@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# `on: push` sans filtre de branche est volontaire : c'est ce qui permet a un agent
+# de prouver son lot sur sa branche avant merge.
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm run test
+
+  # Le depot est destine a etre public : aucune cle ne doit y entrer.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Aucun jeton TMDB committe
+        run: |
+          if git grep -nIE 'eyJhbGciOi[A-Za-z0-9_-]{10,}' -- . ':!*.md'; then
+            echo "::error::Jeton de type JWT detecte dans le depot."
+            exit 1
+          fi
+          if git grep -nIE '\bapi_key=[A-Za-z0-9]{20,}' -- . ':!*.md'; then
+            echo "::error::Cle d API detectee dans le depot."
+            exit 1
+          fi
+          echo "Aucun secret detecte."

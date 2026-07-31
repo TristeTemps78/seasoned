@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.next/
+coverage/
+
+# Secrets — repo potentiellement public, aucune cle ne doit y entrer
+.env
+.env.*
+!.env.example
+
+# OS / editeurs
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json

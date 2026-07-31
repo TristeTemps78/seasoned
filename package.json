@@ -1,0 +1,21 @@
+{
+  "name": "seasoned",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Un endroit ou l'on garde la trace de ce qu'on a pense d'une serie dans le temps",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
