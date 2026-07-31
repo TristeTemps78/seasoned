@@ -4,7 +4,7 @@ import {
   ExpiringCache,
   clampTtl,
   memoizeAsync,
-} from '../src/catalog/cache.js';
+} from '../src/catalog/cache';
 
 /** Horloge manuelle : le temps ne doit jamais dependre de la vitesse des tests. */
 function manualClock(start = 0) {

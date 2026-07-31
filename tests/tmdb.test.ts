@@ -4,7 +4,7 @@ import {
   mapSearchResults,
   mapSeasonDetail,
   mapSeriesDetail,
-} from '../src/catalog/tmdb.js';
+} from '../src/catalog/tmdb';
 
 /**
  * Fiche serie reduite mais fidele a la forme reelle de TMDB, y compris ses

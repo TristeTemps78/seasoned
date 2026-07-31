@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+/**
+ * Theme.
+ *
+ * « L'affiche est l'interface » — la lecon UX de Letterboxd (`RESEARCH.md` §2.3) : les
+ * affiches ne decorent pas, elles sont la navigation. Le reste doit donc etre sombre,
+ * calme, et s'effacer derriere elles.
+ */
+@theme {
+  --color-ink: #0f1115;
+  --color-surface: #171a21;
+  --color-edge: #262b36;
+  --color-muted: #8b94a7;
+  --color-text: #e6e9ef;
+
+  /* Trois tons de statut, pas plus : le but est de faire ressortir l'anomalie
+     (une serie annoncee vivante et morte depuis 18 mois), pas de colorier la page. */
+  --color-live: #4ade80;
+  --color-warn: #fbbf24;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}

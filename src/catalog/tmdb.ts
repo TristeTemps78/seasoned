@@ -18,9 +18,9 @@ import type {
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
-} from './provider.js';
-import type { RawSeason } from '../domain/seasons.js';
-import type { ExternalIds, ProductionStatus } from '../domain/types.js';
+} from './provider';
+import type { RawSeason } from '../domain/seasons';
+import type { ExternalIds, ProductionStatus } from '../domain/types';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 

@@ -5,8 +5,8 @@ import {
   MIN_SEASONS_FOR_CONSISTENCY,
   computeTrajectory,
   type SeasonScore,
-} from '../src/domain/trajectory.js';
-import type { Stars } from '../src/domain/types.js';
+} from '../src/domain/trajectory';
+import type { Stars } from '../src/domain/types';
 
 /** Construit une suite de notes a partir des saisons 1..n. */
 function scores(...stars: Stars[]): SeasonScore[] {

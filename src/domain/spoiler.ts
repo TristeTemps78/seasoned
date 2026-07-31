@@ -24,9 +24,9 @@
  * Module pur.
  */
 
-import type { EpisodeRef, Position, RatingTarget, SeasonRef } from './types.js';
-import type { SeasonScore, Trajectory } from './trajectory.js';
-import { computeTrajectory } from './trajectory.js';
+import type { EpisodeRef, Position, RatingTarget, SeasonRef } from './types';
+import type { SeasonScore, Trajectory } from './trajectory';
+import { computeTrajectory } from './trajectory';
 
 /**
  * Ordonne deux references d'episode.

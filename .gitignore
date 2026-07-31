@@ -1,7 +1,9 @@
 node_modules/
 dist/
 .next/
+next-env.d.ts
 coverage/
+*.tsbuildinfo
 
 # Secrets — repo potentiellement public, aucune cle ne doit y entrer
 .env

@@ -13,8 +13,8 @@
  * Module pur et deterministe : aucune date implicite, aucun acces externe.
  */
 
-import type { SeriesId, Stars } from './types.js';
-import { MAX_STARS, MIN_STARS } from './types.js';
+import type { SeriesId, Stars } from './types';
+import { MAX_STARS, MIN_STARS } from './types';
 
 /**
  * Ecart-type maximal atteignable sur l'echelle 0,5–5.

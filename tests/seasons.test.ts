@@ -4,7 +4,7 @@ import {
   normalizeSeasons,
   type RawSeason,
   type SeasonWarningCode,
-} from '../src/domain/seasons.js';
+} from '../src/domain/seasons';
 
 const NOW = new Date('2026-07-31T00:00:00Z');
 

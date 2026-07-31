@@ -10,7 +10,7 @@
  * Module pur — l'instant de reference est toujours injecte.
  */
 
-import type { ProductionStatus } from './types.js';
+import type { ProductionStatus } from './types';
 
 /**
  * Fenetre, en jours, pendant laquelle une serie reste « en diffusion » apres son

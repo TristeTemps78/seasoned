@@ -6,9 +6,9 @@ import {
   isSpoiler,
   redactTrajectory,
   visibleScores,
-} from '../src/domain/spoiler.js';
-import { computeTrajectory } from '../src/domain/trajectory.js';
-import type { Position } from '../src/domain/types.js';
+} from '../src/domain/spoiler';
+import { computeTrajectory } from '../src/domain/trajectory';
+import type { Position } from '../src/domain/types';
 
 const AT = new Date('2026-07-31T00:00:00Z');
 

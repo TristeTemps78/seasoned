@@ -21,7 +21,7 @@
  * Module pur : aucun acces reseau, aucune dependance a un fournisseur.
  */
 
-import type { Season, SeasonKind, SeriesId } from './types.js';
+import type { Season, SeasonKind, SeriesId } from './types';
 
 /** Numero de saison reserve aux episodes speciaux par TMDB et TheTVDB. */
 export const SPECIALS_SEASON_NUMBER = 0;

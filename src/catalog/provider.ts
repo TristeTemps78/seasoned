@@ -13,8 +13,8 @@
  *     a migrer**.
  */
 
-import type { ExternalIds, ProductionStatus } from '../domain/types.js';
-import type { RawSeason } from '../domain/seasons.js';
+import type { ExternalIds, ProductionStatus } from '../domain/types';
+import type { RawSeason } from '../domain/seasons';
 
 /** Resultat de recherche : le minimum pour choisir dans une liste. */
 export interface SeriesSummary {

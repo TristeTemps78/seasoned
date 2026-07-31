@@ -26,6 +26,12 @@ jobs:
       - name: Tests
         run: npm run test
 
+      # Le build ne doit toucher aucune API : les pages catalogue sont rendues a la
+      # demande puis mises en cache (`ROADMAP.md` §1.4). S'il echoue ici faute de
+      # jeton, c'est qu'une page appelle TMDB au build — donc que le budget fuit.
+      - name: Build (sans aucun secret)
+        run: npm run build
+
   # Le depot est destine a etre public : aucune cle ne doit y entrer.
   secrets:
     runs-on: ubuntu-latest

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RENEWAL_LIMBO_DAYS, deriveStatus } from '../src/domain/status.js';
+import { RENEWAL_LIMBO_DAYS, deriveStatus } from '../src/domain/status';
 
 const NOW = new Date('2026-07-31T00:00:00Z');
 
