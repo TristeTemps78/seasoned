@@ -259,21 +259,53 @@ Ce n'est pas un marché, mais ce n'est pas rien.
 
 ---
 
-## 7. Recommandation révisée
+## 6bis. Ce que Tristan a décidé, et ce que ça fait aux objections
 
-1. **Répondre à l'arbitrage A1 avant tout le reste.** Tant que « à quoi sert ce projet »
-   n'est pas tranché, tout choix en aval est arbitraire. C'est la seule question réellement
-   bloquante.
-2. **Par défaut, viser l'outil personnel** — pari asymétrique démontré au §6.
-3. **Faire entrer la contrainte de spoiler dans le modèle de notation** avant d'écrire le
-   schéma de base (§2). C'est le seul point de l'audit qui exige une correction technique
-   immédiate.
+**Décision du 2026-08-01 : produit à utilisateurs.** Contraire à la recommandation du §6,
+prise en connaissance de ces objections. Elle est actée ; ce document ne la rediscute pas.
+
+Les objections ci-dessus **restent toutes vraies**. Ce qui change, c'est leur statut :
+elles cessent d'être des arguments contre le projet pour devenir son **cahier des
+charges**. Une par une :
+
+| Objection | Ce qu'elle devient sous « produit à utilisateurs » |
+|---|---|
+| **1.1** Fenêtre refermée | **Assumée.** La migration n'est plus un levier d'acquisition mais de **rétention** (phase 3). Le SEO la remplace comme moteur principal — seul canal qui fonctionne sans aucun utilisateur. |
+| **1.2** Économie impossible | **Traitée par le coût, pas par le revenu** (`ROADMAP.md` §1.4) : le succès inattendu ne doit pas coûter cher — exactement ce qui n'était pas vrai chez TV Time. Le revenu reste ouvert (A6) et devra être répondu. |
+| **1.3** Corpus non amorçable | **C'est la réponse centrale du plan révisé** : une page série doit valoir le détour avec zéro critique (`ROADMAP.md` §0.1). Le contenu vient des données dérivées et des gestes à un tap ; les textes passent en dernier. |
+| **3** Différenciateurs ≠ fossés | **Assumée, vocabulaire corrigé** dans `ROADMAP.md` §0. On ne prétend plus à un fossé. Le pari est la vitesse et un terrain que Letterboxd ne priorise pas depuis trois ans. |
+| **4.4** Marché réel petit | **Retournée.** Le SEO adresse les gens qui *cherchent une réponse* sur une série — population bien plus large que celle qui *tient un journal*. On ne se bat plus pour une part du gâteau de Serializd. |
+| **5** Modération / DSA | **Devient obligatoire.** Repoussée en phase 5 avec le social, budgétée comme travail réel. Le social n'ouvre pas sans elle. |
+| **2** Spoiler | **Devient critique** — on affichera du jugement de tiers. Déjà résolu dans le domaine (`src/domain/spoiler.ts`), reste à câbler dans chaque requête. |
+
+Ce que la décision ne résout **pas**, et qu'il faut garder sous les yeux :
+
+1. **L'économie.** Traiter le coût n'est pas répondre au revenu. TV Time est mort avec
+   26 M d'utilisateurs faute d'avoir répondu à cette question-là.
+2. **La thèse SEO n'est pas quantifiée.** Le motif qualitatif est confirmé (« does it get
+   better », « is it worth watching » sont des questions réelles et récurrentes), mais
+   **aucun volume chiffré** n'a été obtenu — il faudrait Ahrefs ou SEMrush. Le canal
+   d'acquisition principal repose donc sur un pari raisonnable, pas sur une mesure.
+3. **Letterboxd peut livrer pendant la construction.**
+
+---
+
+## 7. Ce qui reste à faire de cet audit
+
+1. ~~Répondre à l'arbitrage A1~~ — fait le 2026-08-01, voir §6bis.
+2. ~~Viser l'outil personnel~~ — **écarté par décision de Tristan.** Le §6 est conservé
+   parce que le raisonnement reste valide et qu'il faudra peut-être y revenir.
+3. **Faire entrer la contrainte de spoiler dans le modèle de notation** (§2). Fait au
+   niveau du code dès le 2026-07-31 ; reste à inscrire dans `RATING-MODEL.md`.
 4. **Reconsidérer la hiérarchie épisode/saison** à la lumière du §4.3 : la saison est la
    bonne unité de *jugement*, l'épisode est peut-être la bonne unité de *rythme*.
-5. **Cesser de qualifier les quatre territoires de « défendables »** (§3). Ce sont des
-   différenciateurs. Le vocabulaire compte parce qu'il change les décisions.
+   **Toujours ouvert, et devenu plus important** : en mode produit, le trou d'engagement
+   de trois mois est un problème de rétention, pas seulement d'élégance.
+5. ~~Cesser de qualifier les quatre territoires de « défendables »~~ — corrigé dans
+   `ROADMAP.md` §0.
 6. **Faire relire cet audit par un autre agent.** Rédacteur = relecteur, c'est la limite
-   assumée de ce document.
+   assumée de ce document — et elle devient plus gênante, pas moins, maintenant que le
+   projet vise des utilisateurs.
 
 ---
 

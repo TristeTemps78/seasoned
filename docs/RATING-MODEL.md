@@ -266,6 +266,41 @@ Conservées avec leur motif — pour ne pas refaire le débat dans trois mois.
 
 ---
 
+## 6bis. La contrainte de niveau 1 : rien au-delà de ma position
+
+Ajoutée le 2026-08-01, à la demande de `docs/ROADMAP-AUDIT.md` §2. Ce n'est pas une
+préférence d'interface : **c'est une contrainte du modèle**, au même rang que le choix de
+la saison comme unité canonique.
+
+Sur Letterboxd, l'état d'un utilisateur face à une œuvre est **binaire** : vu, ou pas vu.
+Une case « contient des spoilers » suffit. Pour une série, l'état est **un point sur un
+axe** — le spectateur est *au milieu*. Alors :
+
+- une critique de la saison 5 spoile la saison 4 ;
+- l'existence même d'une saison 7 dit que les personnages survivent ;
+- **la trajectoire est elle-même un spoiler** : montrer que la courbe s'effondre en
+  saison 5 est une information que quelqu'un en saison 2 n'a pas demandée ;
+- **le point d'arrêt recommandé — le cœur de la proposition §3 couche 3 — dit à quelqu'un
+  qui commence qu'il va être déçu, et quand.**
+
+> **Règle : rien qui dépasse la position du spectateur ne s'affiche sans un geste
+> explicite de sa part.**
+
+Deux conséquences techniques non négociables :
+
+1. **Le filtrage vit dans le domaine, pas dans la couche de rendu.** Un filtre d'affichage
+   laisse fuir les agrégats : la courbe est coupée mais le pic et le point de rupture,
+   calculés sur l'ensemble, restent visibles. `redactTrajectory`
+   (`src/domain/spoiler.ts`) **recalcule** sur les seules saisons visibles.
+2. **Sans position déclarée, on masque tout.** Mieux vaut masquer à tort que spoiler.
+
+Cette contrainte devient critique en phase 3, quand on commence à afficher le jugement de
+tiers. C'est aussi, paradoxalement, le meilleur candidat comme véritable fossé technique :
+un affichage conscient de la position est difficile à ajouter après coup — il faut avoir
+modélisé la position dès le départ.
+
+---
+
 ## 7. Ce que ce modèle exige du schéma de données
 
 Conséquences directes, à respecter dès le premier commit — ce sont celles qui coûtent une

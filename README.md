@@ -37,9 +37,13 @@ verdict et non une moyenne.** Argumentée dans [docs/RATING-MODEL.md](docs/RATIN
 
 ## État
 
-**Phase 0.** Socle pur et testé — 89 tests, typecheck strict. Ni interface, ni base de
-données, ni authentification : ce sont exactement les trois choses qui dépendent des
-arbitrages encore ouverts ([ROADMAP.md](ROADMAP.md) §4).
+**Phase 1.** Catalogue public en ligne de mire : recherche, page série, statut réel.
+101 tests, typecheck strict, build vert. Pas encore de compte ni de base — c'est la
+phase 2.
+
+⚠️ **Rien n'a encore tourné contre l'API TMDB réelle** : faute de jeton dans
+l'environnement de développement, la phase 1 est validée contre des fixtures et le
+typage. Protocole de vérification dans [TASKS.md](TASKS.md) §1.10.
 
 ## Lire dans cet ordre
 
@@ -64,10 +68,23 @@ src/catalog/    le catalogue est loué, pas possédé
   provider.ts     l'interface — un seul module connaît la forme d'un fournisseur
   cache.ts        expiration, plafond contractuel de 6 mois appliqué par le code
   tmdb.ts         fournisseur TMDB, parsing tolérant
+
+lib/            la couture entre le catalogue et le domaine
+  catalog.ts      composition + cache partagé + engagement total en heures
+  format.ts       mise en mots — c'est ici que le différenciateur devient visible
+
+app/            Next 16, App Router, rendu serveur et ISR 24 h
 ```
 
 ```bash
 npm install && npm run check
+```
+
+Pour lancer l'application, il faut un jeton TMDB v4 dans `.env`
+(voir [.env.example](.env.example)) :
+
+```bash
+npm run dev
 ```
 
 ## Données
