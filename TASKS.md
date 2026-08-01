@@ -53,6 +53,23 @@ ni base. C'est ce qui rend une page utile à zéro critique (`ROADMAP.md` §0.1)
 | 1.8 | Attribution TMDB | ✅ 2026-08-01 | Dans le pied de page, sur toutes les pages |
 | 1.9 | Dégradation si le catalogue tombe | ✅ 2026-08-01 | Message lisible au lieu d'une 500. `unavailable` ≠ 404 : ne pas faire désindexer une page valide |
 | **1.10** | **Vérifier sur un vrai jeton TMDB** | ⛔ **Tristan** | ⚠️ **Jamais exécuté contre l'API réelle.** Voir ci-dessous |
+| 1.11 | Dépôt GitHub public | ✅ 2026-08-01 | https://github.com/TristeTemps78/seasoned — CI verte au premier push |
+| **1.12** | **Mise en ligne** | ⛔ **Tristan** | Déploiement par agent refusé : `403 — You don't have permission to create a project` sur le compte Vercel. À faire depuis https://vercel.com/new (voir ci-dessous) |
+
+### ⛔ 1.12 — mise en ligne
+
+Le déploiement direct depuis un agent est bloqué par une permission du compte Vercel
+(`403 forbidden`, création de projet interdite). Ce n'est pas un problème de code : la
+CI construit l'application sans erreur et sans aucun secret.
+
+Marche à suivre, sur https://vercel.com/new :
+
+1. **Import Git Repository** → `TristeTemps78/seasoned` (Next.js auto-détecté)
+2. **Environment Variables** → `TMDB_ACCESS_TOKEN` = jeton v4 TMDB
+3. **Deploy** → l'adresse sera `seasoned.vercel.app`
+
+Cette voie est de toute façon supérieure au déploiement direct : chaque `git push`
+redéploie, et le déploiement ne diverge jamais du dépôt.
 
 ### ⚠️ 1.10 — ce qui n'a pas pu être vérifié
 

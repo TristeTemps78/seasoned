@@ -45,6 +45,8 @@ phase 2.
 l'environnement de développement, la phase 1 est validée contre des fixtures et le
 typage. Protocole de vérification dans [TASKS.md](TASKS.md) §1.10.
 
+Pas encore en ligne — voir [TASKS.md](TASKS.md) §1.12.
+
 ## Lire dans cet ordre
 
 | Document | Ce qu'il contient |
