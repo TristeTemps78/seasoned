@@ -63,6 +63,34 @@ ni base. C'est ce qui rend une page utile à zéro critique (`ROADMAP.md` §0.1)
 | 1.18 | Filtre de vitrine par nature de programme | ✅ 2026-08-01 | `src/domain/program.ts`. Sitemap 146 → 110 pages série. Ne filtre que la vitrine, jamais le catalogue |
 | 1.19 | **Seuil de « sans nouvelle » relatif au rythme de la série** | ✅ 2026-08-01 | `src/domain/cadence.ts`. Corrige *Les Griffin*, préserve *Majhi Manasa*. Calibrage du facteur ouvert → D12 |
 | 1.20 | Calibrer `CADENCE_ANOMALY_FACTOR` sur un échantillon réel | 🟢 libre | D12. Mesurer, pas régler au jugé |
+| 1.21 | **La trajectoire s'affiche**, sur les notes du public TMDB | ✅ 2026-08-01 | Derrière un geste explicite. `computeTrajectory` servait enfin — après trois corrections, voir ci-dessous |
+
+### ⚠️ Trois corrections pour une seule feature — ce que ça a appris
+
+`computeTrajectory` était écrit et testé depuis le premier jour sans jamais servir : il
+attendait des notes d'utilisateurs. Les notes du public TMDB permettent de l'activer
+sans un seul compte. **Il a fallu trois passes pour que la courbe dise quelque chose de
+vrai**, et chacune a été révélée par la production, pas par les tests.
+
+| Passe | Ce qui s'affichait | Cause |
+|---|---|---|
+| 1 | *Dexter* : **4,0 partout, « tenue de bout en bout »** | L'arrondi au demi-point détruisait l'information |
+| 2 | Valeurs justes (3,6 → 4,2), mais **toujours « chef-d'œuvre »**, constance 92 % | Forme et constance normalisées sur l'échelle complète |
+| 3 | Courbe + pic + décrochage, **aucun jugement** | ✅ |
+
+> **La leçon, transposable** : un instrument taillé pour des notes **humaines** ne
+> s'applique pas à des moyennes de **foule**. Les notes d'épisode d'une même série
+> tiennent dans une bande d'environ un point sur dix — ceux qui notent un épisode l'ont
+> regardé, donc l'aiment. L'échelle en demi-étoiles, le seuil de rupture à une étoile et
+> la normalisation de la constance supposent tous une dispersion qui n'existe pas.
+>
+> La sortie n'a pas été de recalibrer des seuils jusqu'à ce que ça tombe juste sur quatre
+> exemples, mais de **séparer les faits des jugements** : on montre la courbe, le pic et
+> le décrochage ; on tait la forme et la constance. Elles reviendront intactes le jour où
+> de vraies notes existeront — elles sont justes pour ce qu'elles ont été conçues.
+
+**Vérifié en production** : *Dexter* et *Stranger Things* signalent tous deux leur
+décrochage, et plus aucun jugement faux n'est affiché.
 
 ### ✅ 1.10 — ce que le premier contact avec l'API réelle a révélé
 
