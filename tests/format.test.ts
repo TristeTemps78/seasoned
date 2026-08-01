@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeStatus, formatCommitment, year } from '../lib/format';
+import { describeStatus, formatCommitment, shortStatus, year } from '../lib/format';
 import { deriveStatus } from '../src/domain/status';
 
 const NOW = new Date('2026-08-01T00:00:00Z');
@@ -77,6 +77,52 @@ describe('describeStatus — les autres statuts', () => {
     ];
     for (const status of cases) {
       expect(describeStatus(status).length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('shortStatus — la valeur tient dans le chiffre', () => {
+  // Le recentrage du 2026-08-01 : ce qui vaut, ce n'est pas l'etat (« Returning
+  // Series » ne dit rien) mais le temps ecoule chiffre.
+  it('chiffre l attente entre deux saisons', () => {
+    const status = deriveStatus({ production: 'returning', lastAiredAt: daysAgo(335) }, NOW);
+    expect(shortStatus(status)).toBe('en attente · 11 mois');
+  });
+
+  it('chiffre le silence d une serie zombie', () => {
+    const status = deriveStatus({ production: 'returning', lastAiredAt: daysAgo(760) }, NOW);
+    expect(shortStatus(status)).toBe('sans nouvelle · 25 mois');
+  });
+
+  it('annonce le prochain episode quand il est date', () => {
+    const status = deriveStatus(
+      { production: 'returning', lastAiredAt: daysAgo(300), nextAiringAt: inDays(3) },
+      NOW,
+    );
+    expect(shortStatus(status)).toBe('ép. dans 3 j');
+  });
+
+  it('reste muet quand il n y a rien d utile a dire', () => {
+    // Une vignette muette vaut mieux qu'une vignette qui repete l'evidence :
+    // l'affiche et le titre suffisent.
+    expect(shortStatus(deriveStatus({ production: 'ended', lastAiredAt: daysAgo(9) }, NOW))).toBeUndefined();
+    expect(shortStatus(deriveStatus({ production: 'unknown' }, NOW))).toBeUndefined();
+  });
+
+  it('signale une annulation', () => {
+    const status = deriveStatus({ production: 'canceled', lastAiredAt: daysAgo(100) }, NOW);
+    expect(shortStatus(status)).toBe('annulée');
+  });
+
+  it('tient sur une vignette', () => {
+    // Contrainte d'affichage : sous une affiche, en petit. Au-dela, ca tronque.
+    const cases = [
+      deriveStatus({ production: 'returning', lastAiredAt: daysAgo(1000) }, NOW),
+      deriveStatus({ production: 'returning', lastAiredAt: daysAgo(200) }, NOW),
+      deriveStatus({ production: 'returning', lastAiredAt: daysAgo(2), nextAiringAt: inDays(40) }, NOW),
+    ];
+    for (const status of cases) {
+      expect(shortStatus(status)!.length).toBeLessThanOrEqual(24);
     }
   });
 });

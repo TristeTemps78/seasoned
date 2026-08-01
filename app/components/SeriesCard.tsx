@@ -1,17 +1,31 @@
 import Link from 'next/link';
 import type { SeriesSummary } from '@/src/catalog/provider';
+import type { StatusResult } from '@/src/domain/status';
 import { posterUrl } from '@/lib/catalog';
-import { year } from '@/lib/format';
+import { STATUS_TONE, shortStatus, year } from '@/lib/format';
+
+const TONE_TEXT = {
+  live: 'text-(--color-live)',
+  warning: 'text-(--color-warn)',
+  neutral: 'text-(--color-muted)',
+} as const;
 
 /**
  * Vignette de resultat.
  *
  * « L'affiche est l'interface » : elle n'est pas une decoration, elle est le moyen de
  * navigation. D'ou une carte qui n'est presque que l'affiche.
+ *
+ * Le `status` est optionnel a dessein : il coute un appel par serie, donc on ne
+ * l'hydrate que sur les pages mises en cache (`lib/catalog.ts`, `withStatus`).
  */
-export function SeriesCard({ series }: { readonly series: SeriesSummary }) {
+export function SeriesCard({ series, status }: {
+  readonly series: SeriesSummary;
+  readonly status?: StatusResult;
+}) {
   const poster = posterUrl(series.posterPath, 'w342');
   const firstYear = year(series.firstAirDate);
+  const badge = status !== undefined ? shortStatus(status) : undefined;
 
   return (
     <Link
@@ -35,9 +49,17 @@ export function SeriesCard({ series }: { readonly series: SeriesSummary }) {
         )}
       </div>
       <p className="mt-2 text-sm font-medium leading-snug">{series.title}</p>
-      {firstYear !== undefined ? (
-        <p className="text-xs text-(--color-muted)">{firstYear}</p>
-      ) : null}
+      <p className="text-xs text-(--color-muted)">
+        {firstYear !== undefined ? firstYear : null}
+        {/* Le chiffre est la valeur : « en attente · 11 mois » repond a la question
+            que se pose le spectateur, la ou « Returning Series » ne dit rien. */}
+        {badge !== undefined && status !== undefined ? (
+          <>
+            {firstYear !== undefined ? ' · ' : null}
+            <span className={TONE_TEXT[STATUS_TONE[status.status]]}>{badge}</span>
+          </>
+        ) : null}
+      </p>
     </Link>
   );
 }

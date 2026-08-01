@@ -1,4 +1,4 @@
-import { discover } from '@/lib/catalog';
+import { discover, withStatus, type SeriesWithStatus } from '@/lib/catalog';
 import { SearchForm } from '@/app/components/SearchForm';
 import { SeriesCard } from '@/app/components/SeriesCard';
 
@@ -14,9 +14,17 @@ export default async function HomePage() {
   // Correctif de l'audit du 2026-08-01 : sans ces liens, **aucune page serie n'etait
   // atteignable** depuis une page indexable — sitemap a une seule URL, `/recherche`
   // en `Disallow`, zero lien sortant. Le canal d'acquisition n°1 etait un cul-de-sac.
-  const [trending, onTheAir] = await Promise.all([
+  const [rawTrending, rawOnTheAir] = await Promise.all([
     discover('trending'),
     discover('on_the_air'),
+  ]);
+
+  // Hydratation du statut reel : un appel par serie, mais la page est en ISR
+  // quotidien — 24 appels par jour au total, quel que soit le trafic. C'est ce qui
+  // rend la promesse visible **avant** le clic (`ROADMAP.md` §1.4 pour le budget).
+  const [trending, onTheAir] = await Promise.all([
+    withStatus(rawTrending.slice(0, 12)),
+    withStatus(rawOnTheAir.slice(0, 12)),
   ]);
 
   return (
@@ -65,7 +73,7 @@ export default async function HomePage() {
 function Row({ title, subtitle, series }: {
   readonly title: string;
   readonly subtitle: string;
-  readonly series: readonly Awaited<ReturnType<typeof discover>>[number][];
+  readonly series: readonly SeriesWithStatus[];
 }) {
   if (series.length === 0) return null;
 
@@ -76,9 +84,9 @@ function Row({ title, subtitle, series }: {
         <p className="text-sm text-(--color-muted)">{subtitle}</p>
       </div>
       <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
-        {series.slice(0, 12).map((s) => (
-          <li key={s.providerId}>
-            <SeriesCard series={s} />
+        {series.map(({ summary, status }) => (
+          <li key={summary.providerId}>
+            <SeriesCard series={summary} {...(status !== undefined ? { status } : {})} />
           </li>
         ))}
       </ul>

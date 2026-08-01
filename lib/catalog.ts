@@ -224,6 +224,49 @@ async function estimateEpisodeRuntime(
   return detail.episodeRunTimeMinutes;
 }
 
+/** Un resultat de liste, enrichi de son statut reel quand il a pu etre calcule. */
+export interface SeriesWithStatus {
+  readonly summary: SeriesSummary;
+  readonly status?: StatusResult;
+}
+
+/**
+ * Hydrate une liste avec le statut reel de chaque serie.
+ *
+ * **Un appel par serie** — a ne faire que sur une page mise en cache. L'accueil est
+ * en ISR quotidien : douze series hydratees coutent douze appels par jour, quel que
+ * soit le trafic. La recherche, elle, est dynamique : l'y appliquer couterait un
+ * appel par resultat et par requete, ce que le budget interdit (`ROADMAP.md` §1.4).
+ *
+ * Chaque serie degrade independamment : une fiche indisponible perd son statut, pas
+ * sa vignette.
+ */
+export async function withStatus(
+  summaries: readonly SeriesSummary[],
+  now: Date = new Date(),
+): Promise<readonly SeriesWithStatus[]> {
+  return Promise.all(
+    summaries.map(async (summary) => {
+      try {
+        const detail = await getSeriesDetail(summary.providerId);
+        return {
+          summary,
+          status: deriveStatus(
+            {
+              production: detail.production,
+              ...(detail.lastAiredAt !== undefined ? { lastAiredAt: detail.lastAiredAt } : {}),
+              ...(detail.nextAiringAt !== undefined ? { nextAiringAt: detail.nextAiringAt } : {}),
+            },
+            now,
+          ),
+        };
+      } catch {
+        return { summary };
+      }
+    }),
+  );
+}
+
 /** URL d'une affiche sur le CDN de TMDB. Jamais servie par nous — `next.config.ts`. */
 export function posterUrl(path: string | undefined, size: 'w185' | 'w342' | 'w500' = 'w342'): string | undefined {
   if (path === undefined) return undefined;

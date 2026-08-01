@@ -100,6 +100,52 @@ export function describeStatus(status: StatusResult): string {
 }
 
 /**
+ * Version courte du statut, pour une vignette.
+ *
+ * Porte **le chiffre**, pas seulement l'etat : c'est lui la valeur (`TASKS.md`,
+ * « chasse au zombie »). « en attente · 11 mois » repond a la question du spectateur
+ * — j'attends ou j'abandonne ? — la ou « Returning Series » ne dit rien.
+ *
+ * Renvoie `undefined` quand il n'y a rien d'utile a dire : une vignette muette vaut
+ * mieux qu'une vignette qui repete l'evidence.
+ */
+export function shortStatus(status: StatusResult): string | undefined {
+  const since = status.daysSinceLastAired;
+  const until = status.daysUntilNext;
+
+  switch (status.status) {
+    case 'airing':
+      if (until !== undefined && until >= 0) {
+        const days = Math.ceil(until);
+        if (days === 0) return 'ép. aujourd’hui';
+        if (days === 1) return 'ép. demain';
+        return `ép. dans ${days} j`;
+      }
+      return 'en cours';
+
+    case 'between_seasons':
+      return since === undefined ? 'en attente' : `en attente · ${months(since)} mois`;
+
+    case 'awaiting_renewal':
+      return since === undefined
+        ? 'sans nouvelle'
+        : `sans nouvelle · ${months(since)} mois`;
+
+    case 'cancelled':
+      return 'annulée';
+
+    case 'upcoming':
+      return 'à venir';
+
+    // « Terminée » n'apprend rien d'urgent sur une vignette, et « statut inconnu »
+    // encore moins : on laisse l'affiche parler.
+    case 'ended':
+    case 'unknown':
+      return undefined;
+  }
+}
+
+/**
  * Engagement total demande, en clair.
  *
  * La reponse a « ca vaut mes 40 heures ? ». On donne les heures, parce que c'est
