@@ -92,6 +92,34 @@ vrai**, et chacune a été révélée par la production, pas par les tests.
 **Vérifié en production** : *Dexter* et *Stranger Things* signalent tous deux leur
 décrochage, et plus aucun jugement faux n'est affiché.
 
+### 1.22 — « Arrête-toi après la saison N », chiffré ✅ 2026-08-01
+
+La phrase archétypale du domaine, enfin calculée : *« s'arrêter après la saison 6 ramène
+la série à ~45 h au lieu de ~82 h »*. Derrière le même geste explicite que la courbe.
+
+Une correction a été nécessaire dès le premier test réel. *Dexter* conseillait de
+s'arrêter **après la saison 7** — exact (la plus forte chute est entre S7 et S8) et
+parfaitement inutile : huit épisodes épargnés sur quatre-vingt-seize. Ce n'est pas un cas
+isolé, la dernière saison est souvent la moins bien notée, donc le conseil deviendrait
+systématiquement « regarde tout sauf le final ». **Seuil ajouté : un point d'arrêt ne
+s'affiche que s'il épargne au moins un tiers de la série.**
+
+Ce que ça donne sur de vraies séries :
+
+| Série | Verdict | Cohérence avec la réputation |
+|---|---|---|
+| **The Walking Dead** | arrêt après S6 (4,2 → 3,9) | ✅ la saison 7 est le décrochage connu |
+| **Rick et Morty** | arrêt après S4 | ✅ |
+| **Breaking Bad** | aucun — elle monte | ✅ |
+| Dexter, Stranger Things | aucun — le garde-fou coupe | correct, mais voir ci-dessous |
+
+> **Limite réelle, consignée et non résolue — le biais de survie.** Ces points d'arrêt
+> dérivent de notes de foule : ceux qui ont vu la saison 6 de *Dexter* sont ceux qui ont
+> persévéré, et ils la notent bien. Les notes publiques ne retrouvent donc pas
+> l'effondrement dont tout le monde parle. **Le conseil est exact sur les données, et les
+> données ne disent pas ce que dit la réputation.** Le signal ne transparaît que sur les
+> séries assez longues pour que le déclin s'installe.
+
 ### ✅ 1.10 — ce que le premier contact avec l'API réelle a révélé
 
 Deux défauts, tous deux invisibles hors ligne, tous deux sur la **même promesse** :

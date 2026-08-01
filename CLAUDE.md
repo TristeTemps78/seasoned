@@ -49,6 +49,21 @@
 - **Le seuil de « sans nouvelle » n'est plus absolu** (`src/domain/cadence.ts`) : il suit
   le rythme observé de chaque série. Un seuil fixe traitait *Les Griffin*, qui revient
   chaque automne, comme *Stranger Things*, qui sortait tous les deux ou trois ans.
+- **La trajectoire et le point d'arrêt sont en ligne**, dérivés des notes du public TMDB,
+  derrière un geste explicite (règle de spoiler). *The Walking Dead* → arrêt après S6,
+  ce qui correspond à sa réputation.
+- **Deux règles apprises à la dure, à ne pas défaire** :
+  1. **Un instrument taillé pour des notes humaines ne s'applique pas à des moyennes de
+     foule.** L'échelle en demi-étoiles, le seuil de rupture à une étoile et la
+     normalisation de la constance supposent une dispersion qui n'existe pas — les notes
+     d'une même série tiennent dans un point sur dix. D'où : les seuils sont des
+     **paramètres**, et on affiche les faits (courbe, pic, décrochage) sans les jugements
+     (forme, constance) sur des données de foule.
+  2. **Un conseil exact mais sans portée ne vaut pas mieux que pas de conseil.** Un point
+     d'arrêt qui épargne 8 % de la série ne s'affiche pas.
+- ⚠️ **Biais de survie, non résolu** : ceux qui ont vu la saison 6 de *Dexter* sont ceux
+  qui ont persévéré, et ils la notent bien. Les notes publiques ne retrouvent pas les
+  effondrements dont tout le monde parle.
 - **Le nom n'est pas tranché (A4).** `seasoned.vercel.app` était déjà pris par un tiers —
   le mot est trop commun. Six domaines vérifiés libres à 35 $/an ; recommandation
   **`peaked.tv`**, repli `howfar.tv`.
