@@ -38,8 +38,17 @@
   > **Leçon à appliquer** : une fixture écrite de mémoire décrit l'API dont on se
   > souvient, pas celle qui existe. Les prochaines doivent être **capturées** depuis une
   > réponse réelle.
-- **Trois statuts sur quatre observés en conditions réelles.** Manque le seul qui compte
-  vraiment : **`awaiting_renewal`**, la série zombie (tâche 1.13).
+- **Les cinq statuts sont observés en conditions réelles**, zombie compris (*Majhi
+  Manasa*, 26 mois). Le zombie était introuvable en devinant des titres connus ; il est
+  apparu dès qu'une liste a été construite pour le faire remonter — **c'était la méthode
+  de recherche qui était mauvaise, pas l'hypothèse**.
+- **Le différenciateur a été recentré, chiffres à l'appui.** Sur 36 vignettes : ~20 en
+  diffusion, ~9 « en attente · 1 à 5 mois », 1 seul « sans nouvelle · 26 mois ». La
+  valeur est le **temps écoulé chiffré**, pas le cas zombie — qui en est la forme
+  extrême, rare, et située dans la longue traîne où le trafic SEO n'est pas.
+- **Le seuil de « sans nouvelle » n'est plus absolu** (`src/domain/cadence.ts`) : il suit
+  le rythme observé de chaque série. Un seuil fixe traitait *Les Griffin*, qui revient
+  chaque automne, comme *Stranger Things*, qui sortait tous les deux ou trois ans.
 - **Le nom n'est pas tranché (A4).** `seasoned.vercel.app` était déjà pris par un tiers —
   le mot est trop commun. Six domaines vérifiés libres à 35 $/an ; recommandation
   **`peaked.tv`**, repli `howfar.tv`.
