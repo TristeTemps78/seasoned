@@ -13,7 +13,7 @@
  * Module pur et deterministe : aucune date implicite, aucun acces externe.
  */
 
-import type { SeriesId, Stars } from './types';
+import type { SeriesId } from './types';
 import { MAX_STARS, MIN_STARS } from './types';
 
 /**
@@ -47,10 +47,35 @@ export const SIGNIFICANT_SLOPE = 0.3;
  */
 export const BREAK_POINT_MIN_DROP = 1;
 
-/** Une note de saison, reduite au strict necessaire pour le calcul. */
+/**
+ * Dispersion minimale, en etoiles, pour qu'une forme soit nommee — **par defaut, aucune**.
+ *
+ * Une note humaine identique sur cinq saisons est une information : quelqu'un a
+ * delibarement mis quatre etoiles partout. Une moyenne de foule identique sur cinq
+ * saisons n'en est pas une : elle refuse simplement de discriminer.
+ *
+ * Le moteur ne peut pas distinguer les deux — seul l'appelant sait d'ou viennent ses
+ * notes. D'ou un garde-fou desactive par defaut, que la couche des notes publiques
+ * active pour son compte.
+ */
+export const DEFAULT_MIN_SPREAD_FOR_SHAPE = 0;
+
+/**
+ * Une note de saison, reduite au strict necessaire pour le calcul.
+ *
+ * `stars` est un **nombre** sur [0,5 ; 5] et non le type `Stars` : le modele produit
+ * n'emet que des demi-etoiles (`docs/RATING-MODEL.md` §3), mais le moteur, lui, est un
+ * calcul et doit accepter des valeurs continues.
+ *
+ * Ce n'est pas un detail. Arrondir des notes de foule au demi-point les detruit : sur
+ * TMDB, les notes d'episode d'une meme serie tiennent dans une bande d'environ un point
+ * sur dix. Ramenees a des demi-etoiles, toutes les saisons de *Dexter* valaient 4,0 et
+ * la serie ressortait « tenue de bout en bout » — l'exact contraire de sa reputation
+ * (constate en production le 2026-08-01).
+ */
 export interface SeasonScore {
   readonly seasonNumber: number;
-  readonly stars: Stars;
+  readonly stars: number;
 }
 
 /** Tendance generale de la serie dans le temps. */
@@ -71,6 +96,14 @@ export type TrajectoryShape =
   | 'grower'
   /** Ni tendance ni constance : en dents de scie. */
   | 'erratic'
+  /**
+   * Les saisons sont trop proches pour qu'on puisse conclure quoi que ce soit.
+   *
+   * Cas frequent avec des notes de foule, qui s'agglutinent : ceux qui notent un
+   * episode l'ont regarde, donc l'aiment. Se taire est alors la seule reponse
+   * honnete.
+   */
+  | 'undifferentiated'
   /** Moins de deux saisons notees : on ne dit rien. */
   | 'insufficient_data';
 
@@ -94,7 +127,9 @@ export interface Trajectory {
   /** Notes retenues, triees par numero de saison croissant. */
   readonly scores: readonly SeasonScore[];
   /** Meilleure note de saison. `undefined` si aucune note. */
-  readonly peak?: Stars;
+  readonly peak?: number;
+  /** Ecart entre la meilleure et la moins bonne saison notee. */
+  readonly spread?: number;
   /** Saison ayant atteint le pic. */
   readonly peakSeason?: number;
   /** Note moyenne. Presente a titre indicatif, **jamais** comme note de la serie. */
@@ -170,14 +205,17 @@ function trendFromSlope(slope: number | undefined): Trend {
   return 'flat';
 }
 
-function findBreakPoint(scores: readonly SeasonScore[]): BreakPoint | undefined {
+function findBreakPoint(
+  scores: readonly SeasonScore[],
+  minDrop: number,
+): BreakPoint | undefined {
   let worst: BreakPoint | undefined;
   for (let i = 1; i < scores.length; i += 1) {
     const previous = scores[i - 1];
     const current = scores[i];
     if (previous === undefined || current === undefined) continue;
     const drop = previous.stars - current.stars;
-    if (drop < BREAK_POINT_MIN_DROP) continue;
+    if (drop < minDrop) continue;
     if (worst !== undefined && drop <= worst.drop) continue;
     worst = {
       afterSeason: previous.seasonNumber,
@@ -190,10 +228,17 @@ function findBreakPoint(scores: readonly SeasonScore[]): BreakPoint | undefined 
 }
 
 function classify(
-  peak: Stars,
+  peak: number,
+  spread: number,
+  minSpread: number,
   consistency: number | undefined,
   trend: Trend,
 ): TrajectoryShape {
+  // Avant toute chose : y a-t-il seulement de quoi conclure ? Sur des notes de foule,
+  // des saisons separees par un dixieme d'etoile ne dessinent aucune forme — elles
+  // dessinent du bruit. Sur des notes humaines, ce garde-fou est desactive.
+  if (minSpread > 0 && spread < minSpread) return 'undifferentiated';
+
   const isConsistent = consistency !== undefined && consistency >= HIGH_CONSISTENCY_THRESHOLD;
 
   // Une serie constamment excellente reste un chef-d'oeuvre meme si elle progresse
@@ -215,6 +260,24 @@ function classify(
 export function computeTrajectory(
   seriesId: SeriesId,
   rawScores: readonly SeasonScore[],
+  options: {
+    /**
+     * Chute minimale, en etoiles, pour signaler un decrochage.
+     *
+     * Une etoile pleine pour des notes humaines : en deca, c'est du bruit de notation.
+     * Mais une moyenne de foule ne bouge jamais d'une etoile entiere — il faut un seuil
+     * bien plus fin pour que le decrochage de *Dexter* soit seulement visible. Le seuil
+     * appartient donc a l'appelant, qui sait d'ou viennent ses notes.
+     */
+    readonly minDrop?: number;
+    /**
+     * Dispersion en deca de laquelle on refuse de nommer une forme.
+     *
+     * Zero par defaut : une note humaine constante est un jugement, pas une absence de
+     * jugement. A activer pour des notes agregees, qui s'agglutinent naturellement.
+     */
+    readonly minSpread?: number;
+  } = {},
 ): Trajectory {
   const deduped = new Map<number, SeasonScore>();
   for (const score of rawScores) {
@@ -230,6 +293,7 @@ export function computeTrajectory(
   const peakScore = scores.reduce((best, s) => (s.stars > best.stars ? s : best));
   const peak = peakScore.stars;
   const average = mean(starValues);
+  const spread = peak - Math.min(...starValues);
 
   const consistency =
     scores.length >= MIN_SEASONS_FOR_CONSISTENCY
@@ -240,14 +304,23 @@ export function computeTrajectory(
   const trend = trendFromSlope(slope);
 
   const shape: TrajectoryShape =
-    scores.length < 2 ? 'insufficient_data' : classify(peak, consistency, trend);
+    scores.length < 2
+      ? 'insufficient_data'
+      : classify(
+          peak,
+          spread,
+          options.minSpread ?? DEFAULT_MIN_SPREAD_FOR_SHAPE,
+          consistency,
+          trend,
+        );
 
-  const breakPoint = findBreakPoint(scores);
+  const breakPoint = findBreakPoint(scores, options.minDrop ?? BREAK_POINT_MIN_DROP);
 
   return {
     seriesId,
     scores,
     peak,
+    spread,
     peakSeason: peakScore.seasonNumber,
     mean: average,
     trend,

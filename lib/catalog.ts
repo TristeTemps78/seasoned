@@ -27,7 +27,12 @@ import {
 import { deriveStatus, type StatusResult } from '../src/domain/status';
 import { isShowcased } from '../src/domain/program';
 import { seasonCadence } from '../src/domain/cadence';
-import { representativeRating, starsFromTen } from '../src/domain/rating-scale';
+import {
+  PUBLIC_BREAK_POINT_MIN_DROP,
+  PUBLIC_MIN_SPREAD_FOR_SHAPE,
+  representativeRating,
+  starsFromTen,
+} from '../src/domain/rating-scale';
 import { computeTrajectory, type SeasonScore, type Trajectory } from '../src/domain/trajectory';
 
 /** Duree de vie du cache serie : une journee. Les grilles de diffusion bougent peu. */
@@ -335,7 +340,13 @@ export async function publicTrajectory(
   const usable = scores.filter((s): s is SeasonScore => s !== undefined);
   if (usable.length < 2) return undefined;
 
-  return computeTrajectory(id, usable);
+  // Seuil de decrochage adapte a des notes de foule, qui ne bougent presque pas
+  // (`rating-scale.ts`). Avec le seuil des notes humaines, le decrochage de *Dexter*
+  // etait invisible.
+  return computeTrajectory(id, usable, {
+    minDrop: PUBLIC_BREAK_POINT_MIN_DROP,
+    minSpread: PUBLIC_MIN_SPREAD_FOR_SHAPE,
+  });
 }
 
 /**

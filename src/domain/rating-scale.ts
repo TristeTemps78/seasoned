@@ -14,7 +14,7 @@
  * Module pur.
  */
 
-import { MAX_STARS, MIN_STARS, type Stars } from './types';
+import { MAX_STARS, MIN_STARS } from './types';
 
 /**
  * Nombre de votes minimal pour qu'une note soit prise au serieux.
@@ -26,21 +26,46 @@ import { MAX_STARS, MIN_STARS, type Stars } from './types';
 export const MIN_VOTES_FOR_TRUST = 20;
 
 /**
- * Convertit une note sur 10 en etoiles.
+ * Convertit une note sur 10 vers l'echelle du produit, **sans arrondir**.
  *
- * Arrondi au demi-point le plus proche, borne sur l'echelle. Renvoie `undefined` pour
- * une note absente ou nulle — chez TMDB, `0` signifie « personne n'a vote », pas
- * « detestable ». Les confondre placerait les oeuvres inconnues au fond du classement.
+ * L'arrondi au demi-point est la bonne granularite pour une note humaine : personne ne
+ * distingue 3,6 de 3,7. Il est desastreux pour une moyenne de foule, qui vit dans une
+ * bande etroite — sur TMDB, les notes d'episode d'une meme serie tiennent dans environ
+ * un point sur dix. Arrondies, toutes les saisons de *Dexter* valaient 4,0 et la serie
+ * ressortait « tenue de bout en bout », l'exact contraire de sa reputation.
+ *
+ * La valeur rendue est donc continue. C'est l'**affichage** qui arrondit, pas le calcul.
+ *
+ * Renvoie `undefined` pour une note absente ou nulle : chez TMDB, `0` signifie
+ * « personne n'a vote » et non « detestable ». Les confondre placerait toute oeuvre
+ * inconnue au fond du classement.
  */
-export function starsFromTen(voteAverage: number | undefined): Stars | undefined {
+export function starsFromTen(voteAverage: number | undefined): number | undefined {
   if (voteAverage === undefined || !Number.isFinite(voteAverage) || voteAverage <= 0) {
     return undefined;
   }
-  const halved = voteAverage / 2;
-  const rounded = Math.round(halved * 2) / 2;
-  const clamped = Math.min(MAX_STARS, Math.max(MIN_STARS, rounded));
-  return clamped as Stars;
+  return Math.min(MAX_STARS, Math.max(MIN_STARS, voteAverage / 2));
 }
+
+/**
+ * Chute minimale pour signaler un decrochage **sur des notes de foule**.
+ *
+ * Un quart d'etoile, la ou une note humaine demande une etoile pleine. Les moyennes de
+ * foule ne bougent presque pas : ceux qui notent un episode l'ont regarde, donc l'aiment,
+ * et les notes s'agglutinent vers le haut. L'ecart entre la meilleure et la pire saison
+ * de *Dexter* est d'environ un point sur dix — un demi-point sur cette echelle.
+ * Conserver le seuil des notes humaines revenait a ne jamais rien detecter.
+ */
+export const PUBLIC_BREAK_POINT_MIN_DROP = 0.25;
+
+/**
+ * Dispersion minimale pour qu'une forme soit nommee **sur des notes de foule**.
+ *
+ * Sous un quart d'etoile d'ecart entre la meilleure et la pire saison, la foule refuse
+ * de discriminer et il n'y a rien a en tirer. Qualifier cela de « tenue de bout en
+ * bout » serait presenter du bruit comme un jugement.
+ */
+export const PUBLIC_MIN_SPREAD_FOR_SHAPE = 0.25;
 
 /** Une note publique accompagnee de son assise. */
 export interface PublicRating {

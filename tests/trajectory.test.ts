@@ -68,6 +68,39 @@ describe('computeTrajectory — formes', () => {
     expect(t.peak).toBeLessThan(4);
   });
 
+  it('refuse de nommer une forme quand la dispersion est negligeable — si on le demande', () => {
+    // Correctif du 2026-08-01 : sur des notes de foule, Dexter ressortait « tenue de
+    // bout en bout ». La foule ne discriminait pas ; qualifier cela etait presenter du
+    // bruit comme un jugement.
+    const flat = [
+      { seasonNumber: 1, stars: 4.0 },
+      { seasonNumber: 2, stars: 4.05 },
+      { seasonNumber: 3, stars: 3.95 },
+      { seasonNumber: 4, stars: 4.02 },
+    ];
+    expect(computeTrajectory('s', flat, { minSpread: 0.25 }).shape).toBe('undifferentiated');
+
+    // Sans garde-fou — le defaut — une note humaine constante reste un jugement.
+    expect(computeTrajectory('s', flat).shape).toBe('masterpiece');
+  });
+
+  it('detecte un decrochage tenu que le seuil des notes humaines manquait', () => {
+    // L'ecart reel entre les saisons de Dexter sur TMDB, une fois l'arrondi retire.
+    const dexterPublic = [
+      { seasonNumber: 1, stars: 4.0 },
+      { seasonNumber: 2, stars: 4.05 },
+      { seasonNumber: 3, stars: 3.9 },
+      { seasonNumber: 4, stars: 4.1 },
+      { seasonNumber: 5, stars: 3.7 },
+      { seasonNumber: 6, stars: 3.6 },
+    ];
+    expect(computeTrajectory('dexter', dexterPublic).breakPoint).toBeUndefined();
+
+    const detected = computeTrajectory('dexter', dexterPublic, { minDrop: 0.25 });
+    expect(detected.breakPoint?.afterSeason).toBe(4);
+    expect(detected.suggestedStopAfter).toBe(4);
+  });
+
   it('ne classe rien sous deux saisons notees', () => {
     expect(computeTrajectory('s', []).shape).toBe('insufficient_data');
     expect(computeTrajectory('s', scores(5)).shape).toBe('insufficient_data');

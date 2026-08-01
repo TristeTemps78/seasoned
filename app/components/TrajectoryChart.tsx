@@ -7,6 +7,9 @@ const SHAPE_LABEL: Readonly<Record<TrajectoryShape, string>> = {
   decline: 'Décroche en route',
   grower: 'S’améliore',
   erratic: 'En dents de scie',
+  // Se taire est la seule reponse honnete quand les saisons sont trop proches :
+  // qualifier du bruit serait pire que ne rien dire.
+  undifferentiated: 'Trop homogène pour conclure',
   insufficient_data: 'Pas assez de saisons notées',
 };
 
@@ -38,6 +41,8 @@ export function TrajectoryChart({ trajectory }: { readonly trajectory: Trajector
               className="flex flex-1 flex-col items-center gap-1"
               title={`Saison ${seasonNumber} — ${stars.toFixed(1)}/5`}
             >
+              {/* C'est l'affichage qui arrondit, jamais le calcul : arrondir en amont
+                  ecrasait toute la dispersion des notes de foule. */}
               <span className="text-[10px] tabular-nums text-(--color-muted)">
                 {stars.toFixed(1)}
               </span>

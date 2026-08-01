@@ -6,11 +6,21 @@ import {
 } from '../src/domain/rating-scale';
 
 describe('starsFromTen', () => {
-  it('convertit sur l echelle a demi-etoiles', () => {
+  it('convertit sans arrondir', () => {
+    // L'arrondi au demi-point convient a une note humaine, jamais a une moyenne de
+    // foule : les notes d'une meme serie tiennent dans une bande d'un point sur dix.
+    // Arrondies, toutes les saisons de Dexter valaient 4,0 et la serie ressortait
+    // « tenue de bout en bout » — l'exact contraire de sa reputation.
     expect(starsFromTen(10)).toBe(5);
     expect(starsFromTen(8)).toBe(4);
-    expect(starsFromTen(7.3)).toBe(3.5);
-    expect(starsFromTen(7.6)).toBe(4);
+    expect(starsFromTen(7.3)).toBeCloseTo(3.65, 5);
+    expect(starsFromTen(7.6)).toBeCloseTo(3.8, 5);
+  });
+
+  it('conserve l ecart que l arrondi detruisait', () => {
+    const best = starsFromTen(8.2)!;
+    const worst = starsFromTen(7.0)!;
+    expect(best - worst).toBeCloseTo(0.6, 5);
   });
 
   it('traite zero comme « personne n a vote », pas comme « detestable »', () => {
