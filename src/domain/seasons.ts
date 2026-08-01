@@ -132,6 +132,24 @@ function toSeason(seriesId: SeriesId, raw: RawSeason): Season {
  *   pour distinguer une mini-serie d'une serie qui n'a qu'une saison *pour l'instant*.
  */
 /**
+ * Nombre d'episodes des saisons notables jusqu'a `throughSeason` incluse.
+ *
+ * Sert a chiffrer ce que coute une serie **si l'on s'arrete la** : « regarde Dexter
+ * mais arrete-toi a la saison 4 » est la phrase archetypale de toute conversation sur
+ * les series (`docs/RATING-MODEL.md` §3, couche 3), et personne ne la chiffre.
+ *
+ * Les speciaux et les saisons non diffusees sont exclus, comme partout ailleurs.
+ */
+export function episodesThrough(
+  seasons: readonly Season[],
+  throughSeason: number,
+): number {
+  return seasons
+    .filter((s) => s.ref.seasonNumber <= throughSeason)
+    .reduce((sum, s) => sum + s.episodeCount, 0);
+}
+
+/**
  * Choisit la saison la plus representative pour estimer une duree d'episode.
  *
  * Ni la premiere (le pilote est souvent rallonge), ni la derniere (le final aussi) :

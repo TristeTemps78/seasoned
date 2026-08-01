@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getSeriesPageData, posterUrl, publicTrajectory } from '@/lib/catalog';
 import { STATUS_LABEL, formatCommitment, formatDate, year } from '@/lib/format';
 import { TmdbError } from '@/src/catalog/tmdb';
+import { episodesThrough } from '@/src/domain/seasons';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { SeasonList } from '@/app/components/SeasonList';
 import { TrajectoryChart } from '@/app/components/TrajectoryChart';
@@ -158,7 +159,12 @@ export default async function SeriesPage({ params }: PageProps) {
         </dl>
       </section>
 
-      <Trajectory id={id} seasons={seasons} />
+      <Trajectory
+        id={id}
+        seasons={seasons}
+        episodeCount={episodeCount}
+        {...(totalRuntimeMinutes !== undefined ? { totalRuntimeMinutes } : { totalRuntimeMinutes: undefined })}
+      />
 
       <SeasonList seasons={seasons} />
     </article>
@@ -179,12 +185,20 @@ export default async function SeriesPage({ params }: PageProps) {
  * information — de celui qui est au milieu. Le `<details>` tranche sans compte : c'est
  * le geste explicite que la regle demande, et il ne coute rien a qui veut savoir.
  */
-async function Trajectory({ id, seasons }: {
+async function Trajectory({ id, seasons, totalRuntimeMinutes, episodeCount }: {
   readonly id: string;
   readonly seasons: Awaited<ReturnType<typeof getSeriesPageData>>['seasons'];
+  readonly totalRuntimeMinutes: number | undefined;
+  readonly episodeCount: number;
 }) {
   const trajectory = await publicTrajectory(id, seasons);
   if (trajectory === undefined) return null;
+
+  const stopAfter = trajectory.suggestedStopAfter;
+  const shortened =
+    stopAfter !== undefined && totalRuntimeMinutes !== undefined && episodeCount > 0
+      ? (episodesThrough(seasons.rateable, stopAfter) / episodeCount) * totalRuntimeMinutes
+      : undefined;
 
   return (
     <section aria-label="Trajectoire">
@@ -202,6 +216,18 @@ async function Trajectory({ id, seasons }: {
               faits — mais ni « forme » ni « constance », qui sont des jugements
               normalises sur une echelle que les notes de foule n'occupent pas. */}
           <TrajectoryChart trajectory={trajectory} interpret={false} />
+
+          {/* La question que pose le produit — « ca vaut le coup ? » — enfin chiffree.
+              Formulee comme un FAIT OBSERVE et jamais comme une injonction : sur des
+              notes de foule, un decrochage se compte en dixiemes d'etoile, ce qui ne
+              justifie pas de dire a quelqu'un ce qu'il doit regarder. */}
+          {stopAfter !== undefined && shortened !== undefined ? (
+            <p className="mt-5 rounded-md bg-(--color-warn)/10 px-3 py-2.5 text-sm">
+              S’arrêter après la saison {stopAfter} ramène la série à{' '}
+              <strong>~ {formatCommitment(shortened)}</strong>, au lieu de{' '}
+              ~ {formatCommitment(totalRuntimeMinutes!)}.
+            </p>
+          ) : null}
           {/* L'origine des notes remonte jusqu'ici : ce ne sont pas celles de ce
               produit, et les presenter autrement serait malhonnete. */}
           <p className="mt-5 text-xs text-(--color-muted)">

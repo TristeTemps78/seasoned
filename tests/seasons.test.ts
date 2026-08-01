@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   SPECIALS_SEASON_NUMBER,
+  episodesThrough,
   normalizeSeasons,
   type RawSeason,
   type SeasonWarningCode,
@@ -196,6 +197,37 @@ describe('normalizeSeasons — numerotation', () => {
     );
 
     expect(codes(result.warnings)).not.toContain('non_contiguous_numbering');
+  });
+});
+
+describe('episodesThrough — chiffrer « arrete-toi apres la saison N »', () => {
+  const seasons = normalizeSeasons(
+    's',
+    [
+      { seasonNumber: SPECIALS_SEASON_NUMBER, episodeCount: 5, airDate: d('2019-12-01') },
+      { seasonNumber: 1, episodeCount: 12, airDate: d('2020-01-01') },
+      { seasonNumber: 2, episodeCount: 12, airDate: d('2021-01-01') },
+      { seasonNumber: 3, episodeCount: 10, airDate: d('2022-01-01') },
+      { seasonNumber: 4, episodeCount: 8, airDate: d('2027-01-01') },
+    ],
+    { now: NOW },
+  ).rateable;
+
+  it('additionne jusqu a la saison demandee incluse', () => {
+    expect(episodesThrough(seasons, 1)).toBe(12);
+    expect(episodesThrough(seasons, 2)).toBe(24);
+    expect(episodesThrough(seasons, 3)).toBe(34);
+  });
+
+  it('ignore les speciaux et les saisons non diffusees', () => {
+    // La saison 4 est annoncee pour 2027 : elle ne compte pas, pas plus que les
+    // cinq episodes speciaux.
+    expect(episodesThrough(seasons, 99)).toBe(34);
+  });
+
+  it('rend zero avant la premiere saison', () => {
+    expect(episodesThrough(seasons, 0)).toBe(0);
+    expect(episodesThrough([], 5)).toBe(0);
   });
 });
 
