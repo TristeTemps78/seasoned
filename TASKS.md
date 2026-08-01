@@ -92,30 +92,38 @@ comme exact serait mentir.
 | `between_seasons` | ✅ | **Yellowjackets** (16 mois), **Mercredi** (11 mois), **The Witcher** (9 mois) |
 | `airing` | ✅ | **Ted Lasso** — dernier épisode il y a 3 ans, mais « Nouvel épisode dans 3 jours ». La date à venir prime correctement sur l'ancienneté. **Rick et Morty** |
 | `cancelled` | ✅ | **Westworld** — « peut s'arrêter sans conclusion » |
-| **`awaiting_renewal`** | ❌ | **Aucun cas trouvé sur 12 séries testées.** Voir ci-dessous — c'est un résultat, pas un échec de recherche. |
+| **`awaiting_renewal`** | ✅ | **Majhi Manasa** (série marathi, 2022) — « aucun épisode depuis 26 mois ». Introuvable en devinant des titres connus ; apparu **dès qu'une liste a été construite pour les faire remonter**. Il était dans la longue traîne, comme prévu. |
 
 ### ⚠️ Ce que la chasse au zombie a révélé — recentrage du différenciateur
 
-`RESEARCH.md` §3.4 posait que « les fournisseurs annoncent `returning` pour des séries
-mortes depuis trois ans ». **Sur douze séries testées en conditions réelles, aucune.**
-TMDB classe correctement : terminée, annulée, entre deux saisons, en diffusion.
+Deux temps, et le second corrige le premier.
 
-Deux lectures, et il faut tenir les deux :
+**D'abord**, douze séries connues devinées à la main : **aucun zombie**. TMDB classait
+correctement partout — terminée, annulée, entre deux saisons, en diffusion. Ce qui
+contredisait `RESEARCH.md` §3.4 (« les fournisseurs annoncent `returning` pour des séries
+mortes depuis trois ans »).
 
-- **L'échantillon est biaisé** vers les séries populaires, que la communauté TMDB tient à
-  jour. Les zombies existent probablement dans la longue traîne.
-- **Mais le trafic SEO vient précisément des séries populaires.** Un différenciateur qui
-  ne se manifeste que sur les séries que personne ne cherche ne vaut pas grand-chose.
+**Ensuite**, une liste construite pour les faire remonter — les populaires filtrées sur
+l'attente, triées par ancienneté — en a sorti un **immédiatement** : *Majhi Manasa*,
+série marathi, 26 mois de silence. **Deviner des titres était la mauvaise méthode**, pas
+l'hypothèse qui était fausse.
 
-> **Conséquence : la valeur n'est pas le cas zombie, c'est le chiffre.**
-> « Saison terminée il y a 11 mois. La suite est attendue. » est une information
-> qu'aucun tracker n'affiche, et elle est disponible sur **toutes** les séries entre deux
-> saisons — un cas bien plus fréquent que le zombie. Le zombie n'en est que la forme
-> extrême.
+Distribution réelle observée sur l'accueil (36 vignettes) :
 
-À reporter dans `RESEARCH.md` §3.4 et dans le discours produit : cesser de présenter la
-série zombie comme *le* différenciateur, et parler du **temps écoulé chiffré**, dont le
-zombie est le cas limite.
+| Ce qui s'affiche | Occurrences |
+|---|---|
+| en diffusion (`en cours`, `ép. dans N j`) | ~20 |
+| `en attente · 1 à 5 mois` | ~9 |
+| **`sans nouvelle · 26 mois`** | **1** |
+
+> **Le recentrage tient, et il est maintenant chiffré : la valeur n'est pas le cas
+> zombie, c'est le chiffre.** « Saison terminée il y a 5 mois » est dix fois plus fréquent
+> que le zombie, et tout aussi introuvable ailleurs. Le zombie en est la forme extrême —
+> spectaculaire, mais rare, et surtout situé dans la longue traîne, là où le trafic SEO
+> n'est pas.
+
+À reporter dans le discours produit : parler du **temps écoulé chiffré**, dont le zombie
+est le cas limite — et non l'inverse.
 
 Les avertissements de saison se sont aussi montrés en conditions réelles : « Saison 4
 annoncée mais pas encore diffusée » sur Ted Lasso et Yellowjackets, et la mention des
@@ -204,3 +212,5 @@ par les liens » — sans que ces liens existent.
 | D7 | **L'économie n'est pas résolue** | Le plan traite le coût, pas le revenu (A6). TV Time est mort avec 26 M d'utilisateurs faute d'avoir répondu à cette question. |
 | D8 | **La thèse SEO n'est pas quantifiée** | Motif qualitatif confirmé, **aucun volume chiffré** — il faudrait Ahrefs/SEMrush. Le canal d'acquisition n°1 repose sur un pari raisonnable, pas sur une mesure. |
 | D9 | Trou d'engagement de 3 mois (diffusion hebdomadaire) | Audit §4.3, resté ouvert et devenu un problème de **rétention** en mode produit. La saison est la bonne unité de jugement ; l'épisode est peut-être la bonne unité de **rythme**. |
+| D10 | **Fixtures écrites de mémoire** | Cause directe du bug `episode_run_time`. Les prochaines doivent être **capturées** depuis une réponse réelle (tâche 1.17). |
+| D11 | **Les listes TMDB ne contiennent pas que des séries narratives** | Observé le 2026-08-01 : la rangée « En attente » remonte *Tagesschau* (le journal télévisé allemand, depuis 1952) et *Paradise Hotel* (téléréalité). Pour ces programmes en flux continu, « saison » et « attente d'une suite » n'ont aucun sens — c'est le problème D5 (anthologies, sitcoms) sous une autre forme, et il est maintenant **visible en page d'accueil**. Piste : filtrer sur le genre TMDB (`News`, `Talk`, `Reality`) avant affichage. |
