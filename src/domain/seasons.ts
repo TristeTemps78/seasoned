@@ -131,6 +131,20 @@ function toSeason(seriesId: SeriesId, raw: RawSeason): Season {
  * @param options.productionEnded  la serie est-elle terminee ou annulee ? Necessaire
  *   pour distinguer une mini-serie d'une serie qui n'a qu'une saison *pour l'instant*.
  */
+/**
+ * Choisit la saison la plus representative pour estimer une duree d'episode.
+ *
+ * Ni la premiere (le pilote est souvent rallonge), ni la derniere (le final aussi) :
+ * on prend celle du milieu. Avec une seule saison notable, on n'a pas le choix.
+ *
+ * Renvoie `undefined` si rien n'est diffuse.
+ */
+export function representativeSeason(seasons: NormalizedSeasons): Season | undefined {
+  const { rateable } = seasons;
+  if (rateable.length === 0) return undefined;
+  return rateable[Math.floor((rateable.length - 1) / 2)];
+}
+
 export function normalizeSeasons(
   seriesId: SeriesId,
   rawSeasons: readonly RawSeason[],

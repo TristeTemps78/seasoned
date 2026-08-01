@@ -142,9 +142,12 @@ export default async function SeriesPage({ params }: PageProps) {
           <Stat label="Saisons" value={String(seasons.rateable.length)} />
           <Stat label="Épisodes" value={String(episodeCount)} />
           {totalRuntimeMinutes !== undefined ? (
+            // Le tilde n'est pas cosmetique : le total est une estimation (mediane
+            // d'une saison x nombre d'episodes), et l'annoncer comme exact serait
+            // mentir sur la seule promesse chiffree de la page d'accueil.
             <Stat
               label="Engagement"
-              value={formatCommitment(totalRuntimeMinutes)}
+              value={`~ ${formatCommitment(totalRuntimeMinutes)}`}
               emphasis
             />
           ) : null}

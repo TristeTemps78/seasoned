@@ -11,9 +11,18 @@
  */
 
 import { TmdbProvider } from '../src/catalog/tmdb';
-import type { CatalogProvider, SeriesDetail, SeriesSummary } from '../src/catalog/provider';
+import type {
+  CatalogProvider,
+  SeasonDetail,
+  SeriesDetail,
+  SeriesSummary,
+} from '../src/catalog/provider';
 import { ExpiringCache, memoizeAsync } from '../src/catalog/cache';
-import { normalizeSeasons, type NormalizedSeasons } from '../src/domain/seasons';
+import {
+  normalizeSeasons,
+  representativeSeason,
+  type NormalizedSeasons,
+} from '../src/domain/seasons';
 import { deriveStatus, type StatusResult } from '../src/domain/status';
 
 /** Duree de vie du cache serie : une journee. Les grilles de diffusion bougent peu. */
@@ -54,9 +63,34 @@ export function setProvider(provider: CatalogProvider | undefined): void {
 
 const seriesCache = new ExpiringCache<SeriesDetail>({ maxEntries: 2_000 });
 const searchCache = new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 500 });
+const seasonCache = new ExpiringCache<SeasonDetail>({ maxEntries: 2_000 });
 
 const throughSeries = memoizeAsync(seriesCache, SERIES_TTL_MS);
 const throughSearch = memoizeAsync(searchCache, SEARCH_TTL_MS);
+const throughSeason = memoizeAsync(seasonCache, SERIES_TTL_MS);
+
+/**
+ * Duree mediane d'un episode d'une saison, en minutes.
+ *
+ * **Mediane et non moyenne** : un pilote rallonge ou un final de deux heures
+ * suffisent a fausser une moyenne, et c'est exactement le piege dans lequel la
+ * premiere version est tombee — Stranger Things affichait 90 heures au lieu de 45,
+ * parce que la duree venait du seul dernier episode paru.
+ */
+export function medianRuntime(season: SeasonDetail): number | undefined {
+  const runtimes = season.episodes
+    .map((e) => e.runtimeMinutes)
+    .filter((r): r is number => r !== undefined && r > 0)
+    .sort((a, b) => a - b);
+
+  if (runtimes.length === 0) return undefined;
+  const middle = Math.floor(runtimes.length / 2);
+  if (runtimes.length % 2 === 1) return runtimes[middle];
+  const lower = runtimes[middle - 1];
+  const upper = runtimes[middle];
+  if (lower === undefined || upper === undefined) return undefined;
+  return (lower + upper) / 2;
+}
 
 /**
  * Ce qu'une page serie a besoin de savoir.
@@ -75,6 +109,9 @@ export interface SeriesPageData {
    *
    * C'est la reponse chiffree a « ca vaut mes 40 heures ? » — la question qu'on pose a
    * une serie et jamais a un film (`RESEARCH.md` §6).
+   *
+   * Toujours une **estimation** : duree mediane d'un episode d'une saison
+   * representative, multipliee par le nombre total d'episodes.
    */
   readonly totalRuntimeMinutes?: number;
 }
@@ -114,7 +151,7 @@ export async function getSeriesPageData(
   );
 
   const episodeCount = seasons.rateable.reduce((sum, s) => sum + s.episodeCount, 0);
-  const runtime = detail.episodeRunTimeMinutes;
+  const runtime = await estimateEpisodeRuntime(id, detail, seasons);
 
   return {
     detail,
@@ -125,6 +162,40 @@ export async function getSeriesPageData(
       ? { totalRuntimeMinutes: episodeCount * runtime }
       : {}),
   };
+}
+
+/**
+ * Estime la duree d'un episode, en minutes.
+ *
+ * Un appel supplementaire par serie, mis en cache 24 h comme la page elle-meme : le
+ * cout est negligeable (`ROADMAP.md` §1.4) et c'est le seul moyen d'obtenir un
+ * chiffre juste. TMDB ne renseigne plus `episode_run_time`, et se contenter du
+ * dernier episode paru donne un resultat faux du simple au double sur les series
+ * dont le final est un long-metrage.
+ *
+ * Degradation en cascade : mediane d'une saison representative, puis ce que la
+ * fiche serie veut bien donner, puis rien. Ne jamais afficher un chiffre faux vaut
+ * mieux que remplir la case.
+ */
+async function estimateEpisodeRuntime(
+  id: string,
+  detail: SeriesDetail,
+  seasons: NormalizedSeasons,
+): Promise<number | undefined> {
+  const sample = representativeSeason(seasons);
+  if (sample !== undefined) {
+    try {
+      const seasonNumber = sample.ref.seasonNumber;
+      const full = await throughSeason(`${id}:${seasonNumber}`, () =>
+        getProvider().getSeason(id, seasonNumber),
+      );
+      const median = medianRuntime(full);
+      if (median !== undefined) return median;
+    } catch {
+      // Le catalogue peut tomber : on continue avec ce qu'on a deja.
+    }
+  }
+  return detail.episodeRunTimeMinutes;
 }
 
 /** URL d'une affiche sur le CDN de TMDB. Jamais servie par nous — `next.config.ts`. */
