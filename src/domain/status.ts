@@ -11,6 +11,7 @@
  */
 
 import type { ProductionStatus } from './types';
+import { limboThresholdDays, type Cadence } from './cadence';
 
 /**
  * Fenetre, en jours, pendant laquelle une serie reste « en diffusion » apres son
@@ -26,11 +27,13 @@ export const AIRING_RECENCY_DAYS = 21;
 export const UPCOMING_HORIZON_DAYS = 90;
 
 /**
- * Delai, en jours, au-dela duquel une serie declaree `returning` sans nouvel
- * episode est traitee comme en sursis.
+ * Delai par defaut, en jours, au-dela duquel une serie declaree `returning` sans
+ * nouvel episode est traitee comme en sursis.
  *
- * 18 mois : au-dela, une serie « qui revient » sans date n'est presque jamais
- * renouvelee. C'est le cas que tous les trackers affichent a tort comme actif.
+ * 18 mois. **Ce n'est qu'un repli** : des que le rythme de la serie est etabli, il
+ * remplace cette constante (`cadence.ts`). Un seuil fixe traitait *Les Griffin* — qui
+ * revient chaque automne — comme *Stranger Things*, qui sortait tous les deux ou trois
+ * ans, ce qui n'a pas de sens.
  */
 export const RENEWAL_LIMBO_DAYS = 548;
 
@@ -57,6 +60,14 @@ export interface StatusInput {
   readonly lastAiredAt?: Date;
   /** Diffusion du prochain episode, si elle est datee. */
   readonly nextAiringAt?: Date;
+  /**
+   * Rythme observe entre les saisons, s'il est etabli.
+   *
+   * Quand il est fourni, il **remplace** le seuil fixe : le meme nombre de mois ne
+   * veut pas dire la meme chose pour une serie annuelle et pour une serie triennale
+   * (`cadence.ts`).
+   */
+  readonly cadence?: Cadence;
 }
 
 export interface StatusResult {
@@ -67,9 +78,17 @@ export interface StatusResult {
   readonly daysUntilNext?: number;
   /**
    * La serie est-elle un « zombie » : declaree vivante par le fournisseur, mais
-   * sans episode depuis plus de {@link RENEWAL_LIMBO_DAYS} jours ?
+   * silencieuse au-dela de ce qui est normal **pour elle** ?
    */
   readonly zombie: boolean;
+  /**
+   * Seuil effectivement applique, en jours.
+   *
+   * Expose parce qu'il n'est plus constant : il vaut {@link RENEWAL_LIMBO_DAYS} par
+   * defaut, mais suit le rythme de la serie des qu'il est etabli. Sans cette valeur,
+   * un resultat serait impossible a expliquer.
+   */
+  readonly limboThresholdDays: number;
 }
 
 const MS_PER_DAY = 86_400_000;
@@ -91,7 +110,12 @@ export function deriveStatus(input: StatusInput, now: Date): StatusResult {
   const daysUntilNext =
     input.nextAiringAt !== undefined ? daysFrom(now, input.nextAiringAt) : undefined;
 
+  // Le seuil suit le rythme de la serie quand il est etabli. Une serie annuelle
+  // muette depuis deux ans est un signal ; une serie triennale, non.
+  const threshold = limboThresholdDays(input.cadence, RENEWAL_LIMBO_DAYS);
+
   const base = {
+    limboThresholdDays: threshold,
     ...(daysSinceLastAired !== undefined ? { daysSinceLastAired } : {}),
     ...(daysUntilNext !== undefined ? { daysUntilNext } : {}),
   };
@@ -118,7 +142,7 @@ export function deriveStatus(input: StatusInput, now: Date): StatusResult {
     return { ...base, status: 'airing', zombie: false };
   }
 
-  const zombie = daysSinceLastAired > RENEWAL_LIMBO_DAYS;
+  const zombie = daysSinceLastAired > threshold;
   return {
     ...base,
     status: zombie ? 'awaiting_renewal' : 'between_seasons',

@@ -26,6 +26,7 @@ import {
 } from '../src/domain/seasons';
 import { deriveStatus, type StatusResult } from '../src/domain/status';
 import { isShowcased } from '../src/domain/program';
+import { seasonCadence } from '../src/domain/cadence';
 
 /** Duree de vie du cache serie : une journee. Les grilles de diffusion bougent peu. */
 const SERIES_TTL_MS = 86_400_000;
@@ -175,11 +176,16 @@ export async function getSeriesPageData(
   const productionEnded = detail.production === 'ended' || detail.production === 'canceled';
   const seasons = normalizeSeasons(id, detail.seasons, { now, productionEnded });
 
+  // Le rythme se lit sur les saisons deja diffusees : c'est ce qui rend le seuil de
+  // « sans nouvelle » propre a chaque serie plutot qu'arbitraire (`cadence.ts`).
+  const cadence = seasonCadence(seasons.rateable);
+
   const status = deriveStatus(
     {
       production: detail.production,
       ...(detail.lastAiredAt !== undefined ? { lastAiredAt: detail.lastAiredAt } : {}),
       ...(detail.nextAiringAt !== undefined ? { nextAiringAt: detail.nextAiringAt } : {}),
+      ...(cadence !== undefined ? { cadence } : {}),
     },
     now,
   );
@@ -257,6 +263,8 @@ export async function withStatus(
     summaries.map(async (summary) => {
       try {
         const detail = await getSeriesDetail(summary.providerId);
+        const seasons = normalizeSeasons(summary.providerId, detail.seasons, { now });
+        const cadence = seasonCadence(seasons.rateable);
         return {
           summary,
           status: deriveStatus(
@@ -264,6 +272,7 @@ export async function withStatus(
               production: detail.production,
               ...(detail.lastAiredAt !== undefined ? { lastAiredAt: detail.lastAiredAt } : {}),
               ...(detail.nextAiringAt !== undefined ? { nextAiringAt: detail.nextAiringAt } : {}),
+              ...(cadence !== undefined ? { cadence } : {}),
             },
             now,
           ),
