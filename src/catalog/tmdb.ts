@@ -235,6 +235,8 @@ function toEpisodeDetail(raw: unknown): EpisodeDetail | undefined {
   const airedAt = readDate(source, 'air_date');
   const runtimeMinutes = readNumber(source, 'runtime');
   const overview = readString(source, 'overview');
+  const voteAverage = readNumber(source, 'vote_average');
+  const voteCount = readNumber(source, 'vote_count');
 
   return {
     seasonNumber,
@@ -243,6 +245,8 @@ function toEpisodeDetail(raw: unknown): EpisodeDetail | undefined {
     ...(airedAt !== undefined ? { airedAt } : {}),
     ...(runtimeMinutes !== undefined ? { runtimeMinutes } : {}),
     ...(overview !== undefined ? { overview } : {}),
+    ...(voteAverage !== undefined ? { voteAverage } : {}),
+    ...(voteCount !== undefined ? { voteCount } : {}),
   };
 }
 

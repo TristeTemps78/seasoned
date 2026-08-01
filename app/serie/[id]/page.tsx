@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getSeriesPageData, posterUrl } from '@/lib/catalog';
+import { getSeriesPageData, posterUrl, publicTrajectory } from '@/lib/catalog';
 import { STATUS_LABEL, formatCommitment, formatDate, year } from '@/lib/format';
 import { TmdbError } from '@/src/catalog/tmdb';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { SeasonList } from '@/app/components/SeasonList';
+import { TrajectoryChart } from '@/app/components/TrajectoryChart';
 
 /**
  * Regeneration toutes les 24 h.
@@ -157,8 +158,56 @@ export default async function SeriesPage({ params }: PageProps) {
         </dl>
       </section>
 
+      <Trajectory id={id} seasons={seasons} />
+
       <SeasonList seasons={seasons} />
     </article>
+  );
+}
+
+/**
+ * La trajectoire, **derriere un geste explicite**.
+ *
+ * `docs/RATING-MODEL.md` §6bis pose la regle : rien qui depasse la position du
+ * spectateur ne s'affiche sans qu'il le demande. Or la courbe est elle-meme un
+ * spoiler — montrer qu'elle s'effondre en saison 5 est une information que quelqu'un
+ * en saison 2 n'a pas demandee, et le decrochage annonce en toutes lettres qu'il va
+ * etre decu, et quand.
+ *
+ * En phase 1 il n'y a pas de compte, donc pas de position connue : impossible de
+ * distinguer celui qui n'a pas commence — et qui vient precisement chercher cette
+ * information — de celui qui est au milieu. Le `<details>` tranche sans compte : c'est
+ * le geste explicite que la regle demande, et il ne coute rien a qui veut savoir.
+ */
+async function Trajectory({ id, seasons }: {
+  readonly id: string;
+  readonly seasons: Awaited<ReturnType<typeof getSeriesPageData>>['seasons'];
+}) {
+  const trajectory = await publicTrajectory(id, seasons);
+  if (trajectory === undefined) return null;
+
+  return (
+    <section aria-label="Trajectoire">
+      <details className="group rounded-lg border border-(--color-edge) bg-(--color-surface)">
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium marker:content-none">
+          <span className="group-open:hidden">Voir la trajectoire saison par saison</span>
+          <span className="hidden group-open:inline">Trajectoire saison par saison</span>
+          <span className="ml-2 font-normal text-(--color-muted)">
+            contient un jugement sur les saisons suivantes
+          </span>
+        </summary>
+
+        <div className="border-t border-(--color-edge) px-4 py-5">
+          <TrajectoryChart trajectory={trajectory} />
+          {/* L'origine des notes remonte jusqu'ici : ce ne sont pas celles de ce
+              produit, et les presenter autrement serait malhonnete. */}
+          <p className="mt-5 text-xs text-(--color-muted)">
+            Établie à partir des notes du public TMDB, saison par saison — pas des notes
+            de ce site.
+          </p>
+        </div>
+      </details>
+    </section>
   );
 }
 

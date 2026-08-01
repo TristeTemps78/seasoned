@@ -27,6 +27,8 @@ import {
 import { deriveStatus, type StatusResult } from '../src/domain/status';
 import { isShowcased } from '../src/domain/program';
 import { seasonCadence } from '../src/domain/cadence';
+import { representativeRating, starsFromTen } from '../src/domain/rating-scale';
+import { computeTrajectory, type SeasonScore, type Trajectory } from '../src/domain/trajectory';
 
 /** Duree de vie du cache serie : une journee. Les grilles de diffusion bougent peu. */
 const SERIES_TTL_MS = 86_400_000;
@@ -282,6 +284,58 @@ export async function withStatus(
       }
     }),
   );
+}
+
+/**
+ * Nombre maximal de saisons interrogees pour tracer une courbe.
+ *
+ * Chaque saison coute un appel. Au-dela d'une quinzaine, la courbe n'apprend plus
+ * grand-chose et la facture grimpe pour rien — le cas *Les Simpson* ne doit pas couter
+ * trente-six appels (`ROADMAP.md` §1.4).
+ */
+const MAX_SEASONS_FOR_TRAJECTORY = 15;
+
+/**
+ * Trajectoire etablie a partir des notes **du public TMDB**.
+ *
+ * Ce ne sont pas les notes de ce produit, et ce module ne pretend pas le contraire :
+ * l'origine remonte jusqu'a l'affichage. Elles servent a amorcer — une page serie doit
+ * valoir le detour avec zero critique (`ROADMAP.md` §0.1) — et elles activent enfin
+ * `computeTrajectory`, ecrit et teste des le premier jour sans jamais servir.
+ *
+ * Les saisons trop peu votees sont absentes de la courbe plutot qu'inventees.
+ */
+export async function publicTrajectory(
+  id: string,
+  seasons: NormalizedSeasons,
+): Promise<Trajectory | undefined> {
+  const candidates = seasons.rateable.slice(0, MAX_SEASONS_FOR_TRAJECTORY);
+  if (candidates.length < 2) return undefined;
+
+  const scores = await Promise.all(
+    candidates.map(async (season) => {
+      const seasonNumber = season.ref.seasonNumber;
+      try {
+        const full = await throughSeason(`${id}:${seasonNumber}`, () =>
+          getProvider().getSeason(id, seasonNumber),
+        );
+        const median = representativeRating(
+          full.episodes
+            .filter((e) => e.voteAverage !== undefined && e.voteCount !== undefined)
+            .map((e) => ({ voteAverage: e.voteAverage!, voteCount: e.voteCount! })),
+        );
+        const stars = starsFromTen(median);
+        return stars !== undefined ? { seasonNumber, stars } : undefined;
+      } catch {
+        return undefined;
+      }
+    }),
+  );
+
+  const usable = scores.filter((s): s is SeasonScore => s !== undefined);
+  if (usable.length < 2) return undefined;
+
+  return computeTrajectory(id, usable);
 }
 
 /**

@@ -52,6 +52,10 @@ export interface EpisodeDetail {
   readonly airedAt?: Date;
   readonly runtimeMinutes?: number;
   readonly overview?: string;
+  /** Note du public chez le fournisseur, sur 10. **Pas** une note de ce produit. */
+  readonly voteAverage?: number;
+  /** Nombre de votes. Une note adossee a trois votes ne vaut rien. */
+  readonly voteCount?: number;
 }
 
 /** Detail d'une saison, episodes compris. */
