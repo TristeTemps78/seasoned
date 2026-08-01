@@ -13,6 +13,7 @@
 import { TmdbProvider } from '../src/catalog/tmdb';
 import type {
   CatalogProvider,
+  DiscoverKind,
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
@@ -59,15 +60,19 @@ export function setProvider(provider: CatalogProvider | undefined): void {
   providerInstance = provider;
   seriesCache.clear();
   searchCache.clear();
+  seasonCache.clear();
+  discoverCache.clear();
 }
 
 const seriesCache = new ExpiringCache<SeriesDetail>({ maxEntries: 2_000 });
 const searchCache = new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 500 });
 const seasonCache = new ExpiringCache<SeasonDetail>({ maxEntries: 2_000 });
+const discoverCache = new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 100 });
 
 const throughSeries = memoizeAsync(seriesCache, SERIES_TTL_MS);
 const throughSearch = memoizeAsync(searchCache, SEARCH_TTL_MS);
 const throughSeason = memoizeAsync(seasonCache, SERIES_TTL_MS);
+const throughDiscover = memoizeAsync(discoverCache, SERIES_TTL_MS);
 
 /**
  * Duree mediane d'un episode d'une saison, en minutes.
@@ -124,6 +129,27 @@ export async function searchSeries(query: string): Promise<readonly SeriesSummar
 
 export async function getSeriesDetail(id: string): Promise<SeriesDetail> {
   return throughSeries(id, () => getProvider().getSeries(id));
+}
+
+/**
+ * Listes de decouverte.
+ *
+ * Sans elles, **aucune page serie n'est atteignable** depuis une page indexable
+ * (audit du 2026-08-01). Ce sont donc les liens qui rendent le canal d'acquisition
+ * n°1 possible, pas un ornement de la page d'accueil.
+ *
+ * Degrade en liste vide plutot que de lever : l'accueil est la porte d'entree, il
+ * doit s'afficher meme quand le catalogue est en panne.
+ */
+export async function discover(
+  kind: DiscoverKind,
+  page = 1,
+): Promise<readonly SeriesSummary[]> {
+  try {
+    return await throughDiscover(`${kind}:${page}`, () => getProvider().discover(kind, page));
+  } catch {
+    return [];
+  }
 }
 
 /**

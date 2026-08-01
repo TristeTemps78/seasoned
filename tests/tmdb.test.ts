@@ -261,6 +261,42 @@ describe('TmdbProvider', () => {
     });
   });
 
+  it('mappe chaque liste de decouverte sur le bon endpoint', async () => {
+    // Ces listes ne sont pas un ornement : sans elles, aucune page serie n'est
+    // atteignable depuis une page indexable (audit du 2026-08-01).
+    const seen: string[] = [];
+    const provider = new TmdbProvider({
+      accessToken: 'x',
+      fetchImpl: (async (url: URL) => {
+        seen.push(url.pathname);
+        return new Response('{"results":[]}', { status: 200 });
+      }) as unknown as typeof fetch,
+    });
+
+    await provider.discover('trending');
+    await provider.discover('popular');
+    await provider.discover('on_the_air');
+
+    expect(seen).toEqual(['/3/trending/tv/week', '/3/tv/popular', '/3/tv/on_the_air']);
+  });
+
+  it('normalise le numero de page', async () => {
+    let captured: URL | undefined;
+    const provider = new TmdbProvider({
+      accessToken: 'x',
+      fetchImpl: (async (url: URL) => {
+        captured = url;
+        return new Response('{"results":[]}', { status: 200 });
+      }) as unknown as typeof fetch,
+    });
+
+    await provider.discover('popular', 0);
+    expect(captured?.searchParams.get('page')).toBe('1');
+
+    await provider.discover('popular', 3.7);
+    expect(captured?.searchParams.get('page')).toBe('3');
+  });
+
   it('leve plutot que de rendre une fiche inexploitable', async () => {
     const provider = new TmdbProvider({
       accessToken: 'x',

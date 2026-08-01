@@ -14,6 +14,7 @@
 
 import type {
   CatalogProvider,
+  DiscoverKind,
   EpisodeDetail,
   SeasonDetail,
   SeriesDetail,
@@ -343,4 +344,23 @@ export class TmdbProvider implements CatalogProvider {
     );
     return mapSeasonDetail(raw, seasonNumber);
   }
+
+  async discover(
+    kind: DiscoverKind,
+    page = 1,
+    options: { readonly signal?: AbortSignal } = {},
+  ): Promise<readonly SeriesSummary[]> {
+    const raw = await this.#get(
+      DISCOVER_ENDPOINT[kind],
+      { page: String(Math.max(1, Math.floor(page))) },
+      options.signal,
+    );
+    return mapSearchResults(raw);
+  }
 }
+
+const DISCOVER_ENDPOINT: Readonly<Record<DiscoverKind, string>> = {
+  trending: '/trending/tv/week',
+  popular: '/tv/popular',
+  on_the_air: '/tv/on_the_air',
+};

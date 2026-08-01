@@ -55,11 +55,26 @@ export interface SeasonDetail {
 }
 
 /**
+ * Listes de decouverte.
+ *
+ * Ce ne sont pas des commodites : sans elles, **aucune page serie n'est atteignable**
+ * depuis une page indexable, et le canal d'acquisition n°1 est un cul-de-sac. Constate
+ * par l'audit du 2026-08-01 : sitemap a une seule URL, `/recherche` en `Disallow`,
+ * zero lien sortant depuis l'accueil.
+ */
+export type DiscoverKind =
+  /** Ce qui bouge cette semaine. Renouvelle la page d'accueil sans effort. */
+  | 'trending'
+  /** Le fond de catalogue populaire. Alimente le sitemap. */
+  | 'popular'
+  /** En cours de diffusion — la ou le statut reel a le plus de valeur. */
+  | 'on_the_air';
+
+/**
  * Ce que doit fournir n'importe quelle source de catalogue.
  *
- * Volontairement minimale : trois operations couvrent tout ce dont les phases 0 a 3
- * ont besoin. Toute methode ajoutee ici devra etre implementee par le prochain
- * fournisseur — c'est le prix de la portabilite, et il doit rester bas.
+ * Volontairement minimale. Toute methode ajoutee ici devra etre implementee par le
+ * prochain fournisseur — c'est le prix de la portabilite, et il doit rester bas.
  */
 export interface CatalogProvider {
   /** Nom court, pour les journaux de diagnostic et l'attribution. */
@@ -74,6 +89,13 @@ export interface CatalogProvider {
     seasonNumber: number,
     options?: { readonly signal?: AbortSignal },
   ): Promise<SeasonDetail>;
+
+  /** @param page 1-indexee, comme chez tous les fournisseurs. */
+  discover(
+    kind: DiscoverKind,
+    page?: number,
+    options?: { readonly signal?: AbortSignal },
+  ): Promise<readonly SeriesSummary[]>;
 }
 
 /**

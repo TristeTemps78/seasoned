@@ -1,39 +1,83 @@
+import { discover } from '@/lib/catalog';
 import { SearchForm } from '@/app/components/SearchForm';
+import { SeriesCard } from '@/app/components/SeriesCard';
 
-export default function HomePage() {
+/**
+ * Regeneration quotidienne.
+ *
+ * Deux appels par jour au total pour toute la page d'accueil, quel que soit le
+ * trafic (`ROADMAP.md` §1.4).
+ */
+export const revalidate = 86_400;
+
+export default async function HomePage() {
+  // Correctif de l'audit du 2026-08-01 : sans ces liens, **aucune page serie n'etait
+  // atteignable** depuis une page indexable — sitemap a une seule URL, `/recherche`
+  // en `Disallow`, zero lien sortant. Le canal d'acquisition n°1 etait un cul-de-sac.
+  const [trending, onTheAir] = await Promise.all([
+    discover('trending'),
+    discover('on_the_air'),
+  ]);
+
   return (
-    <div className="mx-auto max-w-2xl py-12 space-y-10">
-      <div className="space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight text-balance">
-          Une série n’est pas un long film.
-        </h1>
-        <p className="text-(--color-muted) leading-relaxed">
-          On ne demande pas à une série si elle est bien. On demande{' '}
-          <em>si elle le reste</em> — combien de temps elle prend, où elle décroche,
-          et si elle est encore vivante.
+    <div className="space-y-14">
+      <section className="mx-auto max-w-2xl space-y-8 pt-6">
+        <div className="space-y-4">
+          <h1 className="text-3xl font-semibold tracking-tight text-balance">
+            Une série n’est pas un long film.
+          </h1>
+          <p className="text-(--color-muted) leading-relaxed">
+            On ne demande pas à une série si elle est bien. On demande{' '}
+            <em>si elle le reste</em> — combien de temps elle prend, où elle décroche,
+            et si elle est encore vivante.
+          </p>
+        </div>
+
+        <SearchForm />
+      </section>
+
+      <Row
+        title="Cette semaine"
+        subtitle="Ce dont tout le monde parle en ce moment."
+        series={trending}
+      />
+
+      <Row
+        title="En cours de diffusion"
+        subtitle="Là où savoir si un épisode arrive vraiment change quelque chose."
+        series={onTheAir}
+      />
+
+      {trending.length === 0 && onTheAir.length === 0 ? (
+        <p className="text-(--color-warn)">
+          Le catalogue est momentanément indisponible. La recherche fonctionne peut-être
+          encore.
         </p>
-      </div>
-
-      <SearchForm autoFocus />
-
-      {/* Ces trois promesses sont tenues des la phase 1, sans un seul utilisateur :
-          elles sont derivees de donnees publiques. C'est la reponse au demarrage a
-          froid (`ROADMAP.md` §0.1). */}
-      <ul className="space-y-3 text-sm text-(--color-muted)">
-        <li>
-          <strong className="text-(--color-text)">Où elle en est vraiment.</strong>{' '}
-          En diffusion, entre deux saisons, ou annoncée comme revenant sans un épisode
-          depuis deux ans.
-        </li>
-        <li>
-          <strong className="text-(--color-text)">Ce qu’elle vous demande.</strong>{' '}
-          Le temps total, en heures.
-        </li>
-        <li>
-          <strong className="text-(--color-text)">Jusqu’où elle tient.</strong>{' '}
-          Bientôt&nbsp;: la trajectoire saison par saison, et où les gens s’arrêtent.
-        </li>
-      </ul>
+      ) : null}
     </div>
+  );
+}
+
+function Row({ title, subtitle, series }: {
+  readonly title: string;
+  readonly subtitle: string;
+  readonly series: readonly Awaited<ReturnType<typeof discover>>[number][];
+}) {
+  if (series.length === 0) return null;
+
+  return (
+    <section className="space-y-4" aria-label={title}>
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+        <p className="text-sm text-(--color-muted)">{subtitle}</p>
+      </div>
+      <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
+        {series.slice(0, 12).map((s) => (
+          <li key={s.providerId}>
+            <SeriesCard series={s} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
