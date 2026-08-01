@@ -104,6 +104,55 @@ describe('mapSeriesDetail — parsing tolerant', () => {
   });
 });
 
+describe('duree d episode — le champ que TMDB a abandonne', () => {
+  // Constate en production le 2026-08-01 : `episode_run_time` revient vide sur la
+  // grande majorite des series, y compris Breaking Bad. Aucun test hors ligne ne
+  // pouvait l'attraper, puisque nos fixtures le contenaient encore.
+  it('se rabat sur le dernier episode quand episode_run_time est vide', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      episode_run_time: [],
+      last_episode_to_air: { air_date: '2013-09-29', runtime: 55 },
+    });
+    expect(detail?.episodeRunTimeMinutes).toBe(55);
+  });
+
+  it('se rabat sur le prochain episode si aucun n est encore paru', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      next_episode_to_air: { air_date: '2026-09-01', runtime: 42 },
+    });
+    expect(detail?.episodeRunTimeMinutes).toBe(42);
+  });
+
+  it('prefere la valeur declaree quand elle existe', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      episode_run_time: [45],
+      last_episode_to_air: { runtime: 90 },
+    });
+    expect(detail?.episodeRunTimeMinutes).toBe(45);
+  });
+
+  it('ignore une duree nulle plutot que de l afficher', () => {
+    // TMDB rend parfois 0, ce qui produirait « moins d'une heure » pour 60 episodes.
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      episode_run_time: [0],
+      last_episode_to_air: { runtime: 0 },
+    });
+    expect(detail?.episodeRunTimeMinutes).toBeUndefined();
+  });
+
+  it('rend undefined quand aucune source ne donne de duree', () => {
+    expect(mapSeriesDetail({ id: 1, name: 'x' })?.episodeRunTimeMinutes).toBeUndefined();
+  });
+});
+
 describe('mapSeasonDetail', () => {
   it('extrait les episodes', () => {
     const season = mapSeasonDetail(

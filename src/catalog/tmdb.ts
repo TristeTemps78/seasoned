@@ -74,13 +74,36 @@ function readDate(source: Record<string, unknown>, key: string): Date | undefine
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
-/** Duree d'episode : TMDB rend un tableau, parfois vide. On prend la premiere. */
+/**
+ * Duree d'un episode, en minutes.
+ *
+ * `episode_run_time` est **de facto abandonne par TMDB** : le champ existe encore
+ * mais revient vide sur la grande majorite des series, y compris les plus connues.
+ * Constate en production le 2026-08-01 — nos fixtures le contenaient encore, ce
+ * qu'aucun test hors ligne ne pouvait detecter.
+ *
+ * D'ou une cascade sur des champs **deja presents dans la meme reponse**, donc sans
+ * appel supplementaire : c'est une contrainte de budget autant que de justesse
+ * (`ROADMAP.md` §1.4).
+ *
+ * La duree du dernier episode paru est une approximation : un final est souvent plus
+ * long que la moyenne. Elle vaut mieux que de ne rien afficher, puisque « combien de
+ * temps ca me demande » est l'une des trois promesses de la page d'accueil.
+ */
 function readRuntime(source: Record<string, unknown>): number | undefined {
   const direct = readNumber(source, 'runtime');
   if (direct !== undefined) return direct;
-  const list = asArray(source['episode_run_time']);
-  const first = list[0];
-  return typeof first === 'number' && Number.isFinite(first) ? first : undefined;
+
+  const declared = asArray(source['episode_run_time'])[0];
+  if (typeof declared === 'number' && Number.isFinite(declared) && declared > 0) {
+    return declared;
+  }
+
+  for (const key of ['last_episode_to_air', 'next_episode_to_air']) {
+    const episode = readNumber(asRecord(source[key]), 'runtime');
+    if (episode !== undefined && episode > 0) return episode;
+  }
+  return undefined;
 }
 
 const PRODUCTION_STATUS_BY_LABEL: Readonly<Record<string, ProductionStatus>> = {
