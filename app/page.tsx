@@ -26,10 +26,14 @@ export default async function HomePage() {
           <h1 className="text-3xl font-semibold tracking-tight text-balance">
             Une série n’est pas un long film.
           </h1>
+          {/* Formulation revue le 2026-08-01 : la verification en reel a montre que la
+              valeur n'est pas le cas extreme (la serie declaree vivante et morte depuis
+              deux ans) mais le **temps ecoule chiffre**, qui vaut pour toutes les series
+              en attente. Voir TASKS.md, « chasse au zombie ». */}
           <p className="text-(--color-muted) leading-relaxed">
             On ne demande pas à une série si elle est bien. On demande{' '}
             <em>si elle le reste</em> — combien de temps elle prend, où elle décroche,
-            et si elle est encore vivante.
+            et depuis combien de temps on attend la suite.
           </p>
         </div>
 
@@ -44,7 +48,7 @@ export default async function HomePage() {
 
       <Row
         title="En cours de diffusion"
-        subtitle="Là où savoir si un épisode arrive vraiment change quelque chose."
+        subtitle="Là où savoir depuis combien de temps on attend change quelque chose."
         series={onTheAir}
       />
 

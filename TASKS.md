@@ -84,14 +84,55 @@ comme exact serait mentir.
 
 | Statut | Vu ? | Cas observé le 2026-08-01 |
 |---|---|---|
-| `ended` | ✅ | Breaking Bad, Stranger Things, Euphoria, Loki |
-| `between_seasons` | ✅ | **Yellowjackets** — « Saison terminée il y a 16 mois. La suite est attendue. » Cas limite précieux : à 18 mois elle bascule en zombie |
-| `airing` | ✅ | **Ted Lasso** — dernier épisode il y a 3 ans, mais « Nouvel épisode dans 3 jours ». La date à venir prime correctement sur l'ancienneté, au lieu de la classer morte |
-| **`awaiting_renewal` (zombie)** | 🟢 | **Le différenciateur, toujours pas observé.** Cherché sur Loki, Ted Lasso, Yellowjackets — tous correctement classés autrement. Il faut une série que TMDB déclare `Returning Series` sans épisode ni date depuis plus de 18 mois. |
+| `ended` | ✅ | Breaking Bad, Stranger Things, Euphoria, Loki, The Boys, Squid Game, Umbrella Academy, The Mandalorian |
+| `between_seasons` | ✅ | **Yellowjackets** (16 mois), **Mercredi** (11 mois), **The Witcher** (9 mois) |
+| `airing` | ✅ | **Ted Lasso** — dernier épisode il y a 3 ans, mais « Nouvel épisode dans 3 jours ». La date à venir prime correctement sur l'ancienneté. **Rick et Morty** |
+| `cancelled` | ✅ | **Westworld** — « peut s'arrêter sans conclusion » |
+| **`awaiting_renewal`** | ❌ | **Aucun cas trouvé sur 12 séries testées.** Voir ci-dessous — c'est un résultat, pas un échec de recherche. |
+
+### ⚠️ Ce que la chasse au zombie a révélé — recentrage du différenciateur
+
+`RESEARCH.md` §3.4 posait que « les fournisseurs annoncent `returning` pour des séries
+mortes depuis trois ans ». **Sur douze séries testées en conditions réelles, aucune.**
+TMDB classe correctement : terminée, annulée, entre deux saisons, en diffusion.
+
+Deux lectures, et il faut tenir les deux :
+
+- **L'échantillon est biaisé** vers les séries populaires, que la communauté TMDB tient à
+  jour. Les zombies existent probablement dans la longue traîne.
+- **Mais le trafic SEO vient précisément des séries populaires.** Un différenciateur qui
+  ne se manifeste que sur les séries que personne ne cherche ne vaut pas grand-chose.
+
+> **Conséquence : la valeur n'est pas le cas zombie, c'est le chiffre.**
+> « Saison terminée il y a 11 mois. La suite est attendue. » est une information
+> qu'aucun tracker n'affiche, et elle est disponible sur **toutes** les séries entre deux
+> saisons — un cas bien plus fréquent que le zombie. Le zombie n'en est que la forme
+> extrême.
+
+À reporter dans `RESEARCH.md` §3.4 et dans le discours produit : cesser de présenter la
+série zombie comme *le* différenciateur, et parler du **temps écoulé chiffré**, dont le
+zombie est le cas limite.
 
 Les avertissements de saison se sont aussi montrés en conditions réelles : « Saison 4
 annoncée mais pas encore diffusée » sur Ted Lasso et Yellowjackets, et la mention des
 épisodes spéciaux sur Breaking Bad, Euphoria et Ted Lasso.
+
+### ✅ Audit SEO du 2026-08-01 — le canal d'acquisition était un cul-de-sac
+
+Constat sur le site en ligne : **sitemap à 1 URL, `/recherche` en `Disallow`, zéro lien
+sortant depuis l'accueil.** Aucun moteur ne pouvait découvrir une seule page série.
+Défaut introduit par `app/sitemap.ts`, qui annonçait que les pages « seront découvertes
+par les liens » — sans que ces liens existent.
+
+| | Avant | Après |
+|---|---|---|
+| Liens `/serie/*` depuis l'accueil | 0 | **20** |
+| URLs dans le sitemap | 1 | **147** dont 146 pages série |
+
+> **Leçon** : une fonctionnalité présente dans le code n'est pas une fonctionnalité qui
+> marche. Tout le dispositif SEO — rendu serveur, ISR, JSON-LD, métadonnées — était
+> correct et intégralement inutile faute d'un point d'entrée. **Auditer le résultat, pas
+> l'intention.**
 
 ---
 

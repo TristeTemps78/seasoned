@@ -270,6 +270,23 @@ casse deux choses :
 Aucun produit ne modélise correctement ce cycle de vie. Il est pourtant entièrement dérivable
 des données de diffusion de TMDB/TVmaze.
 
+> **Correction du 2026-08-01, après vérification en conditions réelles.** L'affirmation
+> ci-dessus (« les trackers affichent *running* pour des séries mortes depuis trois ans »)
+> était en partie fausse pour TMDB : sur **douze séries populaires testées, aucune** n'était
+> déclarée `Returning Series` à tort. TMDB classe correctement — terminée, annulée, entre
+> deux saisons, en diffusion.
+>
+> L'échantillon est biaisé vers les séries populaires, que la communauté TMDB tient à jour ;
+> les zombies existent probablement dans la longue traîne. **Mais le trafic vient des séries
+> populaires**, donc un différenciateur qui ne se manifeste que sur les œuvres que personne
+> ne cherche ne vaut pas grand-chose.
+>
+> **Ce qui reste vrai, et qui est la vraie valeur** : personne n'affiche le **temps écoulé
+> chiffré**. « Saison terminée il y a onze mois, la suite est attendue » répond exactement à
+> la question que se pose le spectateur — j'attends ou j'abandonne ? — et vaut pour **toutes**
+> les séries entre deux saisons, pas seulement pour le cas extrême du zombie.
+> Détail et mesures : `TASKS.md`, section « chasse au zombie ».
+
 ---
 
 ## 4. Les données : d'où vient le catalogue
