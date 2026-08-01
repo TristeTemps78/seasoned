@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getSeriesPageData, posterUrl, publicTrajectory } from '@/lib/catalog';
+import { getSeriesPageData, posterUrl, publicTrajectory, stopPointAdvice } from '@/lib/catalog';
 import { STATUS_LABEL, formatCommitment, formatDate, year } from '@/lib/format';
 import { TmdbError } from '@/src/catalog/tmdb';
-import { episodesThrough } from '@/src/domain/seasons';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { SeasonList } from '@/app/components/SeasonList';
 import { TrajectoryChart } from '@/app/components/TrajectoryChart';
@@ -194,11 +193,7 @@ async function Trajectory({ id, seasons, totalRuntimeMinutes, episodeCount }: {
   const trajectory = await publicTrajectory(id, seasons);
   if (trajectory === undefined) return null;
 
-  const stopAfter = trajectory.suggestedStopAfter;
-  const shortened =
-    stopAfter !== undefined && totalRuntimeMinutes !== undefined && episodeCount > 0
-      ? (episodesThrough(seasons.rateable, stopAfter) / episodeCount) * totalRuntimeMinutes
-      : undefined;
+  const advice = stopPointAdvice(trajectory, seasons, totalRuntimeMinutes, episodeCount);
 
   return (
     <section aria-label="Trajectoire">
@@ -221,11 +216,11 @@ async function Trajectory({ id, seasons, totalRuntimeMinutes, episodeCount }: {
               Formulee comme un FAIT OBSERVE et jamais comme une injonction : sur des
               notes de foule, un decrochage se compte en dixiemes d'etoile, ce qui ne
               justifie pas de dire a quelqu'un ce qu'il doit regarder. */}
-          {stopAfter !== undefined && shortened !== undefined ? (
+          {advice !== undefined ? (
             <p className="mt-5 rounded-md bg-(--color-warn)/10 px-3 py-2.5 text-sm">
-              S’arrêter après la saison {stopAfter} ramène la série à{' '}
-              <strong>~ {formatCommitment(shortened)}</strong>, au lieu de{' '}
-              ~ {formatCommitment(totalRuntimeMinutes!)}.
+              S’arrêter après la saison {advice.afterSeason} ramène la série à{' '}
+              <strong>~ {formatCommitment(advice.shortenedMinutes)}</strong>, au lieu de{' '}
+              ~ {formatCommitment(advice.fullMinutes)}.
             </p>
           ) : null}
           {/* L'origine des notes remonte jusqu'ici : ce ne sont pas celles de ce
