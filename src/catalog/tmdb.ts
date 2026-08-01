@@ -22,8 +22,54 @@ import type {
 } from './provider';
 import type { RawSeason } from '../domain/seasons';
 import type { ExternalIds, ProductionStatus } from '../domain/types';
+import { dominantKind, type ProgramKind } from '../domain/program';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+
+/**
+ * Genres TMDB qui determinent la nature d'un programme.
+ *
+ * **Seul endroit du code ou ces identifiants existent** : le domaine raisonne sur
+ * `ProgramKind`, pas sur des nombres propres a TMDB. C'est ce qui rend la regle
+ * portable si le fournisseur change (`ROADMAP.md` §1.3).
+ *
+ * Les genres absents de cette table (drame, comedie, science-fiction…) ne disent rien
+ * de la nature du programme : ils decrivent son sujet.
+ */
+const KIND_BY_TMDB_GENRE: Readonly<Record<number, ProgramKind>> = {
+  10763: 'news',
+  10767: 'talk',
+  10764: 'reality',
+  10766: 'soap',
+  99: 'documentary',
+  10759: 'scripted', // Action & Adventure
+  16: 'scripted', // Animation
+  35: 'scripted', // Comedy
+  80: 'scripted', // Crime
+  18: 'scripted', // Drama
+  10751: 'scripted', // Family
+  10762: 'scripted', // Kids
+  9648: 'scripted', // Mystery
+  10765: 'scripted', // Sci-Fi & Fantasy
+  10768: 'scripted', // War & Politics
+  37: 'scripted', // Western
+};
+
+/** Traduit les genres TMDB — quelle que soit leur forme — en nature de programme. */
+function readProgramKind(source: Record<string, unknown>): ProgramKind {
+  // `/search` et `/discover` rendent `genre_ids: number[]` ; `/tv/{id}` rend
+  // `genres: [{ id, name }]`. Les deux formes menent au meme endroit.
+  const ids = [
+    ...asArray(source['genre_ids']),
+    ...asArray(source['genres']).map((g) => asRecord(g)['id']),
+  ].filter((id): id is number => typeof id === 'number');
+
+  const kinds = ids
+    .map((id) => KIND_BY_TMDB_GENRE[id])
+    .filter((k): k is ProgramKind => k !== undefined);
+
+  return dominantKind(kinds);
+}
 
 /** Erreur levee quand TMDB repond autre chose qu'un succes. */
 export class TmdbError extends Error {
@@ -155,6 +201,7 @@ function toSummary(raw: unknown): SeriesSummary | undefined {
   return {
     providerId: String(id),
     title,
+    kind: readProgramKind(source),
     ...(originalTitle !== undefined ? { originalTitle } : {}),
     ...(firstAirDate !== undefined ? { firstAirDate } : {}),
     ...(posterPath !== undefined ? { posterPath } : {}),

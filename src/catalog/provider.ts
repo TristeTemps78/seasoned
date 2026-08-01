@@ -15,6 +15,7 @@
 
 import type { ExternalIds, ProductionStatus } from '../domain/types';
 import type { RawSeason } from '../domain/seasons';
+import type { ProgramKind } from '../domain/program';
 
 /** Resultat de recherche : le minimum pour choisir dans une liste. */
 export interface SeriesSummary {
@@ -24,6 +25,13 @@ export interface SeriesSummary {
   readonly firstAirDate?: Date;
   readonly posterPath?: string;
   readonly overview?: string;
+  /**
+   * Nature du programme, traduite depuis les genres du fournisseur.
+   *
+   * Vit sur le resume et pas seulement sur la fiche detaillee : c'est ce qui permet
+   * de filtrer une liste **sans un appel par element**.
+   */
+  readonly kind?: ProgramKind;
 }
 
 /** Fiche complete d'une serie, telle que rendue par un fournisseur. */

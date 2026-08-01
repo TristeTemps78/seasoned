@@ -25,6 +25,7 @@ import {
   type NormalizedSeasons,
 } from '../src/domain/seasons';
 import { deriveStatus, type StatusResult } from '../src/domain/status';
+import { isShowcased } from '../src/domain/program';
 
 /** Duree de vie du cache serie : une journee. Les grilles de diffusion bougent peu. */
 const SERIES_TTL_MS = 86_400_000;
@@ -146,7 +147,14 @@ export async function discover(
   page = 1,
 ): Promise<readonly SeriesSummary[]> {
   try {
-    return await throughDiscover(`${kind}:${page}`, () => getProvider().discover(kind, page));
+    const all = await throughDiscover(`${kind}:${page}`, () =>
+      getProvider().discover(kind, page),
+    );
+    // Filtre la **vitrine**, pas le catalogue : une page serie reste accessible pour
+    // n'importe quel programme si quelqu'un la cherche. Sans ce filtre, la rangee
+    // « En attente » remontait le journal televise allemand et de la telerealite
+    // (constate en production le 2026-08-01).
+    return all.filter((s) => s.kind === undefined || isShowcased(s.kind));
   } catch {
     return [];
   }
@@ -283,7 +291,13 @@ export async function waitingSeries(
   limit = 12,
   now: Date = new Date(),
 ): Promise<readonly SeriesWithStatus[]> {
-  const pages = await Promise.all([discover('popular', 1), discover('popular', 2)]);
+  // Trois pages, pas deux : le filtrage de la vitrine retire une part des resultats,
+  // et le tri par attente n'a d'interet que s'il a de quoi choisir.
+  const pages = await Promise.all([
+    discover('popular', 1),
+    discover('popular', 2),
+    discover('popular', 3),
+  ]);
   const hydrated = await withStatus(pages.flat(), now);
 
   return hydrated
