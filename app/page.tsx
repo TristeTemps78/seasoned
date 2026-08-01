@@ -1,4 +1,4 @@
-import { discover, withStatus, type SeriesWithStatus } from '@/lib/catalog';
+import { discover, waitingSeries, withStatus, type SeriesWithStatus } from '@/lib/catalog';
 import { SearchForm } from '@/app/components/SearchForm';
 import { SeriesCard } from '@/app/components/SeriesCard';
 
@@ -20,11 +20,12 @@ export default async function HomePage() {
   ]);
 
   // Hydratation du statut reel : un appel par serie, mais la page est en ISR
-  // quotidien — 24 appels par jour au total, quel que soit le trafic. C'est ce qui
-  // rend la promesse visible **avant** le clic (`ROADMAP.md` §1.4 pour le budget).
-  const [trending, onTheAir] = await Promise.all([
+  // quotidien — le total reste de l'ordre de 60 appels par JOUR, quel que soit le
+  // trafic (`ROADMAP.md` §1.4). C'est ce qui rend la promesse visible **avant** le clic.
+  const [trending, onTheAir, waiting] = await Promise.all([
     withStatus(rawTrending.slice(0, 12)),
     withStatus(rawOnTheAir.slice(0, 12)),
+    waitingSeries(12),
   ]);
 
   return (
@@ -48,6 +49,15 @@ export default async function HomePage() {
         <SearchForm />
       </section>
 
+      {/* Cette rangee passe en premier a dessein : c'est la seule qui montre ce que
+          fait le produit. Les deux autres ne contiennent, par construction, que des
+          series actives — verifie en ligne le 2026-08-01. */}
+      <Row
+        title="En attente"
+        subtitle="Depuis combien de temps, exactement."
+        series={waiting}
+      />
+
       <Row
         title="Cette semaine"
         subtitle="Ce dont tout le monde parle en ce moment."
@@ -56,11 +66,11 @@ export default async function HomePage() {
 
       <Row
         title="En cours de diffusion"
-        subtitle="Là où savoir depuis combien de temps on attend change quelque chose."
+        subtitle="Le prochain épisode arrive vraiment."
         series={onTheAir}
       />
 
-      {trending.length === 0 && onTheAir.length === 0 ? (
+      {trending.length === 0 && onTheAir.length === 0 && waiting.length === 0 ? (
         <p className="text-(--color-warn)">
           Le catalogue est momentanément indisponible. La recherche fonctionne peut-être
           encore.

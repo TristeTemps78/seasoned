@@ -267,6 +267,34 @@ export async function withStatus(
   );
 }
 
+/**
+ * Series populaires **en attente d'une suite**, les plus longues attentes d'abord.
+ *
+ * C'est la seule liste qui montre reellement ce que fait le produit. Les listes
+ * « tendances » et « en cours de diffusion » ne contiennent, par construction, que
+ * des series actives : verifie en ligne le 2026-08-01, les vingt-quatre vignettes
+ * affichaient « en cours » ou « ep. dans N j », et pas une seule « en attente ·
+ * N mois ». Le differenciateur etait invisible la ou les gens arrivent.
+ *
+ * Trier par attente decroissante n'est pas cosmetique : une serie muette depuis deux
+ * ans est plus parlante qu'une autre en pause depuis trois mois.
+ */
+export async function waitingSeries(
+  limit = 12,
+  now: Date = new Date(),
+): Promise<readonly SeriesWithStatus[]> {
+  const pages = await Promise.all([discover('popular', 1), discover('popular', 2)]);
+  const hydrated = await withStatus(pages.flat(), now);
+
+  return hydrated
+    .filter(
+      (s) =>
+        s.status?.status === 'between_seasons' || s.status?.status === 'awaiting_renewal',
+    )
+    .sort((a, b) => (b.status?.daysSinceLastAired ?? 0) - (a.status?.daysSinceLastAired ?? 0))
+    .slice(0, limit);
+}
+
 /** URL d'une affiche sur le CDN de TMDB. Jamais servie par nous — `next.config.ts`. */
 export function posterUrl(path: string | undefined, size: 'w185' | 'w342' | 'w500' = 'w342'): string | undefined {
   if (path === undefined) return undefined;
