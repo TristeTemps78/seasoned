@@ -52,41 +52,46 @@ ni base. C'est ce qui rend une page utile à zéro critique (`ROADMAP.md` §0.1)
 | 1.7 | ISR 24 h — le trafic ne doit rien coûter | ✅ 2026-08-01 | Le build ne touche aucune API : vérifié en CI sans secret |
 | 1.8 | Attribution TMDB | ✅ 2026-08-01 | Dans le pied de page, sur toutes les pages |
 | 1.9 | Dégradation si le catalogue tombe | ✅ 2026-08-01 | Message lisible au lieu d'une 500. `unavailable` ≠ 404 : ne pas faire désindexer une page valide |
-| **1.10** | **Vérifier sur un vrai jeton TMDB** | ⛔ **Tristan** | ⚠️ **Jamais exécuté contre l'API réelle.** Voir ci-dessous |
+| 1.10 | **Vérifié contre l'API TMDB réelle** | ✅ 2026-08-01 | A révélé **deux défauts invisibles hors ligne** — voir ci-dessous |
 | 1.11 | Dépôt GitHub public | ✅ 2026-08-01 | https://github.com/TristeTemps78/seasoned — CI verte au premier push |
-| **1.12** | **Mise en ligne** | ⛔ **Tristan** | Déploiement par agent refusé : `403 — You don't have permission to create a project` sur le compte Vercel. À faire depuis https://vercel.com/new (voir ci-dessous) |
+| 1.12 | **Mise en ligne** | ✅ 2026-08-01 | **https://seasoned-two.vercel.app** — redéploiement automatique à chaque push |
+| 1.13 | Observer un vrai cas « zombie » | 🟢 libre | Le différenciateur, toujours pas vu en conditions réelles |
 
-### ⛔ 1.12 — mise en ligne
+### ✅ 1.10 — ce que le premier contact avec l'API réelle a révélé
 
-Le déploiement direct depuis un agent est bloqué par une permission du compte Vercel
-(`403 forbidden`, création de projet interdite). Ce n'est pas un problème de code : la
-CI construit l'application sans erreur et sans aucun secret.
+Deux défauts, tous deux invisibles hors ligne, tous deux sur la **même promesse** :
+« ce qu'elle vous demande », l'une des trois annoncées en page d'accueil.
 
-Marche à suivre, sur https://vercel.com/new :
+1. **`episode_run_time` est de facto abandonné par TMDB.** Le champ existe encore mais
+   revient vide, y compris sur Breaking Bad. Nos fixtures le contenaient toujours —
+   écrites de mémoire, elles décrivaient une API qui n'existe plus. Résultat :
+   « Engagement » ne s'affichait sur **aucune** série.
+2. **Le repli sur le dernier épisode paru donnait un chiffre faux du simple au double.**
+   Stranger Things : 90 heures pour 42 épisodes — 128 min chacun — parce que le final de
+   la saison 5 est un long-métrage. La série en fait environ 45.
 
-1. **Import Git Repository** → `TristeTemps78/seasoned` (Next.js auto-détecté)
-2. **Environment Variables** → `TMDB_ACCESS_TOKEN` = jeton v4 TMDB
-3. **Deploy** → l'adresse sera `seasoned.vercel.app`
+Correction : **médiane** des durées d'épisode d'une saison **représentative** (ni la
+première, pilote rallongé ; ni la dernière, final rallongé ; celle du milieu). Médiane et
+non moyenne, précisément pour résister à ces deux cas. Coût : un appel de plus par série,
+mis en cache 24 h. Le total est préfixé d'un tilde — c'est une estimation, l'annoncer
+comme exact serait mentir.
 
-Cette voie est de toute façon supérieure au déploiement direct : chaque `git push`
-redéploie, et le déploiement ne diverge jamais du dépôt.
+> **Leçon, à appliquer désormais** : une fixture écrite de mémoire décrit l'API dont on
+> se souvient, pas celle qui existe. Les prochaines fixtures doivent être **capturées**
+> depuis une réponse réelle, jamais rédigées à la main.
 
-### ⚠️ 1.10 — ce qui n'a pas pu être vérifié
+### Statuts observés en conditions réelles
 
-Aucun jeton TMDB n'est disponible dans l'environnement de travail, et en créer un
-supposerait d'ouvrir un compte. **Toute la phase 1 est donc validée contre des fixtures
-et le typage, jamais contre l'API réelle.**
+| Statut | Vu ? | Cas observé le 2026-08-01 |
+|---|---|---|
+| `ended` | ✅ | Breaking Bad, Stranger Things, Euphoria, Loki |
+| `between_seasons` | ✅ | **Yellowjackets** — « Saison terminée il y a 16 mois. La suite est attendue. » Cas limite précieux : à 18 mois elle bascule en zombie |
+| `airing` | ✅ | **Ted Lasso** — dernier épisode il y a 3 ans, mais « Nouvel épisode dans 3 jours ». La date à venir prime correctement sur l'ancienneté, au lieu de la classer morte |
+| **`awaiting_renewal` (zombie)** | 🟢 | **Le différenciateur, toujours pas observé.** Cherché sur Loki, Ted Lasso, Yellowjackets — tous correctement classés autrement. Il faut une série que TMDB déclare `Returning Series` sans épisode ni date depuis plus de 18 mois. |
 
-Pour lever ce point : mettre `TMDB_ACCESS_TOKEN` (jeton v4) dans `.env`, lancer
-`npm run dev`, puis vérifier le statut réel sur trois cas choisis exprès —
-
-| Cas à vérifier | Attendu |
-|---|---|
-| une série **en diffusion** | pastille verte, « nouvel épisode dans N jours » |
-| une série **entre deux saisons** | pastille neutre, « saison terminée il y a N mois » |
-| une série **zombie** (déclarée `Returning` par TMDB, sans épisode depuis > 18 mois) | pastille ambre, « aucun épisode depuis N mois » |
-
-Le troisième est le seul qui compte vraiment : c'est le différenciateur de la phase 1.
+Les avertissements de saison se sont aussi montrés en conditions réelles : « Saison 4
+annoncée mais pas encore diffusée » sur Ted Lasso et Yellowjackets, et la mention des
+épisodes spéciaux sur Breaking Bad, Euphoria et Ted Lasso.
 
 ---
 

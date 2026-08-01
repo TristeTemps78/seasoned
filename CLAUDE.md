@@ -27,13 +27,22 @@
   - `src/catalog/` — `CatalogProvider`, cache à plafond contractuel, fournisseur TMDB.
   - `app/` + `lib/` — Next 16 / React 19 / Tailwind 4. Accueil, recherche, page série,
     `robots.txt`, `sitemap.xml`. ISR 24 h ; le build ne touche aucune API.
-- **⛔ Bloquant immédiat — tâche 1.10 : rien n'a jamais tourné contre l'API TMDB réelle.**
-  Aucun jeton n'est disponible ici et en créer un supposerait d'ouvrir un compte. Toute
-  la phase 1 est validée contre des fixtures et le typage. Protocole de vérification dans
-  `TASKS.md` §1.10 — le cas qui compte est la série « zombie ».
-- **Le nom n'est pas tranché (A4).** Six domaines vérifiés libres à 35 $/an ;
-  recommandation **`peaked.tv`**, repli `howfar.tv`. Bloquant avant le premier
-  déploiement public, pas avant.
+- **En ligne : https://seasoned-two.vercel.app** — dépôt public
+  https://github.com/TristeTemps78/seasoned, redéploiement automatique à chaque push.
+  115 tests verts.
+- **Le premier contact avec l'API réelle a révélé deux défauts** que les fixtures ne
+  pouvaient pas voir, tous deux sur la promesse « ce qu'elle vous demande » (`TASKS.md`
+  §1.10) : `episode_run_time` est abandonné par TMDB, et le repli sur le dernier épisode
+  paru donnait un chiffre **faux du simple au double** (Stranger Things : 90 h au lieu de
+  37). Corrigé par une **médiane** sur une saison représentative.
+  > **Leçon à appliquer** : une fixture écrite de mémoire décrit l'API dont on se
+  > souvient, pas celle qui existe. Les prochaines doivent être **capturées** depuis une
+  > réponse réelle.
+- **Trois statuts sur quatre observés en conditions réelles.** Manque le seul qui compte
+  vraiment : **`awaiting_renewal`**, la série zombie (tâche 1.13).
+- **Le nom n'est pas tranché (A4).** `seasoned.vercel.app` était déjà pris par un tiers —
+  le mot est trop commun. Six domaines vérifiés libres à 35 $/an ; recommandation
+  **`peaked.tv`**, repli `howfar.tv`.
 - **Cinq faits qui déterminent tout le reste** (détail et sources dans `RESEARCH.md` §0) :
   1. **TV Time est mort le 2026-07-15** avec 26,4 M d'installations — motif : *pas
      soutenable en gratuit, pas assez de demande pour du payant*. Meilleure et pire

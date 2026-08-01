@@ -37,15 +37,15 @@ verdict et non une moyenne.** Argumentée dans [docs/RATING-MODEL.md](docs/RATIN
 
 ## État
 
-**Phase 1.** Catalogue public en ligne de mire : recherche, page série, statut réel.
-101 tests, typecheck strict, build vert. Pas encore de compte ni de base — c'est la
-phase 2.
+**Phase 1 en ligne : https://seasoned-two.vercel.app**
 
-⚠️ **Rien n'a encore tourné contre l'API TMDB réelle** : faute de jeton dans
-l'environnement de développement, la phase 1 est validée contre des fixtures et le
-typage. Protocole de vérification dans [TASKS.md](TASKS.md) §1.10.
+Recherche, page série, statut réel, engagement en heures. 115 tests, typecheck strict,
+build vert, vérifié contre l'API TMDB réelle. Pas encore de compte ni de base — phase 2.
 
-Pas encore en ligne — voir [TASKS.md](TASKS.md) §1.12.
+Le premier contact avec l'API réelle a révélé deux défauts que les fixtures ne pouvaient
+pas voir, tous deux corrigés — voir [TASKS.md](TASKS.md) §1.10. La leçon vaut d'être
+retenue : *une fixture écrite de mémoire décrit l'API dont on se souvient, pas celle qui
+existe.*
 
 ## Lire dans cet ordre
 
