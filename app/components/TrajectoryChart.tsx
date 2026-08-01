@@ -24,7 +24,22 @@ const SHAPE_LABEL: Readonly<Record<TrajectoryShape, string>> = {
  * `docs/RATING-MODEL.md` §6bis. Montrer qu'une courbe s'effondre en saison 5 est une
  * information que quelqu'un en saison 2 n'a pas demandee.
  */
-export function TrajectoryChart({ trajectory }: { readonly trajectory: Trajectory }) {
+export function TrajectoryChart({ trajectory, interpret = true }: {
+  readonly trajectory: Trajectory;
+  /**
+   * Afficher la **forme** et la **constance** — c'est-a-dire des jugements.
+   *
+   * A desactiver pour des notes de foule. Ces deux indicateurs sont normalises sur
+   * l'echelle complete (0,5 a 5), or une moyenne de foule n'en occupe qu'une fraction :
+   * les notes de *Dexter* tiennent entre 3,6 et 4,2. L'ecart-type y parait alors
+   * minuscule, la constance monte a 92 %, et la serie ressort « tenue de bout en bout »
+   * alors qu'elle decroche visiblement.
+   *
+   * La courbe, le pic et le decrochage restent affiches : ce sont des faits, pas des
+   * jugements.
+   */
+  readonly interpret?: boolean;
+}) {
   const { scores, peak, peakSeason, consistency, shape, breakPoint } = trajectory;
   if (scores.length < 2) return null;
 
@@ -67,10 +82,12 @@ export function TrajectoryChart({ trajectory }: { readonly trajectory: Trajector
       </ol>
 
       <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        <div>
-          <dt className="text-xs uppercase tracking-wide text-(--color-muted)">Forme</dt>
-          <dd>{SHAPE_LABEL[shape]}</dd>
-        </div>
+        {interpret ? (
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-(--color-muted)">Forme</dt>
+            <dd>{SHAPE_LABEL[shape]}</dd>
+          </div>
+        ) : null}
         {peak !== undefined ? (
           <div>
             <dt className="text-xs uppercase tracking-wide text-(--color-muted)">Pic</dt>
@@ -80,8 +97,9 @@ export function TrajectoryChart({ trajectory }: { readonly trajectory: Trajector
           </div>
         ) : null}
         {/* La constance n'est publiee qu'a partir de trois saisons notees : afficher un
-            ecart-type calcule sur deux points serait malhonnete (`RATING-MODEL.md` §4). */}
-        {consistency !== undefined ? (
+            ecart-type calcule sur deux points serait malhonnete (`RATING-MODEL.md` §4).
+            Et jamais sur des notes de foule, ou sa normalisation n'a pas de sens. */}
+        {interpret && consistency !== undefined ? (
           <div>
             <dt className="text-xs uppercase tracking-wide text-(--color-muted)">
               Constance

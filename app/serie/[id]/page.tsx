@@ -198,12 +198,16 @@ async function Trajectory({ id, seasons }: {
         </summary>
 
         <div className="border-t border-(--color-edge) px-4 py-5">
-          <TrajectoryChart trajectory={trajectory} />
+          {/* `interpret={false}` : on montre la courbe, le pic et le decrochage — des
+              faits — mais ni « forme » ni « constance », qui sont des jugements
+              normalises sur une echelle que les notes de foule n'occupent pas. */}
+          <TrajectoryChart trajectory={trajectory} interpret={false} />
           {/* L'origine des notes remonte jusqu'ici : ce ne sont pas celles de ce
               produit, et les presenter autrement serait malhonnete. */}
           <p className="mt-5 text-xs text-(--color-muted)">
             Établie à partir des notes du public TMDB, saison par saison — pas des notes
-            de ce site.
+            de ce site. Ces notes se ressemblent beaucoup d’une saison à l’autre&nbsp;:
+            les écarts comptent plus que les valeurs.
           </p>
         </div>
       </details>
