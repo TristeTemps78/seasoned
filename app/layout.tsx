@@ -1,7 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { TMDB_ATTRIBUTION } from '@/src/catalog/provider';
 import { siteUrl } from '@/lib/site';
+import { ServiceWorker } from '@/app/components/ServiceWorker';
 import './globals.css';
 
 const DESCRIPTION =
@@ -24,6 +25,30 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
   },
   twitter: { card: 'summary' },
+
+  // iOS n'a jamais lu le manifeste : il lui faut ses propres balises, sinon
+  // « Sur l'écran d'accueil » produit un marque-page, pas une application. C'est la
+  // moitie de la promesse multiplateforme (A8), et elle tient en trois lignes.
+  appleWebApp: {
+    capable: true,
+    title: 'seasoned',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: {
+    icon: [{ url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+  },
+};
+
+/**
+ * Couleur de la barre systeme quand l'application est installee.
+ *
+ * Doit valoir `--color-ink` : sans elle, une bande blanche encadre l'application sur
+ * Android, ce qui la fait immediatement lire comme un site ouvert dans un navigateur.
+ */
+export const viewport: Viewport = {
+  themeColor: '#0f1115',
+  colorScheme: 'dark',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -35,9 +60,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="font-semibold tracking-tight">
               seasoned
             </Link>
-            <span className="text-sm text-(--color-muted)">
+            <span className="hidden text-sm text-(--color-muted) sm:inline">
               est-ce que ça vaut le coup&nbsp;?
             </span>
+            {/* Le seul lien permanent vers ce que le produit retient de vous. Sans
+                lui, la bibliotheque n'existe que pour qui connait son adresse. */}
+            <Link
+              href="/moi"
+              className="ml-auto text-sm text-(--color-muted) hover:text-(--color-text)"
+            >
+              Ma bibliothèque
+            </Link>
           </div>
         </header>
 
@@ -53,6 +86,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </p>
           </div>
         </footer>
+
+        <ServiceWorker />
       </body>
     </html>
   );
