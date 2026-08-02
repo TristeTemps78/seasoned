@@ -126,6 +126,24 @@ le fait pour personne.
 | **Ce qu'il faut** | Un module pur de plus, une section dans `/moi`, **et un préalable** — voir ci-dessous |
 | **Coût** | **Zéro** — calcul dans le navigateur, aucune donnée ne sort |
 
+> ## ✅ Livré le 2026-08-03 (après-midi) — et la fiche s'était trompée **deux fois**
+>
+> `src/domain/tally.ts` + `MyTally.tsx`. « Au moins 537 heures — 22 jours et 9 h », avec le
+> nombre de séries qui n'ont **pas** pu être comptées. Détail dans `TASKS.md` (1.65/1.66).
+>
+> Le préalable ci-dessous en avait trouvé un ; il en manquait un second, du même genre :
+> **les tailles de saisons**. Une position vaut « saison 3, épisode 7 » et ne se traduit en
+> temps qu'en sachant ce que pèsent les saisons 1 et 2 — une durée d'épisode sans compte
+> d'épisodes ne chiffre rien.
+>
+> **Et le premier préalable n'avait jamais été écrit** : `episodeMinutes` arrivait dans
+> `MyProgress` en prop *à côté* de `series`, pas dedans. Le champ existait, le type
+> l'acceptait, aucun instantané ne l'a jamais porté.
+>
+> **La leçon pour les fiches suivantes** : « tout est déjà là » est une affirmation sur du
+> code, elle se vérifie en lisant ce que le code **écrit**, pas ce qu'il déclare. Cette
+> fiche l'a écrit trois fois de suite sans le vérifier une seule.
+
 > ⚠️ **Un préalable trouvé en commençant l'implémentation le 2026-08-03, et non anticipé
 > dans cette fiche.** Le calcul est annoncé « gratuit, tout est déjà là » — c'est faux.
 > `JournalSnapshot` mémorise le titre, l'affiche, le statut, la date de retour et la note
@@ -175,10 +193,11 @@ que j'ai déjà ? »*
 | Ordre | Feature | Motif |
 |---|---|---|
 | ~~1~~ | ~~**Rewatch (§1)**~~ | ✅ **Livré** — journal v3, série-refuge, 20 tests. Voir `TASKS.md` |
-| **2** | **Pages-listes (§2)** | Le plus gros levier SEO restant, sur des calculs déjà écrits, et il referme le maillage interne |
-| **3** | **Bilan personnel (§4)** | Zéro coût, fort en partage, et positionnement direct contre un paywall |
-| **4** | **Comparateur (§3)** | Excellent rapport valeur/effort, mais demande de traiter l'explosion quadratique avant d'ouvrir |
-| **5** | **Mode soirée (§5)** | Le plus petit, à faire quand la bibliothèque sera assez remplie pour qu'un filtre ait du sens |
+| ~~3~~ | ~~**Bilan personnel (§4)**~~ | ✅ **Livré** — `tally.ts`, 30 tests, +1,38 Ko gzip. Passé avant les pages-listes parce que ses **préalables se périmaient** : ce que l'instantané n'enregistre pas manque rétroactivement |
+| **1** | **Pages-listes (§2)** | Le plus gros levier SEO restant, sur des calculs déjà écrits, et il referme le maillage interne |
+| **2** | **Comparateur (§3)** | Excellent rapport valeur/effort, mais demande de traiter l'explosion quadratique avant d'ouvrir |
+| **3** | **Mode soirée (§5)** | Le plus petit, à faire quand la bibliothèque sera assez remplie pour qu'un filtre ait du sens |
+| — | **Carte partageable du bilan** | Écartée du lot du 2026-08-03 par Tristan. `ShareCard` sait déjà dessiner sur un canvas ; le bilan lui donne enfin un chiffre à porter |
 
 **Le fil** : §1 protège une donnée qu'on est en train de perdre, §2 amène du monde, §3 et §4
 transforment les visiteurs en utilisateurs, §5 les fait revenir le soir. Et **aucune ne

@@ -8,7 +8,39 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, matin)
+## État actuel (2026-08-03, après-midi)
+
+- **⏱️ Bilan personnel livré — et trois défauts de la même famille trouvés en le posant.**
+  508 → **546 tests verts**, typecheck strict vert, build vert, 13 routes `○ Static`.
+  **+1,38 Ko gzip** sur `/moi`. ⚠️ **Quatre commits non poussés** : un push est un
+  déploiement public, décision de Tristan.
+  - **`src/domain/tally.ts`** — « au moins 537 heures — 22 jours et 9 h ». Le
+    différenciateur du produit (le temps chiffré) retourné vers soi, là où ces
+    statistiques sont **payantes** chez Letterboxd. Le calcul se fait dans le navigateur :
+    être gratuit y est structurel, pas généreux.
+  - **La décision de conception : ne jamais compter deux fois.** `setDecision` n'efface pas
+    la position, donc « passages achevés + position » compterait la dernière saison en
+    double sur **toute** série finie. La position ne compte que si elle est **postérieure**
+    au dernier passage — c'est l'usage pour lequel la v2 a rendu la date obligatoire sur
+    chaque fait, deux sessions avant qu'on en ait besoin.
+  - **Le chiffre s'annonce comme un minorant, et le prouve** : « au moins », plus le nombre
+    de séries non comptables, plus un **silence** sous 50 % de couverture ou sous une heure.
+  - 🔴 **Trois défauts, tous invisibles au typage** :
+    1. **`episodeMinutes` n'était jamais écrit** — prop *à côté* de `series`, pas dedans.
+       La feature livrée le matin même était **morte-née**.
+    2. **`freshSnapshot` jetait la forme des séries à trente jours**, donc le bilan aurait
+       ignoré les séries **terminées** — celles qui y pèsent le plus.
+    3. **`isFresh` ne comparait pas les champs neufs**, rendant leur écriture invisible 24 h.
+    > **La leçon** : *un champ qui existe n'est pas un champ qui est écrit.* Et la
+    > vérification au navigateur **ne pouvait pas** le voir — le journal de test, écrit à la
+    > main, portait déjà la valeur qu'on croyait écrire. **Troisième faux négatif de
+    > fixture**, dans sa variante la plus retorse. Seul un test qui lit `localStorage`
+    > **après** le rendu regarde l'écriture elle-même.
+  - ⚠️ **Réserve sur la mesure** : les 207 Ko que je mesure ne sont **pas** comparables aux
+    166 Ko du 2026-08-02 (méthodes différentes). Seuls les deltas le sont, et ils
+    concordent. À réconcilier avant de citer un absolu.
+
+## État précédent (2026-08-03, matin)
 
 - **🔁 Rewatch livré — journal v3, la quatrième décision irréparable.** Le journal ne
   connaissait aucune notion de revisionnage : la position étant un pointeur unique,

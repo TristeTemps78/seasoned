@@ -253,8 +253,73 @@ aux visites déjà faites. D'où l'ordre — le champ d'abord, la feature ensuit
 
 | # | Tâche | Statut | Motif |
 |---|---|---|---|
-| 1.65 | **`seasonSizes` dans l'instantané** — le troisième champ irréparable | 🔒 in-progress — @claude-opus — 2026-08-03 | Réutilise le type `SeasonSize` de `remaining.ts`, donc le bilan consomme sans adaptation. Champ facultatif + parsing tolérant = **aucune migration**, pas de bump de version |
-| 1.66 | **Bilan personnel** — « vous avez passé au moins 47 jours devant des séries » | 🔒 in-progress — @claude-opus — 2026-08-03 | `src/domain/tally.ts` + une section dans `/moi`. Zéro appel, zéro serveur. Le positionnement : ces statistiques sont **payantes** chez Letterboxd |
+| 1.65 | **`seasonSizes` dans l'instantané** — le troisième champ irréparable | ✅ 2026-08-03 | Réutilise le type `SeasonSize` de `remaining.ts`, donc le bilan consomme sans adaptation. Champ facultatif + parsing tolérant = **aucune migration**, pas de bump de version |
+| 1.66 | **Bilan personnel** — « au moins 537 heures » | ✅ 2026-08-03 | `src/domain/tally.ts` (24 tests) + `MyTally.tsx` (6 tests). Zéro appel, **+1,38 Ko gzip**. 508 → **546 tests** |
+
+#### 🔴 Trois défauts trouvés en le posant, tous de la même famille
+
+Aucun n'était visible au typage. Les trois disent la même chose : **un champ qui existe
+n'est pas un champ qui est écrit, et un champ qui est écrit n'est pas un champ qui survit.**
+
+**1. `episodeMinutes` n'était jamais écrit — la feature du matin était morte-née.** Il
+arrive dans `MyProgress` en prop **à côté** de `series`, pas dedans. `SeriesShape` le
+déclarait, la page série ne le remplissait pas : pas un seul instantané ne l'a jamais porté.
+Tout le bilan repose dessus.
+
+> ⚠️ **La vérification au navigateur ne pouvait pas le voir**, parce que le journal de test
+> était écrit à la main et portait déjà la valeur qu'on croyait écrire. C'est le **troisième
+> faux négatif de fixture** du projet, et la variante la plus retorse : la fixture décrivait
+> le journal qu'on veut, pas celui que le produit produit. Trouvé par un test qui interroge
+> `localStorage` **après** le rendu — le seul angle qui regarde l'écriture elle-même.
+
+**2. `freshSnapshot` jetait la forme des séries à trente jours.** Durée d'épisode et tailles
+de saisons étaient rangées avec le **mouvant** (statut, date de retour). Or elles ne bougent
+pas : *Breaking Bad* fera toujours 47 minutes. Le bilan aurait donc été aveugle à toute
+série non revisitée depuis un mois — **c'est-à-dire aux séries terminées**, celles qui
+pèsent le plus lourd dans un bilan de temps passé. Même défaut que « Série 1405 » : *un
+titre ne se périme pas, un statut si.*
+
+**3. `isFresh` ne comparait pas les champs neufs.** Elle décide si une réécriture est
+nécessaire ; un champ absent de la comparaison rend son écriture invisible pendant vingt-
+quatre heures. `episodeMinutes` y manquait déjà depuis le matin. Un commentaire d'avertis-
+sement est maintenant posé sur la fonction.
+
+#### La décision de conception du module : ne jamais compter deux fois
+
+`setDecision` **n'efface pas la position**. Naïvement, « passages achevés + position »
+compterait donc la dernière saison en double sur **toute** série terminée. La position n'est
+prise en compte que si elle est **postérieure** au dernier passage achevé — c'est-à-dire si
+elle appartient à un nouveau visionnage. C'est exactement l'usage pour lequel la v2 a rendu
+la date obligatoire sur chaque fait, deux sessions avant qu'on en ait besoin.
+
+Vérifié en réel : sur un journal de six séries, *Breaking Bad* compte **124 épisodes et non
+186**.
+
+#### Vérification au navigateur (2026-08-03, après-midi)
+
+| Vérifié | Résultat |
+|---|---|
+| Total sur six séries | **537 h — 22 jours et 9 h**, 1175 épisodes, recalculable à la main |
+| Double comptage | ✅ absent (124 ép. pour *Breaking Bad*, deux passages) |
+| Instantané expiré (200 j) | ✅ non compté, et **avoué** |
+| Série sans `seasonSizes` | ✅ non comptée, et avouée |
+| Silence sous le seuil | ✅ — vérifié **après** avoir attendu que la bibliothèque soit chargée, sinon l'absence ne prouve rien |
+| Les deux langues | ✅ `/moi` en anglais, `/fr/moi` en français |
+| Console | ✅ aucune erreur |
+
+⚠️ **Ce qui n'a pas pu être vérifié en local** : la chaîne complète *page série → instantané
+→ `/moi`*, faute de catalogue (`TMDB_ACCESS_TOKEN` vide). Les deux extrémités sont couvertes
+par des tests de composant — et c'est là que le défaut n°1 a été trouvé.
+
+#### La mesure, et une réserve sur la mesure
+
+**+1,38 Ko gzip** sur `/moi` (205,73 → 207,11), même méthode avant et après. Le calcul est
+ici **côté client**, contrairement aux trois features du matin importées `import type`.
+
+⚠️ **L'absolu n'est pas comparable aux 166 Ko relevés le 2026-08-02** : ma méthode somme
+tous les chunks référencés par le HTML prérendu, l'autre mesurait autre chose. Les *deltas*
+concordent (l'écart `/` → `/moi` mesuré ici, ~4,8 Ko, correspond aux ~4 Ko relevés alors
+pour la couche des gestes). **À réconcilier avant de citer un absolu.**
 
 **Périmètre arbitré avec Tristan** : pas de carte partageable cette fois — `ShareCard`
 existe et pourra s'y brancher après. Les **pages-listes** (`NEXT-FIVE-2` §2) restent au
@@ -409,13 +474,18 @@ peuvent pas être vérifiés, parce que **le code n'est pas déployé**.
 Quatre commits : `a1fab2d` (réservation + D14) · `9043233` (filet + i18n) · `26e7514`
 (vague A) · `96853ae` (XSS + langue du catalogue + en-têtes).
 
-## 🔄 REPRENDRE ICI — point d'entrée de la prochaine session (2026-08-03, fin)
+## 🔄 REPRENDRE ICI — point d'entrée de la prochaine session (2026-08-03, après-midi)
 
-**État : tout est committé, poussé, déployé et vérifié en production.** `main` propre,
-508 tests verts, CI verte, rien en attente d'un humain sauf les arbitrages ci-dessous.
+**État : tout est committé sur `main` propre. 546 tests verts, typecheck strict vert, build
+vert, 13 routes `○ Static`.** ⚠️ **Quatre commits ne sont PAS poussés** — un push déclenche
+un déploiement public, ce n'est pas à un agent de le décider.
 
-### Les quatre choses à faire, par ordre de valeur
+### Les cinq choses à faire, par ordre de valeur
 
+0. **Pousser** (`7147eba`, `ed546b9`, `66ca1a8`, `e533451`). ⚠️ **Décision de Tristan.**
+   Le bilan personnel et le correctif d'instantané ne sont en ligne pour personne tant que
+   ce n'est pas fait — et **le manque d'instantané est rétroactif** : chaque jour sans
+   déploiement est un jour de visites dont la forme des séries n'est pas mémorisée.
 1. **La n°2 de `docs/NEXT-FIVE-2.md` — les pages-listes calculées.** Le plus gros levier
    SEO restant, et **ses calculs sont déjà écrits** (`findEntryPoint`, `stopPointAdvice`,
    `computeTrajectory`). Une route `/listes/[slug]` en ISR quotidien. Elle referme aussi
@@ -424,11 +494,25 @@ Quatre commits : `a1fab2d` (réservation + D14) · `9043233` (filet + i18n) · `
    Recommandation `peaked.tv`, repli `howfar.tv`. **Décision de Tristan.**
 3. **0.9 — la relecture par un autre agent.** `AGENTS.md` pose « rédacteur ≠ relecteur »,
    et **tout le dépôt a été écrit par le même agent**. C'est la dette de méthode la plus
-   ancienne, et elle grossit à chaque session.
+   ancienne, et elle grossit à chaque session. ⚠️ Elle vient de coûter cher : trois défauts
+   de la même famille ont traversé une session entière avant d'être vus (bloc 1.65/1.66).
 4. **Re-mesurer le seuil du point d'entrée.** Mesuré en production : *The Office* et
    *Parks and Recreation*, au démarrage lent notoire, ne produisent aucun point d'entrée.
    Le module rate des cas réels. ⚠️ **Ne pas resserrer au jugé** — c'est exactement la
    faute qui a coûté trois passes à `trajectory.ts`. Mesurer sur un échantillon large.
+
+### ⚠️ La question à se poser en ouvrant n'importe quel champ d'instantané
+
+Trois champs ont maintenant été ajoutés à `JournalSnapshot` dans l'urgence, un par session,
+chacun parce que le précédent ne suffisait pas. À chaque fois le manque était **rétroactif**.
+Avant d'écrire la prochaine feature qui lit le journal, poser la question dans l'ordre :
+
+1. **Le champ est-il écrit ?** (défaut n°1 — le type l'acceptait, personne ne le remplissait)
+2. **Survit-il aux trente jours ?** (défaut n°2 — rangé avec le mouvant)
+3. **`isFresh` le compare-t-elle ?** (défaut n°3 — sinon l'écriture est invisible 24 h)
+4. **Un test lit-il `localStorage` après le rendu ?** Sans lui, rien de ce qui précède ne
+   se voit — ni au typage, ni aux tests purs, ni au navigateur avec une fixture écrite à
+   la main.
 
 ### Ce qu'il ne faut PAS refaire
 
