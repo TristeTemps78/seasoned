@@ -239,6 +239,35 @@ affichait **« à voir »** dès que son instantané n'avait pas de libellé de 
 arrive dès qu'il expire. La vignette contredisait la section qui la contient. La décision
 passe désormais avant le repli.
 
+### 🔒 Bloc du 2026-08-03 (après-midi) — le bilan personnel, et le trou qui le bloquait
+
+**Réservé — @claude-opus — 2026-08-03.** Motif : `docs/NEXT-FIVE-2.md` §4 annonce que le
+bilan personnel se calcule avec ce qui existe déjà. **C'est encore faux, pour la seconde
+fois.** La fiche avait manqué `episodeMinutes` (livré ce matin) ; en relisant le code, son
+**jumeau** apparaît — `JournalSnapshot` ne mémorise pas les **tailles de saisons**. Or
+`/moi` ne fait aucun appel réseau : une position « S3E7 » y est donc **incomptable**, faute
+de savoir combien d'épisodes font les saisons 1 et 2. `episodeMinutes` seul ne chiffre rien.
+
+Même règle que le rewatch : **ce qu'on n'enregistre pas aujourd'hui manque pour toujours**
+aux visites déjà faites. D'où l'ordre — le champ d'abord, la feature ensuite.
+
+| # | Tâche | Statut | Motif |
+|---|---|---|---|
+| 1.65 | **`seasonSizes` dans l'instantané** — le troisième champ irréparable | 🔒 in-progress — @claude-opus — 2026-08-03 | Réutilise le type `SeasonSize` de `remaining.ts`, donc le bilan consomme sans adaptation. Champ facultatif + parsing tolérant = **aucune migration**, pas de bump de version |
+| 1.66 | **Bilan personnel** — « vous avez passé au moins 47 jours devant des séries » | 🔒 in-progress — @claude-opus — 2026-08-03 | `src/domain/tally.ts` + une section dans `/moi`. Zéro appel, zéro serveur. Le positionnement : ces statistiques sont **payantes** chez Letterboxd |
+
+**Périmètre arbitré avec Tristan** : pas de carte partageable cette fois — `ShareCard`
+existe et pourra s'y brancher après. Les **pages-listes** (`NEXT-FIVE-2` §2) restent au
+menu, elles ne sont pas abandonnées.
+
+⚠️ **Ce que ce bilan doit dire de lui-même.** Trois causes de sous-estimation se cumulent,
+et aucune n'est un bug : les instantanés **expirent** (plafond contractuel de six mois), les
+séries visitées **avant** 1.65 n'ont pas de tailles de saisons, et TMDB ne donne pas
+toujours de durée d'épisode. Donc **« au moins X »**, jamais « X » — et un **seuil de
+couverture sous lequel on se tait**, parce qu'annoncer « au moins 3 heures » à quelqu'un qui
+suit quarante séries est un mensonge par omission. C'est la règle déjà écrite deux fois ici
+(`MIN_STOP_POINT_SAVING`, `MIN_SERIES_FOR_TASTE`).
+
 ### Ce que la boucle d'audit a trouvé sur ces trois features
 
 **1. Une cinquième règle, trouvée par les tests (F1).** La première version maximisait le
