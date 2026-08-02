@@ -263,6 +263,81 @@ produit.
 
 ---
 
+## 4bis. Le compte : on se balade librement, on agit avec un compte
+
+**Tranché par Tristan le 2026-08-03.** Tout le monde a un compte. Mais :
+
+> **On circule dans toutes les faces sans compte. Le compte est demandé au premier geste.**
+
+### Le mur, et pourquoi il n'est pas sec
+
+Le piège classique de ce modèle est de **perdre le geste** : on clique « j'en suis à S3E7 »,
+on crée un compte, on revient — et le geste a disparu. C'est le défaut le plus fréquent des
+inscriptions différées.
+
+La forme retenue l'évite par construction :
+
+1. **Le geste s'applique**, localement et immédiatement. L'utilisateur voit qu'il a été pris.
+2. **Puis l'invitation** : *« gardé sur cet appareil — créez un compte pour le retrouver
+   ailleurs »*.
+3. **À l'inscription, le journal local monte tel quel** par `mergeJournals`.
+
+Trois propriétés en découlent, et aucune ne coûte de code neuf :
+
+- **On montre la valeur avant de la demander.** Le mur sec demande un compte pour une chose
+  qu'on n'a pas encore vue fonctionner.
+- **Le geste n'est jamais perdu**, sans mécanisme de « geste en attente » à écrire.
+- **C'est le journal local d'aujourd'hui**, inchangé. Le compte ajoute une réplique, il ne
+  remplace rien.
+
+> ♻️ **Le bandeau `DataSafety` fait déjà ce travail** — il dit « ces notes ne vivent que
+> dans ce navigateur, installez l'application ou exportez une copie ». Il devient
+> l'invitation au compte. C'est une **réécriture de texte**, pas un composant de plus.
+
+### Où le mur devient dur
+
+Ce qui est **purement local** reste accessible sans compte : la position, les notes, le
+bilan, le calendrier. Ce qui **demande le serveur** est fermé, et le dire est honnête plutôt
+que frustrant :
+
+| Sans compte | Avec compte |
+|---|---|
+| Circuler dans les six faces | + Retrouver son journal sur un autre appareil |
+| Noter, positionner, décider | + Le fil d'activité et les amis |
+| Voir son bilan et son calendrier | + Les listes partagées et le profil |
+
+### ⚠️ Le piège de l'appareil partagé
+
+Un journal local existe sur cet appareil ; quelqu'un d'autre s'y connecte. **Une fusion
+silencieuse verserait le journal du propriétaire dans le compte du visiteur** — une fuite de
+données, causée par une commodité.
+
+**Règle : jamais de fusion implicite à la connexion.** Si un journal local existe et que le
+compte qui se connecte n'est pas celui qui l'a déposé, on demande explicitement :
+*« un journal a été trouvé sur cet appareil — le rattacher à votre compte ? »*. Le défaut est
+**non**.
+
+### 🔄 À contre-sens
+
+**« Un mur qui ne bloque rien sera ignoré : les gens resteront sans compte. »** — Vrai, et
+c'est le prix assumé de ce choix. Il est atténué par le fait que **tout le social est
+derrière le compte**, donc quiconque veut un ami s'inscrit. Si la conversion reste trop
+basse, le levier est de durcir le rappel après N gestes — pas de bloquer le premier, qui est
+celui qui montre à quoi sert le produit.
+
+**« Le RGPD attendra bien le lot 4. »** — Non. Dès le **premier compte** il y a une donnée
+personnelle : mentions légales, politique de confidentialité, base légale, droit d'accès et
+d'effacement. Ça devient un **prérequis de mise en ligne du lot 2**, pas une tâche de
+finition.
+
+**« Le mur va casser le SEO. »** — Non : Googlebot circule et ne clique jamais. Les pages
+série restent entièrement lisibles sans compte, ce qui est précisément la balade libre.
+
+**« Alors le hors-ligne meurt ? »** — Non, il se restreint : ce qui est local marche
+toujours sans réseau. C'est le hors-ligne d'aujourd'hui, inchangé.
+
+---
+
 ## 5. Le schéma
 
 | Table | Colonnes | Décisions |
@@ -301,12 +376,14 @@ Trois policies suffisent au départ :
 
 | # | Lot | Motif | Dépend de |
 |---|---|---|---|
-| **1** | **Les six onglets, sans compte** | Le calendrier et le bilan existent déjà : leur donner un écran est immédiat, et valide la navigation **avant** d'y accrocher un serveur | — |
-| **2** | **Auth + `journals` + synchronisation** | La fusion est écrite et prouvée. Le plus de valeur (multi-appareil) pour le moins de risque, et **aucune** surface sociale ouverte | 1 |
+| **1** | **Les six onglets, sans compte** | Le calendrier et le bilan existent déjà : leur donner un écran est immédiat, et valide la navigation **avant** d'y accrocher un serveur. C'est aussi **la balade** que §4bis rend libre | — |
+| **1bis** | **L'invitation au compte** | Réécriture du bandeau `DataSafety`. Sans serveur : elle décrit ce qui viendra | 1 |
+| **2a** | **Mentions légales, confidentialité, effacement** | ⚠️ **Prérequis de mise en ligne**, pas une finition : le premier compte crée une donnée personnelle | — |
+| **2b** | **Auth + `journals` + synchronisation** | La fusion est écrite et prouvée. Le plus de valeur pour le moins de risque, **aucune** surface sociale ouverte. Inclut le garde-fou de l'appareil partagé | 1bis, 2a |
 | **3** | **Modération (5.0)** | ⛔ Prérequis légal, avant toute écriture visible par un tiers | — |
-| **4** | **`profiles` + `follows` + `activity` + le fil** | Le cœur social. Débloqué par la correction du §0 | 2, 3 |
+| **4** | **`profiles` + `follows` + `activity` + le fil** | Le cœur social. Débloqué par la correction du §0 | 2b, 3 |
 | **5** | **`lists` + partage** | Un objet, un propriétaire, une visibilité | 3 |
-| **6** | **Envoi d'avatars** | La porte qu'on ne sait pas refermer. En dernier, jamais avant 3 | 3 |
+| **6** | **Envoi d'avatars** | La porte qu'on ne sait pas refermer. Jamais avant 3 | 3 |
 
 ---
 
@@ -317,12 +394,9 @@ Trois policies suffisent au départ :
 | **Q1** | Un profil est-il public par défaut ? | `profiles` | **Non.** Un produit qui vend « vos données restent chez vous » ne peut pas rendre public par défaut ce qu'il vient de rapatrier |
 | **Q2** | Le journal synchronisé est-il chiffré côté client ? | Lot 2 | **Non** — il ne serait plus projetable, donc plus de fil. À dire, pas à cacher |
 | **Q3** | Quelle région Supabase ? | Lot 2 | **UE.** Le RGPD s'en trouve simplifié, et la latence est bonne pour le public de départ |
-| **Q4** | Que devient l'utilisateur **sans** compte ? | Lot 1 | **Tout fonctionne sans compte** ; le compte ajoute les autres appareils et les autres gens |
+| ~~Q4~~ | ~~Que devient l'utilisateur sans compte ?~~ | — | ✅ **Tranché** (2026-08-03) : on circule librement, **le compte est demandé au premier geste**, et le geste s'applique avant l'invitation. Voir §4bis |
 | **Q5** | Que se passe-t-il à la suppression d'un compte ? | Lot 4 | Journal et activité supprimés ; les **listes publiques** deviennent anonymes plutôt que de disparaître de chez ceux qui les ont enregistrées. À trancher, c'est un choix RGPD réel |
-
-> **Q4 mérite d'être tranché en premier.** Le produit vit du SEO : la quasi-totalité des
-> arrivants n'auront jamais de compte. Une application qui force l'inscription remplace un
-> canal d'acquisition qui marche par un mur.
+| **Q6** | Le rappel se durcit-il après N gestes sans compte ? | après le lot 2b | **À mesurer, pas à régler au jugé.** C'est le levier de conversion si elle est trop basse — et le projet a déjà payé trois passes pour avoir réglé un seuil sans données (`trajectory.ts`) |
 
 ---
 
@@ -338,3 +412,7 @@ Trace des simplifications, pour qu'on ne les repropose pas :
 - **Un schéma relationnel du journal** — remplacé par un document plus une projection, ce
   qui réutilise `mergeJournals` au lieu de le jeter.
 - **Les notifications push** — déjà résolues par le `.ics`.
+- **Le mécanisme de « geste en attente »** pendant l'inscription — inutile : le geste
+  s'applique d'abord en local, donc il n'y a rien à mettre en attente ni à rejouer.
+- **Un composant d'invitation au compte** — le bandeau `DataSafety` existe et dit déjà
+  presque cela. C'est un texte à réécrire, pas un composant à ajouter.

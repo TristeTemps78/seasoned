@@ -37,6 +37,17 @@
     de l'interface devra être réécrit, pas conservé.
   - ⚠️ **Le prérequis n'est pas l'argent, c'est la modération** (5.0, ⛔ bloquant). Ça
     démarre gratuitement — Supabase et Vercel offrent de quoi. Le DSA, non.
+  - **✅ Q4 tranché (2026-08-03) : tout le monde a un compte, mais on circule d'abord.**
+    Les six faces sont libres ; **le compte est demandé au premier geste** — et le geste
+    **s'applique avant** l'invitation (« gardé sur cet appareil, créez un compte pour le
+    retrouver ailleurs »). Ça évite par construction le défaut classique du modèle, le geste
+    perdu pendant l'inscription, **sans écrire une ligne de « geste en attente »** : le
+    journal local est déjà le tampon, et `mergeJournals` fait la montée.
+    - ⚠️ **Le RGPD devient un prérequis de mise en ligne**, pas une finition : le premier
+      compte crée une donnée personnelle.
+    - ⚠️ **Jamais de fusion silencieuse à la connexion.** Sur un appareil partagé, elle
+      verserait le journal du propriétaire dans le compte du visiteur. On demande, et le
+      défaut est **non**.
   - **Correction actée : le fil d'activité des amis ne spoile pas.** J'avais affirmé le
     contraire ; c'était surdimensionné. « Marie a noté *Breaking Bad* ★★★★ » ne révèle rien,
     et le nombre de saisons est public. Ce qui spoile est plus étroit : **les titres
