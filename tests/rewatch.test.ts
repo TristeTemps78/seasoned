@@ -201,3 +201,34 @@ describe('la serie-refuge', () => {
     expect(buildTasteProfile(journal).comfortSeries).toEqual(first);
   });
 });
+
+describe('la duree memorisee dans l’instantane', () => {
+  it('survit a un aller-retour', () => {
+    // Sans ce champ, aucun bilan de temps passe n'est calculable ailleurs que sur la
+    // page de la serie — et le manque serait RETROACTIF : `/moi` ne fait aucun appel,
+    // donc les visites deja faites ne se rejouent pas.
+    const raw = JSON.stringify({
+      version: JOURNAL_VERSION,
+      entries: {
+        [KEY]: {
+          wanted: { at: DAY_ONE.toISOString() },
+          snapshot: { title: 'Breaking Bad', cachedAt: DAY_ONE.toISOString(), episodeMinutes: 47 },
+        },
+      },
+    });
+    expect(parseJournal(raw, DAY_ONE).entries[KEY]?.snapshot?.episodeMinutes).toBe(47);
+  });
+
+  it('ecarte une duree absurde au lieu de la propager', () => {
+    const raw = JSON.stringify({
+      version: JOURNAL_VERSION,
+      entries: {
+        [KEY]: {
+          wanted: { at: DAY_ONE.toISOString() },
+          snapshot: { title: 'X', cachedAt: DAY_ONE.toISOString(), episodeMinutes: -3 },
+        },
+      },
+    });
+    expect(parseJournal(raw, DAY_ONE).entries[KEY]?.snapshot?.episodeMinutes).toBeUndefined();
+  });
+});

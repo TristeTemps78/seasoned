@@ -162,6 +162,24 @@ export interface JournalSnapshot {
   /** Date du prochain episode annonce, ISO 8601. C'est elle qui fait « Ca revient ». */
   readonly nextEpisodeAt?: string;
   /**
+   * Duree mediane d'un episode, en minutes.
+   *
+   * ## Pourquoi elle est memorisee et non recalculee
+   *
+   * `/moi` ne fait **aucun appel reseau** — c'est la condition qui rend la bibliotheque
+   * tenable a cent mille utilisateurs. Donc ce que le journal ignore au moment du geste,
+   * il l'ignorera pour toujours pour cette visite-la.
+   *
+   * Sans ce champ, aucun bilan de temps passe n'est calculable ailleurs que sur la page
+   * de la serie, et **le manque est retroactif** : les visites deja faites ne se rejouent
+   * pas. Meme regle que le revisionnage — ce qu'on n'enregistre pas aujourd'hui manque
+   * pour toujours.
+   *
+   * ⚠️ Elle expire avec le reste de l'instantane (plafond contractuel de six mois), donc
+   * tout bilan qui s'appuie dessus doit s'annoncer comme un **minorant**.
+   */
+  readonly episodeMinutes?: number;
+  /**
    * Note du public pour la serie, sur l'echelle en etoiles.
    *
    * Le seul moyen de dire « vous notez plus severement que le public » ailleurs que
@@ -368,6 +386,13 @@ function parseSnapshot(raw: unknown): JournalSnapshot | undefined {
   const posterPath = readText(source, 'posterPath');
   const statusLabel = readText(source, 'statusLabel');
   const nextEpisodeAt = readText(source, 'nextEpisodeAt');
+  const rawEpisodeMinutes = source['episodeMinutes'];
+  const episodeMinutes =
+    typeof rawEpisodeMinutes === 'number' &&
+    Number.isFinite(rawEpisodeMinutes) &&
+    rawEpisodeMinutes > 0
+      ? rawEpisodeMinutes
+      : undefined;
   const rawPublic = source['publicStars'];
   const publicStars =
     typeof rawPublic === 'number' && rawPublic > 0 && rawPublic <= 5 ? rawPublic : undefined;
@@ -382,6 +407,7 @@ function parseSnapshot(raw: unknown): JournalSnapshot | undefined {
     ...(posterPath !== undefined ? { posterPath } : {}),
     ...(statusLabel !== undefined ? { statusLabel } : {}),
     ...(nextEpisodeAt !== undefined ? { nextEpisodeAt } : {}),
+    ...(episodeMinutes !== undefined ? { episodeMinutes } : {}),
     ...(publicStars !== undefined ? { publicStars } : {}),
   };
 }

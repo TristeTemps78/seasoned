@@ -10,6 +10,21 @@
 
 ## État actuel (2026-08-03, matin)
 
+- **🔁 Rewatch livré — journal v3, la quatrième décision irréparable.** Le journal ne
+  connaissait aucune notion de revisionnage : la position étant un pointeur unique,
+  recommencer une série **écrasait** la progression précédente. Une **liste de dates**
+  (donc un ensemble : union commutative, associative, idempotente par construction),
+  dédupliquée **par jour** — sinon « vu 4 fois » compterait des synchronisations. La
+  **série-refuge** en découle : le trait de goût le plus difficile à falsifier.
+  - ⚠️ **`episodeMinutes` ajouté à l'instantané dans la foulée** : sans lui, aucun bilan
+    de temps passé n'est calculable ailleurs que sur la page série, et **le manque serait
+    rétroactif** (`/moi` ne fait aucun appel). Même règle que le rewatch — ce qu'on
+    n'enregistre pas aujourd'hui manque pour toujours.
+  - **Vérifié au navigateur sur un journal v2 réel**, migration comprise. La première
+    vérification n'a rien prouvé : fixture aux instantanés expirés et trop peu de séries
+    notées. *Se méfier de sa propre vérification* — deuxième faux négatif de ce genre.
+
+
 - **🔴 Le plus important, avant tout le reste : 21 commits ne sont pas poussés, et la
   faille XSS est en ligne.** Vérifié en production ce matin : `/fr/serie/1396` répond
   **404**, `<html lang>` vaut **`fr`**, aucun `hreflang`, et le JSON-LD d'une page destinée

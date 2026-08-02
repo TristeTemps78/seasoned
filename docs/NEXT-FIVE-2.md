@@ -123,8 +123,27 @@ le fait pour personne.
 | | |
 |---|---|
 | **Ce qui existe** | `TasteCard` (le goût), `remaining.ts` (le temps), le journal |
-| **Ce qu'il faut** | Un module pur de plus, et une section dans `/moi` |
+| **Ce qu'il faut** | Un module pur de plus, une section dans `/moi`, **et un préalable** — voir ci-dessous |
 | **Coût** | **Zéro** — calcul dans le navigateur, aucune donnée ne sort |
+
+> ⚠️ **Un préalable trouvé en commençant l'implémentation le 2026-08-03, et non anticipé
+> dans cette fiche.** Le calcul est annoncé « gratuit, tout est déjà là » — c'est faux.
+> `JournalSnapshot` mémorise le titre, l'affiche, le statut, la date de retour et la note
+> du public, mais **pas la durée d'un épisode**. Or `/moi` ne fait aucun appel réseau : ce
+> que le journal ignore au moment du geste, il l'ignorera pour toujours.
+>
+> Il faut donc **ajouter `episodeMinutes` à l'instantané** avant de pouvoir calculer quoi
+> que ce soit — un champ de plus, écrit par `rememberSnapshot` sur la page série, où la
+> médiane est déjà connue. Ce n'est pas difficile, mais c'est un changement de modèle de
+> plus, et il obéit à la même règle que le rewatch : **ce qu'on n'enregistre pas
+> aujourd'hui manquera pour toujours** aux visites déjà faites.
+>
+> Conséquence sur l'ordre : ce préalable devrait être écrit **en même temps que le
+> rewatch** — il l'a manqué de peu. À faire tôt, indépendamment du reste de la feature.
+>
+> Conséquence sur la promesse : le bilan restera **partiel** pour les séries dont
+> l'instantané a expiré (plafond contractuel de six mois). Il faudra donc écrire
+> « au moins 47 jours » et non « 47 jours ».
 | **Positionnement** | Les statistiques équivalentes sont **payantes** chez Letterboxd, au point que des tiers écrivent des outils pour les remplacer. Les offrir n'est pas une générosité : c'est le seul endroit où être gratuit est un **argument structurel**, parce que chez nous le calcul ne coûte rien à personne |
 
 **Et c'est le meilleur candidat viral du produit.** La leçon du « Top 4 » de Letterboxd est

@@ -23,6 +23,8 @@ export interface SeriesShape {
   readonly statusLabel?: string;
   readonly nextEpisodeAt?: string;
   readonly publicStars?: number;
+  /** Duree mediane d'un episode — memorisee pour que `/moi` puisse chiffrer sans appel. */
+  readonly episodeMinutes?: number;
 }
 
 /**
