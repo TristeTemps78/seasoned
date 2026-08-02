@@ -39,10 +39,29 @@ export const CADENCE_ANOMALY_FACTOR = 2;
 export const MIN_DERIVED_LIMBO_DAYS = 365;
 export const MAX_DERIVED_LIMBO_DAYS = 1_460;
 
+/**
+ * Multiplicateur applique quand un **seul** intervalle a ete observe.
+ *
+ * Une mesure unique ne distingue pas un rythme d'un accident, mais l'ignorer est pire :
+ * on retombe alors sur le seuil fixe, qui condamne les series lentes. Constate en
+ * production le 2026-08-02 — *Les Anneaux de Pouvoir*, deux saisons espacees de deux
+ * ans, etait declaree « sans nouvelle » apres vingt mois de silence, ce qui est son
+ * rythme normal.
+ *
+ * Plus prudent que {@link CADENCE_ANOMALY_FACTOR}, et jamais en dessous du seuil fixe :
+ * une mesure fragile peut allonger le delai, jamais le raccourcir.
+ */
+export const SINGLE_SAMPLE_FACTOR = 1.5;
+
 export interface Cadence {
   /** Intervalle median entre deux saisons consecutives, en jours. */
   readonly medianGapDays: number;
-  /** Nombre d'intervalles observes. Un seul ne fait pas un rythme. */
+  /**
+   * Nombre d'intervalles observes.
+   *
+   * Un seul ne fait pas un rythme, mais en dit assez pour ne pas condamner une serie
+   * lente — voir {@link SINGLE_SAMPLE_FACTOR}.
+   */
   readonly samples: number;
 }
 
@@ -52,8 +71,9 @@ export interface Cadence {
  * **Mediane et non moyenne** : une longue interruption — greve, pandemie, changement de
  * diffuseur — ne doit pas redefinir le rythme d'une serie par ailleurs reguliere.
  *
- * Renvoie `undefined` sous deux intervalles : avec une seule mesure, on ne distingue pas
- * un rythme d'un accident.
+ * Un seul intervalle suffit a produire une cadence — `samples` vaudra 1 et le seuil
+ * derive sera plus prudent. L'ecarter reviendrait a retomber sur le seuil fixe, qui
+ * condamne les series lentes.
  */
 export function seasonCadence(seasons: readonly Season[]): Cadence | undefined {
   const dates = seasons
@@ -62,7 +82,7 @@ export function seasonCadence(seasons: readonly Season[]): Cadence | undefined {
     .map((d) => d.getTime())
     .sort((a, b) => a - b);
 
-  if (dates.length < 3) return undefined;
+  if (dates.length < 2) return undefined;
 
   const gaps: number[] = [];
   for (let i = 1; i < dates.length; i += 1) {
@@ -71,7 +91,7 @@ export function seasonCadence(seasons: readonly Season[]): Cadence | undefined {
     if (previous === undefined || current === undefined) continue;
     gaps.push((current - previous) / MS_PER_DAY);
   }
-  if (gaps.length < 2) return undefined;
+  if (gaps.length === 0) return undefined;
 
   gaps.sort((a, b) => a - b);
   const middle = Math.floor(gaps.length / 2);
@@ -95,6 +115,15 @@ export function limboThresholdDays(
   fallbackDays: number,
 ): number {
   if (cadence === undefined) return fallbackDays;
+
+  if (cadence.samples < 2) {
+    // Une seule mesure : elle peut allonger le delai, jamais le raccourcir. Sans quoi
+    // une serie ayant sorti deux saisons a trois mois d'ecart deviendrait suspecte
+    // avant meme la fin de l'annee.
+    const cautious = cadence.medianGapDays * SINGLE_SAMPLE_FACTOR;
+    return Math.min(MAX_DERIVED_LIMBO_DAYS, Math.max(fallbackDays, cautious));
+  }
+
   const derived = cadence.medianGapDays * CADENCE_ANOMALY_FACTOR;
   return Math.min(MAX_DERIVED_LIMBO_DAYS, Math.max(MIN_DERIVED_LIMBO_DAYS, derived));
 }

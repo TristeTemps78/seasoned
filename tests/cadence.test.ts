@@ -52,9 +52,15 @@ describe('seasonCadence', () => {
     expect(seasonCadence(seasons)?.medianGapDays).toBeCloseTo(365, 0);
   });
 
-  it('refuse de conclure sous deux intervalles', () => {
-    // Une seule mesure ne distingue pas un rythme d'un accident.
-    expect(seasonCadence(seasonsEvery(365, 2, 100))).toBeUndefined();
+  it('accepte un seul intervalle, en le marquant comme tel', () => {
+    // Une mesure unique ne fait pas un rythme, mais l'ignorer est pire : on retombe
+    // sur le seuil fixe, qui condamne les series lentes.
+    const cadence = seasonCadence(seasonsEvery(730, 2, 100));
+    expect(cadence?.samples).toBe(1);
+    expect(cadence?.medianGapDays).toBeCloseTo(730, 0);
+  });
+
+  it('ne conclut rien sans au moins deux saisons datees', () => {
     expect(seasonCadence(seasonsEvery(365, 1, 100))).toBeUndefined();
     expect(seasonCadence([])).toBeUndefined();
   });
@@ -71,6 +77,18 @@ describe('seasonCadence', () => {
 describe('limboThresholdDays', () => {
   it('retombe sur le seuil fixe quand le rythme est inconnu', () => {
     expect(limboThresholdDays(undefined, RENEWAL_LIMBO_DAYS)).toBe(RENEWAL_LIMBO_DAYS);
+  });
+
+  it('avec un seul intervalle, allonge le delai mais ne le raccourcit jamais', () => {
+    // Le cas *Les Anneaux de Pouvoir* : deux saisons a deux ans d'ecart, vingt mois
+    // de silence. Le seuil fixe la declarait « sans nouvelle » a tort.
+    const slow = { medianGapDays: 730, samples: 1 };
+    expect(limboThresholdDays(slow, RENEWAL_LIMBO_DAYS)).toBeCloseTo(1095, 0);
+
+    // A l'inverse, deux saisons sorties a trois mois d'ecart ne doivent pas rendre
+    // la serie suspecte avant meme la fin de l'annee.
+    const fast = { medianGapDays: 90, samples: 1 };
+    expect(limboThresholdDays(fast, RENEWAL_LIMBO_DAYS)).toBe(RENEWAL_LIMBO_DAYS);
   });
 
   it('borne le seuil derive', () => {
