@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   EMPTY_JOURNAL,
   JOURNAL_VERSION,
+  SNAPSHOT_IDENTITY_TTL_MS,
   SNAPSHOT_TTL_MS,
   TOMBSTONE_TTL_MS,
   episodeKey,
@@ -250,14 +251,45 @@ describe('instantane de vignette — le plafond contractuel vaut aussi dans le n
     expect(freshSnapshot(j.entries[BB], NOW)?.title).toBe('Breaking Bad');
   });
 
-  it('expire de lui-meme a la lecture', () => {
+  it('perd d abord ce qui bouge, en gardant ce qui identifie', () => {
+    // Defaut trouve en verifiant la bibliotheque au navigateur, qu aucun test ne
+    // pouvait montrer : avec un delai unique, toute serie terminee — donc dont on ne
+    // revisite jamais la fiche — retombait sur « Serie 1405 » au bout d un mois, et
+    // la section « Terminees » etait illisible en permanence.
+    let j = setWanted(EMPTY_JOURNAL, BB, true, NOW);
+    j = setSnapshot(
+      j,
+      BB,
+      { ...SHAPE, statusLabel: 'Terminée', nextEpisodeAt: NOW.toISOString(), publicStars: 4.3 },
+      NOW,
+    );
+
+    const justBefore = new Date(NOW.getTime() + SNAPSHOT_TTL_MS - 1);
+    expect(freshSnapshot(j.entries[BB], justBefore)?.statusLabel).toBe('Terminée');
+
+    const later = new Date(NOW.getTime() + SNAPSHOT_TTL_MS + 1);
+    const aged = freshSnapshot(j.entries[BB], later);
+    expect(aged?.title).toBe('Breaking Bad');
+    expect(aged?.posterPath).toBe('/aff.jpg');
+    // Un statut vieux d'un mois peut etre faux : mieux vaut rien qu'une mention fausse.
+    expect(aged?.statusLabel).toBeUndefined();
+    expect(aged?.nextEpisodeAt).toBeUndefined();
+    expect(aged?.publicStars).toBeUndefined();
+  });
+
+  it('disparait entierement au plafond contractuel', () => {
     let j = setWanted(EMPTY_JOURNAL, BB, true, NOW);
     j = setSnapshot(j, BB, SHAPE, NOW);
 
-    const justBefore = new Date(NOW.getTime() + SNAPSHOT_TTL_MS - 1);
-    const justAfter = new Date(NOW.getTime() + SNAPSHOT_TTL_MS + 1);
+    const justBefore = new Date(NOW.getTime() + SNAPSHOT_IDENTITY_TTL_MS - 1);
+    const justAfter = new Date(NOW.getTime() + SNAPSHOT_IDENTITY_TTL_MS + 1);
     expect(freshSnapshot(j.entries[BB], justBefore)).toBeDefined();
     expect(freshSnapshot(j.entries[BB], justAfter)).toBeUndefined();
+  });
+
+  it('le plafond ne depasse jamais les six mois du contrat', () => {
+    // `AGENTS.md` regle 1 : irreparable apres coup, donc verifie plutot que commente.
+    expect(SNAPSHOT_IDENTITY_TTL_MS).toBeLessThanOrEqual(183 * 86_400_000);
   });
 
   it('un instantane ne fait pas exister une serie qu on a retiree', () => {

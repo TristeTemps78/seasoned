@@ -138,14 +138,29 @@ export interface JournalSnapshot {
 }
 
 /**
- * Duree de vie d'un instantane : trente jours.
+ * Duree de vie de ce qui **bouge** dans un instantane : trente jours.
  *
- * Tres en deca du plafond contractuel de six mois — un titre ne change pas, mais un
- * statut et une date de diffusion, si. Passe ce delai l'instantane est ignore : la
- * vignette disparait de `/moi` jusqu'a la prochaine visite de la page serie, ce qui est
- * preferable a l'affichage d'une information peremptoire.
+ * Statut reel, date du prochain episode, note du public. Passe ce delai, ces champs
+ * sont ignores : mieux vaut une vignette sans mention qu'une mention fausse.
  */
 export const SNAPSHOT_TTL_MS = 30 * 86_400_000;
+
+/**
+ * Duree de vie de ce qui **identifie** une serie : titre et affiche.
+ *
+ * Six mois — le plafond contractuel exact (`AGENTS.md` regle 1), applique par le code
+ * et non par une consigne.
+ *
+ * La distinction n'est pas une subtilite : elle a ete trouvee en verifiant la
+ * bibliotheque au navigateur. Avec un delai unique de trente jours, toute serie
+ * terminee ou abandonnee — donc dont on ne revisite jamais la fiche — retombait sur
+ * « Serie 1405 » au bout d'un mois. La section « Terminees » aurait ete illisible en
+ * permanence, ce qu'aucun test ne pouvait montrer.
+ *
+ * Un titre ne se perime pas ; un statut, si. Les faire expirer au meme rythme etait
+ * une confusion, pas une precaution.
+ */
+export const SNAPSHOT_IDENTITY_TTL_MS = 182 * 86_400_000;
 
 /**
  * Ce qui a ete supprime, et quand.
@@ -694,11 +709,19 @@ export function withDeviceId(journal: Journal, deviceId: string): Journal {
 // ---------------------------------------------------------------------------
 
 /**
- * L'instantane d'une entree, s'il est encore valable.
+ * L'instantane d'une entree, ampute de ce qui a vieilli.
  *
- * L'expiration est appliquee **ici**, a la lecture, et pas au moment de l'ecriture :
- * un journal peut dormir des mois dans un navigateur ferme. C'est la seule facon de
- * garantir le plafond contractuel sans tache de fond.
+ * Deux horizons, parce que deux natures de donnees (voir {@link SNAPSHOT_TTL_MS} et
+ * {@link SNAPSHOT_IDENTITY_TTL_MS}) :
+ *
+ *   - au-dela de trente jours, le statut, la date du prochain episode et la note du
+ *     public disparaissent — ils ont pu changer ;
+ *   - au-dela de six mois, l'instantane entier disparait — c'est le plafond
+ *     contractuel.
+ *
+ * L'expiration est appliquee **ici, a la lecture**, et pas au moment de l'ecriture :
+ * un journal peut dormir des mois dans un navigateur ferme, et il n'existe aucune
+ * tache de fond pour faire le menage.
  */
 export function freshSnapshot(
   entry: JournalEntry | undefined,
@@ -706,9 +729,17 @@ export function freshSnapshot(
 ): JournalSnapshot | undefined {
   const snapshot = entry?.snapshot;
   if (snapshot === undefined) return undefined;
+
   const age = now.getTime() - new Date(snapshot.cachedAt).getTime();
-  if (Number.isNaN(age) || age > SNAPSHOT_TTL_MS) return undefined;
-  return snapshot;
+  if (Number.isNaN(age) || age > SNAPSHOT_IDENTITY_TTL_MS) return undefined;
+  if (age <= SNAPSHOT_TTL_MS) return snapshot;
+
+  // Ne reste que ce qui ne se perime pas.
+  return {
+    title: snapshot.title,
+    cachedAt: snapshot.cachedAt,
+    ...(snapshot.posterPath !== undefined ? { posterPath: snapshot.posterPath } : {}),
+  };
 }
 
 /** Les notes de saison d'une serie, sous la forme qu'attend le moteur de trajectoire. */

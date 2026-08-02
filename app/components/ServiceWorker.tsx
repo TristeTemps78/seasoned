@@ -17,6 +17,24 @@ export function ServiceWorker() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
+    // ⚠️ Jamais en developpement, et ce n'est pas une preference.
+    //
+    // Le service worker sert `/_next/static/` depuis le cache sans jamais le
+    // revalider, parce qu'en production ces fichiers portent leur empreinte dans leur
+    // nom : ils ne changent pas a URL constante. **En developpement, si.** Constate
+    // au navigateur pendant l'ecriture de ce bloc : la page affichait obstinement du
+    // code d'il y a deux minutes, rechargement compris, et le rendu a chaud ne
+    // remontait plus. On debogue alors un site qui n'existe plus.
+    if (process.env.NODE_ENV !== 'production') {
+      // Nettoyer derriere soi : quiconque a lance le site une fois avant cette
+      // correction porte encore un service worker actif dans son navigateur.
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((all) => Promise.all(all.map((r) => r.unregister())))
+        .catch(() => undefined);
+      return;
+    }
+
     const register = () => {
       void navigator.serviceWorker.register('/sw.js').catch(() => {
         // Enregistrement refuse : le site marche, simplement sans hors-ligne.

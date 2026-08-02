@@ -41,14 +41,16 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
             className="h-full w-full object-cover transition-opacity group-hover:opacity-85"
           />
         ) : (
+          // Meme repli que `SeriesCard` : ne pas repeter le titre, qui est juste
+          // en dessous.
           <div className="flex h-full items-center justify-center p-3 text-center text-xs text-(--color-muted)">
-            {item.snapshot?.title ?? 'Série suivie'}
+            Pas d’affiche
           </div>
         )}
       </div>
 
       <p className="mt-2 line-clamp-2 text-sm font-medium leading-snug">
-        {item.snapshot?.title ?? `Série ${parsed?.providerId ?? ''}`}
+        {item.snapshot?.title ?? 'Série suivie'}
       </p>
 
       <p className="text-xs text-(--color-muted)">

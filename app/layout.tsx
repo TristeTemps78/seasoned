@@ -38,6 +38,11 @@ export const metadata: Metadata = {
     icon: [{ url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
     apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
   },
+  // Next 16 n'emet plus que le nom standardise `mobile-web-app-capable` — verifie
+  // dans le HTML servi. Les iPhone anterieurs a iOS 16.4, qui ne lisent pas le
+  // manifeste, ne connaissent que l'ancien nom : sans lui, « Sur l'ecran d'accueil »
+  // y ouvre une fenetre de navigateur au lieu d'une application.
+  other: { 'apple-mobile-web-app-capable': 'yes' },
 };
 
 /**
