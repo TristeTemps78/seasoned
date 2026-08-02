@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { StarRating } from '@/app/components/StarRating';
@@ -74,13 +74,24 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
   const position = entry?.position;
   const tracked = entry !== undefined;
 
-  // De quoi dessiner cette serie ailleurs — dans la bibliotheque — sans aucun appel.
+  // Ce qu'on memorise : ce que la page sait deja, **plus la forme de la serie**.
+  //
+  // Les tailles de saisons sont deja la, en prop. Sans elles dans l'instantane, `/moi`
+  // ne peut pas traduire « saison 3, episode 7 » en un nombre d'episodes vus — il ne fait
+  // aucun appel reseau, donc ce qu'il n'a pas ici, il ne l'aura jamais pour cette visite.
+  //
+  // ⚠️ **Memoise, et ce n'est pas une optimisation** : `setSnapshot` reecrit toujours, avec
+  // un `cachedAt` neuf. Un objet reconstruit a chaque rendu ferait donc une ecriture dans
+  // `localStorage` a chaque rendu, indefiniment. `series` et `seasons` viennent d'un
+  // composant serveur, leurs references sont stables ; l'objet fusionne doit l'etre aussi.
+  const toRemember = useMemo(() => ({ ...series, seasonSizes: seasons }), [series, seasons]);
+
   // N'ecrit que si l'entree existe deja : passer sur une page ne doit pas remplir le
   // journal, ni constituer une base de metadonnees que le contrat interdit.
   useEffect(() => {
     if (!ready || !tracked) return;
-    rememberSnapshot(key, series);
-  }, [ready, tracked, key, series, rememberSnapshot]);
+    rememberSnapshot(key, toRemember);
+  }, [ready, tracked, key, toRemember, rememberSnapshot]);
 
   // Tant que le stockage n'a pas ete lu, on n'affiche rien : dire « vous n'avez rien
   // vu » a quelqu'un qui a tout note serait pire que d'attendre un instant.

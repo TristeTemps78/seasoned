@@ -45,6 +45,7 @@
  */
 
 import type { DecisionKind, SeriesId, Stars } from './types';
+import type { SeasonSize } from './remaining';
 
 /** Version du format. Toute lecture d'une version inconnue repart de zero. */
 export const JOURNAL_VERSION = 3;
@@ -179,6 +180,28 @@ export interface JournalSnapshot {
    * tout bilan qui s'appuie dessus doit s'annoncer comme un **minorant**.
    */
   readonly episodeMinutes?: number;
+  /**
+   * Taille de chaque saison notable, en episodes.
+   *
+   * ## Le jumeau de `episodeMinutes`, trouve une session trop tard
+   *
+   * Le champ precedent a ete ajoute pour qu'un bilan de temps passe soit calculable hors
+   * de la page serie. Il ne suffit pas : une position vaut « saison 3, episode 7 », et
+   * **on ne sait pas ce que ca represente sans connaitre la taille des saisons 1 et 2**.
+   * Une duree d'episode sans compte d'episodes ne chiffre rien.
+   *
+   * Le type est celui que {@link SeasonSize} definit pour `remainingAfter` — donc le
+   * bilan reutilise le calcul deja ecrit et teste, au lieu de refaire la meme
+   * arithmetique une seconde fois avec ses propres erreurs.
+   *
+   * ⚠️ **Meme regle que le revisionnage et que la duree** : ce que le journal n'enregistre
+   * pas au moment du geste, il l'ignorera pour toujours **pour cette visite-la**. Le manque
+   * est retroactif, il ne se rattrape pas.
+   *
+   * La saison en cours grossit apres coup, donc une valeur ancienne **sous-estime**. C'est
+   * le bon sens de l'erreur : tout ce qui s'appuie dessus s'annonce comme un minorant.
+   */
+  readonly seasonSizes?: readonly SeasonSize[];
   /**
    * Note du public pour la serie, sur l'echelle en etoiles.
    *
@@ -396,6 +419,7 @@ function parseSnapshot(raw: unknown): JournalSnapshot | undefined {
   const rawPublic = source['publicStars'];
   const publicStars =
     typeof rawPublic === 'number' && rawPublic > 0 && rawPublic <= 5 ? rawPublic : undefined;
+  const seasonSizes = parseSeasonSizes(source['seasonSizes']);
   return {
     title,
     // Un instantane sans date lisible est traite comme perime, donc jete a la premiere
@@ -408,8 +432,36 @@ function parseSnapshot(raw: unknown): JournalSnapshot | undefined {
     ...(statusLabel !== undefined ? { statusLabel } : {}),
     ...(nextEpisodeAt !== undefined ? { nextEpisodeAt } : {}),
     ...(episodeMinutes !== undefined ? { episodeMinutes } : {}),
+    ...(seasonSizes !== undefined ? { seasonSizes } : {}),
     ...(publicStars !== undefined ? { publicStars } : {}),
   };
+}
+
+/**
+ * Les tailles de saisons, lues sans jamais lever.
+ *
+ * Une saison mal formee est **ecartee seule** : perdre le decoupage entier parce qu'une
+ * ligne sur douze est illisible couterait bien plus que la ligne (`AGENTS.md` regle 4).
+ * Une liste qui ne contient rien d'exploitable rend `undefined` plutot qu'un tableau vide,
+ * pour que « je n'ai pas l'information » reste distinct de « la serie n'a aucune saison ».
+ */
+function parseSeasonSizes(raw: unknown): readonly SeasonSize[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+
+  const sizes: SeasonSize[] = [];
+  for (const item of raw) {
+    const source = asRecord(item);
+    const seasonNumber = readPositiveInt(source, 'seasonNumber');
+    const episodeCount = readPositiveInt(source, 'episodeCount');
+    // Une saison a zero episode n'apporte rien a un compte et brouille la distinction
+    // ci-dessus : elle est ecartee comme une ligne illisible.
+    if (seasonNumber === undefined || episodeCount === undefined || episodeCount === 0) {
+      continue;
+    }
+    sizes.push({ seasonNumber, episodeCount });
+  }
+
+  return sizes.length > 0 ? sizes : undefined;
 }
 
 function parseRatings(raw: unknown, keyPattern: RegExp): Record<string, JournalRating> {
@@ -914,6 +966,22 @@ export function withDeviceId(journal: Journal, deviceId: string): Journal {
  * L'expiration est appliquee **ici, a la lecture**, et pas au moment de l'ecriture :
  * un journal peut dormir des mois dans un navigateur ferme, et il n'existe aucune
  * tache de fond pour faire le menage.
+ *
+ * ## ⚠️ Ce qui a change le 2026-08-03, et pourquoi
+ *
+ * La **forme** d'une serie — duree d'un episode, taille de ses saisons — survit desormais
+ * aux trente jours, dans la limite du plafond contractuel comme tout le reste.
+ *
+ * Le premier decoupage rangeait ces deux champs avec le mouvant, ce qui rendait le bilan
+ * de temps passe aveugle a toute serie non revisitee depuis un mois — c'est-a-dire
+ * **precisement les series terminees**, celles qui pesent le plus lourd dans un bilan. Le
+ * chiffre aurait ete un minorant si severe qu'il n'aurait plus rien mesure.
+ *
+ * C'est le meme defaut que celui trouve en verifiant la bibliotheque au navigateur, quand
+ * un delai unique faisait retomber toute serie finie sur « Serie 1405 » : **un titre ne se
+ * perime pas, un statut si.** Une duree d'episode non plus, et une saison passee non plus.
+ * Seule la saison en cours grossit — donc l'erreur va vers la sous-estimation, ce qui est
+ * le sens qu'on veut.
  */
 export function freshSnapshot(
   entry: JournalEntry | undefined,
@@ -926,11 +994,15 @@ export function freshSnapshot(
   if (Number.isNaN(age) || age > SNAPSHOT_IDENTITY_TTL_MS) return undefined;
   if (age <= SNAPSHOT_TTL_MS) return snapshot;
 
-  // Ne reste que ce qui ne se perime pas.
+  // Ne reste que ce qui ne se perime pas : l'identite de la serie, et sa forme.
   return {
     title: snapshot.title,
     cachedAt: snapshot.cachedAt,
     ...(snapshot.posterPath !== undefined ? { posterPath: snapshot.posterPath } : {}),
+    ...(snapshot.episodeMinutes !== undefined
+      ? { episodeMinutes: snapshot.episodeMinutes }
+      : {}),
+    ...(snapshot.seasonSizes !== undefined ? { seasonSizes: snapshot.seasonSizes } : {}),
   };
 }
 

@@ -80,6 +80,57 @@ describe('parseJournal — ne perd jamais tout', () => {
     expect(journal.entries[BB]?.position?.seasonNumber).toBe(2);
   });
 
+  it('ecarte une saison illisible sans perdre le decoupage entier', () => {
+    // Regle 4 : perdre les onze saisons lisibles parce que la douzieme est cassee
+    // couterait bien plus que la ligne cassee elle-meme.
+    const raw = JSON.stringify({
+      version: JOURNAL_VERSION,
+      entries: {
+        [BB]: {
+          wanted: { at: NOW.toISOString() },
+          snapshot: {
+            title: 'Breaking Bad',
+            cachedAt: NOW.toISOString(),
+            seasonSizes: [
+              { seasonNumber: 1, episodeCount: 7 },
+              { seasonNumber: 'deux', episodeCount: 13 },
+              { seasonNumber: 3, episodeCount: 0 },
+              { seasonNumber: 4 },
+              'pas un objet',
+              { seasonNumber: 5, episodeCount: 16 },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(parseJournal(raw, NOW).entries[BB]?.snapshot?.seasonSizes).toEqual([
+      { seasonNumber: 1, episodeCount: 7 },
+      { seasonNumber: 5, episodeCount: 16 },
+    ]);
+  });
+
+  it('distingue « je ne sais pas » de « aucune saison »', () => {
+    // Un tableau vide dirait que la serie n a pas de saison, ce qui est faux et ferait
+    // compter zero episode vu. L absence doit rester une absence.
+    const snapshotWith = (seasonSizes: unknown): unknown => ({
+      version: JOURNAL_VERSION,
+      entries: {
+        [BB]: {
+          wanted: { at: NOW.toISOString() },
+          snapshot: { title: 'Breaking Bad', cachedAt: NOW.toISOString(), seasonSizes },
+        },
+      },
+    });
+
+    for (const bad of [undefined, null, 'douze', 42, {}, [], [{ seasonNumber: 1 }]]) {
+      const journal = parseJournal(JSON.stringify(snapshotWith(bad)), NOW);
+      expect(journal.entries[BB]?.snapshot?.seasonSizes).toBeUndefined();
+      // Et le reste de l instantane survit : une forme illisible n est pas fatale.
+      expect(journal.entries[BB]?.snapshot?.title).toBe('Breaking Bad');
+    }
+  });
+
   it('refuse une version future plutot que de deviner', () => {
     const raw = JSON.stringify({ version: 99, entries: { [BB]: { position: {} } } });
     expect(parseJournal(raw, NOW)).toEqual(EMPTY_JOURNAL);
@@ -299,6 +350,37 @@ describe('instantane de vignette — le plafond contractuel vaut aussi dans le n
     expect(aged?.statusLabel).toBeUndefined();
     expect(aged?.nextEpisodeAt).toBeUndefined();
     expect(aged?.publicStars).toBeUndefined();
+  });
+
+  it('garde la forme de la serie au-dela des trente jours', () => {
+    // La duree d un episode et la taille des saisons ne se periment pas comme un statut.
+    // Les ranger avec le mouvant rendait le bilan de temps passe aveugle a toute serie
+    // non revisitee depuis un mois — c est-a-dire aux series **terminees**, celles qui
+    // pesent le plus lourd dans un bilan.
+    let j = setWanted(EMPTY_JOURNAL, BB, true, NOW);
+    j = setSnapshot(
+      j,
+      BB,
+      {
+        ...SHAPE,
+        statusLabel: 'Terminée',
+        episodeMinutes: 47,
+        seasonSizes: [
+          { seasonNumber: 1, episodeCount: 7 },
+          { seasonNumber: 2, episodeCount: 13 },
+        ],
+      },
+      NOW,
+    );
+
+    const later = new Date(NOW.getTime() + SNAPSHOT_TTL_MS + 1);
+    const aged = freshSnapshot(j.entries[BB], later);
+    expect(aged?.statusLabel).toBeUndefined();
+    expect(aged?.episodeMinutes).toBe(47);
+    expect(aged?.seasonSizes).toEqual([
+      { seasonNumber: 1, episodeCount: 7 },
+      { seasonNumber: 2, episodeCount: 13 },
+    ]);
   });
 
   it('disparait entierement au plafond contractuel', () => {

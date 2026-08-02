@@ -19,12 +19,45 @@ import {
   type JournalKey,
   type JournalSnapshot,
 } from '@/src/domain/journal';
+import type { SeasonSize } from '@/src/domain/remaining';
 import { browserJournalStore } from '@/src/journal/local';
 import type { JournalStore } from '@/src/journal/store';
 
 /** Delai en deca duquel un instantane identique n'est pas reecrit. */
 const SNAPSHOT_REWRITE_MS = 86_400_000;
 
+/**
+ * Deux decoupages en saisons identiques ?
+ *
+ * Compare le **contenu**, jamais les references : le tableau entrant est reconstruit a
+ * chaque rendu de la page, donc une egalite de reference serait toujours fausse et
+ * provoquerait une ecriture par rendu.
+ */
+function sameSizes(
+  a: readonly SeasonSize[] | undefined,
+  b: readonly SeasonSize[] | undefined,
+): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  if (a.length !== b.length) return false;
+  return a.every((season, i) => {
+    const other = b[i];
+    return (
+      other !== undefined &&
+      season.seasonNumber === other.seasonNumber &&
+      season.episodeCount === other.episodeCount
+    );
+  });
+}
+
+/**
+ * L'instantane range est-il deja celui qu'on s'apprete a ecrire ?
+ *
+ * ⚠️ **Chaque champ de l'instantane doit figurer ici.** Un champ oublie rend son ecriture
+ * invisible pendant vingt-quatre heures : la comparaison declare « rien n'a change », donc
+ * la valeur neuve n'est jamais rangee. C'est arrive deux fois de suite — `episodeMinutes`
+ * puis `seasonSizes` ont ete ajoutes a l'instantane sans l'etre ici, et le premier est
+ * reste sans effet sur toute serie revisitee dans la journee.
+ */
 function isFresh(
   existing: JournalSnapshot | undefined,
   incoming: Omit<JournalSnapshot, 'cachedAt'>,
@@ -37,7 +70,9 @@ function isFresh(
     existing.posterPath === incoming.posterPath &&
     existing.statusLabel === incoming.statusLabel &&
     existing.nextEpisodeAt === incoming.nextEpisodeAt &&
-    existing.publicStars === incoming.publicStars
+    existing.publicStars === incoming.publicStars &&
+    existing.episodeMinutes === incoming.episodeMinutes &&
+    sameSizes(existing.seasonSizes, incoming.seasonSizes)
   );
 }
 
