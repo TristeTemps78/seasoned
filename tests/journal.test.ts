@@ -2,19 +2,56 @@ import { describe, expect, it } from 'vitest';
 import {
   EMPTY_JOURNAL,
   JOURNAL_VERSION,
+  SNAPSHOT_TTL_MS,
+  TOMBSTONE_TTL_MS,
+  episodeKey,
+  freshSnapshot,
+  hasContent,
+  journalKey,
+  mergeJournals,
   parseJournal,
+  parseJournalKey,
   seasonScoresOf,
   serializeJournal,
   setDecision,
+  setEpisodeRating,
+  setPlatforms,
   setPosition,
   setSeasonRating,
+  setSnapshot,
+  setWanted,
+  suggestedSeasonRating,
+  withDeviceId,
 } from '../src/domain/journal';
 
 const NOW = new Date('2026-08-02T12:00:00Z');
+const LATER = new Date('2026-08-03T12:00:00Z');
+
+const BB = journalKey('1396');
+const DEXTER = journalKey('1405');
+
+describe('les cles ne portent jamais un identifiant nu', () => {
+  it('prefixe du fournisseur', () => {
+    // `types.ts` : les donnees utilisateur ne pointent jamais un id fournisseur brut.
+    // Le journal v1 le faisait — un changement de catalogue aurait tout emporte.
+    expect(journalKey('1396')).toBe('tmdb:1396');
+    expect(journalKey('81189', 'tvdb')).toBe('tvdb:81189');
+  });
+
+  it('se decompose, ce qui rend un remappage possible', () => {
+    expect(parseJournalKey('tmdb:1396')).toEqual({ provider: 'tmdb', providerId: '1396' });
+  });
+
+  it('rejette ce qui n en est pas une', () => {
+    for (const bad of ['1396', '', ':', 'tmdb:', ':1396']) {
+      expect(parseJournalKey(bad)).toBeUndefined();
+    }
+  });
+});
 
 describe('parseJournal — ne perd jamais tout', () => {
   it('lit un journal valide', () => {
-    const journal = setPosition(EMPTY_JOURNAL, '1396', 3, 7, NOW);
+    const journal = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
     expect(parseJournal(serializeJournal(journal), NOW)).toEqual(journal);
   });
 
@@ -31,69 +68,102 @@ describe('parseJournal — ne perd jamais tout', () => {
     const raw = JSON.stringify({
       version: JOURNAL_VERSION,
       entries: {
-        '1396': { position: { seasonNumber: 2, episodeNumber: 5, declaredAt: NOW.toISOString() } },
-        '1405': { position: { seasonNumber: 'trois', episodeNumber: null } },
-        '1402': { seasonRatings: { '1': { stars: 4, at: NOW.toISOString() } } },
+        [BB]: { position: { seasonNumber: 2, episodeNumber: 5, declaredAt: NOW.toISOString() } },
+        [DEXTER]: { position: { seasonNumber: 'trois', episodeNumber: null } },
+        'tmdb:1402': { seasonRatings: { '1': { stars: 4, at: NOW.toISOString() } } },
       },
     });
 
     const journal = parseJournal(raw, NOW);
-    expect(Object.keys(journal.entries).sort()).toEqual(['1396', '1402']);
-    expect(journal.entries['1396']?.position?.seasonNumber).toBe(2);
+    expect(Object.keys(journal.entries).sort()).toEqual(['tmdb:1396', 'tmdb:1402']);
+    expect(journal.entries[BB]?.position?.seasonNumber).toBe(2);
   });
 
-  it('refuse une version inconnue plutot que de deviner', () => {
-    const raw = JSON.stringify({ version: 99, entries: { '1': { position: {} } } });
+  it('refuse une version future plutot que de deviner', () => {
+    const raw = JSON.stringify({ version: 99, entries: { [BB]: { position: {} } } });
     expect(parseJournal(raw, NOW)).toEqual(EMPTY_JOURNAL);
+  });
+
+  it('migre un journal v1 : les cles nues prennent leur prefixe', () => {
+    // Le seul fournisseur de la v1 etait TMDB : la migration est sure.
+    const v1 = JSON.stringify({
+      version: 1,
+      entries: {
+        '1396': {
+          position: { seasonNumber: 3, episodeNumber: 7, declaredAt: NOW.toISOString() },
+          seasonRatings: { '1': { stars: 4.5, at: NOW.toISOString() } },
+        },
+      },
+    });
+
+    const journal = parseJournal(v1, NOW);
+    expect(Object.keys(journal.entries)).toEqual(['tmdb:1396']);
+    expect(journal.entries[BB]?.position?.seasonNumber).toBe(3);
+    expect(journal.entries[BB]?.seasonRatings?.['1']?.stars).toBe(4.5);
+    expect(journal.version).toBe(JOURNAL_VERSION);
   });
 
   it('ecarte une note hors echelle', () => {
     const raw = JSON.stringify({
       version: JOURNAL_VERSION,
-      entries: { '1': { seasonRatings: { '1': { stars: 3.7 }, '2': { stars: 4 } } } },
+      entries: { [BB]: { seasonRatings: { '1': { stars: 3.7 }, '2': { stars: 4 } } } },
     });
-    const ratings = parseJournal(raw, NOW).entries['1']?.seasonRatings ?? {};
+    const ratings = parseJournal(raw, NOW).entries[BB]?.seasonRatings ?? {};
     expect(Object.keys(ratings)).toEqual(['2']);
   });
 
   it('remplace une date illisible au lieu de jeter l entree', () => {
     const raw = JSON.stringify({
       version: JOURNAL_VERSION,
-      entries: { '1': { position: { seasonNumber: 1, episodeNumber: 1, declaredAt: 'hier' } } },
+      entries: { [BB]: { position: { seasonNumber: 1, episodeNumber: 1, declaredAt: 'hier' } } },
     });
-    expect(parseJournal(raw, NOW).entries['1']?.position?.declaredAt).toBe(NOW.toISOString());
+    expect(parseJournal(raw, NOW).entries[BB]?.position?.declaredAt).toBe(NOW.toISOString());
+  });
+
+  it('conserve l appareil et les plateformes', () => {
+    let j = withDeviceId(EMPTY_JOURNAL, 'appareil-1');
+    j = setPlatforms(j, ['Netflix', 'Disney Plus']);
+    j = setPosition(j, BB, 1, 1, NOW);
+
+    const round = parseJournal(serializeJournal(j), NOW);
+    expect(round.deviceId).toBe('appareil-1');
+    expect(round.platforms).toEqual(['Netflix', 'Disney Plus']);
   });
 });
 
 describe('ecritures', () => {
   it('la position est un pointeur qu on deplace', () => {
-    let j = setPosition(EMPTY_JOURNAL, '1396', 1, 1, NOW);
-    j = setPosition(j, '1396', 3, 7, NOW);
-    expect(j.entries['1396']?.position).toMatchObject({ seasonNumber: 3, episodeNumber: 7 });
+    let j = setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW);
+    j = setPosition(j, BB, 3, 7, NOW);
+    expect(j.entries[BB]?.position).toMatchObject({ seasonNumber: 3, episodeNumber: 7 });
   });
 
   it('note et denote une saison', () => {
-    let j = setSeasonRating(EMPTY_JOURNAL, '1396', 2, 4.5, NOW);
-    expect(j.entries['1396']?.seasonRatings?.['2']?.stars).toBe(4.5);
+    let j = setSeasonRating(EMPTY_JOURNAL, BB, 2, 4.5, NOW);
+    expect(j.entries[BB]?.seasonRatings?.['2']?.stars).toBe(4.5);
 
-    j = setSeasonRating(j, '1396', 2, undefined, NOW);
-    expect(j.entries['1396']).toBeUndefined();
+    j = setSeasonRating(j, BB, 2, undefined, LATER);
+    expect(j.entries[BB]?.seasonRatings?.['2']).toBeUndefined();
+    // L'entree survit, reduite a sa trace de suppression : sans elle, la note
+    // reviendrait a la premiere fusion avec un appareil qui l'ignorait.
+    expect(hasContent(j.entries[BB])).toBe(false);
+    expect(j.entries[BB]?.removed?.['season:2']).toBe(LATER.toISOString());
   });
 
   it('retire une serie devenue vide du journal', () => {
     // Une entree vide n'a pas a encombrer le journal ni son export.
-    let j = setPosition(EMPTY_JOURNAL, '1396', 1, 1, NOW);
-    j = setSeasonRating(j, '1396', 1, 4, NOW);
-    j = setSeasonRating(j, '1396', 1, undefined, NOW);
-    expect(j.entries['1396']?.position).toBeDefined();
+    let j = setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW);
+    j = setSeasonRating(j, BB, 1, 4, NOW);
+    j = setSeasonRating(j, BB, 1, undefined, LATER);
+    expect(j.entries[BB]?.position).toBeDefined();
   });
 
   it('une decision retient le point exact ou elle a ete prise', () => {
     // C'est ce point qui fera la carte des abandons.
-    let j = setPosition(EMPTY_JOURNAL, '1405', 5, 3, NOW);
-    j = setDecision(j, '1405', 'abandoned', NOW);
+    let j = setPosition(EMPTY_JOURNAL, DEXTER, 5, 3, NOW);
+    j = setDecision(j, DEXTER, 'abandoned', NOW);
 
-    expect(j.entries['1405']?.decision).toMatchObject({
+    expect(j.entries[DEXTER]?.decision).toMatchObject({
       kind: 'abandoned',
       atSeason: 5,
       atEpisode: 3,
@@ -101,26 +171,201 @@ describe('ecritures', () => {
   });
 
   it('accepte une decision sans position connue', () => {
-    const j = setDecision(EMPTY_JOURNAL, '1405', 'completed', NOW);
-    expect(j.entries['1405']?.decision?.kind).toBe('completed');
-    expect(j.entries['1405']?.decision?.atSeason).toBeUndefined();
+    const j = setDecision(EMPTY_JOURNAL, DEXTER, 'completed', NOW);
+    expect(j.entries[DEXTER]?.decision?.kind).toBe('completed');
+    expect(j.entries[DEXTER]?.decision?.atSeason).toBeUndefined();
   });
 
   it('n altere jamais le journal recu', () => {
-    const before = setPosition(EMPTY_JOURNAL, '1', 1, 1, NOW);
+    const before = setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW);
     const snapshot = serializeJournal(before);
-    setPosition(before, '2', 2, 2, NOW);
+    setPosition(before, DEXTER, 2, 2, NOW);
     expect(serializeJournal(before)).toBe(snapshot);
+  });
+});
+
+describe('« je veux la voir » — le geste qui ne suppose rien', () => {
+  it('cree une entree sans aucune position', () => {
+    // Le produit n'offrait aucune prise a qui decouvre une serie, c'est-a-dire a la
+    // quasi-totalite des arrivants.
+    const j = setWanted(EMPTY_JOURNAL, BB, true, NOW);
+    expect(j.entries[BB]?.wanted?.at).toBe(NOW.toISOString());
+    expect(j.entries[BB]?.position).toBeUndefined();
+  });
+
+  it('se retire, et l entree ne porte plus rien', () => {
+    let j = setWanted(EMPTY_JOURNAL, BB, true, NOW);
+    j = setWanted(j, BB, false, LATER);
+    expect(j.entries[BB]?.wanted).toBeUndefined();
+    expect(hasContent(j.entries[BB])).toBe(false);
+  });
+});
+
+describe('notes d episode (A7)', () => {
+  it('note et denote un episode', () => {
+    let j = setEpisodeRating(EMPTY_JOURNAL, BB, 5, 14, 5, NOW);
+    expect(j.entries[BB]?.episodeRatings?.[episodeKey(5, 14)]?.stars).toBe(5);
+
+    j = setEpisodeRating(j, BB, 5, 14, undefined, LATER);
+    expect(hasContent(j.entries[BB])).toBe(false);
+  });
+
+  it('la note de saison est suggeree, jamais ecrite', () => {
+    // `AGENTS.md` regle 8 : on signale, on ne repare pas en silence.
+    let j = setEpisodeRating(EMPTY_JOURNAL, BB, 1, 1, 4, NOW);
+    j = setEpisodeRating(j, BB, 1, 2, 4.5, NOW);
+    j = setEpisodeRating(j, BB, 1, 3, 5, NOW);
+    j = setEpisodeRating(j, BB, 2, 1, 1, NOW);
+
+    expect(suggestedSeasonRating(j.entries[BB], 1)).toBe(4.5);
+    expect(j.entries[BB]?.seasonRatings).toBeUndefined();
+  });
+
+  it('ne suggere rien sans note d episode', () => {
+    expect(suggestedSeasonRating(undefined, 1)).toBeUndefined();
+    expect(suggestedSeasonRating({}, 1)).toBeUndefined();
+  });
+
+  it('ne confond pas la saison 1 et la saison 10', () => {
+    let j = setEpisodeRating(EMPTY_JOURNAL, BB, 10, 1, 1, NOW);
+    j = setEpisodeRating(j, BB, 1, 1, 5, NOW);
+    expect(suggestedSeasonRating(j.entries[BB], 1)).toBe(5);
+    expect(suggestedSeasonRating(j.entries[BB], 10)).toBe(1);
+  });
+});
+
+describe('instantane de vignette — le plafond contractuel vaut aussi dans le navigateur', () => {
+  const SHAPE = { title: 'Breaking Bad', posterPath: '/aff.jpg' } as const;
+
+  it('ne cree jamais une entree', () => {
+    // Sans cela, visiter des pages suffirait a constituer une base de metadonnees
+    // TMDB — ce que le contrat interdit (`AGENTS.md` regle 1).
+    const j = setSnapshot(EMPTY_JOURNAL, BB, SHAPE, NOW);
+    expect(j.entries[BB]).toBeUndefined();
+  });
+
+  it('s attache a une entree existante', () => {
+    let j = setWanted(EMPTY_JOURNAL, BB, true, NOW);
+    j = setSnapshot(j, BB, SHAPE, NOW);
+    expect(freshSnapshot(j.entries[BB], NOW)?.title).toBe('Breaking Bad');
+  });
+
+  it('expire de lui-meme a la lecture', () => {
+    let j = setWanted(EMPTY_JOURNAL, BB, true, NOW);
+    j = setSnapshot(j, BB, SHAPE, NOW);
+
+    const justBefore = new Date(NOW.getTime() + SNAPSHOT_TTL_MS - 1);
+    const justAfter = new Date(NOW.getTime() + SNAPSHOT_TTL_MS + 1);
+    expect(freshSnapshot(j.entries[BB], justBefore)).toBeDefined();
+    expect(freshSnapshot(j.entries[BB], justAfter)).toBeUndefined();
+  });
+
+  it('un instantane ne fait pas exister une serie qu on a retiree', () => {
+    let j = setWanted(EMPTY_JOURNAL, BB, true, NOW);
+    j = setSnapshot(j, BB, SHAPE, NOW);
+    j = setWanted(j, BB, false, LATER);
+    expect(hasContent(j.entries[BB])).toBe(false);
+  });
+});
+
+describe('mergeJournals — cinq appareils ne se marchent pas dessus', () => {
+  it('fusionne champ par champ, jamais document contre document', () => {
+    // Le cas qui fait mal : le matin sur l'ordinateur, le soir sur le telephone.
+    // Une fusion « le plus recent gagne » sur le document entier perdrait la
+    // position posee le matin.
+    const ordinateur = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
+    const telephone = setSeasonRating(EMPTY_JOURNAL, BB, 1, 4.5, LATER);
+
+    const merged = mergeJournals(ordinateur, telephone);
+    expect(merged.entries[BB]?.position?.seasonNumber).toBe(3);
+    expect(merged.entries[BB]?.seasonRatings?.['1']?.stars).toBe(4.5);
+  });
+
+  it('garde la valeur la plus recente pour un meme champ', () => {
+    const avant = setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW);
+    const apres = setPosition(EMPTY_JOURNAL, BB, 4, 2, LATER);
+
+    expect(mergeJournals(avant, apres).entries[BB]?.position).toMatchObject({
+      seasonNumber: 4,
+      episodeNumber: 2,
+    });
+    // Symetrique : l'ordre des arguments ne change pas le vainqueur.
+    expect(mergeJournals(apres, avant).entries[BB]?.position).toMatchObject({
+      seasonNumber: 4,
+      episodeNumber: 2,
+    });
+  });
+
+  it('une suppression ne ressuscite pas', () => {
+    // Sans trace datee, l'appareil qui ignore la suppression reimpose sa note a la
+    // premiere synchronisation. C'est le defaut classique des fusions naives.
+    const note = setSeasonRating(EMPTY_JOURNAL, BB, 2, 4, NOW);
+    const efface = setSeasonRating(note, BB, 2, undefined, LATER);
+
+    const merged = mergeJournals(efface, note);
+    expect(merged.entries[BB]?.seasonRatings?.['2']).toBeUndefined();
+  });
+
+  it('une note reposee apres la suppression, elle, revient', () => {
+    const note = setSeasonRating(EMPTY_JOURNAL, BB, 2, 4, NOW);
+    const efface = setSeasonRating(note, BB, 2, undefined, LATER);
+    const reposee = setSeasonRating(
+      efface,
+      BB,
+      2,
+      3,
+      new Date(LATER.getTime() + 3_600_000),
+    );
+
+    expect(mergeJournals(reposee, note).entries[BB]?.seasonRatings?.['2']?.stars).toBe(3);
+  });
+
+  it('reunit les series presentes d un seul cote', () => {
+    const a = setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW);
+    const b = setWanted(EMPTY_JOURNAL, DEXTER, true, NOW);
+
+    const merged = mergeJournals(a, b);
+    expect(Object.keys(merged.entries).sort()).toEqual([BB, DEXTER].sort());
+  });
+
+  it('garde l appareil local et reunit les plateformes', () => {
+    const local = setPlatforms(withDeviceId(EMPTY_JOURNAL, 'ici'), ['Netflix']);
+    const autre = setPlatforms(withDeviceId(EMPTY_JOURNAL, 'ailleurs'), ['Netflix', 'Max']);
+
+    const merged = mergeJournals(local, autre);
+    expect(merged.deviceId).toBe('ici');
+    expect([...(merged.platforms ?? [])].sort()).toEqual(['Max', 'Netflix']);
+  });
+
+  it('les traces de suppression finissent par disparaitre', () => {
+    // Sans quoi le journal grossirait de tout ce qu'il n'a plus.
+    let j = setSeasonRating(EMPTY_JOURNAL, BB, 2, 4, NOW);
+    j = setSeasonRating(j, BB, 2, undefined, NOW);
+
+    const raw = serializeJournal(j);
+    const avant = new Date(NOW.getTime() + TOMBSTONE_TTL_MS - 1);
+    const apres = new Date(NOW.getTime() + TOMBSTONE_TTL_MS + 1);
+
+    expect(parseJournal(raw, avant).entries[BB]?.removed?.['season:2']).toBeDefined();
+    // L'entree ne portait plus que cette trace : elle disparait avec elle.
+    expect(parseJournal(raw, apres).entries[BB]).toBeUndefined();
+  });
+
+  it('fusionner avec soi-meme ne change rien', () => {
+    let j = setPosition(EMPTY_JOURNAL, BB, 2, 4, NOW);
+    j = setSeasonRating(j, BB, 1, 4, NOW);
+    j = setEpisodeRating(j, BB, 2, 4, 5, NOW);
+    expect(mergeJournals(j, j).entries).toEqual(j.entries);
   });
 });
 
 describe('seasonScoresOf', () => {
   it('rend les notes triees, pretes pour le moteur de trajectoire', () => {
-    let j = setSeasonRating(EMPTY_JOURNAL, '1405', 3, 3.5, NOW);
-    j = setSeasonRating(j, '1405', 1, 4.5, NOW);
-    j = setSeasonRating(j, '1405', 2, 4, NOW);
+    let j = setSeasonRating(EMPTY_JOURNAL, DEXTER, 3, 3.5, NOW);
+    j = setSeasonRating(j, DEXTER, 1, 4.5, NOW);
+    j = setSeasonRating(j, DEXTER, 2, 4, NOW);
 
-    expect(seasonScoresOf(j, '1405')).toEqual([
+    expect(seasonScoresOf(j, DEXTER)).toEqual([
       { seasonNumber: 1, stars: 4.5 },
       { seasonNumber: 2, stars: 4 },
       { seasonNumber: 3, stars: 3.5 },
@@ -128,6 +373,6 @@ describe('seasonScoresOf', () => {
   });
 
   it('rend une liste vide pour une serie inconnue', () => {
-    expect(seasonScoresOf(EMPTY_JOURNAL, 'inconnue')).toEqual([]);
+    expect(seasonScoresOf(EMPTY_JOURNAL, 'tmdb:inconnue')).toEqual([]);
   });
 });

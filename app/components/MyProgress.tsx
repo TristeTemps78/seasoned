@@ -1,6 +1,7 @@
 'use client';
 
 import { useJournal } from '@/app/journal/useJournal';
+import { journalKey } from '@/src/domain/journal';
 import type { Stars } from '@/src/domain/types';
 
 const STARS: readonly Stars[] = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
@@ -31,7 +32,10 @@ export function MyProgress({ seriesId, seasons }: {
   readonly seasons: readonly SeasonShape[];
 }) {
   const { journal, ready, setPosition, setSeasonRating, setDecision } = useJournal();
-  const entry = journal.entries[seriesId];
+  // Jamais l'identifiant nu : les cles du journal portent leur fournisseur, pour qu'un
+  // changement de catalogue reste un remappage et non une perte (`journal.ts`).
+  const key = journalKey(seriesId);
+  const entry = journal.entries[key];
   const position = entry?.position;
 
   // Tant que le stockage n'a pas ete lu, on n'affiche rien : dire « vous n'avez rien
@@ -65,7 +69,7 @@ export function MyProgress({ seriesId, seasons }: {
           onChange={(e) => {
             const season = Number(e.target.value);
             if (Number.isNaN(season)) return;
-            setPosition(seriesId, season, 1);
+            setPosition(key, season, 1);
           }}
         >
           <option value="">—</option>
@@ -86,7 +90,7 @@ export function MyProgress({ seriesId, seasons }: {
               className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1.5 text-sm"
               value={position?.episodeNumber ?? 1}
               onChange={(e) =>
-                setPosition(seriesId, current.seasonNumber, Number(e.target.value))
+                setPosition(key, current.seasonNumber, Number(e.target.value))
               }
             >
               {Array.from({ length: current.episodeCount }, (_, i) => i + 1).map((n) => (
@@ -122,7 +126,7 @@ export function MyProgress({ seriesId, seasons }: {
                       value={rating?.stars ?? ''}
                       onChange={(e) =>
                         setSeasonRating(
-                          seriesId,
+                          key,
                           s.seasonNumber,
                           e.target.value === ''
                             ? undefined
@@ -161,7 +165,7 @@ export function MyProgress({ seriesId, seasons }: {
                 key={kind}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setDecision(seriesId, active ? undefined : kind)}
+                onClick={() => setDecision(key, active ? undefined : kind)}
                 className={`rounded-full border px-3 py-1 text-xs ${
                   active
                     ? 'border-(--color-live)/40 bg-(--color-live)/15 text-(--color-live)'
