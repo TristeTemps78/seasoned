@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { JournalTransfer } from '@/app/components/JournalTransfer';
 import { LibraryCard } from '@/app/components/LibraryCard';
+import { MyPlatforms } from '@/app/components/MyPlatforms';
 import { TasteCard } from '@/app/components/TasteCard';
 import { buildLibrary, type LibraryItem } from '@/src/domain/library';
 import { buildTasteProfile } from '@/src/domain/taste';
@@ -71,6 +72,8 @@ export function Library() {
       />
 
       <TasteCard profile={taste} />
+
+      <MyPlatforms />
 
       <JournalTransfer
         onExport={exportJournal}

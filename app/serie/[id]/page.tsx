@@ -16,8 +16,7 @@ import { TmdbError } from '@/src/catalog/tmdb';
 import { starsFromTen } from '@/src/domain/rating-scale';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { SeasonList } from '@/app/components/SeasonList';
-import { TrajectoryChart } from '@/app/components/TrajectoryChart';
-import { EpisodeGrid } from '@/app/components/EpisodeGrid';
+import { TrajectorySection } from '@/app/components/TrajectorySection';
 import { WatchOptions } from '@/app/components/WatchOptions';
 import { MyProgress } from '@/app/components/MyProgress';
 
@@ -280,6 +279,7 @@ export default async function SeriesPage({ params }: PageProps) {
 
       <Trajectory
         id={id}
+        title={detail.title}
         seasons={seasons}
         episodeCount={episodeCount}
         {...(totalRuntimeMinutes !== undefined ? { totalRuntimeMinutes } : { totalRuntimeMinutes: undefined })}
@@ -333,7 +333,7 @@ async function WatchHere({ id }: { readonly id: string }) {
 }
 
 /**
- * La trajectoire, **derriere un geste explicite**.
+ * La trajectoire, **coupee a l'horizon du spectateur**.
  *
  * `docs/RATING-MODEL.md` §6bis pose la regle : rien qui depasse la position du
  * spectateur ne s'affiche sans qu'il le demande. Or la courbe est elle-meme un
@@ -341,13 +341,14 @@ async function WatchHere({ id }: { readonly id: string }) {
  * en saison 2 n'a pas demandee, et le decrochage annonce en toutes lettres qu'il va
  * etre decu, et quand.
  *
- * En phase 1 il n'y a pas de compte, donc pas de position connue : impossible de
- * distinguer celui qui n'a pas commence — et qui vient precisement chercher cette
- * information — de celui qui est au milieu. Le `<details>` tranche sans compte : c'est
- * le geste explicite que la regle demande, et il ne coute rien a qui veut savoir.
+ * Ce composant ne fait que **charger** : c'est `TrajectorySection`, cote navigateur,
+ * qui decide de ce qui s'affiche — lui seul connait la position, qui ne doit jamais
+ * traverser le serveur. Sans position, tout reste derriere le geste explicite ; avec,
+ * la courbe se decouvre a mesure qu'on avance.
  */
-async function Trajectory({ id, seasons, totalRuntimeMinutes, episodeCount }: {
+async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCount }: {
   readonly id: string;
+  readonly title: string;
   readonly seasons: Awaited<ReturnType<typeof getSeriesPageData>>['seasons'];
   readonly totalRuntimeMinutes: number | undefined;
   readonly episodeCount: number;
@@ -363,54 +364,13 @@ async function Trajectory({ id, seasons, totalRuntimeMinutes, episodeCount }: {
   const advice = stopPointAdvice(trajectory, seasons, totalRuntimeMinutes, episodeCount);
 
   return (
-    <section aria-label="Trajectoire">
-      <h2 className="sr-only">Trajectoire saison par saison</h2>
-      <details className="group rounded-lg border border-(--color-edge) bg-(--color-surface)">
-        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium marker:content-none">
-          <span className="group-open:hidden">Voir la trajectoire saison par saison</span>
-          <span className="hidden group-open:inline">Trajectoire saison par saison</span>
-          <span className="ml-2 font-normal text-(--color-muted)">
-            contient un jugement sur les saisons suivantes
-          </span>
-        </summary>
-
-        <div className="border-t border-(--color-edge) px-4 py-5">
-          {/* `interpret={false}` : on montre la courbe, le pic et le decrochage — des
-              faits — mais ni « forme » ni « constance », qui sont des jugements
-              normalises sur une echelle que les notes de foule n'occupent pas. */}
-          <TrajectoryChart trajectory={trajectory} interpret={false} />
-
-          {grid.length > 0 ? (
-            <div className="mt-6 border-t border-(--color-edge) pt-5">
-              <h3 className="mb-3 text-sm font-medium">Épisode par épisode</h3>
-              <p className="mb-3 text-xs text-(--color-muted)">
-                Cliquez un épisode pour dire où vous en êtes, ou le noter.
-              </p>
-              <EpisodeGrid seriesId={id} seasons={grid} />
-            </div>
-          ) : null}
-
-          {/* La question que pose le produit — « ca vaut le coup ? » — enfin chiffree.
-              Formulee comme un FAIT OBSERVE et jamais comme une injonction : sur des
-              notes de foule, un decrochage se compte en dixiemes d'etoile, ce qui ne
-              justifie pas de dire a quelqu'un ce qu'il doit regarder. */}
-          {advice !== undefined ? (
-            <p className="mt-5 rounded-md bg-(--color-warn)/10 px-3 py-2.5 text-sm">
-              S’arrêter après la saison {advice.afterSeason} ramène la série à{' '}
-              <strong>~ {formatCommitment(advice.shortenedMinutes)}</strong>, au lieu de{' '}
-              ~ {formatCommitment(advice.fullMinutes)}.
-            </p>
-          ) : null}
-          {/* L'origine des notes remonte jusqu'ici : ce ne sont pas celles de ce
-              produit, et les presenter autrement serait malhonnete. */}
-          <p className="mt-5 text-xs text-(--color-muted)">
-            Établie à partir des notes du public TMDB, saison par saison — pas des notes
-            de ce site. Ces notes se ressemblent beaucoup d’une saison à l’autre&nbsp;:
-            les écarts comptent plus que les valeurs.
-          </p>
-        </div>
-      </details>
-    </section>
+    <TrajectorySection
+      seriesId={id}
+      title={title}
+      trajectory={trajectory}
+      grid={grid}
+      advice={advice}
+    />
   );
 }
 
