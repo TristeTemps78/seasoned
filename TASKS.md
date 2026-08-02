@@ -67,38 +67,59 @@ ni base. C'est ce qui rend une page utile à zéro critique (`ROADMAP.md` §0.1)
 | 1.20 | Calibrer `CADENCE_ANOMALY_FACTOR` sur un échantillon réel | 🟢 libre | D12. Mesurer, pas régler au jugé |
 | 1.21 | **La trajectoire s'affiche**, sur les notes du public TMDB | ✅ 2026-08-01 | Derrière un geste explicite. `computeTrajectory` servait enfin — après trois corrections, voir ci-dessous |
 
-### 🔒 1.35 → 1.56 — Bloc du 2026-08-02, sous contraintes A7 et A8
+### ✅ 1.35 → 1.56 — Bloc du 2026-08-02, sous contraintes A7 et A8
 
-**Réservé — @claude-opus — 2026-08-02.** Vingt-six boucles à contre-sens (détail dans le
-plan de session) ont fait apparaître trois failles de fond : le produit **se souvient sans
-lieu de restitution** ; le **seul geste offert suppose la série déjà commencée** alors que
-les arrivants viennent du SEO ; et le **multiplateforme est un problème d'identité et de
-fusion**, que le format actuel du journal rend impossible sans perte.
+Vingt-six boucles à contre-sens ont fait apparaître trois failles de fond : le produit
+**se souvenait sans lieu de restitution** ; le **seul geste offert supposait la série déjà
+commencée** alors que les arrivants viennent du SEO ; et le **multiplateforme est un
+problème d'identité et de fusion**, que le format d'alors rendait impossible sans perte.
 
-| # | Tâche | Statut | Boucle |
+> ⚠️ **Statuts remis en accord avec le code le 2026-08-03** — c'est la dette D14 : quinze
+> lignes ci-dessous étaient encore `🟢 libre` alors que le code correspondant est en
+> production depuis le 2026-08-02. Vérifié fichier par fichier, pas de mémoire.
+
+| # | Tâche | Statut | Preuve dans le code |
 |---|---|---|---|
-| 1.35 | **Clés de journal préfixées par fournisseur** (`tmdb:1396`) | 🔒 in-progress — @claude-opus — 2026-08-02 | B25 — `types.ts` interdit de pointer un id fournisseur ; le journal le faisait |
-| 1.36 | **Fusion au niveau du champ** — deux appareils ne se perdent pas | 🔒 in-progress — @claude-opus — 2026-08-02 | B24 — irréparable après coup |
-| 1.37 | **Port `JournalStore`** — patron `CatalogProvider` | 🔒 in-progress — @claude-opus — 2026-08-02 | B23, B28 |
-| 1.38 | **Garantie anti-fuite** : aucun journal côté serveur | 🔒 in-progress — @claude-opus — 2026-08-02 | B12 — le HTML est partagé par le cache de bord |
-| 1.39 | **Manifeste + icônes** — l'application devient installable | 🟢 libre | B22 — la PWA était écrite dans `ROADMAP` §1.1, jamais implémentée |
-| 1.40 | **Service worker minimal + page hors-ligne** | 🟢 libre | B21 — `/moi` marche dans le métro |
-| 1.41 | Journal v2 : watchlist, notes d'épisode, snapshot à TTL, plateformes | 🟢 libre | B2, B6, A7 |
-| 1.42 | `src/domain/library.ts` et `taste.ts` — purs | 🟢 libre | B1, B16 |
-| 1.43 | **« Je veux la voir »** — le premier geste possible | 🟢 libre | B2 |
-| 1.44 | **Étoiles cliquables** au lieu du `<select>` | 🟢 libre | B7 |
-| 1.45 | **Grille d'épisodes vivante** : position + mes notes + commutateur | 🟢 libre | B8, B9, B10 |
-| 1.46 | `MyProgress` : suggestion de note de saison, placeholder correct | 🟢 libre | B11, A7 |
-| 1.47 | **`/moi`** — le lieu qui manquait, zéro appel API | 🟢 libre | B1, B14, B26 |
-| 1.48 | **Export / import JSON** — règle 9 d'`AGENTS.md`, violée aujourd'hui | 🟢 libre | B3, B4 |
-| 1.49 | Bande **« Reprendre »** sur l'accueil | 🟢 libre | B15 |
-| 1.50 | **`redactTrajectory` branché** — la courbe se révèle à mesure | 🟢 libre | B5 |
-| 1.51 | **Mes plateformes** — « dispo chez vous » | 🟢 libre | B19 |
-| 1.52 | **Profil de goût** | 🟢 libre | B16, B17 |
-| 1.53 | **Trajectoire partageable en image** (canvas, côté client) | 🟢 libre | B17 |
-| 1.54 | `npm run check` + build `○ Static` + test anti-fuite | 🟢 libre | B12, B20 |
-| 1.55 | Vérification au navigateur, PWA comprise (hors-ligne) | 🟢 libre | — |
-| 1.56 | Mesures : poids JS, coût à 100 000, en-têtes en production | 🟢 libre | B13, B26, B27 |
+| 1.35 | **Clés de journal préfixées par fournisseur** (`tmdb:1396`) | ✅ 2026-08-02 | `journalKey()` dans `src/domain/journal.ts` |
+| 1.36 | **Fusion au niveau du champ** — deux appareils ne se perdent pas | ✅ 2026-08-02 | `mergeJournals`, 8 lois dans `tests/journal-merge.test.ts` |
+| 1.37 | **Port `JournalStore`** — patron `CatalogProvider` | ✅ 2026-08-02 | `src/journal/store.ts` + `local.ts` |
+| 1.38 | **Garantie anti-fuite** : aucun journal côté serveur | ✅ 2026-08-02 | `tests/no-journal-on-server.test.ts` |
+| 1.39 | **Manifeste + icônes** — l'application devient installable | ✅ 2026-08-02 | `app/manifest.ts` |
+| 1.40 | **Service worker minimal + page hors-ligne** | ✅ 2026-08-02 | `app/components/ServiceWorker.tsx`, `app/(site)/hors-ligne` |
+| 1.41 | Journal v2 : watchlist, notes d'épisode, snapshot à TTL, plateformes | ✅ 2026-08-02 | `journal.ts` v2 |
+| 1.42 | `src/domain/library.ts` et `taste.ts` — purs | ✅ 2026-08-02 | 27 tests |
+| 1.43 | **« Je veux la voir »** — le premier geste possible | ✅ 2026-08-02 | `setWanted`, `MyProgress` |
+| 1.44 | **Étoiles cliquables** au lieu du `<select>` | ✅ 2026-08-02 | `StarRating.tsx` |
+| 1.45 | **Grille d'épisodes vivante** : position + mes notes + commutateur | ✅ 2026-08-02 | `EpisodeGrid.tsx` |
+| 1.46 | `MyProgress` : suggestion de note de saison, placeholder correct | ✅ 2026-08-02 | `MyProgress.tsx` |
+| 1.47 | **`/moi`** — le lieu qui manquait, zéro appel API | ✅ 2026-08-02 | `app/(site)/moi/` |
+| 1.48 | **Export / import JSON** — règle 9 d'`AGENTS.md` | ✅ 2026-08-02 | `JournalTransfer.tsx` |
+| 1.49 | Bande **« Reprendre »** sur l'accueil | ✅ 2026-08-02 | `ResumeStrip.tsx` |
+| 1.50 | **`redactTrajectory` branché** — la courbe se révèle à mesure | ✅ 2026-08-02 | `TrajectorySection.tsx` |
+| 1.51 | **Mes plateformes** — « dispo chez vous » | ✅ 2026-08-02 | `MyPlatforms.tsx` |
+| 1.52 | **Profil de goût** | ✅ 2026-08-02 | `TasteCard.tsx`, `taste.ts` |
+| 1.53 | **Trajectoire partageable en image** (canvas, côté client) | ✅ 2026-08-02 | `ShareCard.tsx` |
+| 1.54 | `npm run check` + build `○ Static` + test anti-fuite | ✅ 2026-08-02 | 306 tests |
+| 1.55 | Vérification au navigateur, PWA comprise (hors-ligne) | ✅ 2026-08-02 | |
+| 1.56 | Mesures : poids JS, coût à 100 000, en-têtes en production | 🔒 in-progress — @claude-opus — 2026-08-03 | D13 rouvert : le chiffre de 194 Ko date d'avant la couche des gestes |
+
+### 🔒 Bloc du 2026-08-03 — le filet, la langue, et les cinq gestes qui manquent
+
+**Réservé — @claude-opus — 2026-08-03.** Motif, et non liste de tâches : le produit sait
+**se souvenir** et sait **parler deux langues**, mais les deux ne se rencontrent pas —
+seize modules `'use client'` sont en français en dur *et* sans un seul test. Migrer seize
+fichiers sans filet est précisément le geste qui casse en silence. D'où l'ordre : le
+harnais d'abord, la langue ensuite, les gestes après.
+
+| # | Tâche | Statut | Motif |
+|---|---|---|---|
+| 1.61 | Harnais de test de composants (`jsdom`, `include` en `.tsx`) | 🔒 in-progress — @claude-opus — 2026-08-03 | Prérequis de 1.59 : 16 modules client, zéro test |
+| 1.59 | Migrer les composants client vers le dictionnaire | 🔒 in-progress — @claude-opus — 2026-08-03 | `/fr` sert du français sur les pages, de l'anglais nulle part dans les gestes |
+| A4 | **« Il vous reste 14 épisodes · 9 h 20 »** | 🔒 in-progress — @claude-opus — 2026-08-03 | Le différenciateur ne sert que les arrivants ; celui qui a commencé n'a pas son chiffre |
+| A5 | Rappel de noter la saison qu'on vient de finir | 🔒 in-progress — @claude-opus — 2026-08-03 | La note de saison est le cœur du modèle et rien ne la demande |
+| A2 | Import des exports concurrents | 🔒 in-progress — @claude-opus — 2026-08-03 | Cause n°1 d'abandon (`RESEARCH.md` §0.4) ; 26 M d'orphelins TV Time |
+| A3 | `/convertir` — la page qui capte les orphelins | 🔒 in-progress — @claude-opus — 2026-08-03 | Un import sans adresse ne se trouve pas |
+| A6 | Calendrier `.ics` des prochains épisodes | 🔒 in-progress — @claude-opus — 2026-08-03 | Répond au trou d'engagement D9 sans notification à héberger |
 
 ---
 
