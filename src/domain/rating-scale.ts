@@ -67,6 +67,26 @@ export const PUBLIC_BREAK_POINT_MIN_DROP = 0.25;
  */
 export const PUBLIC_MIN_SPREAD_FOR_SHAPE = 0.25;
 
+/**
+ * Position d'une note sur l'echelle de couleur, dans [0, 1].
+ *
+ * **Bornee sur la plage reellement occupee par les notes de foule, pas sur 0–10.**
+ * Meme raison que pour la trajectoire : les notes d'episode s'agglutinent entre 6 et
+ * 9 — ceux qui notent un episode l'ont regarde, donc l'aiment. Etaler la couleur sur
+ * l'echelle theorique donnerait une grille uniformement verte, ou l'on ne verrait rien.
+ *
+ * Les bornes ci-dessous sont celles ou l'oeil distingue quelque chose : en dessous de
+ * {@link COLOR_FLOOR}, un episode est mauvais pour tout le monde ; au-dessus de
+ * {@link COLOR_CEILING}, il est culte.
+ */
+export const COLOR_FLOOR = 6;
+export const COLOR_CEILING = 9;
+
+export function ratingHue(voteAverage: number): number {
+  const span = COLOR_CEILING - COLOR_FLOOR;
+  return Math.min(1, Math.max(0, (voteAverage - COLOR_FLOOR) / span));
+}
+
 /** Une note publique accompagnee de son assise. */
 export interface PublicRating {
   readonly voteAverage: number;

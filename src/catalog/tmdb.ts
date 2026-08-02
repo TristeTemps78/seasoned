@@ -20,6 +20,7 @@ import type {
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
+  WatchOption,
 } from './provider';
 import type { RawSeason } from '../domain/seasons';
 import type { ExternalIds, ProductionStatus } from '../domain/types';
@@ -441,6 +442,19 @@ export class TmdbProvider implements CatalogProvider {
     return mapSearchResults(raw);
   }
 
+  async watchOptions(
+    providerId: string,
+    region: string,
+    options: { readonly signal?: AbortSignal } = {},
+  ): Promise<readonly WatchOption[]> {
+    const raw = await this.#get(
+      `/tv/${encodeURIComponent(providerId)}/watch/providers`,
+      {},
+      options.signal,
+    );
+    return mapWatchOptions(raw, region);
+  }
+
   async seriesByCreator(
     personId: string,
     options: { readonly signal?: AbortSignal } = {},
@@ -452,6 +466,36 @@ export class TmdbProvider implements CatalogProvider {
     );
     return mapPersonSeriesCredits(raw);
   }
+}
+
+/**
+ * Reponse de `/tv/{id}/watch/providers`, pour un pays.
+ *
+ * TMDB agrege ces donnees depuis JustWatch et impose de le mentionner partout ou
+ * elles sont affichees — d'ou {@link JUSTWATCH_ATTRIBUTION}.
+ */
+export function mapWatchOptions(raw: unknown, region: string): readonly WatchOption[] {
+  const forRegion = asRecord(asRecord(asRecord(raw)['results'])[region.toUpperCase()]);
+
+  const out: WatchOption[] = [];
+  const seen = new Set<string>();
+
+  for (const kind of ['flatrate', 'free', 'ads', 'rent', 'buy'] as const) {
+    for (const entry of asArray(forRegion[kind])) {
+      const source = asRecord(entry);
+      const providerName = readString(source, 'provider_name');
+      if (providerName === undefined) continue;
+      // Un service peut proposer a la fois l'abonnement et l'achat : on garde le
+      // premier mode rencontre, l'ordre ci-dessus allant du plus au moins interessant.
+      const key = providerName.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const logoPath = readString(source, 'logo_path');
+      out.push({ kind, providerName, ...(logoPath !== undefined ? { logoPath } : {}) });
+    }
+  }
+  return out;
 }
 
 /** Reponse de `/person/{id}/tv_credits` : les series sont sous `cast` et `crew`. */

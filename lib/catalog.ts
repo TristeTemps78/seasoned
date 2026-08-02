@@ -17,6 +17,7 @@ import type {
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
+  WatchOption,
 } from '../src/catalog/provider';
 import { ExpiringCache, memoizeAsync } from '../src/catalog/cache';
 import {
@@ -104,6 +105,9 @@ const throughDiscover = memoizeAsync(discoverCache, SERIES_TTL_MS);
 
 const creatorCache = new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 1_000 });
 const throughCreator = memoizeAsync(creatorCache, SERIES_TTL_MS);
+
+const watchCache = new ExpiringCache<readonly WatchOption[]>({ maxEntries: 2_000 });
+const throughWatch = memoizeAsync(watchCache, SERIES_TTL_MS);
 
 /**
  * Duree mediane d'un episode d'une saison, en minutes.
@@ -423,6 +427,105 @@ export function stopPointAdvice(
     shortenedMinutes: (kept / episodeCount) * totalRuntimeMinutes,
     fullMinutes: totalRuntimeMinutes,
   };
+}
+
+/**
+ * Pays pour lequel la disponibilite est demandee.
+ *
+ * La disponibilite est **toujours** nationale : afficher celle d'un autre pays serait
+ * pire que ne rien afficher. Le site etant en francais, la France est le defaut ;
+ * quand il y aura des comptes, ce sera une preference.
+ */
+export const DEFAULT_WATCH_REGION = 'FR';
+
+/**
+ * Ou regarder une serie.
+ *
+ * Complete la decision que le reste de la page prepare : « 62 h, decroche en saison 5,
+ * et c'est sur Netflix » repond a la question entiere. Sans ce dernier element, le
+ * visiteur doit aller ailleurs pour agir.
+ *
+ * Degrade en liste vide : une serie indisponible dans le pays est le cas courant, pas
+ * une erreur.
+ */
+export async function watchOptions(
+  id: string,
+  region: string = DEFAULT_WATCH_REGION,
+): Promise<readonly WatchOption[]> {
+  try {
+    return await throughWatch(`${id}:${region}`, () =>
+      getProvider().watchOptions(id, region),
+    );
+  } catch {
+    return [];
+  }
+}
+
+/** Une note d'episode destinee a la grille. */
+export interface EpisodeRating {
+  readonly seasonNumber: number;
+  readonly episodeNumber: number;
+  readonly title?: string;
+  readonly voteAverage: number;
+  readonly voteCount: number;
+}
+
+/** Une saison et ses episodes notes. */
+export interface SeasonRatings {
+  readonly seasonNumber: number;
+  readonly episodes: readonly EpisodeRating[];
+}
+
+/**
+ * Plafond d'episodes charges pour la grille.
+ *
+ * *Detective Conan* compte plus de mille episodes : une grille de cette taille est
+ * illisible **et** hors budget. On s'arrete aux saisons qui tiennent a l'ecran.
+ */
+const MAX_SEASONS_FOR_GRID = 15;
+
+/**
+ * Notes episode par episode, pour la grille.
+ *
+ * Reutilise exactement le meme cache que la trajectoire — `throughSeason` —, donc
+ * afficher les deux sur une page ne coute pas un appel de plus.
+ */
+export async function episodeRatings(
+  id: string,
+  seasons: NormalizedSeasons,
+): Promise<readonly SeasonRatings[]> {
+  const candidates = seasons.rateable.slice(0, MAX_SEASONS_FOR_GRID);
+
+  const rows = await Promise.all(
+    candidates.map(async (season) => {
+      const seasonNumber = season.ref.seasonNumber;
+      try {
+        const full = await throughSeason(`${id}:${seasonNumber}`, () =>
+          getProvider().getSeason(id, seasonNumber),
+        );
+        const episodes = full.episodes
+          .filter(
+            (e): e is typeof e & { voteAverage: number; voteCount: number } =>
+              e.voteAverage !== undefined &&
+              e.voteAverage > 0 &&
+              e.voteCount !== undefined,
+          )
+          .map((e) => ({
+            seasonNumber,
+            episodeNumber: e.episodeNumber,
+            voteAverage: e.voteAverage,
+            voteCount: e.voteCount,
+            ...(e.title !== undefined ? { title: e.title } : {}),
+          }))
+          .sort((a, b) => a.episodeNumber - b.episodeNumber);
+        return { seasonNumber, episodes };
+      } catch {
+        return { seasonNumber, episodes: [] };
+      }
+    }),
+  );
+
+  return rows.filter((r) => r.episodes.length > 0);
 }
 
 /**

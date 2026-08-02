@@ -34,6 +34,22 @@ export interface SeriesSummary {
   readonly kind?: ProgramKind;
 }
 
+/**
+ * Comment une serie est mise a disposition.
+ *
+ * `flatrate` couvre l'abonnement — c'est le cas qui interesse la plupart des gens et
+ * le seul affiche par defaut. Les autres existent mais repondent a une autre question
+ * (« combien ca coute »), qui n'est pas celle du produit.
+ */
+export type WatchKind = 'flatrate' | 'free' | 'ads' | 'rent' | 'buy';
+
+/** Un service ou regarder une serie, dans un pays donne. */
+export interface WatchOption {
+  readonly kind: WatchKind;
+  readonly providerName: string;
+  readonly logoPath?: string;
+}
+
 /** Une personne creditee a la creation d'une serie. */
 export interface Creator {
   readonly providerId: string;
@@ -128,6 +144,18 @@ export interface CatalogProvider {
     personId: string,
     options?: { readonly signal?: AbortSignal },
   ): Promise<readonly SeriesSummary[]>;
+
+  /**
+   * Ou regarder une serie, pour un pays donne.
+   *
+   * @param region code ISO 3166-1 a deux lettres. La disponibilite est **toujours**
+   *   nationale : afficher celle d'un autre pays serait pire que ne rien afficher.
+   */
+  watchOptions(
+    providerId: string,
+    region: string,
+    options?: { readonly signal?: AbortSignal },
+  ): Promise<readonly WatchOption[]>;
 }
 
 /**
@@ -139,3 +167,11 @@ export interface CatalogProvider {
  */
 export const TMDB_ATTRIBUTION =
   'This product uses the TMDB API but is not endorsed or certified by TMDB.';
+
+/**
+ * Mention exigee des que des donnees de disponibilite sont affichees.
+ *
+ * TMDB les agrege depuis JustWatch et impose de le citer — obligation contractuelle,
+ * au meme titre que {@link TMDB_ATTRIBUTION}, et non un choix de mise en page.
+ */
+export const JUSTWATCH_ATTRIBUTION = 'Disponibilité fournie par JustWatch.';

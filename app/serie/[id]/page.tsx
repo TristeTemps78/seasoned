@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import {
   alsoByCreators,
+  episodeRatings,
   getSeriesPageData,
   posterDimensions,
   posterUrl,
   publicTrajectory,
   stopPointAdvice,
+  watchOptions,
 } from '@/lib/catalog';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { STATUS_LABEL, formatCommitment, formatDate, year } from '@/lib/format';
@@ -14,6 +16,8 @@ import { TmdbError } from '@/src/catalog/tmdb';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { SeasonList } from '@/app/components/SeasonList';
 import { TrajectoryChart } from '@/app/components/TrajectoryChart';
+import { EpisodeGrid } from '@/app/components/EpisodeGrid';
+import { WatchOptions } from '@/app/components/WatchOptions';
 
 /**
  * Regeneration toutes les 24 h.
@@ -227,6 +231,8 @@ export default async function SeriesPage({ params }: PageProps) {
         </dl>
       </section>
 
+      <WatchHere id={id} />
+
       <Trajectory
         id={id}
         seasons={seasons}
@@ -276,6 +282,11 @@ async function AlsoByCreators({ detail }: {
   );
 }
 
+/** Ou regarder la serie — le dernier maillon de la decision. */
+async function WatchHere({ id }: { readonly id: string }) {
+  return <WatchOptions options={await watchOptions(id)} />;
+}
+
 /**
  * La trajectoire, **derriere un geste explicite**.
  *
@@ -296,7 +307,12 @@ async function Trajectory({ id, seasons, totalRuntimeMinutes, episodeCount }: {
   readonly totalRuntimeMinutes: number | undefined;
   readonly episodeCount: number;
 }) {
-  const trajectory = await publicTrajectory(id, seasons);
+  // Les deux partagent le meme cache de saisons : afficher la grille en plus de la
+  // courbe ne coute pas un appel supplementaire.
+  const [trajectory, grid] = await Promise.all([
+    publicTrajectory(id, seasons),
+    episodeRatings(id, seasons),
+  ]);
   if (trajectory === undefined) return null;
 
   const advice = stopPointAdvice(trajectory, seasons, totalRuntimeMinutes, episodeCount);
@@ -318,6 +334,13 @@ async function Trajectory({ id, seasons, totalRuntimeMinutes, episodeCount }: {
               faits — mais ni « forme » ni « constance », qui sont des jugements
               normalises sur une echelle que les notes de foule n'occupent pas. */}
           <TrajectoryChart trajectory={trajectory} interpret={false} />
+
+          {grid.length > 0 ? (
+            <div className="mt-6 border-t border-(--color-edge) pt-5">
+              <h3 className="mb-3 text-sm font-medium">Épisode par épisode</h3>
+              <EpisodeGrid seasons={grid} />
+            </div>
+          ) : null}
 
           {/* La question que pose le produit — « ca vaut le coup ? » — enfin chiffree.
               Formulee comme un FAIT OBSERVE et jamais comme une injonction : sur des
