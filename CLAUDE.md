@@ -10,6 +10,25 @@
 
 ## État actuel (2026-08-03, après-midi)
 
+- **🏷️ A4 tranché : le produit s'appelle `VOLTFACE`.** Dernier arbitrage bloquant avant un
+  lancement public, ouvert depuis cinq sessions. **Volte-face = un revirement d'opinion** —
+  c'est la promesse même du produit, et le seul nom de la liste qui la dise. Il porte aussi
+  la direction artistique choisie (**volt** : cyberpunk, éclairs) et le logo (**face** : le
+  cube). Libre au RDAP en `.tv`, `.app`, `.io` et `.dev` ; `.com` enregistré mais mort.
+  - ⚠️ **Le domaine n'est pas enregistré — action de Tristan.** Un nom tranché et non
+    réservé est exactement ainsi que `seasoned` a été perdu.
+  - ⚠️ **Le code, les métadonnées et le dictionnaire disent encore « seasoned » partout.**
+    Le renommage n'est pas fait et n'est pas trivial : `lib/site.ts`, les métadonnées, le
+    manifeste PWA, le JSON-LD, les deux dictionnaires, le dépôt GitHub, le projet Vercel.
+- **🎨 Direction prise (2026-08-03) : passer d'une page à une application.** Onglets,
+  comptes, DA **cyberpunk**, et un logo en **cube 3D** aux faces colorées avec des éclairs
+  (fabriqué ailleurs — ne pas s'en occuper). Animation d'ouverture : **le cube se déplie en
+  patron, et les faces deviennent les onglets.** Rien n'est encore planifié ni écrit.
+  - ⚠️ **Deux conséquences à trancher avant d'écrire une ligne** : un cube a **six faces**,
+    donc six onglets, or le produit n'a aujourd'hui que quatre sections défendables ; et les
+    **comptes cassent** « le calcul se fait dans votre navigateur, rien ne sort » — l'argument
+    qui place le produit gratuitement là où Letterboxd fait payer (voir le bilan personnel).
+
 - **⏱️ Bilan personnel livré — et trois défauts de la même famille trouvés en le posant.**
   508 → **546 tests verts**, typecheck strict vert, build vert, 13 routes `○ Static`.
   **+1,38 Ko gzip** sur `/moi`. ⚠️ **Quatre commits non poussés** : un push est un

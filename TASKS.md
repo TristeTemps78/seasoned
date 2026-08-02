@@ -13,7 +13,7 @@
 | A1 | **À quoi sert ce projet ?** | ✅ 2026-08-01 | **Produit à utilisateurs.** Contraire à la reco de l'audit, actée. Conséquences : `ROADMAP.md` §0.1-0.2, audit §6bis |
 | A2 | Valider le modèle de notation | 🟡 par défaut | Réputé validé, réserves §8 en vigueur |
 | A3 | Social en v1 ? | ✅ 2026-08-01 | **Non — phase 5**, et sous condition de modération |
-| A4 | Le nom | 🟡 Tristan | 6 domaines libres à 35 $/an. Reco **`peaked.tv`**, repli `howfar.tv`. Bloquant **avant le premier déploiement public**, pas avant |
+| A4 | **Le nom — `VOLTFACE`** | ✅ **tranché par Tristan, 2026-08-03** | **Volte-face = un revirement d'opinion, c'est-à-dire le produit lui-même** (« garder la trace de ce qu'on a pensé d'une série *dans le temps* »). Contient **volt** (la DA cyberpunk, les éclairs du logo) et **face** (les faces du cube). Vérifié au RDAP : **libre en `.tv`, `.app`, `.io`, `.dev`** — le seul candidat cohérent sur tous. `.com` enregistré mais mort (404, aucun produit). ⚠️ **À enregistrer — action de Tristan, non faite.** L'ancienne reco `peaked.tv` est abandonnée. |
 | A5 | TMDB ou TheTVDB ? | ✅ 2026-07-31 | TMDB, derrière `CatalogProvider` — réversible |
 | A6 | **Monétisation** | 🟡 non fermée | Volontairement non décidée. ⚠️ L'usage TMDB reste **non commercial** : affiliation ou freemium = accord écrit requis (`ROADMAP.md` §4.1) |
 | A7 | **Note complète par épisode ?** | ✅ 2026-08-02 | **Oui, tranché par Tristan.** Contraire à `RATING-MODEL.md` §3 couche 2 (« on ne note pas les épisodes, on les distingue »). Comme A1 : les objections deviennent le cahier des charges — `docs/RATING-MODEL.md` §6ter |
