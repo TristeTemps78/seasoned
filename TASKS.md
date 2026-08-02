@@ -92,6 +92,47 @@ vrai**, et chacune a été révélée par la production, pas par les tests.
 **Vérifié en production** : *Dexter* et *Stranger Things* signalent tous deux leur
 décrochage, et plus aucun jugement faux n'est affiché.
 
+### 1.24 → 1.29 — Bloc du 2026-08-02 ✅
+
+| # | Ce qui a été fait | Trouvé par |
+|---|---|---|
+| 1.24 | **Dimensions d'affiche déclarées** + `fetchPriority` sur le LCP | audit de performance |
+| 1.25 | **Métadonnées de partage** (Open Graph, Twitter, `metadataBase`) | audit de performance |
+| 1.26 | **Maillage interne « Du même créateur »** — clôt 1.16 | trou SEO connu |
+| 1.27 | Hiérarchie de titres cohérente (`sr-only`) | audit d'accessibilité |
+| 1.28 | **Statut dans les résultats de recherche** (8 premiers) | audit du parcours |
+| 1.29 | **Cadence à un seul intervalle** | audit sur échantillon large |
+
+**Audit de performance.** 194 Ko de JS compressé pour **zéro composant client** — le site
+n'a aucune interactivité, formulaire et dépliant sont natifs. C'est le coût structurel de
+Next, non retirable sans changer de framework : **dette D13**, consignée plutôt que
+combattue. En revanche aucune image ne déclarait ses dimensions, donc la page sautait à
+leur arrivée — un des trois indicateurs mesurés par Google, corrigé sans rien charger
+puisque le ratio TMDB est constant.
+
+**Audit d'accessibilité.** `lang`, un seul `h1`, hiérarchie correcte, tous les `alt`,
+landmarks, `aria-label` : **rien de grave**. C'est un résultat, pas un échec d'audit.
+Seule incohérence corrigée : deux sections sans `h2`.
+
+**Maillage interne (1.16, ouvert depuis le début).** J'avais écarté « séries similaires »
+parce que la recommandation algorithmique est bannie (`ROADMAP.md` §3). Mais **« du même
+créateur » est un crédit de production, pas un calcul de similarité** — la distinction
+n'est pas rhétorique, c'est elle qui rend ce maillage compatible avec le positionnement.
+Vérifié : depuis *Breaking Bad* on atteint *Better Call Saul*, *X-Files*, *Battle Creek*.
+
+**Audit sur échantillon large** (16 séries : très anciennes, mini-séries, anime,
+non-anglophones, très longues). Engagements plausibles — *Chernobyl* 6 h, *Détective
+Conan* 505 h. Un faux positif sur une série très connue : *Les Anneaux de Pouvoir*
+déclarée « sans nouvelle » alors que deux saisons à deux ans d'écart et 20 mois de
+silence sont son rythme normal. `seasonCadence` exigeait **trois** saisons ; le garde-fou
+posé pour la prudence produisait exactement le défaut qu'il devait corriger.
+
+> **Correction asymétrique** : un intervalle unique produit désormais une cadence, avec
+> un facteur plus prudent (1,5 au lieu de 2) et une règle stricte — **une mesure fragile
+> peut allonger le délai, jamais le raccourcir**. Vérifié des deux côtés : *Les Anneaux
+> de Pouvoir* repasse en « entre deux saisons », et *Majhi Manasa* reste « sans nouvelle
+> · 26 mois ». Une correction qui casse ce qui marchait n'en est pas une.
+
 ### 🔴 1.23 — Audit de robustesse : le budget était violé depuis le début ✅ 2026-08-02
 
 Premier audit portant sur le **comportement HTTP réel** plutôt que sur le contenu. Il a
@@ -304,5 +345,6 @@ par les liens » — sans que ces liens existent.
 | D8 | **La thèse SEO n'est pas quantifiée** | Motif qualitatif confirmé, **aucun volume chiffré** — il faudrait Ahrefs/SEMrush. Le canal d'acquisition n°1 repose sur un pari raisonnable, pas sur une mesure. |
 | D9 | Trou d'engagement de 3 mois (diffusion hebdomadaire) | Audit §4.3, resté ouvert et devenu un problème de **rétention** en mode produit. La saison est la bonne unité de jugement ; l'épisode est peut-être la bonne unité de **rythme**. |
 | D10 | **Fixtures écrites de mémoire** | Cause directe du bug `episode_run_time`. Les prochaines doivent être **capturées** depuis une réponse réelle (tâche 1.17). |
+| **D13** | **194 Ko de JS pour zéro composant client** | Le site n'a aucune interactivité — formulaire et dépliant sont natifs, aucun `'use client'` dans le projet. C'est le coût structurel de Next App Router, non retirable sans changer de framework. Mesuré le 2026-08-02. À reconsidérer seulement si les Core Web Vitals deviennent bloquants pour le SEO. |
 | D11 | Listes TMDB polluées par des programmes non narratifs | **Partiellement réglé** le 2026-08-01 par `src/domain/program.ts` : *Tagesschau* et *Paradise Hotel* ont disparu de la vitrine, le sitemap est passé de 146 à 110 pages série (~25 % écartés). **Mais le filtre par genre n'attrape pas tout** : *Die Ratgeber*, magazine de conseils allemand, reste en tête de la rangée « En attente » — TMDB ne l'étiquette ni `news` ni `talk`. La longue traîne échappe au genre. |
 | **D12** | **Le facteur d'anomalie ×2 est arbitraire** | `CADENCE_ANOMALY_FACTOR` vaut 2 — « deux cycles manqués ». Observé le 2026-08-01 : *Die Ratgeber*, silencieuse depuis 20 mois avec un rythme annuel, repasse en « entre deux saisons » (609 j < seuil 730 j). Défendable, mais probablement **trop permissif** : une série annuelle qui manque son créneau de six mois est déjà un signal. ×1,5 donnerait 18 mois. **Non tranché faute de données** — il faudrait mesurer la distribution réelle des intervalles sur un échantillon large, pas régler au jugé. |
