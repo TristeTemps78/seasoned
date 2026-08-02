@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { searchSeries, withStatus, type SeriesWithStatus } from '@/lib/catalog';
+import { DEFAULT_LOCALE, t, tn, type Locale } from '@/lib/i18n';
 
 /**
  * Nombre de resultats dont on va chercher le statut reel.
@@ -16,21 +17,35 @@ interface PageProps {
   readonly searchParams: Promise<{ readonly q?: string }>;
 }
 
-export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
-  const { q } = await searchParams;
-  const query = q?.trim();
+export function searchMetadata(query: string | undefined, locale: Locale): Metadata {
+  const clean = query?.trim();
   return {
-    title: query !== undefined && query.length > 0 ? `« ${query} »` : 'Recherche',
+    title:
+      clean !== undefined && clean.length > 0
+        ? t(locale, 'search.titleQuery', { q: clean })
+        : t(locale, 'search.title'),
     // Les pages de resultats ne sont pas du contenu : on ne les fait pas indexer.
     // Ce sont les pages serie qui portent le SEO (`ROADMAP.md` §0.2).
     robots: { index: false, follow: true },
   };
 }
 
-export default async function SearchPage({ searchParams }: PageProps) {
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const { q } = await searchParams;
-  const query = q?.trim() ?? '';
+  return searchMetadata(q, DEFAULT_LOCALE);
+}
 
+/**
+ * La recherche, dans une langue.
+ *
+ * Exportee pour que `/fr/recherche` serve exactement la meme page. Sans cette adresse,
+ * le formulaire d'une page francaise renvoyait vers la page anglaise — le francais
+ * existait, et aucun chemin n'y restait.
+ */
+export async function SearchView({ query, locale }: {
+  readonly query: string;
+  readonly locale: Locale;
+}) {
   // Le catalogue est une dependance externe : il peut tomber, changer, ou n'etre pas
   // configure. Une recherche qui echoue doit rendre une page lisible, pas une 500 —
   // c'est la meme regle que le parsing tolerant du fournisseur : on degrade, on ne
@@ -55,27 +70,27 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-8">
-      <SearchForm defaultValue={query} autoFocus={query.length === 0} />
+      <SearchForm defaultValue={query} autoFocus={query.length === 0} locale={locale} />
 
       {query.length === 0 ? (
-        <p className="text-(--color-muted)">Tapez le nom d’une série.</p>
+        <p className="text-(--color-muted)">{t(locale, 'search.prompt')}</p>
       ) : unavailable ? (
-        <p className="text-(--color-warn)">
-          Le catalogue est momentanément indisponible. Réessayez dans un instant.
-        </p>
+        <p className="text-(--color-warn)">{t(locale, 'search.unavailable')}</p>
       ) : results.length === 0 ? (
-        <p className="text-(--color-muted)">
-          Aucun résultat pour « {query} ».
-        </p>
+        <p className="text-(--color-muted)">{t(locale, 'search.none', { q: query })}</p>
       ) : (
         <>
           <p className="text-sm text-(--color-muted)">
-            {total} résultat{total > 1 ? 's' : ''} pour « {query} »
+            {tn(locale, 'search.count', total, { q: query })}
           </p>
           <ul className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-5">
             {results.map(({ summary, status }) => (
               <li key={summary.providerId}>
-                <SeriesCard series={summary} {...(status !== undefined ? { status } : {})} />
+                <SeriesCard
+                  series={summary}
+                  locale={locale}
+                  {...(status !== undefined ? { status } : {})}
+                />
               </li>
             ))}
           </ul>
@@ -83,4 +98,9 @@ export default async function SearchPage({ searchParams }: PageProps) {
       )}
     </div>
   );
+}
+
+export default async function SearchPage({ searchParams }: PageProps) {
+  const { q } = await searchParams;
+  return <SearchView query={q?.trim() ?? ''} locale={DEFAULT_LOCALE} />;
 }

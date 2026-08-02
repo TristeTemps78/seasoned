@@ -42,6 +42,7 @@
   "include": [
     "src/**/*.ts",
     "tests/**/*.ts",
+    "tests/**/*.tsx",
     "lib/**/*.ts",
     "app/**/*.ts",
     "app/**/*.tsx",

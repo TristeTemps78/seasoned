@@ -1,6 +1,7 @@
 'use client';
 
 import { useId } from 'react';
+import { useT } from '@/app/i18n/LocaleProvider';
 import { ALL_STARS, type Stars } from '@/src/domain/types';
 
 /**
@@ -26,12 +27,13 @@ export function StarRating({ value, onChange, label, size = 'md' }: {
   readonly label: string;
   readonly size?: 'sm' | 'md';
 }) {
+  const { t, n } = useT();
   const box = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
 
   return (
     <div
       role="radiogroup"
-      aria-label={`Note de ${label}`}
+      aria-label={t('rating.of', { what: label })}
       className="inline-flex items-center gap-1"
     >
       <div className="flex">
@@ -47,7 +49,7 @@ export function StarRating({ value, onChange, label, size = 'md' }: {
                 type="button"
                 role="radio"
                 aria-checked={value === stars}
-                aria-label={`${stars.toString().replace('.', ',')} sur 5`}
+                aria-label={t('rating.stars', { n: n(stars) })}
                 // Re-cliquer la note posee la retire : sans cela, une note donnee par
                 // erreur ne peut plus etre reprise.
                 onClick={() => onChange(value === stars ? undefined : (stars as Stars))}
@@ -65,7 +67,7 @@ export function StarRating({ value, onChange, label, size = 'md' }: {
           size === 'sm' ? 'text-[11px]' : 'text-xs'
         }`}
       >
-        {value !== undefined ? value.toFixed(1).replace('.', ',') : '—'}
+        {value !== undefined ? n(value, 1) : '—'}
       </span>
     </div>
   );

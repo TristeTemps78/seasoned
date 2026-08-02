@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useT } from '@/app/i18n/LocaleProvider';
 
 /**
  * Sortir son journal, et le remettre.
@@ -27,6 +28,7 @@ export function JournalTransfer({ onExport, onImport, count }: {
   readonly count: number;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const { t, tn } = useT();
   const [message, setMessage] = useState<string | undefined>(undefined);
 
   const download = () => {
@@ -37,7 +39,7 @@ export function JournalTransfer({ onExport, onImport, count }: {
     link.download = `seasoned-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    setMessage(`${count} série${count > 1 ? 's' : ''} exportée${count > 1 ? 's' : ''}.`);
+    setMessage(tn('backup.exported', count));
   };
 
   const upload = async (file: File) => {
@@ -45,26 +47,23 @@ export function JournalTransfer({ onExport, onImport, count }: {
     // Un import muet serait pire qu'une erreur : on dit ce qui est entre, ou que rien
     // n'a pu etre lu.
     setMessage(
-      total === undefined
-        ? 'Ce fichier ne contient pas de journal lisible. Rien n’a été modifié.'
-        : `Fusionné. Votre bibliothèque compte ${total} série${total > 1 ? 's' : ''}.`,
+      total === undefined ? t('backup.unreadable') : tn('backup.merged', total),
     );
   };
 
   return (
     <section
       className="space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
-      aria-label="Sauvegarde"
+      aria-label={t('backup.aria')}
     >
-      <h2 className="text-sm font-semibold">Sauvegarder, ou changer d’appareil</h2>
+      <h2 className="text-sm font-semibold">{t('backup.title')}</h2>
 
       {/* Dire la verite sur la fragilite du stockage fait partie du contrat : vider
           son navigateur efface tout, et personne ne s'y attend. */}
       <p className="max-w-prose text-xs leading-relaxed text-(--color-muted)">
-        Votre bibliothèque est gardée <strong>dans ce navigateur</strong>, et nulle part
-        ailleurs. Elle ne suit pas d’un appareil à l’autre, et vider les données du
-        navigateur l’efface. Le fichier ci-dessous est votre copie&nbsp;: il se relit
-        ici même, ou sur un autre appareil — l’import complète, il ne remplace pas.
+        {t('backup.body.before')}
+        <strong>{t('backup.body.em')}</strong>
+        {t('backup.body.after')}
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -74,7 +73,7 @@ export function JournalTransfer({ onExport, onImport, count }: {
           disabled={count === 0}
           className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted) disabled:opacity-40 disabled:hover:border-(--color-edge)"
         >
-          Exporter mon journal
+          {t('backup.export')}
         </button>
 
         <button
@@ -82,7 +81,7 @@ export function JournalTransfer({ onExport, onImport, count }: {
           onClick={() => fileRef.current?.click()}
           className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
         >
-          Importer un fichier
+          {t('backup.import')}
         </button>
 
         <input

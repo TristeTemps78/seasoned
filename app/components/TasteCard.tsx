@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/app/i18n/LocaleProvider';
 import { severityOf, type TasteProfile } from '@/src/domain/taste';
 
 /**
@@ -14,6 +15,7 @@ import { severityOf, type TasteProfile } from '@/src/domain/taste';
  * pas afficher.
  */
 export function TasteCard({ profile }: { readonly profile: TasteProfile }) {
+  const { t, tn, n } = useT();
   if (!profile.speaks) return null;
 
   const severity = severityOf(profile.gapToPublic);
@@ -22,59 +24,58 @@ export function TasteCard({ profile }: { readonly profile: TasteProfile }) {
   return (
     <section
       className="space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
-      aria-label="Mon goût"
+      aria-label={t('taste.aria')}
     >
-      <h2 className="text-sm font-semibold">La forme de mon goût</h2>
+      <h2 className="text-sm font-semibold">{t('taste.title')}</h2>
 
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {profile.averageStars !== undefined ? (
-          <Figure
-            label="Ma moyenne"
-            value={`${profile.averageStars.toFixed(1).replace('.', ',')}/5`}
-          />
+          <Figure label={t('taste.average')} value={`${n(profile.averageStars, 1)}/5`} />
         ) : null}
 
         {severity !== undefined && gap !== undefined && profile.comparedSeries > 0 ? (
           <Figure
-            label="Face au public"
+            label={t('taste.vsPublic')}
             value={
               severity === 'aligned'
-                ? 'aligné'
-                : `${gap > 0 ? '+' : '−'}${Math.abs(gap).toFixed(1).replace('.', ',')}`
+                ? t('taste.aligned')
+                : `${gap > 0 ? '+' : '−'}${n(Math.abs(gap), 1)}`
             }
             hint={
               severity === 'aligned'
-                ? `sur ${profile.comparedSeries} séries`
+                ? tn('taste.onSeries', profile.comparedSeries)
                 : severity === 'severe'
-                  ? 'plus sévère'
-                  : 'plus généreux'
+                  ? t('taste.severe')
+                  : t('taste.generous')
             }
           />
         ) : null}
 
         {profile.completionRate !== undefined ? (
           <Figure
-            label="Menées au bout"
+            label={t('taste.completedLabel')}
             value={`${Math.round(profile.completionRate * 100)} %`}
-            hint={`${profile.completed} finie${profile.completed > 1 ? 's' : ''}, ${profile.abandoned} abandonnée${profile.abandoned > 1 ? 's' : ''}`}
+            hint={`${tn('taste.finished', profile.completed)}, ${tn('taste.dropped', profile.abandoned)}`}
           />
         ) : null}
 
         {profile.medianAbandonSeason !== undefined ? (
           // La donnee propre du produit : personne d'autre ne sait ou les gens lachent.
           <Figure
-            label="J’abandonne en"
-            value={`saison ${profile.medianAbandonSeason}`}
-            hint="en médiane"
+            label={t('taste.abandonAt')}
+            value={t('taste.seasonN', { n: profile.medianAbandonSeason })}
+            hint={t('taste.median')}
           />
         ) : null}
       </dl>
 
       <p className="text-xs text-(--color-muted)">
-        Calculé sur vos {profile.seasonRatings} note
-        {profile.seasonRatings > 1 ? 's' : ''} de saison
-        {profile.episodeRatings > 0 ? ` et ${profile.episodeRatings} d’épisode` : ''}.
-        Rien de tout cela ne quitte ce navigateur.
+        {tn('taste.basis', profile.seasonRatings, {
+          extra:
+            profile.episodeRatings > 0
+              ? tn('taste.basisEpisodes', profile.episodeRatings)
+              : '',
+        })}
       </p>
     </section>
   );

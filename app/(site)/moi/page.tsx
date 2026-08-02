@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { Library } from './Library';
 
 /**
@@ -21,25 +22,39 @@ import { Library } from './Library';
  */
 export const dynamic = 'force-static';
 
-export const metadata: Metadata = {
-  title: 'Ma bibliothèque',
-  // Rien a indexer : vue d'un robot, cette page est vide par construction. La faire
-  // explorer remplirait l'index de pages sans contenu et gaspillerait le budget de
-  // crawl qui doit aller sur `/serie/*` (`ROADMAP.md` §0.2).
-  robots: { index: false, follow: false },
-};
+/**
+ * Les metadonnees, dans une langue.
+ *
+ * ⚠️ Exportee pour que `/fr/moi` serve **la meme page** dans une autre langue au lieu
+ * d'en entretenir une copie. Cette adresse n'existait pas : l'en-tete pointait `/moi` en
+ * dur, donc un lecteur francais quittait le francais en cliquant sur sa propre
+ * bibliotheque. Le francais avait une adresse, et aucun chemin n'y restait.
+ */
+export function libraryMetadata(locale: Locale): Metadata {
+  return {
+    title: t(locale, 'library.title'),
+    // Rien a indexer : vue d'un robot, cette page est vide par construction. La faire
+    // explorer remplirait l'index de pages sans contenu et gaspillerait le budget de
+    // crawl qui doit aller sur `/serie/*` (`ROADMAP.md` §0.2).
+    robots: { index: false, follow: false },
+  };
+}
 
-export default function MyLibraryPage() {
+export const metadata: Metadata = libraryMetadata(DEFAULT_LOCALE);
+
+export function LibraryView({ locale }: { readonly locale: Locale }) {
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Ma bibliothèque</h1>
-        <p className="text-(--color-muted)">
-          Ce que vous suivez, ce qui revient, et ce que vous vous étiez promis.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t(locale, 'library.title')}</h1>
+        <p className="text-(--color-muted)">{t(locale, 'library.lede')}</p>
       </header>
 
       <Library />
     </div>
   );
+}
+
+export default function MyLibraryPage() {
+  return <LibraryView locale={DEFAULT_LOCALE} />;
 }

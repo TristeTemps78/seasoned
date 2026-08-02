@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { posterDimensions, posterUrl } from '@/lib/catalog';
+import { useT } from '@/app/i18n/LocaleProvider';
+import { pathIn, seriesPath } from '@/lib/routes';
 import { parseJournalKey } from '@/src/domain/journal';
 import type { LibraryItem } from '@/src/domain/library';
 
@@ -18,8 +20,10 @@ import type { LibraryItem } from '@/src/domain/library';
  * perdre une serie suivie serait une perte de donnee.
  */
 export function LibraryCard({ item }: { readonly item: LibraryItem }) {
+  const { t, tn, locale } = useT();
   const parsed = parseJournalKey(item.key);
-  const href = parsed !== undefined ? `/serie/${parsed.providerId}` : '/';
+  const href =
+    parsed !== undefined ? seriesPath(parsed.providerId, locale) : pathIn('/', locale);
   const poster = posterUrl(item.snapshot?.posterPath, 'w342');
   const position = item.entry.position;
 
@@ -44,13 +48,13 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
           // Meme repli que `SeriesCard` : ne pas repeter le titre, qui est juste
           // en dessous.
           <div className="flex h-full items-center justify-center p-3 text-center text-xs text-(--color-muted)">
-            Pas d’affiche
+            {t('card.noPoster')}
           </div>
         )}
       </div>
 
       <p className="mt-2 line-clamp-2 text-sm font-medium leading-snug">
-        {item.snapshot?.title ?? 'Série suivie'}
+        {item.snapshot?.title ?? t('library.card.tracked')}
       </p>
 
       <p className="text-xs text-(--color-muted)">
@@ -59,17 +63,17 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
           // pose, la ou « en cours » ne dit rien.
           <span className="text-(--color-live)">
             {item.daysUntilNext === 0
-              ? 'nouvel épisode aujourd’hui'
+              ? t('library.card.today')
               : item.daysUntilNext === 1
-                ? 'nouvel épisode demain'
-                : `nouvel épisode dans ${item.daysUntilNext} j`}
+                ? t('library.card.tomorrow')
+                : tn('library.card.inDays', item.daysUntilNext)}
           </span>
         ) : position !== undefined ? (
           <>
             S{position.seasonNumber}E{position.episodeNumber}
           </>
         ) : (
-          (item.snapshot?.statusLabel ?? 'à voir')
+          (item.snapshot?.statusLabel ?? t('library.card.toWatch'))
         )}
       </p>
     </Link>

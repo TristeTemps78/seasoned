@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
+import { useT } from '@/app/i18n/LocaleProvider';
+import { pathIn } from '@/lib/routes';
 import { JournalTransfer } from '@/app/components/JournalTransfer';
 import { LibraryCard } from '@/app/components/LibraryCard';
 import { MyPlatforms } from '@/app/components/MyPlatforms';
@@ -34,6 +36,7 @@ import { buildTasteProfile } from '@/src/domain/taste';
  */
 export function Library() {
   const { journal, ready, exportJournal, importJournal } = useJournal();
+  const { t } = useT();
 
   // Recalcule seulement quand le journal change : le rangement traverse toutes les
   // entrees, et il n'a aucune raison de recommencer a chaque rendu.
@@ -51,23 +54,23 @@ export function Library() {
   return (
     <div className="space-y-12">
       <Row
-        title="Ça revient"
-        subtitle="Ce que vous suivez et qui repasse bientôt."
+        title={t('library.returning.title')}
+        subtitle={t('library.returning.subtitle')}
         items={library.returning}
       />
       <Row
-        title="Reprendre"
-        subtitle="Là où vous vous étiez arrêté."
+        title={t('library.resuming.title')}
+        subtitle={t('library.resuming.subtitle')}
         items={library.resuming}
       />
       <Row
-        title="À voir"
-        subtitle="Ce que vous vous êtes promis."
+        title={t('library.wanted.title')}
+        subtitle={t('library.wanted.subtitle')}
         items={library.wanted}
       />
       <Row
-        title="Terminées et abandonnées"
-        subtitle="Ce qui est derrière vous."
+        title={t('library.finished.title')}
+        subtitle={t('library.finished.subtitle')}
         items={library.finished}
       />
 
@@ -115,25 +118,27 @@ function Row({ title, subtitle, items }: {
  * premiere visite. Elle mene donc quelque part au lieu de constater.
  */
 function EmptyLibrary() {
+  const { t, locale } = useT();
   return (
     <div className="mx-auto max-w-md space-y-4 py-10 text-center">
-      <h2 className="text-lg font-semibold">Rien ici pour l’instant</h2>
+      <h2 className="text-lg font-semibold">{t('library.empty.title')}</h2>
       <p className="leading-relaxed text-(--color-muted)">
-        Ouvrez une série et dites <em>« je veux la voir »</em>, ou cliquez un épisode
-        pour marquer où vous en êtes. Tout reste dans ce navigateur.
+        {t('library.empty.before')}
+        <em>{t('library.empty.em')}</em>
+        {t('library.empty.after')}
       </p>
       <div className="flex flex-wrap justify-center gap-2">
         <Link
-          href="/"
+          href={pathIn('/', locale)}
           className="rounded-md border border-(--color-edge) bg-(--color-surface) px-4 py-2 text-sm hover:border-(--color-muted)"
         >
-          Parcourir
+          {t('library.empty.browse')}
         </Link>
         <Link
-          href="/recherche"
+          href={pathIn('/recherche', locale)}
           className="rounded-md border border-(--color-edge) bg-(--color-surface) px-4 py-2 text-sm hover:border-(--color-muted)"
         >
-          Chercher une série
+          {t('library.empty.search')}
         </Link>
       </div>
     </div>

@@ -1,19 +1,35 @@
 'use client';
 
 import { useJournal } from '@/app/journal/useJournal';
+import { useT } from '@/app/i18n/LocaleProvider';
+import type { MessageKey } from '@/lib/i18n';
 import type { WatchOption } from '@/src/catalog/provider';
 import { JUSTWATCH_ATTRIBUTION } from '@/src/catalog/provider';
 
-const KIND_LABEL: Readonly<Record<WatchOption['kind'], string>> = {
-  flatrate: 'Inclus dans l’abonnement',
-  free: 'Gratuit',
-  ads: 'Gratuit avec publicité',
-  rent: 'En location',
-  buy: 'À l’achat',
+const KIND_KEY: Readonly<Record<WatchOption['kind'], MessageKey>> = {
+  flatrate: 'watch.flatrate',
+  free: 'watch.free',
+  ads: 'watch.ads',
+  rent: 'watch.rent',
+  buy: 'watch.buy',
 };
 
 /** Ordre d'affichage : du moins cher a l'utilisateur au plus cher. */
 const ORDER: readonly WatchOption['kind'][] = ['flatrate', 'free', 'ads', 'rent', 'buy'];
+
+/**
+ * « FR » → « France » / « France » ; « US » → « États-Unis » / « United States ».
+ *
+ * Repli sur le code brut si le navigateur ne connait pas `DisplayNames` : deux lettres
+ * restent lisibles, une exception ne l'est pas (`AGENTS.md` regle 4).
+ */
+function regionName(region: string, locale: string): string {
+  try {
+    return new Intl.DisplayNames([locale], { type: 'region' }).of(region) ?? region;
+  } catch {
+    return region;
+  }
+}
 
 /**
  * Ou regarder la serie.
@@ -29,8 +45,13 @@ const ORDER: readonly WatchOption['kind'][] = ['flatrate', 'free', 'ads', 'rent'
  * Les logos viennent du CDN de TMDB, jamais de chez nous — meme regle que les
  * affiches (`ROADMAP.md` §1.4).
  */
-export function WatchOptions({ options }: { readonly options: readonly WatchOption[] }) {
+export function WatchOptions({ options, region }: {
+  readonly options: readonly WatchOption[];
+  /** Code ISO du pays interroge — la disponibilite n'a aucun sens sans lui. */
+  readonly region: string;
+}) {
   const { journal, ready } = useJournal();
+  const { t, locale } = useT();
   if (options.length === 0) return null;
 
   const mine = new Set(journal.platforms ?? []);
@@ -44,12 +65,12 @@ export function WatchOptions({ options }: { readonly options: readonly WatchOpti
   })).filter((g) => g.items.length > 0);
 
   return (
-    <section className="space-y-3" aria-label="Où regarder">
-      <h2 className="text-lg font-semibold tracking-tight">Où la regarder</h2>
+    <section className="space-y-3" aria-label={t('watch.aria')}>
+      <h2 className="text-lg font-semibold tracking-tight">{t('watch.title')}</h2>
 
       {available.length > 0 ? (
         <p className="rounded-md bg-(--color-live)/10 px-3 py-2 text-sm text-(--color-live)">
-          Vous l’avez déjà&nbsp;: {available.map((o) => o.providerName).join(', ')}.
+          {t('watch.youHave', { list: available.map((o) => o.providerName).join(', ') })}
         </p>
       ) : null}
 
@@ -57,7 +78,7 @@ export function WatchOptions({ options }: { readonly options: readonly WatchOpti
         {groups.map(({ kind, items }) => (
           <div key={kind} className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <dt className="text-xs uppercase tracking-wide text-(--color-muted)">
-              {KIND_LABEL[kind]}
+              {t(KIND_KEY[kind])}
             </dt>
             <dd className="flex flex-wrap items-center gap-2">
               {items.map((o) => {
@@ -93,8 +114,13 @@ export function WatchOptions({ options }: { readonly options: readonly WatchOpti
 
       {/* Obligation contractuelle : TMDB agrege ces donnees depuis JustWatch et
           impose de le citer partout ou elles apparaissent. */}
+      {/* ⚠️ La region etait ecrite « en France » en dur, sur un site desormais servi en
+          anglais : on annoncait la disponibilite francaise a des lecteurs americains,
+          qui n'ont pas le meme catalogue. Le nom du pays passe par `Intl.DisplayNames`
+          plutot que par le dictionnaire — traduire 249 pays a la main n'aurait aucun
+          sens quand le navigateur sait deja le faire. */}
       <p className="text-xs text-(--color-muted)">
-        {JUSTWATCH_ATTRIBUTION} Disponibilité en France.
+        {JUSTWATCH_ATTRIBUTION} {t('watch.region', { region: regionName(region, locale) })}
       </p>
     </section>
   );

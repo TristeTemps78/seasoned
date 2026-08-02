@@ -1,16 +1,28 @@
 import type { Trajectory, TrajectoryShape } from '@/src/domain/trajectory';
 import { MAX_STARS } from '@/src/domain/types';
+import {
+  DEFAULT_LOCALE,
+  formatNumberIn,
+  t,
+  tn,
+  type Locale,
+  type MessageKey,
+} from '@/lib/i18n';
 
-const SHAPE_LABEL: Readonly<Record<TrajectoryShape, string>> = {
-  masterpiece: 'Tenue de bout en bout',
-  steady: 'Constante',
-  decline: 'Décroche en route',
-  grower: 'S’améliore',
-  erratic: 'En dents de scie',
-  // Se taire est la seule reponse honnete quand les saisons sont trop proches :
-  // qualifier du bruit serait pire que ne rien dire.
-  undifferentiated: 'Trop homogène pour conclure',
-  insufficient_data: 'Pas assez de saisons notées',
+/**
+ * Le libelle de chaque forme, par cle et non par texte.
+ *
+ * Se taire est la seule reponse honnete quand les saisons sont trop proches
+ * (`undifferentiated`) : qualifier du bruit serait pire que ne rien dire.
+ */
+const SHAPE_KEY: Readonly<Record<TrajectoryShape, MessageKey>> = {
+  masterpiece: 'shape.masterpiece',
+  steady: 'shape.steady',
+  decline: 'shape.decline',
+  grower: 'shape.grower',
+  erratic: 'shape.erratic',
+  undifferentiated: 'shape.undifferentiated',
+  insufficient_data: 'shape.insufficient_data',
 };
 
 /**
@@ -24,8 +36,9 @@ const SHAPE_LABEL: Readonly<Record<TrajectoryShape, string>> = {
  * `docs/RATING-MODEL.md` §6bis. Montrer qu'une courbe s'effondre en saison 5 est une
  * information que quelqu'un en saison 2 n'a pas demandee.
  */
-export function TrajectoryChart({ trajectory, interpret = true }: {
+export function TrajectoryChart({ trajectory, interpret = true, locale = DEFAULT_LOCALE }: {
   readonly trajectory: Trajectory;
+  readonly locale?: Locale;
   /**
    * Afficher la **forme** et la **constance** — c'est-a-dire des jugements.
    *
@@ -42,10 +55,11 @@ export function TrajectoryChart({ trajectory, interpret = true }: {
 }) {
   const { scores, peak, peakSeason, consistency, shape, breakPoint } = trajectory;
   if (scores.length < 2) return null;
+  const n = (value: number, digits?: number) => formatNumberIn(value, locale, digits);
 
   return (
     <div className="space-y-5">
-      <ol className="flex items-end gap-1.5" aria-label="Note par saison">
+      <ol className="flex items-end gap-1.5" aria-label={t(locale, 'chart.aria')}>
         {scores.map(({ seasonNumber, stars }) => {
           const height = (stars / MAX_STARS) * 100;
           const isPeak = seasonNumber === peakSeason;
@@ -54,12 +68,15 @@ export function TrajectoryChart({ trajectory, interpret = true }: {
             <li
               key={seasonNumber}
               className="flex flex-1 flex-col items-center gap-1"
-              title={`Saison ${seasonNumber} — ${stars.toFixed(1)}/5`}
+              title={t(locale, 'chart.seasonTitle', {
+                n: seasonNumber,
+                v: n(stars, 1),
+              })}
             >
               {/* C'est l'affichage qui arrondit, jamais le calcul : arrondir en amont
                   ecrasait toute la dispersion des notes de foule. */}
               <span className="text-[10px] tabular-nums text-(--color-muted)">
-                {stars.toFixed(1)}
+                {n(stars, 1)}
               </span>
               <div className="flex h-24 w-full items-end">
                 <div
@@ -84,15 +101,19 @@ export function TrajectoryChart({ trajectory, interpret = true }: {
       <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
         {interpret ? (
           <div>
-            <dt className="text-xs uppercase tracking-wide text-(--color-muted)">Forme</dt>
-            <dd>{SHAPE_LABEL[shape]}</dd>
+            <dt className="text-xs uppercase tracking-wide text-(--color-muted)">
+              {t(locale, 'chart.shape')}
+            </dt>
+            <dd>{t(locale, SHAPE_KEY[shape])}</dd>
           </div>
         ) : null}
         {peak !== undefined ? (
           <div>
-            <dt className="text-xs uppercase tracking-wide text-(--color-muted)">Pic</dt>
+            <dt className="text-xs uppercase tracking-wide text-(--color-muted)">
+              {t(locale, 'chart.peak')}
+            </dt>
             <dd>
-              {peak.toFixed(1)}/5 <span className="text-(--color-muted)">· S{peakSeason}</span>
+              {n(peak, 1)}/5 <span className="text-(--color-muted)">· S{peakSeason}</span>
             </dd>
           </div>
         ) : null}
@@ -102,7 +123,7 @@ export function TrajectoryChart({ trajectory, interpret = true }: {
         {interpret && consistency !== undefined ? (
           <div>
             <dt className="text-xs uppercase tracking-wide text-(--color-muted)">
-              Constance
+              {t(locale, 'chart.consistency')}
             </dt>
             <dd>{Math.round(consistency * 100)} %</dd>
           </div>
@@ -111,10 +132,12 @@ export function TrajectoryChart({ trajectory, interpret = true }: {
 
       {breakPoint !== undefined ? (
         <p className="text-sm text-(--color-warn)">
-          Décrochage après la saison {breakPoint.afterSeason} —{' '}
-          {breakPoint.drop.toFixed(1)} étoile{breakPoint.drop > 1 ? 's' : ''} de moins à
-          la saison {breakPoint.beforeSeason}
-          {breakPoint.contiguous ? '' : ' (saisons non contiguës)'}.
+          {tn(locale, 'chart.break', breakPoint.drop, {
+            after: breakPoint.afterSeason,
+            drop: n(breakPoint.drop, 1),
+            before: breakPoint.beforeSeason,
+            gap: breakPoint.contiguous ? '' : t(locale, 'chart.break.gap'),
+          })}
         </p>
       ) : null}
     </div>

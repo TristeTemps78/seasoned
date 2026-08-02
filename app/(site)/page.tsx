@@ -57,7 +57,7 @@ export async function Home({ locale }: { readonly locale: Locale }) {
           </p>
         </div>
 
-        <SearchForm />
+        <SearchForm locale={locale} />
 
         {/* Le rappel que le produit s'interdit d'envoyer par notification : il ne
             coute rien, ne reveille personne, et ne s'affiche que pour qui a deja un
@@ -72,18 +72,21 @@ export async function Home({ locale }: { readonly locale: Locale }) {
         title={t(locale, 'home.waiting.title')}
         subtitle={t(locale, 'home.waiting.subtitle')}
         series={waiting}
+        locale={locale}
       />
 
       <Row
         title={t(locale, 'home.week.title')}
         subtitle={t(locale, 'home.week.subtitle')}
         series={trending}
+        locale={locale}
       />
 
       <Row
         title={t(locale, 'home.airing.title')}
         subtitle={t(locale, 'home.airing.subtitle')}
         series={onTheAir}
+        locale={locale}
       />
 
       {trending.length === 0 && onTheAir.length === 0 && waiting.length === 0 ? (
@@ -93,10 +96,11 @@ export async function Home({ locale }: { readonly locale: Locale }) {
   );
 }
 
-function Row({ title, subtitle, series }: {
+function Row({ title, subtitle, series, locale }: {
   readonly title: string;
   readonly subtitle: string;
   readonly series: readonly SeriesWithStatus[];
+  readonly locale: Locale;
 }) {
   if (series.length === 0) return null;
 
@@ -109,7 +113,11 @@ function Row({ title, subtitle, series }: {
       <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
         {series.map(({ summary, status }) => (
           <li key={summary.providerId}>
-            <SeriesCard series={summary} {...(status !== undefined ? { status } : {})} />
+            <SeriesCard
+              series={summary}
+              locale={locale}
+              {...(status !== undefined ? { status } : {})}
+            />
           </li>
         ))}
       </ul>

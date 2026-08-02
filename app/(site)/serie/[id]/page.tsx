@@ -12,7 +12,7 @@ import {
 } from '@/lib/catalog';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { formatCommitment, formatDate, statusLabel, year } from '@/lib/format';
-import { DEFAULT_LOCALE, localeTag, t, tn, type Locale } from '@/lib/i18n';
+import { DEFAULT_LOCALE, localeTag, t, tn, watchRegion, type Locale } from '@/lib/i18n';
 import { alternatesFor } from '@/lib/routes';
 import { TmdbError } from '@/src/catalog/tmdb';
 import { starsFromTen } from '@/src/domain/rating-scale';
@@ -218,7 +218,11 @@ export async function SeriesView({ id, locale }: {
 
           {/* Le differenciateur immediat : personne n'affiche correctement la
               difference entre « entre deux saisons » et « morte depuis 18 mois ». */}
-          <StatusBadge status={status} withDetail />
+          {/* ⚠️ `locale` n'etait pas transmis : le badge — le differenciateur meme du
+              produit — s'affichait en anglais sur les pages francaises. Un defaut que
+              ni le typage ni les tests ne pouvaient voir, la valeur par defaut etant
+              legale. */}
+          <StatusBadge status={status} withDetail locale={locale} />
 
           {/* La seule information du site qui donne une raison de revenir a une date
               precise. « Dans trois jours » laissait le lecteur calculer et ignorer de
@@ -232,7 +236,9 @@ export async function SeriesView({ id, locale }: {
                 ? ` — ${detail.nextEpisode.title}`
                 : ''}{' '}
               <span className="text-(--color-muted)">
-                le {formatDate(detail.nextEpisode.airsOn)}
+                {t(locale, 'series.airsOn', {
+                  date: formatDate(detail.nextEpisode.airsOn, locale),
+                })}
               </span>
             </p>
           ) : null}
@@ -295,7 +301,7 @@ export async function SeriesView({ id, locale }: {
         }}
       />
 
-      <WatchHere id={id} />
+      <WatchHere id={id} locale={locale} />
 
       <Trajectory
         id={id}
@@ -305,7 +311,7 @@ export async function SeriesView({ id, locale }: {
         {...(totalRuntimeMinutes !== undefined ? { totalRuntimeMinutes } : { totalRuntimeMinutes: undefined })}
       />
 
-      <SeasonList seasons={seasons} />
+      <SeasonList seasons={seasons} locale={locale} />
 
       <AlsoByCreators detail={detail} locale={locale} />
     </article>
@@ -350,7 +356,7 @@ async function AlsoByCreators({ detail, locale }: {
       <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
         {others.map((series) => (
           <li key={series.providerId}>
-            <SeriesCard series={series} />
+            <SeriesCard series={series} locale={locale} />
           </li>
         ))}
       </ul>
@@ -358,9 +364,21 @@ async function AlsoByCreators({ detail, locale }: {
   );
 }
 
-/** Ou regarder la serie — le dernier maillon de la decision. */
-async function WatchHere({ id }: { readonly id: string }) {
-  return <WatchOptions options={await watchOptions(id)} />;
+/**
+ * Ou regarder la serie — le dernier maillon de la decision.
+ *
+ * ⚠️ **La region suit la langue, faute de mieux.** Un francophone belge n'a pas le
+ * catalogue francais (`lib/i18n.ts`, {@link watchRegion}) : c'est un repli assume, pas
+ * une verite. Ce qui ne l'etait pas, en revanche : la region reelle etait la France pour
+ * tout le monde, tandis que la mention affichee disait « en France » a un lecteur
+ * americain. Les deux sont desormais la meme valeur, et elle est affichee.
+ */
+async function WatchHere({ id, locale }: {
+  readonly id: string;
+  readonly locale: Locale;
+}) {
+  const region = watchRegion(locale);
+  return <WatchOptions options={await watchOptions(id, region)} region={region} />;
 }
 
 /**

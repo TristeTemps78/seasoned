@@ -1,6 +1,7 @@
 'use client';
 
 import { useJournal } from '@/app/journal/useJournal';
+import { useT } from '@/app/i18n/LocaleProvider';
 
 /**
  * Les services les plus courants en France, dans l'ordre de leur audience.
@@ -36,6 +37,7 @@ export const KNOWN_PLATFORMS: readonly string[] = [
  */
 export function MyPlatforms() {
   const { journal, ready, setPlatforms } = useJournal();
+  const { t } = useT();
   if (!ready) return <div className="h-24" aria-hidden="true" />;
 
   const mine = new Set(journal.platforms ?? []);
@@ -50,13 +52,11 @@ export function MyPlatforms() {
   return (
     <section
       className="space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
-      aria-label="Mes plateformes"
+      aria-label={t('platforms.aria')}
     >
       <div>
-        <h2 className="text-sm font-semibold">Mes abonnements</h2>
-        <p className="text-xs text-(--color-muted)">
-          Pour repérer d’un coup d’œil ce que vous pouvez regarder tout de suite.
-        </p>
+        <h2 className="text-sm font-semibold">{t('platforms.title')}</h2>
+        <p className="text-xs text-(--color-muted)">{t('platforms.subtitle')}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">

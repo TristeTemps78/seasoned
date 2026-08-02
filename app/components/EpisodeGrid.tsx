@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
+import { useT } from '@/app/i18n/LocaleProvider';
 import { StarRating } from '@/app/components/StarRating';
 import { episodeKey, journalKey } from '@/src/domain/journal';
 import { COLOR_CEILING, COLOR_FLOOR, ratingHue } from '@/src/domain/rating-scale';
@@ -51,6 +52,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
   readonly seasons: readonly GridSeason[];
 }) {
   const { journal, ready, setPosition, setEpisodeRating } = useJournal();
+  const { t, n } = useT();
   const [selected, setSelected] = useState<GridEpisode | undefined>(undefined);
   const [layer, setLayer] = useState<Layer>('public');
 
@@ -72,8 +74,8 @@ export function EpisodeGrid({ seriesId, seasons }: {
         <div className="flex items-center gap-2 text-xs">
           {(
             [
-              ['public', 'Notes du public'],
-              ['mine', 'Mes notes'],
+              ['public', 'grid.public'],
+              ['mine', 'grid.mine'],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -87,7 +89,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
                   : 'border-(--color-edge) text-(--color-muted) hover:border-(--color-muted)'
               }`}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
@@ -96,9 +98,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
       <div className="overflow-x-auto">
         <table className="border-separate border-spacing-0.5 text-[10px]">
           <caption className="sr-only">
-            {layer === 'mine'
-              ? 'Vos notes par épisode, saison par saison'
-              : 'Note du public par épisode, saison par saison'}
+            {layer === 'mine' ? t('grid.captionMine') : t('grid.captionPublic')}
           </caption>
           <tbody>
             {seasons.map((season) => (
@@ -150,14 +150,17 @@ export function EpisodeGrid({ seriesId, seasons }: {
                         }}
                         title={`S${episode.seasonNumber}E${episode.episodeNumber}${
                           episode.title !== undefined ? ` — ${episode.title}` : ''
-                        } · ${episode.voteAverage.toFixed(1)}/10${
-                          stars !== undefined ? ` · vous : ${stars}/5` : ''
+                        } · ${n(episode.voteAverage, 1)}/10${
+                          stars !== undefined ? ` · ${t('grid.you')} : ${n(stars)}/5` : ''
                         }`}
                       >
                         <span className="sr-only">
-                          Saison {episode.seasonNumber}, épisode {episode.episodeNumber} :{' '}
-                          {episode.voteAverage.toFixed(1)} sur 10
-                          {stars !== undefined ? `, votre note ${stars} sur 5` : ''}
+                          {t('grid.cell', {
+                            s: episode.seasonNumber,
+                            e: episode.episodeNumber,
+                            v: n(episode.voteAverage, 1),
+                          })}
+                          {stars !== undefined ? t('grid.cellMine', { n: n(stars) }) : ''}
                         </span>
                         {/* Un point marque les episodes que l'on a notes soi-meme : sur
                             la couche du public, rien d'autre ne les distinguerait. */}
@@ -191,20 +194,23 @@ export function EpisodeGrid({ seriesId, seasons }: {
             onClick={() => setPosition(key, selected.seasonNumber, selected.episodeNumber)}
             className="rounded-full border border-(--color-edge) px-2.5 py-1 text-xs hover:border-(--color-muted)"
           >
-            J’en suis là
+            {t('grid.here')}
           </button>
 
           <StarRating
             size="sm"
             value={myStars(selected)}
-            label={`l’épisode S${selected.seasonNumber}E${selected.episodeNumber}`}
+            label={t('rating.episode', {
+              s: selected.seasonNumber,
+              e: selected.episodeNumber,
+            })}
             onChange={(stars) =>
               setEpisodeRating(key, selected.seasonNumber, selected.episodeNumber, stars)
             }
           />
 
           <span className="text-xs text-(--color-muted)">
-            public&nbsp;: {selected.voteAverage.toFixed(1)}/10
+            {t('grid.publicShort')}&nbsp;: {n(selected.voteAverage, 1)}/10
           </span>
         </div>
       ) : null}
@@ -212,15 +218,15 @@ export function EpisodeGrid({ seriesId, seasons }: {
       <p className="flex items-center gap-2 text-xs text-(--color-muted)">
         {layer === 'mine' ? (
           <>
-            <span>0,5</span>
+            <span>{n(0.5, 1)}</span>
             <Scale />
-            <span>5 étoiles</span>
+            <span>{t('grid.scaleStars')}</span>
           </>
         ) : (
           <>
             <span>{COLOR_FLOOR}/10</span>
             <Scale />
-            <span>{COLOR_CEILING}/10 et plus</span>
+            <span>{t('grid.scaleCeiling', { n: COLOR_CEILING })}</span>
           </>
         )}
       </p>

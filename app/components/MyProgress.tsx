@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
+import { useT } from '@/app/i18n/LocaleProvider';
 import { StarRating } from '@/app/components/StarRating';
 import { journalKey, suggestedSeasonRating } from '@/src/domain/journal';
 import type { Stars } from '@/src/domain/types';
@@ -53,6 +54,7 @@ export function MyProgress({ seriesId, seasons, series }: {
     setWanted,
     rememberSnapshot,
   } = useJournal();
+  const { t, n } = useT();
 
   // Jamais l'identifiant nu : les cles du journal portent leur fournisseur, pour qu'un
   // changement de catalogue reste un remappage et non une perte (`journal.ts`).
@@ -85,13 +87,11 @@ export function MyProgress({ seriesId, seasons, series }: {
   return (
     <section
       className="space-y-4 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
-      aria-label="Ma progression"
+      aria-label={t('progress.aria')}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">Où j’en suis</h2>
-        <span className="text-xs text-(--color-muted)">
-          gardé dans ce navigateur, rien n’est envoyé
-        </span>
+        <h2 className="text-sm font-semibold">{t('progress.title')}</h2>
+        <span className="text-xs text-(--color-muted)">{t('progress.local')}</span>
       </div>
 
       {/* Niveau 0 — le geste qui ne suppose rien. */}
@@ -106,7 +106,7 @@ export function MyProgress({ seriesId, seasons, series }: {
               : 'border-(--color-edge) hover:border-(--color-muted)'
           }`}
         >
-          {entry?.wanted !== undefined ? '✓ Dans ma liste' : 'Je veux la voir'}
+          {entry?.wanted !== undefined ? t('progress.wanted') : t('progress.want')}
         </button>
 
         {position === undefined ? (
@@ -115,7 +115,7 @@ export function MyProgress({ seriesId, seasons, series }: {
             onClick={() => setPosition(key, seasons[0]?.seasonNumber ?? 1, 1)}
             className="rounded-full border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
           >
-            Je l’ai commencée
+            {t('progress.start')}
           </button>
         ) : null}
       </div>
@@ -124,7 +124,7 @@ export function MyProgress({ seriesId, seasons, series }: {
       {position !== undefined ? (
         <div className="flex flex-wrap items-center gap-2 border-t border-(--color-edge) pt-3">
           <label className="text-sm text-(--color-muted)" htmlFor="season">
-            Saison
+            {t('progress.season')}
           </label>
           <select
             id="season"
@@ -146,7 +146,7 @@ export function MyProgress({ seriesId, seasons, series }: {
           {current !== undefined ? (
             <>
               <label className="text-sm text-(--color-muted)" htmlFor="episode">
-                Épisode
+                {t('progress.episode')}
               </label>
               <select
                 id="episode"
@@ -162,9 +162,7 @@ export function MyProgress({ seriesId, seasons, series }: {
                   </option>
                 ))}
               </select>
-              <span className="text-xs text-(--color-muted)">
-                ou cliquez un épisode dans la grille
-              </span>
+              <span className="text-xs text-(--color-muted)">{t('progress.orGrid')}</span>
             </>
           ) : null}
         </div>
@@ -176,7 +174,7 @@ export function MyProgress({ seriesId, seasons, series }: {
       {position !== undefined ? (
         <div className="space-y-2 border-t border-(--color-edge) pt-3">
           <p className="text-xs uppercase tracking-wide text-(--color-muted)">
-            Mes notes de saison
+            {t('progress.seasonRatings')}
           </p>
           <ul className="space-y-1">
             {seasons
@@ -187,11 +185,11 @@ export function MyProgress({ seriesId, seasons, series }: {
                 return (
                   <li key={s.seasonNumber} className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="w-16 shrink-0 text-(--color-muted)">
-                      Saison {s.seasonNumber}
+                      {t('progress.seasonN', { n: s.seasonNumber })}
                     </span>
                     <StarRating
                       value={rating?.stars}
-                      label={`la saison ${s.seasonNumber}`}
+                      label={t('rating.season', { n: s.seasonNumber })}
                       onChange={(stars) => setSeasonRating(key, s.seasonNumber, stars)}
                     />
                     {/* On signale, on ne repare pas en silence (`AGENTS.md` regle 8) :
@@ -203,7 +201,7 @@ export function MyProgress({ seriesId, seasons, series }: {
                         onClick={() => setSeasonRating(key, s.seasonNumber, suggestion)}
                         className="text-xs text-(--color-muted) underline decoration-dotted underline-offset-2 hover:text-(--color-text)"
                       >
-                        vos épisodes donnent {suggestion.toFixed(1).replace('.', ',')}
+                        {t('progress.suggest', { v: n(suggestion, 1) })}
                       </button>
                     ) : null}
                   </li>
@@ -218,10 +216,10 @@ export function MyProgress({ seriesId, seasons, series }: {
         <div className="flex flex-wrap items-center gap-2 border-t border-(--color-edge) pt-3">
           {(
             [
-              ['continuing', 'Je continue'],
-              ['paused', 'En pause'],
-              ['abandoned', 'J’abandonne'],
-              ['completed', 'Terminée'],
+              ['continuing', 'decision.continuing'],
+              ['paused', 'decision.paused'],
+              ['abandoned', 'decision.abandoned'],
+              ['completed', 'decision.completed'],
             ] as const
           ).map(([kind, label]) => {
             const active = entry?.decision?.kind === kind;
@@ -237,7 +235,7 @@ export function MyProgress({ seriesId, seasons, series }: {
                     : 'border-(--color-edge) text-(--color-muted) hover:border-(--color-muted)'
                 }`}
               >
-                {label}
+                {t(label)}
               </button>
             );
           })}

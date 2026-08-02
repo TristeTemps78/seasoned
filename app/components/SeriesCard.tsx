@@ -3,6 +3,8 @@ import type { SeriesSummary } from '@/src/catalog/provider';
 import type { StatusResult } from '@/src/domain/status';
 import { posterDimensions, posterUrl } from '@/lib/catalog';
 import { STATUS_TONE, shortStatus, year } from '@/lib/format';
+import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
+import { seriesPath } from '@/lib/routes';
 
 const TONE_TEXT = {
   live: 'text-(--color-live)',
@@ -19,17 +21,20 @@ const TONE_TEXT = {
  * Le `status` est optionnel a dessein : il coute un appel par serie, donc on ne
  * l'hydrate que sur les pages mises en cache (`lib/catalog.ts`, `withStatus`).
  */
-export function SeriesCard({ series, status }: {
+export function SeriesCard({ series, status, locale = DEFAULT_LOCALE }: {
   readonly series: SeriesSummary;
   readonly status?: StatusResult;
+  readonly locale?: Locale;
 }) {
   const poster = posterUrl(series.posterPath, 'w342');
   const firstYear = year(series.firstAirDate);
-  const badge = status !== undefined ? shortStatus(status) : undefined;
+  const badge = status !== undefined ? shortStatus(status, locale) : undefined;
 
   return (
+    // Le lien reste dans la langue de la page : sans cela, chaque vignette de l'accueil
+    // francais etait une sortie du francais.
     <Link
-      href={`/serie/${series.providerId}`}
+      href={seriesPath(series.providerId, locale)}
       className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-live) rounded-lg"
     >
       <div className="aspect-2/3 overflow-hidden rounded-lg border border-(--color-edge) bg-(--color-surface)">
@@ -51,7 +56,7 @@ export function SeriesCard({ series, status }: {
           />
         ) : (
           <div className="flex h-full items-center justify-center p-3 text-center text-xs text-(--color-muted)">
-            Pas d’affiche
+            {t(locale, 'card.noPoster')}
           </div>
         )}
       </div>

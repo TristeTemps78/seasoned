@@ -5,6 +5,7 @@ import { siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
 import { DataSafety } from '@/app/components/DataSafety';
 import { LanguagePicker } from '@/app/components/LanguagePicker';
+import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import { localeTag, t, type Locale } from '@/lib/i18n';
 import { pathIn } from '@/lib/routes';
 
@@ -25,6 +26,13 @@ import { pathIn } from '@/lib/routes';
  *
  * Les deux dispositions racines n'ont donc chacune que trois lignes, et tout ce qui
  * pourrait diverger entre elles vit ici.
+ *
+ * ## Le fournisseur de langue enveloppe tout, et ne coute rien
+ *
+ * `LocaleProvider` est un composant client, mais il recoit `children` **en prop** : Next
+ * rend alors les enfants sur le serveur et les insere tels quels. Envelopper tout l'arbre
+ * ne le fait donc pas basculer cote client — c'est le seul detail qui rend cette solution
+ * acceptable ici, et il merite d'etre ecrit parce qu'il n'est pas evident.
  */
 export function SiteChrome({ locale, children }: {
   readonly locale: Locale;
@@ -33,6 +41,7 @@ export function SiteChrome({ locale, children }: {
   return (
     <html lang={locale}>
       <body className="min-h-screen flex flex-col">
+      <LocaleProvider locale={locale}>
         <header className="border-b border-(--color-edge)">
           <div className="mx-auto max-w-5xl px-4 py-4 flex items-baseline gap-4">
             {/* Le logo ramene a l'accueil **de la langue courante** : renvoyer un
@@ -45,9 +54,12 @@ export function SiteChrome({ locale, children }: {
               {t(locale, 'nav.tagline')}
             </span>
             {/* Le seul lien permanent vers ce que le produit retient de vous. Sans
-                lui, la bibliotheque n'existe que pour qui connait son adresse. */}
+                lui, la bibliotheque n'existe que pour qui connait son adresse.
+                ⚠️ Dans la langue courante : ce lien pointait `/moi` en dur, donc un
+                lecteur francais quittait le francais en cliquant sur sa propre
+                bibliotheque — exactement ce que le commentaire du logo interdit. */}
             <Link
-              href="/moi"
+              href={pathIn('/moi', locale)}
               className="ml-auto text-sm text-(--color-muted) hover:text-(--color-text)"
             >
               {t(locale, 'nav.library')}
@@ -74,6 +86,7 @@ export function SiteChrome({ locale, children }: {
         </footer>
 
         <ServiceWorker />
+      </LocaleProvider>
       </body>
     </html>
   );

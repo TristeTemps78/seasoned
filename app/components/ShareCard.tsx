@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useT } from '@/app/i18n/LocaleProvider';
 
 export interface SharePoint {
   readonly seasonNumber: number;
@@ -42,6 +43,7 @@ export function ShareCard({ title, points }: {
   readonly title: string;
   readonly points: readonly SharePoint[];
 }) {
+  const { t, n: num } = useT();
   const [done, setDone] = useState(false);
   if (points.length < 2) return null;
 
@@ -62,7 +64,7 @@ export function ShareCard({ title, points }: {
 
     ctx.fillStyle = '#8b94a7';
     ctx.font = '400 26px ui-sans-serif, system-ui, sans-serif';
-    ctx.fillText('saison par saison', 80, 162);
+    ctx.fillText(t('share.caption'), 80, 162);
 
     const top = 220;
     const bottom = HEIGHT - 130;
@@ -89,7 +91,7 @@ export function ShareCard({ title, points }: {
       ctx.fillStyle = '#e6e9ef';
       ctx.font = '600 28px ui-sans-serif, system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(value.toFixed(1).replace('.', ','), centre, bottom - barHeight - 18);
+      ctx.fillText(num(value, 1), centre, bottom - barHeight - 18);
 
       ctx.fillStyle = '#8b94a7';
       ctx.font = '400 24px ui-sans-serif, system-ui, sans-serif';
@@ -101,7 +103,7 @@ export function ShareCard({ title, points }: {
     ctx.fillStyle = '#8b94a7';
     ctx.font = '400 24px ui-sans-serif, system-ui, sans-serif';
     ctx.fillText(
-      hasMine ? 'mes notes · le public en gris' : 'notes du public TMDB',
+      hasMine ? t('share.legendMine') : t('share.legendPublic'),
       80,
       HEIGHT - 52,
     );
@@ -130,11 +132,11 @@ export function ShareCard({ title, points }: {
         onClick={draw}
         className="rounded-full border border-(--color-edge) px-3 py-1.5 text-xs hover:border-(--color-muted)"
       >
-        Enregistrer cette courbe en image
+        {t('share.save')}
       </button>
       {done ? (
         <span aria-live="polite" className="text-xs text-(--color-live)">
-          Image enregistrée.
+          {t('share.saved')}
         </span>
       ) : null}
     </div>

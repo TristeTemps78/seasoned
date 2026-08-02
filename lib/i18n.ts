@@ -132,6 +132,27 @@ export function watchRegion(locale: Locale): string {
   return FALLBACK_REGION[locale];
 }
 
+/**
+ * Un nombre, ecrit comme l'ecrit la langue.
+ *
+ * ⚠️ Le separateur decimal n'est pas un detail typographique : `4.5` se lit
+ * « quatre mille cinq cents » a quelqu'un dont la langue groupe les milliers par un
+ * point. Le code faisait partout `toFixed(1).replace('.', ',')` — une virgule **codee en
+ * dur**, donc une note affichee en francais sur une page anglaise. C'est le meme defaut
+ * que la langue devinee, en plus discret.
+ *
+ * @param digits nombre de decimales imposees. Omis, `2.5` rend « 2,5 » et `4` rend « 4 »,
+ *   ce qui est ce qu'on veut pour une etiquette lue a voix haute.
+ */
+export function formatNumberIn(value: number, locale: Locale, digits?: number): string {
+  return new Intl.NumberFormat(
+    localeTag(locale),
+    digits === undefined
+      ? {}
+      : { minimumFractionDigits: digits, maximumFractionDigits: digits },
+  ).format(value);
+}
+
 /** Date longue, dans la langue demandee, en UTC pour rester stable d'un serveur a l'autre. */
 export function formatDateIn(date: Date, locale: Locale): string {
   return new Intl.DateTimeFormat(localeTag(locale), {
@@ -220,6 +241,7 @@ const FR = {
   'series.seasons.other': '{n} saisons',
   'series.episodes.one': '{n} épisode',
   'series.episodes.other': '{n} épisodes',
+  'series.airsOn': 'le {date}',
   'series.demands': 'Ce que la série demande',
   'series.sameCreator': 'Du même créateur',
   'stat.seasons': 'Saisons',
@@ -258,6 +280,218 @@ const FR = {
   'safety.export': 'Enregistrer une copie',
   'safety.later': 'Plus tard',
   'safety.done': 'C’est fait — vos notes sont a l’abri.',
+
+  // --- Saisons -------------------------------------------------------------
+  'seasons.title': 'Saisons',
+  'seasons.none': 'Rien n’a encore été diffusé.',
+  'seasons.seasonN': 'Saison {n}',
+  'seasons.specials': 'Épisodes spéciaux disponibles, hors de la continuité principale.',
+  'seasons.warn.split.one':
+    'Saison {list} probablement diffusée en deux parties — le découpage du catalogue peut différer de celui du diffuseur.',
+  'seasons.warn.split.other':
+    'Saisons {list} probablement diffusées en deux parties — le découpage du catalogue peut différer de celui du diffuseur.',
+  'seasons.warn.unaired.one': 'Saison {list} annoncée mais pas encore diffusée.',
+  'seasons.warn.unaired.other': 'Saisons {list} annoncées mais pas encore diffusées.',
+  'seasons.warn.single': 'Mini-série : une seule saison, et c’est toute l’histoire.',
+
+  // --- Courbe --------------------------------------------------------------
+  'chart.aria': 'Note par saison',
+  'chart.seasonTitle': 'Saison {n} — {v}/5',
+  'chart.shape': 'Forme',
+  'chart.peak': 'Pic',
+  'chart.consistency': 'Constance',
+  'shape.masterpiece': 'Tenue de bout en bout',
+  'shape.steady': 'Constante',
+  'shape.decline': 'Décroche en route',
+  'shape.grower': 'S’améliore',
+  'shape.erratic': 'En dents de scie',
+  'shape.undifferentiated': 'Trop homogène pour conclure',
+  'shape.insufficient_data': 'Pas assez de saisons notées',
+  'chart.break.one':
+    'Décrochage après la saison {after} — {drop} étoile de moins à la saison {before}{gap}.',
+  'chart.break.other':
+    'Décrochage après la saison {after} — {drop} étoiles de moins à la saison {before}{gap}.',
+  'chart.break.gap': ' (saisons non contiguës)',
+
+  // --- Hors ligne et page introuvable --------------------------------------
+  'offline.title': 'Hors ligne',
+  'offline.heading': 'Pas de réseau',
+  'offline.body':
+    'Le catalogue a besoin d’une connexion. Votre bibliothèque, elle, est gardée dans ce navigateur : elle reste consultable.',
+  'offline.open': 'Ouvrir ma bibliothèque',
+  'notFound.heading': 'Rien ici.',
+  'notFound.body': 'Cette série n’existe pas dans le catalogue, ou son identifiant a changé.',
+
+  // --- Recherche -----------------------------------------------------------
+  'search.placeholder': 'Chercher une série…',
+  'search.submit': 'Chercher',
+  'search.title': 'Recherche',
+  // Les guillemets font partie de la traduction : le francais met des chevrons et une
+  // espace insecable, l'anglais des guillemets courbes colles au mot.
+  'search.titleQuery': '« {q} »',
+  'search.prompt': 'Tapez le nom d’une série.',
+  'search.unavailable': 'Le catalogue est momentanément indisponible. Réessayez dans un instant.',
+  'search.none': 'Aucun résultat pour « {q} ».',
+  'search.count.one': '{n} résultat pour « {q} »',
+  'search.count.other': '{n} résultats pour « {q} »',
+  'card.noPoster': 'Pas d’affiche',
+
+  // --- Noter ---------------------------------------------------------------
+  'rating.of': 'Note de {what}',
+  'rating.stars': '{n} sur 5',
+  'rating.season': 'la saison {n}',
+  'rating.episode': 'l’épisode S{s}E{e}',
+
+  // --- Ma progression ------------------------------------------------------
+  'progress.aria': 'Ma progression',
+  'progress.title': 'Où j’en suis',
+  'progress.local': 'gardé dans ce navigateur, rien n’est envoyé',
+  'progress.want': 'Je veux la voir',
+  'progress.wanted': '✓ Dans ma liste',
+  'progress.start': 'Je l’ai commencée',
+  'progress.season': 'Saison',
+  'progress.episode': 'Épisode',
+  'progress.orGrid': 'ou cliquez un épisode dans la grille',
+  'progress.seasonRatings': 'Mes notes de saison',
+  'progress.seasonN': 'Saison {n}',
+  'progress.suggest': 'vos épisodes donnent {v}',
+  'progress.remaining': 'Il vous reste {episodes} · {time}',
+  'progress.rateSeason': 'Vous venez de finir la saison {n} — elle valait combien ?',
+  'decision.continuing': 'Je continue',
+  'decision.paused': 'En pause',
+  'decision.abandoned': 'J’abandonne',
+  'decision.completed': 'Terminée',
+
+  // --- Grille d'episodes ---------------------------------------------------
+  'grid.public': 'Notes du public',
+  'grid.mine': 'Mes notes',
+  'grid.captionMine': 'Vos notes par épisode, saison par saison',
+  'grid.captionPublic': 'Note du public par épisode, saison par saison',
+  'grid.cell': 'Saison {s}, épisode {e} : {v} sur 10',
+  'grid.cellMine': ', votre note {n} sur 5',
+  'grid.here': 'J’en suis là',
+  'grid.publicShort': 'public',
+  'grid.you': 'vous',
+  'grid.scaleStars': '5 étoiles',
+  'grid.scaleCeiling': '{n}/10 et plus',
+
+  // --- Ma bibliotheque -----------------------------------------------------
+  'library.title': 'Ma bibliothèque',
+  'library.lede': 'Ce que vous suivez, ce qui revient, et ce que vous vous étiez promis.',
+  'library.returning.title': 'Ça revient',
+  'library.returning.subtitle': 'Ce que vous suivez et qui repasse bientôt.',
+  'library.resuming.title': 'Reprendre',
+  'library.resuming.subtitle': 'Là où vous vous étiez arrêté.',
+  'library.wanted.title': 'À voir',
+  'library.wanted.subtitle': 'Ce que vous vous êtes promis.',
+  'library.finished.title': 'Terminées et abandonnées',
+  'library.finished.subtitle': 'Ce qui est derrière vous.',
+  'library.empty.title': 'Rien ici pour l’instant',
+  'library.empty.before': 'Ouvrez une série et dites ',
+  'library.empty.em': '« je veux la voir »',
+  'library.empty.after':
+    ', ou cliquez un épisode pour marquer où vous en êtes. Tout reste dans ce navigateur.',
+  'library.empty.browse': 'Parcourir',
+  'library.empty.search': 'Chercher une série',
+  'library.card.tracked': 'Série suivie',
+  'library.card.today': 'nouvel épisode aujourd’hui',
+  'library.card.tomorrow': 'nouvel épisode demain',
+  'library.card.inDays.one': 'nouvel épisode dans {n} j',
+  'library.card.inDays.other': 'nouvel épisode dans {n} j',
+  'library.card.toWatch': 'à voir',
+
+  // --- Reprendre (accueil) -------------------------------------------------
+  'resume.returning': 'Ça revient',
+  'resume.resume': 'Reprendre',
+  'resume.yourSeries': 'votre série en cours',
+  'resume.today': 'aujourd’hui',
+  'resume.tomorrow': 'demain',
+  'resume.inDays.one': 'dans {n} jour',
+  'resume.inDays.other': 'dans {n} jours',
+  'resume.at': 'vous en étiez à S{s}E{e}',
+  'resume.library': 'ma bibliothèque →',
+
+  // --- Sauvegarde ----------------------------------------------------------
+  'backup.aria': 'Sauvegarde',
+  'backup.title': 'Sauvegarder, ou changer d’appareil',
+  'backup.body.before': 'Votre bibliothèque est gardée ',
+  'backup.body.em': 'dans ce navigateur',
+  'backup.body.after':
+    ', et nulle part ailleurs. Elle ne suit pas d’un appareil à l’autre, et vider les données du navigateur l’efface. Le fichier ci-dessous est votre copie : il se relit ici même, ou sur un autre appareil — l’import complète, il ne remplace pas.',
+  'backup.export': 'Exporter mon journal',
+  'backup.import': 'Importer un fichier',
+  'backup.exported.one': '{n} série exportée.',
+  'backup.exported.other': '{n} séries exportées.',
+  'backup.unreadable': 'Ce fichier ne contient pas de journal lisible. Rien n’a été modifié.',
+  'backup.merged.one': 'Fusionné. Votre bibliothèque compte {n} série.',
+  'backup.merged.other': 'Fusionné. Votre bibliothèque compte {n} séries.',
+
+  // --- Mon gout ------------------------------------------------------------
+  'taste.aria': 'Mon goût',
+  'taste.title': 'La forme de mon goût',
+  'taste.average': 'Ma moyenne',
+  'taste.vsPublic': 'Face au public',
+  'taste.aligned': 'aligné',
+  'taste.onSeries.one': 'sur {n} série',
+  'taste.onSeries.other': 'sur {n} séries',
+  'taste.severe': 'plus sévère',
+  'taste.generous': 'plus généreux',
+  'taste.completedLabel': 'Menées au bout',
+  'taste.finished.one': '{n} finie',
+  'taste.finished.other': '{n} finies',
+  'taste.dropped.one': '{n} abandonnée',
+  'taste.dropped.other': '{n} abandonnées',
+  'taste.abandonAt': 'J’abandonne en',
+  'taste.seasonN': 'saison {n}',
+  'taste.median': 'en médiane',
+  'taste.basis.one': 'Calculé sur votre {n} note de saison{extra}. Rien de tout cela ne quitte ce navigateur.',
+  'taste.basis.other': 'Calculé sur vos {n} notes de saison{extra}. Rien de tout cela ne quitte ce navigateur.',
+  'taste.basisEpisodes.one': ' et {n} d’épisode',
+  'taste.basisEpisodes.other': ' et {n} d’épisode',
+
+  // --- Mes plateformes -----------------------------------------------------
+  'platforms.aria': 'Mes plateformes',
+  'platforms.title': 'Mes abonnements',
+  'platforms.subtitle':
+    'Pour repérer d’un coup d’œil ce que vous pouvez regarder tout de suite.',
+
+  // --- Ou la regarder ------------------------------------------------------
+  'watch.aria': 'Où regarder',
+  'watch.title': 'Où la regarder',
+  'watch.youHave': 'Vous l’avez déjà : {list}.',
+  'watch.flatrate': 'Inclus dans l’abonnement',
+  'watch.free': 'Gratuit',
+  'watch.ads': 'Gratuit avec publicité',
+  'watch.rent': 'En location',
+  'watch.buy': 'À l’achat',
+  'watch.region': 'Disponibilité : {region}.',
+
+  // --- Trajectoire ---------------------------------------------------------
+  'traj.aria': 'Trajectoire',
+  'traj.srTitle': 'Trajectoire saison par saison',
+  'traj.yours': 'Jusqu’où vous en êtes',
+  'traj.seasonsTo': 'saisons 1 à {n}',
+  'traj.hidden.one': '{n} saison au-delà de votre position n’est pas affichée.',
+  'traj.hidden.other': '{n} saisons au-delà de votre position ne sont pas affichées.',
+  'traj.seeMore': 'Voir la suite de la trajectoire',
+  'traj.seeAll': 'Voir la trajectoire saison par saison',
+  'traj.warning': 'contient un jugement sur les saisons suivantes',
+  'traj.episodeByEpisode': 'Épisode par épisode',
+  'traj.clickHint': 'Cliquez un épisode pour dire où vous en êtes, ou le noter.',
+  'traj.stop.before': 'S’arrêter après la saison {n} ramène la série à ',
+  'traj.stop.after': ', au lieu de ~ {full}.',
+  'traj.source':
+    'Établie à partir des notes du public TMDB, saison par saison — pas des notes de ce site. Ces notes se ressemblent beaucoup d’une saison à l’autre : les écarts comptent plus que les valeurs.',
+  'traj.youAndPublic': 'Vous, et le public',
+  'traj.you': 'vous {v}',
+  'traj.publicIs': 'public {v}',
+  'traj.likeMore': 'vous aimez plus',
+  'traj.likeLess': 'vous aimez moins',
+  'share.save': 'Enregistrer cette courbe en image',
+  'share.saved': 'Image enregistrée.',
+  'share.caption': 'saison par saison',
+  'share.legendMine': 'mes notes · le public en gris',
+  'share.legendPublic': 'notes du public TMDB',
 } as const;
 
 const EN: Readonly<Record<keyof typeof FR, string>> = {
@@ -321,6 +555,7 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'series.seasons.other': '{n} seasons',
   'series.episodes.one': '{n} episode',
   'series.episodes.other': '{n} episodes',
+  'series.airsOn': 'on {date}',
   'series.demands': 'What this series asks of you',
   'series.sameCreator': 'From the same creator',
   'stat.seasons': 'Seasons',
@@ -356,6 +591,201 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'safety.export': 'Save a copy',
   'safety.later': 'Later',
   'safety.done': 'Done — your notes are safe.',
+
+  'seasons.title': 'Seasons',
+  'seasons.none': 'Nothing has aired yet.',
+  'seasons.seasonN': 'Season {n}',
+  'seasons.specials': 'Special episodes available, outside the main continuity.',
+  'seasons.warn.split.one':
+    'Season {list} was likely aired in two parts — the catalogue’s split may differ from the broadcaster’s.',
+  'seasons.warn.split.other':
+    'Seasons {list} were likely aired in two parts — the catalogue’s split may differ from the broadcaster’s.',
+  'seasons.warn.unaired.one': 'Season {list} is announced but has not aired yet.',
+  'seasons.warn.unaired.other': 'Seasons {list} are announced but have not aired yet.',
+  'seasons.warn.single': 'Mini-series: a single season, and that is the whole story.',
+
+  'chart.aria': 'Rating per season',
+  'chart.seasonTitle': 'Season {n} — {v}/5',
+  'chart.shape': 'Shape',
+  'chart.peak': 'Peak',
+  'chart.consistency': 'Consistency',
+  'shape.masterpiece': 'Holds up throughout',
+  'shape.steady': 'Steady',
+  'shape.decline': 'Declines along the way',
+  'shape.grower': 'Gets better',
+  'shape.erratic': 'Up and down',
+  'shape.undifferentiated': 'Too uniform to call',
+  'shape.insufficient_data': 'Not enough rated seasons',
+  'chart.break.one':
+    'Drop-off after season {after} — {drop} star lower in season {before}{gap}.',
+  'chart.break.other':
+    'Drop-off after season {after} — {drop} stars lower in season {before}{gap}.',
+  'chart.break.gap': ' (non-contiguous seasons)',
+
+  'offline.title': 'Offline',
+  'offline.heading': 'No connection',
+  'offline.body':
+    'The catalogue needs a connection. Your library, however, is kept in this browser: it stays readable.',
+  'offline.open': 'Open my library',
+  'notFound.heading': 'Nothing here.',
+  'notFound.body': 'This series is not in the catalogue, or its identifier has changed.',
+
+  'search.placeholder': 'Search for a series…',
+  'search.submit': 'Search',
+  'search.title': 'Search',
+  'search.titleQuery': '“{q}”',
+  'search.prompt': 'Type the name of a series.',
+  'search.unavailable': 'The catalogue is temporarily unavailable. Try again in a moment.',
+  'search.none': 'No results for “{q}”.',
+  'search.count.one': '{n} result for “{q}”',
+  'search.count.other': '{n} results for “{q}”',
+  'card.noPoster': 'No poster',
+
+  'rating.of': 'Rating for {what}',
+  'rating.stars': '{n} out of 5',
+  'rating.season': 'season {n}',
+  'rating.episode': 'episode S{s}E{e}',
+
+  'progress.aria': 'My progress',
+  'progress.title': 'Where I am',
+  'progress.local': 'kept in this browser, nothing is sent',
+  'progress.want': 'I want to watch it',
+  'progress.wanted': '✓ On my list',
+  'progress.start': 'I’ve started it',
+  'progress.season': 'Season',
+  'progress.episode': 'Episode',
+  'progress.orGrid': 'or click an episode in the grid',
+  'progress.seasonRatings': 'My season ratings',
+  'progress.seasonN': 'Season {n}',
+  'progress.suggest': 'your episodes say {v}',
+  'progress.remaining': 'You have {episodes} left · {time}',
+  'progress.rateSeason': 'You just finished season {n} — how was it?',
+  'decision.continuing': 'Carrying on',
+  'decision.paused': 'Paused',
+  'decision.abandoned': 'Dropped',
+  'decision.completed': 'Finished',
+
+  'grid.public': 'Public ratings',
+  'grid.mine': 'My ratings',
+  'grid.captionMine': 'Your ratings per episode, season by season',
+  'grid.captionPublic': 'Public rating per episode, season by season',
+  'grid.cell': 'Season {s}, episode {e}: {v} out of 10',
+  'grid.cellMine': ', your rating {n} out of 5',
+  'grid.here': 'I’m here',
+  'grid.publicShort': 'public',
+  'grid.you': 'you',
+  'grid.scaleStars': '5 stars',
+  'grid.scaleCeiling': '{n}/10 and up',
+
+  'library.title': 'My library',
+  'library.lede': 'What you follow, what is coming back, and what you promised yourself.',
+  'library.returning.title': 'Coming back',
+  'library.returning.subtitle': 'What you follow and returns soon.',
+  'library.resuming.title': 'Resume',
+  'library.resuming.subtitle': 'Right where you stopped.',
+  'library.wanted.title': 'To watch',
+  'library.wanted.subtitle': 'What you promised yourself.',
+  'library.finished.title': 'Finished and dropped',
+  'library.finished.subtitle': 'What is behind you.',
+  'library.empty.title': 'Nothing here yet',
+  'library.empty.before': 'Open a series and say ',
+  'library.empty.em': '“I want to watch it”',
+  'library.empty.after':
+    ', or click an episode to mark where you are. Everything stays in this browser.',
+  'library.empty.browse': 'Browse',
+  'library.empty.search': 'Search for a series',
+  'library.card.tracked': 'Tracked series',
+  'library.card.today': 'new episode today',
+  'library.card.tomorrow': 'new episode tomorrow',
+  'library.card.inDays.one': 'new episode in {n}d',
+  'library.card.inDays.other': 'new episode in {n}d',
+  'library.card.toWatch': 'to watch',
+
+  'resume.returning': 'Coming back',
+  'resume.resume': 'Resume',
+  'resume.yourSeries': 'the series you started',
+  'resume.today': 'today',
+  'resume.tomorrow': 'tomorrow',
+  'resume.inDays.one': 'in {n} day',
+  'resume.inDays.other': 'in {n} days',
+  'resume.at': 'you were at S{s}E{e}',
+  'resume.library': 'my library →',
+
+  'backup.aria': 'Backup',
+  'backup.title': 'Back up, or switch device',
+  'backup.body.before': 'Your library is kept ',
+  'backup.body.em': 'in this browser',
+  'backup.body.after':
+    ', and nowhere else. It does not follow you from one device to another, and clearing your browsing data erases it. The file below is your copy: it can be read back here, or on another device — importing adds to what is there, it does not replace it.',
+  'backup.export': 'Export my journal',
+  'backup.import': 'Import a file',
+  'backup.exported.one': '{n} series exported.',
+  'backup.exported.other': '{n} series exported.',
+  'backup.unreadable': 'This file contains no readable journal. Nothing was changed.',
+  'backup.merged.one': 'Merged. Your library now holds {n} series.',
+  'backup.merged.other': 'Merged. Your library now holds {n} series.',
+
+  'taste.aria': 'My taste',
+  'taste.title': 'The shape of my taste',
+  'taste.average': 'My average',
+  'taste.vsPublic': 'Versus the public',
+  'taste.aligned': 'aligned',
+  'taste.onSeries.one': 'across {n} series',
+  'taste.onSeries.other': 'across {n} series',
+  'taste.severe': 'harsher',
+  'taste.generous': 'more generous',
+  'taste.completedLabel': 'Seen through',
+  'taste.finished.one': '{n} finished',
+  'taste.finished.other': '{n} finished',
+  'taste.dropped.one': '{n} dropped',
+  'taste.dropped.other': '{n} dropped',
+  'taste.abandonAt': 'I drop out at',
+  'taste.seasonN': 'season {n}',
+  'taste.median': 'median',
+  'taste.basis.one': 'Based on your {n} season rating{extra}. None of this leaves this browser.',
+  'taste.basis.other': 'Based on your {n} season ratings{extra}. None of this leaves this browser.',
+  'taste.basisEpisodes.one': ' and {n} episode rating',
+  'taste.basisEpisodes.other': ' and {n} episode ratings',
+
+  'platforms.aria': 'My platforms',
+  'platforms.title': 'My subscriptions',
+  'platforms.subtitle': 'So you can spot at a glance what you can watch right now.',
+
+  'watch.aria': 'Where to watch',
+  'watch.title': 'Where to watch it',
+  'watch.youHave': 'You already have it: {list}.',
+  'watch.flatrate': 'Included in your subscription',
+  'watch.free': 'Free',
+  'watch.ads': 'Free with ads',
+  'watch.rent': 'To rent',
+  'watch.buy': 'To buy',
+  'watch.region': 'Availability: {region}.',
+
+  'traj.aria': 'Trajectory',
+  'traj.srTitle': 'Season-by-season trajectory',
+  'traj.yours': 'How far you have come',
+  'traj.seasonsTo': 'seasons 1 to {n}',
+  'traj.hidden.one': '{n} season beyond your position is not shown.',
+  'traj.hidden.other': '{n} seasons beyond your position are not shown.',
+  'traj.seeMore': 'See the rest of the trajectory',
+  'traj.seeAll': 'See the season-by-season trajectory',
+  'traj.warning': 'contains a judgement on later seasons',
+  'traj.episodeByEpisode': 'Episode by episode',
+  'traj.clickHint': 'Click an episode to say where you are, or to rate it.',
+  'traj.stop.before': 'Stopping after season {n} brings the series down to ',
+  'traj.stop.after': ', instead of ~ {full}.',
+  'traj.source':
+    'Derived from TMDB public ratings, season by season — not from ratings on this site. Those ratings look very similar from one season to the next: the gaps matter more than the values.',
+  'traj.youAndPublic': 'You, and the public',
+  'traj.you': 'you {v}',
+  'traj.publicIs': 'public {v}',
+  'traj.likeMore': 'you like it more',
+  'traj.likeLess': 'you like it less',
+  'share.save': 'Save this curve as an image',
+  'share.saved': 'Image saved.',
+  'share.caption': 'season by season',
+  'share.legendMine': 'my ratings · public in grey',
+  'share.legendPublic': 'TMDB public ratings',
 };
 
 export type MessageKey = keyof typeof FR;

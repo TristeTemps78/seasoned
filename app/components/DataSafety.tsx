@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { hasContent } from '@/src/domain/journal';
-import { negotiateLocale, t, type Locale } from '@/lib/i18n';
+import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 
 /**
@@ -36,11 +36,21 @@ import { useJournal } from '@/app/journal/useJournal';
  *    refus se mesure en gestes et non en jours, parce que ce qui augmente le risque est
  *    la quantite de travail accumule, pas le temps.
  *
- * ## Pourquoi la langue se decide ici, cote client
+ * ## ⚠️ La langue vient de la page, plus du navigateur
  *
- * Les pages sont `force-static` : au rendu, il n'y a **aucun en-tete de requete** a
- * negocier — c'est le prix du cache, et c'est lui qui tient le budget. Un composant
- * client, lui, peut lire la langue du navigateur sans rien couter ni rien invalider.
+ * Ce composant a longtemps lu `navigator.language`. Le raisonnement tenait : les pages
+ * etant `force-static`, il n'y a aucun en-tete de requete a negocier au rendu, et un
+ * composant client peut lire le reglage du navigateur sans rien couter.
+ *
+ * Il produisait pourtant un resultat faux, et le premier test ecrit sur ce composant l'a
+ * montre en une ligne : sur `/fr`, un navigateur regle en anglais recevait **un bandeau
+ * anglais au milieu d'une page francaise**. Chaque moitie du raisonnement etait juste,
+ * l'ensemble se contredisait — la meme forme d'echec que le `lang="en"` sur `/fr`.
+ *
+ * La regle qui en sort : **la langue est une propriete de l'adresse, jamais du visiteur.**
+ * L'adresse a ete choisie en cliquant un lien ; le reglage du navigateur est subi. Elle
+ * descend donc par {@link useT}, depuis la disposition racine qui connait sa langue par
+ * construction.
  */
 
 /** L'evenement d'installation de Chrome/Edge/Android, absent des types DOM standard. */
@@ -82,14 +92,13 @@ function isApple(): boolean {
 
 export function DataSafety() {
   const { journal, ready, exportJournal } = useJournal();
-  const [locale, setLocale] = useState<Locale>('fr');
+  const { t } = useT();
   const [dismissedAt, setDismissedAt] = useState(-1);
   const [installed, setInstalled] = useState(true); // suppose installe : on n'affiche rien avant de savoir
   const [prompt, setPrompt] = useState<InstallPromptEvent | undefined>(undefined);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setLocale(negotiateLocale(navigator.language));
     setDismissedAt(readDismissedAt());
     setInstalled(isInstalled());
 
@@ -144,12 +153,12 @@ export function DataSafety() {
 
   return (
     <aside
-      aria-label={t(locale, 'safety.title')}
+      aria-label={t('safety.title')}
       className="mx-auto mb-6 max-w-3xl space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
     >
-      <h2 className="text-sm font-semibold">{t(locale, 'safety.title')}</h2>
+      <h2 className="text-sm font-semibold">{t('safety.title')}</h2>
       <p className="max-w-prose text-xs leading-relaxed text-(--color-muted)">
-        {t(locale, 'safety.body')}
+        {t('safety.body')}
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -159,7 +168,7 @@ export function DataSafety() {
             onClick={install}
             className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
           >
-            {t(locale, 'safety.install')}
+            {t('safety.install')}
           </button>
         ) : null}
 
@@ -168,7 +177,7 @@ export function DataSafety() {
           onClick={download}
           className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
         >
-          {t(locale, 'safety.export')}
+          {t('safety.export')}
         </button>
 
         <button
@@ -176,21 +185,21 @@ export function DataSafety() {
           onClick={dismiss}
           className="rounded-md px-3 py-1.5 text-sm text-(--color-muted) hover:text-(--color-ink)"
         >
-          {t(locale, 'safety.later')}
+          {t('safety.later')}
         </button>
       </div>
 
       {/* iOS n'expose aucun evenement d'installation : la seule voie est le geste manuel,
           donc on l'explique au lieu de proposer un bouton qui ne ferait rien. */}
       {prompt === undefined && isApple() ? (
-        <p className="text-xs text-(--color-muted)">{t(locale, 'safety.iosHint')}</p>
+        <p className="text-xs text-(--color-muted)">{t('safety.iosHint')}</p>
       ) : (
-        <p className="text-xs text-(--color-muted)">{t(locale, 'safety.installWhy')}</p>
+        <p className="text-xs text-(--color-muted)">{t('safety.installWhy')}</p>
       )}
 
       {saved ? (
         <p aria-live="polite" className="text-xs text-(--color-live)">
-          {t(locale, 'safety.done')}
+          {t('safety.done')}
         </p>
       ) : null}
     </aside>

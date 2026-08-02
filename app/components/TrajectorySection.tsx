@@ -1,6 +1,7 @@
 'use client';
 
 import { useJournal } from '@/app/journal/useJournal';
+import { useT } from '@/app/i18n/LocaleProvider';
 import { EpisodeGrid, type GridSeason } from '@/app/components/EpisodeGrid';
 import { ShareCard } from '@/app/components/ShareCard';
 import { TrajectoryChart } from '@/app/components/TrajectoryChart';
@@ -57,6 +58,7 @@ export function TrajectorySection({
   readonly advice: StopPoint | undefined;
 }) {
   const { journal, ready } = useJournal();
+  const { t, tn, locale } = useT();
   const entry = journal.entries[journalKey(seriesId)];
   const position = entry?.position;
 
@@ -77,18 +79,18 @@ export function TrajectorySection({
   const hidden = redacted?.hiddenSeasons ?? 0;
 
   return (
-    <section aria-label="Trajectoire">
-      <h2 className="sr-only">Trajectoire saison par saison</h2>
+    <section aria-label={t('traj.aria')}>
+      <h2 className="sr-only">{t('traj.srTitle')}</h2>
 
       {showsMine && redacted !== undefined ? (
         <div className="mb-4 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4">
           <h3 className="mb-3 text-sm font-medium">
-            Jusqu’où vous en êtes
+            {t('traj.yours')}
             <span className="ml-2 font-normal text-(--color-muted)">
-              saisons 1 à {position?.seasonNumber}
+              {t('traj.seasonsTo', { n: position?.seasonNumber ?? 1 })}
             </span>
           </h3>
-          <TrajectoryChart trajectory={redacted.trajectory} interpret={false} />
+          <TrajectoryChart trajectory={redacted.trajectory} interpret={false} locale={locale} />
           <Comparison
             scores={redacted.trajectory.scores}
             mine={entry?.seasonRatings}
@@ -109,10 +111,7 @@ export function TrajectorySection({
           />
 
           {hidden > 0 ? (
-            <p className="mt-4 text-xs text-(--color-muted)">
-              {hidden} saison{hidden > 1 ? 's' : ''} au-delà de votre position
-              {hidden > 1 ? ' ne sont pas affichées' : ' n’est pas affichée'}.
-            </p>
+            <p className="mt-4 text-xs text-(--color-muted)">{tn('traj.hidden', hidden)}</p>
           ) : null}
         </div>
       ) : null}
@@ -120,26 +119,22 @@ export function TrajectorySection({
       <details className="group rounded-lg border border-(--color-edge) bg-(--color-surface)">
         <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium marker:content-none">
           <span className="group-open:hidden">
-            {hidden > 0 ? 'Voir la suite de la trajectoire' : 'Voir la trajectoire saison par saison'}
+            {hidden > 0 ? t('traj.seeMore') : t('traj.seeAll')}
           </span>
-          <span className="hidden group-open:inline">Trajectoire saison par saison</span>
-          <span className="ml-2 font-normal text-(--color-muted)">
-            contient un jugement sur les saisons suivantes
-          </span>
+          <span className="hidden group-open:inline">{t('traj.srTitle')}</span>
+          <span className="ml-2 font-normal text-(--color-muted)">{t('traj.warning')}</span>
         </summary>
 
         <div className="border-t border-(--color-edge) px-4 py-5">
           {/* `interpret={false}` : on montre la courbe, le pic et le decrochage — des
               faits — mais ni « forme » ni « constance », qui sont des jugements
               normalises sur une echelle que les notes de foule n'occupent pas. */}
-          <TrajectoryChart trajectory={trajectory} interpret={false} />
+          <TrajectoryChart trajectory={trajectory} interpret={false} locale={locale} />
 
           {grid.length > 0 ? (
             <div className="mt-6 border-t border-(--color-edge) pt-5">
-              <h3 className="mb-3 text-sm font-medium">Épisode par épisode</h3>
-              <p className="mb-3 text-xs text-(--color-muted)">
-                Cliquez un épisode pour dire où vous en êtes, ou le noter.
-              </p>
+              <h3 className="mb-3 text-sm font-medium">{t('traj.episodeByEpisode')}</h3>
+              <p className="mb-3 text-xs text-(--color-muted)">{t('traj.clickHint')}</p>
               <EpisodeGrid seriesId={seriesId} seasons={grid} />
             </div>
           ) : null}
@@ -150,19 +145,17 @@ export function TrajectorySection({
               justifie pas de dire a quelqu'un ce qu'il doit regarder. */}
           {advice !== undefined ? (
             <p className="mt-5 rounded-md bg-(--color-warn)/10 px-3 py-2.5 text-sm">
-              S’arrêter après la saison {advice.afterSeason} ramène la série à{' '}
-              <strong>~ {formatCommitment(advice.shortenedMinutes)}</strong>, au lieu de{' '}
-              ~ {formatCommitment(advice.fullMinutes)}.
+              {t('traj.stop.before', { n: advice.afterSeason })}
+              <strong>~ {formatCommitment(advice.shortenedMinutes, locale)}</strong>
+              {t('traj.stop.after', {
+                full: formatCommitment(advice.fullMinutes, locale),
+              })}
             </p>
           ) : null}
 
           {/* L'origine des notes remonte jusqu'ici : ce ne sont pas celles de ce
               produit, et les presenter autrement serait malhonnete. */}
-          <p className="mt-5 text-xs text-(--color-muted)">
-            Établie à partir des notes du public TMDB, saison par saison — pas des notes
-            de ce site. Ces notes se ressemblent beaucoup d’une saison à l’autre&nbsp;:
-            les écarts comptent plus que les valeurs.
-          </p>
+          <p className="mt-5 text-xs text-(--color-muted)">{t('traj.source')}</p>
         </div>
       </details>
     </section>
@@ -181,6 +174,7 @@ function Comparison({ scores, mine }: {
   readonly scores: readonly { readonly seasonNumber: number; readonly stars: number }[];
   readonly mine: Readonly<Record<string, { readonly stars: number }>> | undefined;
 }) {
+  const { t, n } = useT();
   const rows = scores
     .map((score) => ({ ...score, ours: mine?.[String(score.seasonNumber)]?.stars }))
     .filter((row): row is typeof row & { ours: number } => row.ours !== undefined);
@@ -190,7 +184,7 @@ function Comparison({ scores, mine }: {
   return (
     <div className="mt-5 border-t border-(--color-edge) pt-4">
       <p className="mb-2 text-xs uppercase tracking-wide text-(--color-muted)">
-        Vous, et le public
+        {t('traj.youAndPublic')}
       </p>
       <ul className="space-y-1 text-sm">
         {rows.map((row) => {
@@ -198,18 +192,16 @@ function Comparison({ scores, mine }: {
           return (
             <li key={row.seasonNumber} className="flex flex-wrap items-baseline gap-x-3">
               <span className="w-16 shrink-0 text-(--color-muted)">S{row.seasonNumber}</span>
-              <span className="tabular-nums">
-                vous {row.ours.toFixed(1).replace('.', ',')}
-              </span>
+              <span className="tabular-nums">{t('traj.you', { v: n(row.ours, 1) })}</span>
               <span className="tabular-nums text-(--color-muted)">
-                public {row.stars.toFixed(1).replace('.', ',')}
+                {t('traj.publicIs', { v: n(row.stars, 1) })}
               </span>
               {/* Sous un demi-point, l'ecart n'est pas un desaccord : les notes de
                   foule tiennent dans une bande etroite, et le bruit y ressemble a un
                   avis. */}
               {Math.abs(gap) >= 0.5 ? (
                 <span className={gap > 0 ? 'text-(--color-live)' : 'text-(--color-warn)'}>
-                  {gap > 0 ? 'vous aimez plus' : 'vous aimez moins'}
+                  {gap > 0 ? t('traj.likeMore') : t('traj.likeLess')}
                 </span>
               ) : null}
             </li>

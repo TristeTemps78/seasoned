@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { DEFAULT_LOCALE, localeTag, t } from '@/lib/i18n';
 
 /**
  * Le manifeste qui rend l'application **installable sur les cinq plateformes**.
@@ -17,14 +18,25 @@ import type { MetadataRoute } from 'next';
  * par `ROADMAP.md` §1.1 depuis le premier jour et n'avait jamais ete construite — ni
  * manifeste, ni icone, ni service worker. Une fonctionnalite ecrite n'est pas une
  * fonctionnalite qui marche.
+ *
+ * ## ⚠️ Un seul manifeste, donc une seule langue : celle par defaut
+ *
+ * Un manifeste est servi a une adresse unique et **avant** toute navigation : il n'y a
+ * ni page, ni locale, ni preference a consulter au moment ou le systeme le lit. Il etait
+ * ecrit en francais alors que le site est desormais servi en anglais par defaut — donc
+ * un utilisateur anglophone installait une application au nom francais.
+ *
+ * Le declarer dans la langue par defaut est le seul choix coherent, et `lang` doit dire
+ * la verite : c'est cet attribut que les magasins d'applications et les lanceurs lisent.
+ * Servir un manifeste par langue demanderait une route dynamique — donc une invocation
+ * a chaque installation, pour un gain nul sur le seul canal qui compte.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'seasoned — est-ce que ça vaut le coup ?',
+    name: `seasoned — ${t(DEFAULT_LOCALE, 'nav.tagline')}`,
     short_name: 'seasoned',
-    description:
-      'Où en est une série, combien de temps elle demande, et jusqu’où elle reste bonne.',
-    lang: 'fr',
+    description: t(DEFAULT_LOCALE, 'meta.description'),
+    lang: localeTag(DEFAULT_LOCALE),
     // L'accueil, et pas `/moi` : quelqu'un qui vient d'installer n'a pas de journal,
     // et l'accueillir sur une page vide serait le pire premier ecran possible. La
     // bande « Reprendre » y amene ceux qui en ont un.
@@ -50,8 +62,16 @@ export default function manifest(): MetadataRoute.Manifest {
     // Menu long-clic sur l'icone. Les deux seules destinations qui valent un raccourci :
     // ce qu'on a laisse en cours, et la recherche.
     shortcuts: [
-      { name: 'Ma bibliothèque', short_name: 'Chez moi', url: '/moi' },
-      { name: 'Chercher une série', short_name: 'Chercher', url: '/recherche' },
+      {
+        name: t(DEFAULT_LOCALE, 'library.title'),
+        short_name: t(DEFAULT_LOCALE, 'library.title'),
+        url: '/moi',
+      },
+      {
+        name: t(DEFAULT_LOCALE, 'library.empty.search'),
+        short_name: t(DEFAULT_LOCALE, 'search.submit'),
+        url: '/recherche',
+      },
     ],
   };
 }
