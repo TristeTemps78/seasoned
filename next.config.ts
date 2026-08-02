@@ -22,6 +22,77 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: false },
 
   poweredByHeader: false,
+
+  /**
+   * Les en-tetes de securite — et l'arbitrage qu'ils imposent ici.
+   *
+   * Aucun n'etait servi : verifie sur la reponse reelle, pas dans la configuration.
+   *
+   * ## ⛔ Pourquoi la CSP n'a PAS de nonce, alors que c'est la bonne pratique
+   *
+   * Une politique a nonce est la seule qui neutralise vraiment le script injecte. Elle
+   * exige de generer une valeur differente **a chaque reponse**, donc de rendre la page
+   * a chaque requete — ce qui **detruit le cache de bord**, c'est-a-dire la chose meme
+   * qui tient le budget (`ROADMAP.md` §1.4, et l'audit du 2026-08-02 qui a trouve les
+   * pages serie en `MISS`). Payer une invocation par visite pour durcir un site qui ne
+   * traite aucun mot de passe et n'heberge aucune donnee serait exactement l'erreur qui
+   * a tue TV Time.
+   *
+   * L'arbitrage est donc explicite : **`script-src` reste permissif, tout le reste est
+   * ferme.** Ce n'est pas une CSP complete, et c'est nettement mieux que rien —
+   * `frame-ancestors`, `base-uri`, `form-action` et `object-src` coupent des vecteurs
+   * reels sans rien couter. La voie propre pour le script injecte est ailleurs, et elle
+   * est prise : `lib/jsonld.ts` echappe le seul endroit ou du contenu tiers entre dans
+   * une balise `<script>`.
+   *
+   * ## `Referrer-Policy` n'est pas cosmetique ici
+   *
+   * Une URL de ce site dit **ce que quelqu'un est en train de regarder**. La laisser
+   * partir en entier vers chaque domaine tiers contacte revient a diffuser un historique
+   * de visionnage a des gens qui ne l'ont pas demande.
+   */
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // Redondant avec `frame-ancestors` pour les navigateurs recents, utile pour
+          // les anciens : le clickjacking est un vecteur reel ici, puisqu'un clic sur
+          // nos boutons ecrit dans le journal de la personne.
+          { key: 'X-Frame-Options', value: 'DENY' },
+          // Rien de tout cela n'est utilise, et ce qu'on n'utilise pas doit etre refuse
+          // plutot que laisse disponible a qui trouverait comment l'appeler.
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              // Voir l'arbitrage ci-dessus : le nonce couterait le cache.
+              "script-src 'self' 'unsafe-inline'",
+              // Tailwind pose des styles en ligne.
+              "style-src 'self' 'unsafe-inline'",
+              // Les affiches viennent du CDN de TMDB, jamais de nous.
+              "img-src 'self' https://image.tmdb.org data: blob:",
+              "font-src 'self'",
+              // Le produit ne parle a aucun service tiers depuis le navigateur : le
+              // journal ne sort pas d'ici, et cette ligne le rend verifiable.
+              "connect-src 'self'",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              'upgrade-insecure-requests',
+            ].join('; '),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

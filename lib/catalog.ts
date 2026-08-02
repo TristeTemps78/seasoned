@@ -36,7 +36,7 @@ import {
   starsFromTen,
 } from '../src/domain/rating-scale';
 import { computeTrajectory, type SeasonScore, type Trajectory } from '../src/domain/trajectory';
-import { DEFAULT_LOCALE, localeTag, watchRegion } from './i18n';
+import { DEFAULT_LOCALE, localeTag, watchRegion, type Locale } from './i18n';
 
 /** Duree de vie du cache serie : une journee. Les grilles de diffusion bougent peu. */
 const SERIES_TTL_MS = 86_400_000;
@@ -55,13 +55,25 @@ const TMDB_FETCH_REVALIDATE_SECONDS = 86_400;
 let providerInstance: CatalogProvider | undefined;
 
 /**
+ * Un fournisseur par langue.
+ *
+ * Ils ne different que par l'etiquette envoyee a TMDB, mais ils doivent etre distincts :
+ * une seule instance servirait la meme langue de metadonnees a toutes les pages.
+ */
+const providersByLocale = new Map<Locale, CatalogProvider>();
+
+/**
  * Le fournisseur, cree a la demande.
  *
  * Le jeton n'est lu qu'a l'usage et jamais au chargement du module : sans cela, un
  * simple import ferait echouer les tests et le build en l'absence d'environnement.
  */
-export function getProvider(): CatalogProvider {
+export function getProvider(locale: Locale = DEFAULT_LOCALE): CatalogProvider {
+  // Un fournisseur force par un test l'emporte sur tout : c'est le point d'injection.
   if (providerInstance !== undefined) return providerInstance;
+
+  const cached = providersByLocale.get(locale);
+  if (cached !== undefined) return cached;
 
   const accessToken = process.env['TMDB_ACCESS_TOKEN'];
   if (accessToken === undefined || accessToken.trim().length === 0) {
@@ -70,11 +82,22 @@ export function getProvider(): CatalogProvider {
     );
   }
 
-  // La langue du catalogue doit suivre celle du site : servir une page anglaise avec des
-  // synopsis francais serait pire que ne pas traduire du tout — le lecteur y verrait une
-  // erreur, et un moteur une page a la langue incoherente avec sa balise `lang`.
-  const language = process.env['TMDB_LANGUAGE'] ?? localeTag(DEFAULT_LOCALE);
-  providerInstance = new TmdbProvider({
+  // ⚠️ La langue du catalogue suit desormais celle de la PAGE, et non une variable
+  // d'environnement globale.
+  //
+  // Le commentaire qui etait ici disait deja la regle — « servir une page anglaise avec
+  // des synopsis francais serait pire que ne pas traduire du tout » — et le code faisait
+  // exactement l'inverse : `TMDB_LANGUAGE` valait une seule langue pour tout le site,
+  // donc `/serie/1396` et `/fr/serie/1396` recevaient le meme synopsis. Avec un
+  // `TMDB_LANGUAGE=fr-FR` oublie dans l'environnement, ce sont les pages ANGLAISES —
+  // celles que les moteurs indexent, le canal d'acquisition n°1 — qui servaient du
+  // francais. L'intention etait ecrite, l'effet etait nul : la forme d'echec propre a ce
+  // projet, rencontree ici pour la quatrieme fois.
+  //
+  // `TMDB_LANGUAGE` reste lu, mais **uniquement** comme forcage de diagnostic : il
+  // ecrase toutes les langues, ce qui n'a de sens que pour reproduire un bogue.
+  const language = process.env['TMDB_LANGUAGE'] ?? localeTag(locale);
+  const provider = new TmdbProvider({
     accessToken,
     language,
     // Le cache de donnees de Next, partage entre toutes les instances et persistant —
@@ -85,12 +108,14 @@ export function getProvider(): CatalogProvider {
     // visite rejouait tous les appels TMDB.
     requestInit: { next: { revalidate: TMDB_FETCH_REVALIDATE_SECONDS } } as RequestInit,
   });
-  return providerInstance;
+  providersByLocale.set(locale, provider);
+  return provider;
 }
 
 /** Remplace le fournisseur — reserve aux tests. */
 export function setProvider(provider: CatalogProvider | undefined): void {
   providerInstance = provider;
+  providersByLocale.clear();
   seriesCache.clear();
   searchCache.clear();
   seasonCache.clear();
@@ -160,14 +185,34 @@ export interface SeriesPageData {
   readonly totalRuntimeMinutes?: number;
 }
 
-export async function searchSeries(query: string): Promise<readonly SeriesSummary[]> {
-  const trimmed = query.trim();
-  if (trimmed.length === 0) return [];
-  return throughSearch(trimmed.toLowerCase(), () => getProvider().search(trimmed));
+/**
+ * ⚠️ **La langue fait partie de la cle de cache.**
+ *
+ * Sans elle, la premiere requete d'une serie fixerait la langue de son synopsis pour
+ * toutes les autres : `/serie/1396` et `/fr/serie/1396` se serviraient mutuellement leur
+ * contenu selon qui arrive en premier. C'est le genre de defaut qui ne se reproduit pas
+ * a la demande et qu'on ne trouve jamais en relisant le code.
+ */
+function keyIn(locale: Locale, key: string): string {
+  return `${locale}:${key}`;
 }
 
-export async function getSeriesDetail(id: string): Promise<SeriesDetail> {
-  return throughSeries(id, () => getProvider().getSeries(id));
+export async function searchSeries(
+  query: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<readonly SeriesSummary[]> {
+  const trimmed = query.trim();
+  if (trimmed.length === 0) return [];
+  return throughSearch(keyIn(locale, trimmed.toLowerCase()), () =>
+    getProvider(locale).search(trimmed),
+  );
+}
+
+export async function getSeriesDetail(
+  id: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<SeriesDetail> {
+  return throughSeries(keyIn(locale, id), () => getProvider(locale).getSeries(id));
 }
 
 /**
@@ -183,10 +228,11 @@ export async function getSeriesDetail(id: string): Promise<SeriesDetail> {
 export async function discover(
   kind: DiscoverKind,
   page = 1,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<readonly SeriesSummary[]> {
   try {
-    const all = await throughDiscover(`${kind}:${page}`, () =>
-      getProvider().discover(kind, page),
+    const all = await throughDiscover(keyIn(locale, `${kind}:${page}`), () =>
+      getProvider(locale).discover(kind, page),
     );
     // Filtre la **vitrine**, pas le catalogue : une page serie reste accessible pour
     // n'importe quel programme si quelqu'un la cherche. Sans ce filtre, la rangee
@@ -207,8 +253,9 @@ export async function discover(
 export async function getSeriesPageData(
   id: string,
   now: Date = new Date(),
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<SeriesPageData> {
-  const detail = await getSeriesDetail(id);
+  const detail = await getSeriesDetail(id, locale);
 
   const productionEnded = detail.production === 'ended' || detail.production === 'canceled';
   const seasons = normalizeSeasons(id, detail.seasons, { now, productionEnded });
@@ -228,7 +275,7 @@ export async function getSeriesPageData(
   );
 
   const episodeCount = seasons.rateable.reduce((sum, s) => sum + s.episodeCount, 0);
-  const runtime = await estimateEpisodeRuntime(id, detail, seasons);
+  const runtime = await estimateEpisodeRuntime(id, detail, seasons, locale);
 
   return {
     detail,
@@ -258,13 +305,14 @@ async function estimateEpisodeRuntime(
   id: string,
   detail: SeriesDetail,
   seasons: NormalizedSeasons,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<number | undefined> {
   const sample = representativeSeason(seasons);
   if (sample !== undefined) {
     try {
       const seasonNumber = sample.ref.seasonNumber;
-      const full = await throughSeason(`${id}:${seasonNumber}`, () =>
-        getProvider().getSeason(id, seasonNumber),
+      const full = await throughSeason(keyIn(locale, `${id}:${seasonNumber}`), () =>
+        getProvider(locale).getSeason(id, seasonNumber),
       );
       const median = medianRuntime(full);
       if (median !== undefined) return median;
@@ -295,11 +343,12 @@ export interface SeriesWithStatus {
 export async function withStatus(
   summaries: readonly SeriesSummary[],
   now: Date = new Date(),
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<readonly SeriesWithStatus[]> {
   return Promise.all(
     summaries.map(async (summary) => {
       try {
-        const detail = await getSeriesDetail(summary.providerId);
+        const detail = await getSeriesDetail(summary.providerId, locale);
         const seasons = normalizeSeasons(summary.providerId, detail.seasons, { now });
         const cadence = seasonCadence(seasons.rateable);
         return {
@@ -343,6 +392,7 @@ const MAX_SEASONS_FOR_TRAJECTORY = 15;
 export async function publicTrajectory(
   id: string,
   seasons: NormalizedSeasons,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<Trajectory | undefined> {
   const candidates = seasons.rateable.slice(0, MAX_SEASONS_FOR_TRAJECTORY);
   if (candidates.length < 2) return undefined;
@@ -351,8 +401,8 @@ export async function publicTrajectory(
     candidates.map(async (season) => {
       const seasonNumber = season.ref.seasonNumber;
       try {
-        const full = await throughSeason(`${id}:${seasonNumber}`, () =>
-          getProvider().getSeason(id, seasonNumber),
+        const full = await throughSeason(keyIn(locale, `${id}:${seasonNumber}`), () =>
+          getProvider(locale).getSeason(id, seasonNumber),
         );
         const median = representativeRating(
           full.episodes
@@ -462,6 +512,8 @@ export async function watchOptions(
   region: string = DEFAULT_WATCH_REGION,
 ): Promise<readonly WatchOption[]> {
   try {
+    // Pas de langue dans la cle : ce que renvoie cet appel est une liste de marques,
+    // que TMDB ne traduit pas. Y ajouter la locale doublerait le cache pour rien.
     return await throughWatch(`${id}:${region}`, () =>
       getProvider().watchOptions(id, region),
     );
@@ -502,6 +554,7 @@ const MAX_SEASONS_FOR_GRID = 15;
 export async function episodeRatings(
   id: string,
   seasons: NormalizedSeasons,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<readonly SeasonRatings[]> {
   const candidates = seasons.rateable.slice(0, MAX_SEASONS_FOR_GRID);
 
@@ -509,8 +562,8 @@ export async function episodeRatings(
     candidates.map(async (season) => {
       const seasonNumber = season.ref.seasonNumber;
       try {
-        const full = await throughSeason(`${id}:${seasonNumber}`, () =>
-          getProvider().getSeason(id, seasonNumber),
+        const full = await throughSeason(keyIn(locale, `${id}:${seasonNumber}`), () =>
+          getProvider(locale).getSeason(id, seasonNumber),
         );
         const episodes = full.episodes
           .filter(
@@ -552,15 +605,16 @@ export async function episodeRatings(
 export async function waitingSeries(
   limit = 12,
   now: Date = new Date(),
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<readonly SeriesWithStatus[]> {
   // Trois pages, pas deux : le filtrage de la vitrine retire une part des resultats,
   // et le tri par attente n'a d'interet que s'il a de quoi choisir.
   const pages = await Promise.all([
-    discover('popular', 1),
-    discover('popular', 2),
-    discover('popular', 3),
+    discover('popular', 1, locale),
+    discover('popular', 2, locale),
+    discover('popular', 3, locale),
   ]);
-  const hydrated = await withStatus(pages.flat(), now);
+  const hydrated = await withStatus(pages.flat(), now, locale);
 
   return hydrated
     .filter(
@@ -589,6 +643,7 @@ export async function waitingSeries(
 export async function alsoByCreators(
   detail: SeriesDetail,
   limit = 6,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<readonly SeriesSummary[]> {
   const creators = detail.creators ?? [];
   if (creators.length === 0) return [];
@@ -596,8 +651,8 @@ export async function alsoByCreators(
   const lists = await Promise.all(
     creators.slice(0, 2).map(async (creator) => {
       try {
-        return await throughCreator(creator.providerId, () =>
-          getProvider().seriesByCreator(creator.providerId),
+        return await throughCreator(keyIn(locale, creator.providerId), () =>
+          getProvider(locale).seriesByCreator(creator.providerId),
         );
       } catch {
         return [];

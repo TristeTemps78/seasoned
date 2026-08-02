@@ -9,7 +9,6 @@ import { seasonToRate } from '@/src/domain/nudge';
 import { remainingAfter } from '@/src/domain/remaining';
 import { formatCommitment } from '@/lib/format';
 import { tn as translateN } from '@/lib/i18n';
-import type { Stars } from '@/src/domain/types';
 
 export interface SeasonShape {
   readonly seasonNumber: number;
@@ -288,6 +287,3 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
     </section>
   );
 }
-
-/** Re-export pour les appelants qui construisent la forme attendue. */
-export type { Stars };

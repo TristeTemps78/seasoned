@@ -2,7 +2,7 @@
 
 import { useId } from 'react';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { ALL_STARS, type Stars } from '@/src/domain/types';
+import type { Stars } from '@/src/domain/types';
 
 /**
  * Dix demi-etoiles, un geste.
@@ -105,6 +105,3 @@ function Star({ filled, className }: { readonly filled: 0 | 0.5 | 1; readonly cl
     </svg>
   );
 }
-
-/** Les valeurs possibles, exportees pour qui a besoin de la meme echelle. */
-export const STAR_VALUES = ALL_STARS;

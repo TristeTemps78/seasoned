@@ -55,14 +55,17 @@ export async function SearchView({ query, locale }: {
   let unavailable = false;
   if (query.length > 0) {
     try {
-      const found = await searchSeries(query);
+      const found = await searchSeries(query, locale);
       total = found.length;
       // Le statut n'est hydrate que sur les premiers resultats : cette page est
       // dynamique, donc un appel par element serait paye a chaque requete. Les
       // suivants gardent leur vignette, sans statut — degradation choisie plutot
       // que subie (`ROADMAP.md` §1.4).
       const [head, tail] = [found.slice(0, HYDRATED_RESULTS), found.slice(HYDRATED_RESULTS)];
-      results = [...(await withStatus(head)), ...tail.map((summary) => ({ summary }))];
+      results = [
+        ...(await withStatus(head, new Date(), locale)),
+        ...tail.map((summary) => ({ summary })),
+      ];
     } catch {
       unavailable = true;
     }

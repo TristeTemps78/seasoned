@@ -113,13 +113,85 @@ harnais d'abord, la langue ensuite, les gestes après.
 
 | # | Tâche | Statut | Motif |
 |---|---|---|---|
-| 1.61 | Harnais de test de composants (`jsdom`, `include` en `.tsx`) | 🔒 in-progress — @claude-opus — 2026-08-03 | Prérequis de 1.59 : 16 modules client, zéro test |
-| 1.59 | Migrer les composants client vers le dictionnaire | 🔒 in-progress — @claude-opus — 2026-08-03 | `/fr` sert du français sur les pages, de l'anglais nulle part dans les gestes |
-| A4 | **« Il vous reste 14 épisodes · 9 h 20 »** | 🔒 in-progress — @claude-opus — 2026-08-03 | Le différenciateur ne sert que les arrivants ; celui qui a commencé n'a pas son chiffre |
-| A5 | Rappel de noter la saison qu'on vient de finir | 🔒 in-progress — @claude-opus — 2026-08-03 | La note de saison est le cœur du modèle et rien ne la demande |
-| A2 | Import des exports concurrents | 🔒 in-progress — @claude-opus — 2026-08-03 | Cause n°1 d'abandon (`RESEARCH.md` §0.4) ; 26 M d'orphelins TV Time |
-| A3 | `/convertir` — la page qui capte les orphelins | 🔒 in-progress — @claude-opus — 2026-08-03 | Un import sans adresse ne se trouve pas |
-| A6 | Calendrier `.ics` des prochains épisodes | 🔒 in-progress — @claude-opus — 2026-08-03 | Répond au trou d'engagement D9 sans notification à héberger |
+| 1.61 | Harnais de test de composants (`jsdom`, `include` en `.tsx`) | ✅ 2026-08-03 | Deux projets vitest. **Le domaine reste sous `node`** : un `document` global rendrait invisible une violation de la règle 2 |
+| 1.59 | Migrer les composants client vers le dictionnaire | ✅ 2026-08-03 | Contexte de langue + `tests/no-hardcoded-strings.test.ts`. Six défauts trouvés, voir ci-dessous |
+| A4 | **« Il vous reste 15 épisodes · 11 h 15 »** | ✅ 2026-08-03 | `src/domain/remaining.ts`, 12 tests |
+| A5 | Rappel de noter la saison qu'on vient de finir | ✅ 2026-08-03 | `src/domain/nudge.ts`, 9 tests. Un seul rappel à la fois |
+| A2 | Import des exports concurrents | ✅ 2026-08-03 | `src/domain/import.ts`, 14 tests. **Aucun format connu nommément** — voir le motif |
+| A3 | `/convertir` — la page qui capte les orphelins | ✅ 2026-08-03 | Indexable, au sitemap, liée depuis chaque pied de page |
+| A6 | Calendrier `.ics` des prochains épisodes | ✅ 2026-08-03 | `src/domain/calendar.ts`, 12 tests |
+| 1.62 | **Langue du catalogue par page** | ✅ 2026-08-03 | Un fournisseur par langue, la locale dans la clé de cache. Voir ci-dessous — c'était sévère |
+| 1.63 | **Faille XSS dans le JSON-LD** | ✅ 2026-08-03 | `lib/jsonld.ts`. Voir ci-dessous |
+| 1.64 | En-têtes de sécurité HTTP | ✅ 2026-08-03 | CSP sans nonce, assumé : un nonce détruirait le cache |
+| 1.56 | Mesures : poids JS, en-têtes en production | ✅ 2026-08-03 | D13 refermée : **162 Ko gzip** sur `/`, 166 sur `/moi` |
+
+### 🔴 Ce que l'audit du 2026-08-03 a trouvé, et que rien d'autre ne voyait
+
+Quatre défauts, tous dans du code déclaré fait, tous invisibles au typage et aux tests.
+
+**1. Une faille XSS réelle dans les données structurées.** La page série injectait
+`JSON.stringify(jsonLd)` dans une balise `<script>`, avec en commentaire « contenu
+construit par nous, jamais du HTML tiers ». Le raisonnement est faux sur un point :
+**`JSON.stringify` n'échappe pas `<`**. Un titre valant `</script><script>…` refermait la
+balise et faisait exécuter la suite — sur toutes les pages servies depuis le cache de
+bord, donc pour tous les visiteurs, avec accès au journal rangé dans `localStorage`.
+
+> **Ce que ça apprend** : *les titres viennent de TMDB, alimenté par des contributeurs.*
+> Au sens de la sécurité, c'est une entrée non fiable, au même titre qu'un champ rempli
+> par un visiteur. Le parsing tolérant (`AGENTS.md` règle 4) protège du **mal formé**,
+> pas du **malveillant** — et le premier a masqué le second pendant tout le projet.
+>
+> Détail savoureux : la première version de `lib/jsonld.ts` écrivait `U+2028` en clair,
+> et **le compilateur TypeScript a refusé de la lire**. La démonstration la plus courte
+> possible de ce contre quoi la fonction protège.
+
+**2. La langue du catalogue ne suivait pas la page — quatrième occurrence.**
+`lib/catalog.ts` portait ce commentaire depuis le premier jour : « la langue du catalogue
+doit suivre celle du site : servir une page anglaise avec des synopsis français serait
+pire que ne pas traduire du tout ». Et le code lisait `TMDB_LANGUAGE`, **une variable
+globale**, qui valait `fr-FR`. Donc les pages **anglaises** — celles que les moteurs
+indexent, le canal d'acquisition n°1 — servaient des synopsis français.
+
+Corrigé par un fournisseur par langue **et la locale dans la clé de cache**. Le second
+point est le plus vicieux : sans lui, la première requête d'une série fixe la langue de
+son synopsis pour toutes les suivantes, `/serie/1396` et `/fr/serie/1396` se servant
+mutuellement leur contenu **selon qui arrive en premier**. Un défaut qui ne se reproduit
+pas à la demande et disparaît à chaque redémarrage. `tests/catalog-locale.test.ts` le
+mesure sur le **nombre d'appels**, seule façon de le rendre visible.
+
+**3. `robots.txt` ne couvrait que l'anglais.** `/recherche`, `/moi`, `/hors-ligne` étaient
+exclus ; `/fr/recherche`, `/fr/moi`, `/fr/hors-ligne` ne l'étaient pas. Le budget de crawl
+partait sur des pages vides par construction. La liste est désormais **dérivée** des
+langues servies.
+
+**4. Six défauts d'i18n dans des fichiers marqués ✅.** Le bandeau de sécurité devinait sa
+langue via `navigator.language` — sur `/fr`, un navigateur anglophone recevait un bandeau
+anglais **au milieu d'une page française**. `StatusBadge` ne recevait pas la locale : le
+différenciateur même du produit s'affichait en anglais sur les pages françaises.
+« Disponibilité en France » était servi en dur à des lecteurs américains. La virgule
+décimale était codée en dur. Et **tous** les liens internes étaient absolus : depuis `/fr`,
+chaque clic ramenait en anglais — vers des adresses qui, pour `/fr/moi` et `/fr/recherche`,
+n'existaient même pas.
+
+> **La leçon de la bascule se prolonge d'un cran.** On savait qu'il ne suffit pas de
+> changer un défaut pour servir une alternative — il faut qu'elle ait une adresse. Il
+> faut aussi que **les chemins y restent**.
+
+### Ce que l'audit a mesuré plutôt que supposé
+
+| Sujet | Résultat |
+|---|---|
+| **Poids JS** (D13) | **162 Ko gzip** sur `/`, **166 Ko** sur `/moi`. La couche des gestes — 18 modules client — coûte donc **~4 Ko** : le reste est le socle Next/React. L'ancienne ligne « 194 Ko pour zéro composant client » était fausse **dans les deux sens**. |
+| En-têtes servis | Aucun avant. Désormais CSP, `nosniff`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy` — vérifiés sur la réponse réelle, cache toujours `HIT`. |
+| CVE `sharp` (haute) | **Non exploitable ici, et vérifié** : `images.unoptimized: true` et **aucun `next/image`** dans le dépôt, donc le chemin de code n'est jamais exercé. Next 16.2.12 est déjà la dernière version — rien à mettre à jour. Consigné plutôt que maquillé. |
+| CVE `esbuild` (modérée) | Fermée : vitest 2 → 4. |
+| Code mort | 92 exports sans usage externe, dont **3 vrais** (re-exports de confort). Le reste est de l'inférence de types — faux positifs assumés. |
+
+**⚠️ CSP sans nonce, et c'est un arbitrage, pas un oubli.** Une politique à nonce est la
+seule qui neutralise vraiment le script injecté ; elle exige une valeur différente **par
+réponse**, donc un rendu par requête, donc la destruction du cache de bord — c'est-à-dire
+de ce qui tient le budget. `script-src` reste permissif, tout le reste est fermé, et le
+seul endroit où du contenu tiers entre dans une balise `<script>` est traité à la source.
 
 ---
 

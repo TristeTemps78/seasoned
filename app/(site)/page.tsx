@@ -26,17 +26,17 @@ export async function Home({ locale }: { readonly locale: Locale }) {
   // atteignable** depuis une page indexable — sitemap a une seule URL, `/recherche`
   // en `Disallow`, zero lien sortant. Le canal d'acquisition n°1 etait un cul-de-sac.
   const [rawTrending, rawOnTheAir] = await Promise.all([
-    discover('trending'),
-    discover('on_the_air'),
+    discover('trending', 1, locale),
+    discover('on_the_air', 1, locale),
   ]);
 
   // Hydratation du statut reel : un appel par serie, mais la page est en ISR
   // quotidien — le total reste de l'ordre de 60 appels par JOUR, quel que soit le
   // trafic (`ROADMAP.md` §1.4). C'est ce qui rend la promesse visible **avant** le clic.
   const [trending, onTheAir, waiting] = await Promise.all([
-    withStatus(rawTrending.slice(0, 12)),
-    withStatus(rawOnTheAir.slice(0, 12)),
-    waitingSeries(12),
+    withStatus(rawTrending.slice(0, 12), new Date(), locale),
+    withStatus(rawOnTheAir.slice(0, 12), new Date(), locale),
+    waitingSeries(12, new Date(), locale),
   ]);
 
   return (

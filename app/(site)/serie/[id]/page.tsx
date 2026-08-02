@@ -13,6 +13,7 @@ import {
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { formatCommitment, formatDate, statusLabel, year } from '@/lib/format';
 import { DEFAULT_LOCALE, localeTag, t, tn, watchRegion, type Locale } from '@/lib/i18n';
+import { serializeJsonLd } from '@/lib/jsonld';
 import { alternatesFor } from '@/lib/routes';
 import { TmdbError } from '@/src/catalog/tmdb';
 import { starsFromTen } from '@/src/domain/rating-scale';
@@ -70,10 +71,10 @@ function isValidSeriesId(id: string): boolean {
   return /^[0-9]+$/.test(id);
 }
 
-async function load(id: string) {
+async function load(id: string, locale: Locale) {
   if (!isValidSeriesId(id)) return { kind: 'missing' as const };
   try {
-    return { kind: 'ok' as const, data: await getSeriesPageData(id) };
+    return { kind: 'ok' as const, data: await getSeriesPageData(id, new Date(), locale) };
   } catch (error) {
     if (error instanceof TmdbError && error.status === 404) {
       return { kind: 'missing' as const };
@@ -89,7 +90,7 @@ async function load(id: string) {
  * meme page dans une autre langue, au lieu d'en entretenir une copie qui divergera.
  */
 export async function seriesMetadata(id: string, locale: Locale): Promise<Metadata> {
-  const loaded = await load(id);
+  const loaded = await load(id, locale);
   if (loaded.kind !== 'ok') return { title: t(locale, 'series.unavailableTitle') };
 
   const { detail, seasons, status, episodeCount, totalRuntimeMinutes } = loaded.data;
@@ -148,7 +149,7 @@ export async function SeriesView({ id, locale }: {
   readonly id: string;
   readonly locale: Locale;
 }) {
-  const loaded = await load(id);
+  const loaded = await load(id, locale);
 
   if (loaded.kind === 'missing') notFound();
   if (loaded.kind === 'unavailable') {
@@ -183,8 +184,12 @@ export async function SeriesView({ id, locale }: {
     <article className="space-y-10">
       <script
         type="application/ld+json"
-        // Contenu construit par nous a partir de champs deja decodes, jamais du HTML tiers.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // ⚠️ `serializeJsonLd` et non `JSON.stringify` : ce dernier n'echappe pas `<`,
+        // donc un titre TMDB valant `</script><script>…` refermait la balise et faisait
+        // executer ce qui suit — sur toutes les pages servies depuis le cache de bord.
+        // Les titres viennent de contributeurs : au sens de la securite, c'est une
+        // entree non fiable, et le parsing tolerant ne protege que du mal forme.
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
       <header className="flex flex-col gap-6 sm:flex-row">
@@ -312,6 +317,7 @@ export async function SeriesView({ id, locale }: {
         id={id}
         title={detail.title}
         seasons={seasons}
+        locale={locale}
         episodeCount={episodeCount}
         {...(totalRuntimeMinutes !== undefined ? { totalRuntimeMinutes } : { totalRuntimeMinutes: undefined })}
       />
@@ -340,7 +346,7 @@ async function AlsoByCreators({ detail, locale }: {
   readonly detail: Awaited<ReturnType<typeof getSeriesPageData>>['detail'];
   readonly locale: Locale;
 }) {
-  const others = await alsoByCreators(detail);
+  const others = await alsoByCreators(detail, 6, locale);
   if (others.length === 0) return null;
 
   const names = (detail.creators ?? [])
@@ -400,18 +406,19 @@ async function WatchHere({ id, locale }: {
  * traverser le serveur. Sans position, tout reste derriere le geste explicite ; avec,
  * la courbe se decouvre a mesure qu'on avance.
  */
-async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCount }: {
+async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCount, locale }: {
   readonly id: string;
   readonly title: string;
   readonly seasons: Awaited<ReturnType<typeof getSeriesPageData>>['seasons'];
   readonly totalRuntimeMinutes: number | undefined;
   readonly episodeCount: number;
+  readonly locale: Locale;
 }) {
   // Les deux partagent le meme cache de saisons : afficher la grille en plus de la
   // courbe ne coute pas un appel supplementaire.
   const [trajectory, grid] = await Promise.all([
-    publicTrajectory(id, seasons),
-    episodeRatings(id, seasons),
+    publicTrajectory(id, seasons, locale),
+    episodeRatings(id, seasons, locale),
   ]);
   if (trajectory === undefined) return null;
 
