@@ -92,6 +92,56 @@ vrai**, et chacune a été révélée par la production, pas par les tests.
 **Vérifié en production** : *Dexter* et *Stranger Things* signalent tous deux leur
 décrochage, et plus aucun jugement faux n'est affiché.
 
+### 🟢 1.30 → 1.34 — Le produit se souvient (2026-08-02) ✅
+
+Bloc dirigé par le cadrage produit de Tristan : **Letterboxd** (amis, listes, profils,
+notes) + **IMDb** (notes par épisode, couleurs) + **JustWatch** (où regarder, sorties).
+
+| # | Fait | Modèle |
+|---|---|---|
+| 1.30 | **Grille d'épisodes colorée** | IMDb |
+| 1.31 | **« Où la regarder »** + attribution JustWatch | JustWatch |
+| 1.32 | **Prochain épisode daté et nommé** | JustWatch |
+| 1.33 | **Journal personnel** — position, notes de saison, décision | Letterboxd |
+| 1.34 | Vérification interactive au navigateur | — |
+
+#### Le contre-sens qui a dirigé le bloc
+
+J'ai décomposé ce qui rend réellement addict : attente récompensée, progression
+visible, collection, comparaison sociale, découverte de soi. **Quatre sur cinq butaient
+sur la même chose** — le produit ne se souvenait de rien. Le blocage n'était pas une
+feature manquante, c'était l'absence de persistance.
+
+> **Sortie : stocker sans base de données, dans le navigateur.** Coût zéro, aucun compte
+> à créer, aucune donnée personnelle hébergée, aucune obligation RGPD — et surtout, cela
+> **valide l'usage avant d'investir dans Supabase**.
+
+Deux propriétés rendent la chose acceptable architecturalement :
+
+- **La page reste statique et mise en cache** — vérifié au build, `/serie/[id]` est
+  toujours `○ Static`. L'état personnel s'ajoute par-dessus, côté navigateur.
+- **La forme des données est exactement celle qu'attend `RATING-MODEL.md` §7** :
+  position en pointeur, cible de note polymorphe, décision de plein droit. Passer au
+  serveur ne demandera pas de la réécrire.
+
+#### Vérifié au navigateur, pas au curl
+
+Le HTML servi **ne contient pas** le composant — voulu : il ne rend rien tant que le
+stockage n'est pas lu, ce qui évite toute erreur d'hydratation. Un `curl` ne pouvait
+donc rien prouver.
+
+| Vérification | Résultat |
+|---|---|
+| Sélection saison 3 | 13 épisodes proposés — correct pour Breaking Bad |
+| Sélecteurs de note | **3 seulement** (saisons 1-3) : les saisons non atteintes ne sont pas proposées — la règle de spoiler tient jusque dans la saisie |
+| Note 4,5 sur la saison 1, puis rechargement | restaurée |
+| Contenu de `localStorage` | forme conforme au modèle, version 1 |
+
+**Dette D14** : pas de synchronisation entre appareils, et le journal disparaît si le
+navigateur est nettoyé. Un export/import JSON est le minimum à ajouter avant que
+quiconque y investisse du temps — `exportJournal()` existe déjà, il lui manque une
+interface.
+
 ### 1.24 → 1.29 — Bloc du 2026-08-02 ✅
 
 | # | Ce qui a été fait | Trouvé par |
