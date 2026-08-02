@@ -1,11 +1,12 @@
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MyProgress } from '@/app/components/MyProgress';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import type { Locale } from '@/lib/i18n';
 import {
   EMPTY_JOURNAL,
   markCompleted,
+  parseJournal,
   serializeJournal,
   setPosition,
   setSeasonRating,
@@ -156,5 +157,52 @@ describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
     store(setPosition(EMPTY_JOURNAL, KEY, 2, 5));
     renderAt('en', 45);
     expect(await screen.findByText(/You have 15 episodes left/)).toBeDefined();
+  });
+});
+
+describe('l’instantane memorise la forme de la serie, et une seule fois', () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it('range les tailles de saisons, sans quoi /moi ne peut rien chiffrer', async () => {
+    // `/moi` ne fait aucun appel : une position « S2E5 » y est incomptable sans savoir
+    // combien d'episodes fait la saison 1. Ce que la page ne memorise pas ici manque
+    // pour toujours a cette visite.
+    store(setPosition(EMPTY_JOURNAL, KEY, 2, 5));
+    renderAt('fr', 45);
+
+    await waitFor(() => {
+      const journal = parseJournal(window.localStorage.getItem(STORAGE_KEY));
+      expect(journal.entries[KEY]?.snapshot?.seasonSizes).toEqual(SEASONS);
+      expect(journal.entries[KEY]?.snapshot?.episodeMinutes).toBe(45);
+    });
+  });
+
+  it('⚠️ n’ecrit pas en boucle', async () => {
+    // `setSnapshot` reecrit **toujours**, avec un `cachedAt` neuf : un objet reconstruit
+    // a chaque rendu provoquerait une ecriture par rendu, indefiniment. Le garde-fou est
+    // la memoisation cote composant, plus la comparaison de contenu dans `isFresh` — et
+    // ni l'une ni l'autre ne se voit en relisant le code.
+    store(setPosition(EMPTY_JOURNAL, KEY, 2, 5));
+
+    // Espionner le prototype et non l'instance : en jsdom, `localStorage` n'expose pas
+    // ses methodes en propre, donc une reaffectation sur l'objet ne voit rien passer.
+    const spy = vi.spyOn(Storage.prototype, 'setItem');
+
+    try {
+      renderAt('fr', 45);
+      await waitFor(() => {
+        expect(
+          parseJournal(window.localStorage.getItem(STORAGE_KEY)).entries[KEY]?.snapshot
+            ?.seasonSizes,
+        ).toBeDefined();
+      });
+      // Laisser passer plusieurs cycles : une boucle se verrait ici et nulle part avant.
+      for (let i = 0; i < 5; i += 1) await Promise.resolve();
+
+      const writes = spy.mock.calls.filter(([key]) => key === STORAGE_KEY).length;
+      expect(writes).toBe(1);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

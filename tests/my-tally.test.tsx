@@ -82,7 +82,7 @@ describe('le bilan personnel, branche sur le journal', () => {
     renderLibrary();
 
     await waitFor(() => {
-      expect(screen.getByText(/Breaking Bad —.*vue 2 fois/)).toBeDefined();
+      expect(screen.getByText(/Breaking Bad :.*vue 2 fois/)).toBeDefined();
     });
   });
 

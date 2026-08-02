@@ -76,15 +76,28 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
 
   // Ce qu'on memorise : ce que la page sait deja, **plus la forme de la serie**.
   //
-  // Les tailles de saisons sont deja la, en prop. Sans elles dans l'instantane, `/moi`
-  // ne peut pas traduire « saison 3, episode 7 » en un nombre d'episodes vus — il ne fait
+  // Les deux morceaux de cette forme sont deja la, en props. Sans eux dans l'instantane,
+  // `/moi` ne peut pas traduire « saison 3, episode 7 » en un temps passe — il ne fait
   // aucun appel reseau, donc ce qu'il n'a pas ici, il ne l'aura jamais pour cette visite.
+  //
+  // ⚠️ **`episodeMinutes` doit etre recopie explicitement.** Il arrive en prop **a cote**
+  // de `series`, pas dedans : le type l'acceptait, la page ne le remplissait pas, et le
+  // champ ajoute a l'instantane le matin meme n'etait donc **jamais ecrit**. Trouve par
+  // ce test et par lui seul — une verification au navigateur ne pouvait pas le voir,
+  // puisque le journal de test portait deja la valeur qu'on croyait ecrire.
   //
   // ⚠️ **Memoise, et ce n'est pas une optimisation** : `setSnapshot` reecrit toujours, avec
   // un `cachedAt` neuf. Un objet reconstruit a chaque rendu ferait donc une ecriture dans
   // `localStorage` a chaque rendu, indefiniment. `series` et `seasons` viennent d'un
   // composant serveur, leurs references sont stables ; l'objet fusionne doit l'etre aussi.
-  const toRemember = useMemo(() => ({ ...series, seasonSizes: seasons }), [series, seasons]);
+  const toRemember = useMemo(
+    () => ({
+      ...series,
+      seasonSizes: seasons,
+      ...(episodeMinutes !== undefined ? { episodeMinutes } : {}),
+    }),
+    [series, seasons, episodeMinutes],
+  );
 
   // N'ecrit que si l'entree existe deja : passer sur une page ne doit pas remplir le
   // journal, ni constituer une base de metadonnees que le contrat interdit.

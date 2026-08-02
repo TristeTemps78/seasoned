@@ -522,9 +522,9 @@ const FR = {
   'tally.onSeries.one': '{episodes}, sur {n} série comptée',
   'tally.onSeries.other': '{episodes}, sur {n} séries comptées',
   'tally.heaviest': 'Surtout',
-  'tally.heaviestOnce': '{title} — {commitment}',
-  'tally.heaviestPasses.one': '{title} — {commitment}, vue {n} fois',
-  'tally.heaviestPasses.other': '{title} — {commitment}, vue {n} fois',
+  'tally.heaviestOnce': '{title} : {commitment}',
+  'tally.heaviestPasses.one': '{title} : {commitment}, vue {n} fois',
+  'tally.heaviestPasses.other': '{title} : {commitment}, vue {n} fois',
   'tally.missing.one':
     '{n} série suivie n’a pas pu être comptée : son instantané a expiré, ou le catalogue ignore la durée de ses épisodes. Le vrai total est plus élevé.',
   'tally.missing.other':
@@ -900,9 +900,9 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'tally.onSeries.one': '{episodes}, across {n} series counted',
   'tally.onSeries.other': '{episodes}, across {n} series counted',
   'tally.heaviest': 'Mostly',
-  'tally.heaviestOnce': '{title} — {commitment}',
-  'tally.heaviestPasses.one': '{title} — {commitment}, watched {n} time',
-  'tally.heaviestPasses.other': '{title} — {commitment}, watched {n} times',
+  'tally.heaviestOnce': '{title}: {commitment}',
+  'tally.heaviestPasses.one': '{title}: {commitment}, watched {n} time',
+  'tally.heaviestPasses.other': '{title}: {commitment}, watched {n} times',
   'tally.missing.one':
     '{n} show you follow could not be counted: its snapshot has expired, or the catalogue does not know how long its episodes are. The real total is higher.',
   'tally.missing.other':
