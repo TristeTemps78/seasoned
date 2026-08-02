@@ -195,27 +195,41 @@ seul endroit où du contenu tiers entre dans une balise `<script>` est traité �
 
 ---
 
-## 🔄 Reprise à froid — état au 2026-08-02 (fin de session)
+## 🔄 Reprise à froid — état au 2026-08-03 (fin de session)
 
-**Tout est committé, `main` propre. 306 tests verts, typecheck strict vert, build vert,
-toutes les routes `○ Static`.** Cinq commits : `a46b4cf` (fusion) · `2fa1292` (i18n +
-DataSafety) · `2ae1816` (bascule `en`) · `40b4f99` (doc) · `bfd070e` (routage locale).
+**Tout est committé, `main` propre. 436 tests verts, typecheck strict vert, build vert,
+13 routes `○ Static` sur 15** (`/recherche` et `/fr/recherche` sont dynamiques par nature).
+Quatre commits : `a1fab2d` (réservation + D14) · `9043233` (filet + i18n) · `26e7514`
+(vague A) · `96853ae` (XSS + langue du catalogue + en-têtes).
 
 ### À faire en premier, dans cet ordre
 
-1. **Vérifier en production** (rien d'autre ne peut le prouver) : les `hreflang` d'une page
-   série (`/serie/1396` et `/fr/serie/1396`) — non observables en local, le catalogue y
-   était indisponible ; et `X-Vercel-Cache: HIT|PRERENDER` sur `/fr/serie/1396`.
-2. **⚠️ Vider `TMDB_LANGUAGE` dans l'environnement Vercel.** Un `fr-FR` oublié servirait
-   des synopsis français sur des pages `lang="en"` — pire que ne pas traduire.
-3. **1.61 harnais de test de composants** (`jsdom` + testing-library, `include` en `.tsx`).
-   15 modules `'use client'`, zéro test — dont `DataSafety` et `LanguagePicker`, livrés
-   sans filet. Prérequis de 1.59.
-4. **1.59 migrer les ~14 composants restants** vers le dictionnaire (`/moi`, `EpisodeGrid`,
-   `MyProgress`, `StarRating`, `ShareCard`, `TasteCard`…). Encore en français en dur.
-5. **Vague A** (plan complet dans le fichier de plan de session) : A4 « il vous reste
-   14 épisodes · 9 h 20 », A5 rappel de noter la saison, A2 import, A3 `/convertir`,
-   A6 calendrier `.ics`.
+1. **⚠️ Vérifier en production, c'est la seule chose que le local ne peut pas prouver.**
+   Le catalogue est **indisponible en local** (`TMDB_ACCESS_TOKEN` vide dans `.env`), donc
+   les pages série y servent leur repli. **Deux vérifications restent dues** depuis deux
+   sessions : les `hreflang` d'une page série, et `X-Vercel-Cache: HIT` sur
+   `/fr/serie/1396`. Tout le reste a été vérifié au navigateur.
+2. **⚠️ Vider `TMDB_LANGUAGE` dans l'environnement Vercel** — toujours dû. Depuis
+   le 2026-08-03 la langue du catalogue suit la page ; cette variable **écrase toutes les
+   langues d'un coup** et n'a plus qu'un usage de diagnostic. Un `fr-FR` oublié y sert des
+   synopsis français sur les pages `lang="en"`, c'est-à-dire celles qui portent le SEO.
+   *(Le forçage local a été retiré de `.env` ; l'environnement Vercel n'est pas
+   observable d'ici — **unverified**.)*
+3. **Les cinq propositions** : `docs/NEXT-FIVE.md`, à trancher par Tristan. La n°1 (point
+   d'entrée, « ça commence vraiment à S1E8 ») est rentable dès demain, sans un seul
+   utilisateur, avec les données déjà en cache.
+4. **A4 (le nom)** reste le seul arbitrage bloquant avant un vrai lancement public.
+
+### Ce que la méthodologie a encore trouvé cette nuit
+
+Les quatre défauts de l'audit (XSS, langue du catalogue, `robots.txt` à moitié, i18n des
+composants) étaient **tous dans du code marqué ✅**, et **aucun** n'était visible au
+typage, aux tests ni au build. La règle tient pour la cinquième fois : **auditer le
+résultat, jamais l'intention.**
+
+Deux ajouts durables à l'outillage, qui rendent deux de ces fautes non répétables :
+`tests/no-hardcoded-strings.test.ts` (toute phrase française hors dictionnaire casse la CI)
+et `tests/catalog-locale.test.ts` (la langue doit rester dans la clé de cache).
 
 ### La méthodologie qui a produit ces cinq commits
 

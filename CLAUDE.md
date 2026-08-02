@@ -8,7 +8,43 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-01)
+## État actuel (2026-08-03)
+
+- **Session du 2026-08-03 : le filet, la langue, cinq gestes, et un audit qui a trouvé une
+  faille.** 306 → **436 tests verts**, typecheck strict vert, build vert, 13 routes
+  `○ Static`. Quatre commits — détail et suites dans `TASKS.md`.
+  - **🔴 Une XSS réelle**, dans le JSON-LD des pages série. `JSON.stringify` **n'échappe
+    pas `<`** : un titre TMDB valant `</script><script>…` refermait la balise et faisait
+    exécuter la suite, sur toutes les pages servies depuis le cache de bord, avec accès au
+    journal dans `localStorage`. Réparé par `lib/jsonld.ts`.
+    > **La leçon** : les titres viennent de contributeurs TMDB. Au sens de la sécurité,
+    > c'est une **entrée non fiable**. Le parsing tolérant (`AGENTS.md` règle 4) protège du
+    > **mal formé**, pas du **malveillant** — et le premier a masqué le second tout le projet.
+  - **La langue du catalogue ne suivait pas la page** — quatrième occurrence de la forme
+    d'échec du projet. Le commentaire disait la règle, le code lisait `TMDB_LANGUAGE`, une
+    variable **globale** valant `fr-FR` : les pages **anglaises**, celles que les moteurs
+    indexent, servaient des synopsis français. Corrigé par un fournisseur par langue **et
+    la locale dans la clé de cache** — sans quoi la première visite fixe la langue pour
+    toutes les suivantes, selon qui arrive en premier.
+  - **1.61 le harnais de composants** (deux projets vitest ; le domaine reste sous `node`,
+    pour qu'une violation de la règle 2 ne puisse pas passer inaperçue) et **1.59 l'i18n
+    des 18 modules client** — six défauts trouvés dans des fichiers marqués ✅, dont le
+    `StatusBadge` anglais sur les pages françaises et **tous** les liens internes en dur.
+    > **La leçon de la bascule se prolonge** : il ne suffit pas qu'une langue ait une
+    > adresse, il faut que **les chemins y restent**.
+  - **Vague A** : `remaining.ts` (« il vous reste 15 épisodes · 11 h 15 »), `nudge.ts`
+    (le rappel de noter la saison finie), `calendar.ts` (`.ics` — le rappel que quelqu'un
+    d'autre paie), `import.ts` + `/convertir` (**aucun format tiers connu nommément** :
+    écrire un lecteur « Trakt » de mémoire serait la dette D10, TV Time a fermé et on ne
+    peut plus en obtenir d'export).
+  - **Mesuré, pas supposé** : **162 Ko gzip** sur `/`, 166 sur `/moi` — D13 refermée, la
+    couche des gestes coûte ~4 Ko. En-têtes de sécurité posés (CSP **sans nonce**, assumé :
+    un nonce impose un rendu par requête, donc détruit le cache).
+  - **Cinq features proposées** : `docs/NEXT-FIVE.md`. ⚠️ **Reddit est bloqué dans cet
+    environnement** (recherche et navigateur) — les sources sont donc autres, et le dire
+    fait partie du travail.
+
+## État précédent (2026-08-01)
 
 - **🌍 A9 tranché par Tristan (2026-08-02) : le produit vise l'international.** Ce n'est pas
   un élargissement, c'est le **multiplicateur du seul canal qui marche à froid** — une page
