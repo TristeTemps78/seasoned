@@ -34,6 +34,12 @@ export interface SeriesSummary {
   readonly kind?: ProgramKind;
 }
 
+/** Une personne creditee a la creation d'une serie. */
+export interface Creator {
+  readonly providerId: string;
+  readonly name: string;
+}
+
 /** Fiche complete d'une serie, telle que rendue par un fournisseur. */
 export interface SeriesDetail extends SeriesSummary {
   readonly externalIds: ExternalIds;
@@ -42,6 +48,14 @@ export interface SeriesDetail extends SeriesSummary {
   readonly lastAiredAt?: Date;
   readonly nextAiringAt?: Date;
   readonly episodeRunTimeMinutes?: number;
+  /**
+   * Createurs credites.
+   *
+   * Un **fait de production**, pas un calcul de similarite : c'est ce qui distingue ce
+   * maillage d'une recommandation algorithmique, ecartee par `ROADMAP.md` §3. Souvent
+   * absent hors des series americaines — degrader sans bruit.
+   */
+  readonly creators?: readonly Creator[];
 }
 
 /** Un episode tel que rendu par un fournisseur. */
@@ -106,6 +120,12 @@ export interface CatalogProvider {
   discover(
     kind: DiscoverKind,
     page?: number,
+    options?: { readonly signal?: AbortSignal },
+  ): Promise<readonly SeriesSummary[]>;
+
+  /** Les autres series d'une personne creditee a la creation. */
+  seriesByCreator(
+    personId: string,
     options?: { readonly signal?: AbortSignal },
   ): Promise<readonly SeriesSummary[]>;
 }

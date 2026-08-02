@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   TmdbProvider,
+  mapPersonSeriesCredits,
   mapSearchResults,
   mapSeasonDetail,
   mapSeriesDetail,
@@ -180,6 +181,50 @@ describe('mapSeasonDetail', () => {
 
   it('rend une saison vide plutot que de casser', () => {
     expect(mapSeasonDetail(null, 1).episodes).toEqual([]);
+  });
+});
+
+describe('createurs — le seul maillage interne, et il est factuel', () => {
+  it('lit les credits de creation', () => {
+    const detail = mapSeriesDetail({
+      id: 1396,
+      name: 'Breaking Bad',
+      created_by: [{ id: 66633, name: 'Vince Gilligan', credit_id: 'x' }],
+    });
+    expect(detail?.creators).toEqual([{ providerId: '66633', name: 'Vince Gilligan' }]);
+  });
+
+  it('omet le champ quand personne n est credite', () => {
+    // Frequent hors des series americaines : degrader sans bruit.
+    expect(mapSeriesDetail({ id: 1, name: 'x' })?.creators).toBeUndefined();
+    expect(mapSeriesDetail({ id: 1, name: 'x', created_by: [] })?.creators).toBeUndefined();
+  });
+
+  it('ecarte les credits inexploitables sans perdre les autres', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      created_by: [{ id: 1, name: 'A' }, { name: 'sans id' }, null, { id: 2 }],
+    });
+    expect(detail?.creators).toHaveLength(1);
+  });
+
+  it('fusionne crew et cast sans doublon dans les credits d une personne', () => {
+    const series = mapPersonSeriesCredits({
+      crew: [
+        { id: 1, name: 'A', genre_ids: [18] },
+        { id: 2, name: 'B', genre_ids: [18] },
+      ],
+      // La meme serie peut apparaitre des deux cotes : creee et jouee.
+      cast: [{ id: 2, name: 'B', genre_ids: [18] }, { id: 3, name: 'C', genre_ids: [18] }],
+    });
+    expect(series.map((s) => s.providerId)).toEqual(['1', '2', '3']);
+  });
+
+  it('rend une liste vide pour une reponse malformee', () => {
+    expect(mapPersonSeriesCredits(null)).toEqual([]);
+    expect(mapPersonSeriesCredits({})).toEqual([]);
+    expect(mapPersonSeriesCredits({ crew: 'pas un tableau' })).toEqual([]);
   });
 });
 

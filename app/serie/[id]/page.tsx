@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import {
+  alsoByCreators,
   getSeriesPageData,
   posterDimensions,
   posterUrl,
   publicTrajectory,
   stopPointAdvice,
 } from '@/lib/catalog';
+import { SeriesCard } from '@/app/components/SeriesCard';
 import { STATUS_LABEL, formatCommitment, formatDate, year } from '@/lib/format';
 import { TmdbError } from '@/src/catalog/tmdb';
 import { StatusBadge } from '@/app/components/StatusBadge';
@@ -229,7 +231,44 @@ export default async function SeriesPage({ params }: PageProps) {
       />
 
       <SeasonList seasons={seasons} />
+
+      <AlsoByCreators detail={detail} />
     </article>
+  );
+}
+
+/**
+ * Le seul maillage interne du site.
+ *
+ * Une page serie ne renvoyait vers aucune autre : cul-de-sac pour le visiteur comme
+ * pour le crawl. « Du meme createur » est un **credit de production**, pas un calcul
+ * de similarite — ce qui le distingue de la recommandation algorithmique, ecartee
+ * par `ROADMAP.md` §3.
+ */
+async function AlsoByCreators({ detail }: {
+  readonly detail: Awaited<ReturnType<typeof getSeriesPageData>>['detail'];
+}) {
+  const others = await alsoByCreators(detail);
+  if (others.length === 0) return null;
+
+  const names = (detail.creators ?? []).slice(0, 2).map((c) => c.name).join(' et ');
+
+  return (
+    <section className="space-y-4" aria-label="Du même créateur">
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight">Du même créateur</h2>
+        {names.length > 0 ? (
+          <p className="text-sm text-(--color-muted)">{names}</p>
+        ) : null}
+      </div>
+      <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
+        {others.map((series) => (
+          <li key={series.providerId}>
+            <SeriesCard series={series} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

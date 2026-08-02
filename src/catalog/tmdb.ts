@@ -14,6 +14,7 @@
 
 import type {
   CatalogProvider,
+  Creator,
   DiscoverKind,
   EpisodeDetail,
   SeasonDetail,
@@ -169,6 +170,19 @@ function readProductionStatus(source: Record<string, unknown>): ProductionStatus
   return PRODUCTION_STATUS_BY_LABEL[label] ?? 'unknown';
 }
 
+function readCreators(source: Record<string, unknown>): readonly Creator[] {
+  return asArray(source['created_by'])
+    .map((raw) => {
+      const person = asRecord(raw);
+      const id = readNumber(person, 'id');
+      const name = readString(person, 'name');
+      return id !== undefined && name !== undefined
+        ? { providerId: String(id), name }
+        : undefined;
+    })
+    .filter((c): c is Creator => c !== undefined);
+}
+
 function readExternalIds(source: Record<string, unknown>): ExternalIds {
   const tmdb = readNumber(source, 'id');
   const external = asRecord(source['external_ids']);
@@ -270,12 +284,14 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
   const lastAiredAt = readDate(lastEpisode, 'air_date');
   const nextAiringAt = readDate(nextEpisode, 'air_date');
   const episodeRunTimeMinutes = readRuntime(source);
+  const creators = readCreators(source);
 
   return {
     ...summary,
     externalIds: readExternalIds(source),
     production: readProductionStatus(source),
     seasons,
+    ...(creators.length > 0 ? { creators } : {}),
     ...(lastAiredAt !== undefined ? { lastAiredAt } : {}),
     ...(nextAiringAt !== undefined ? { nextAiringAt } : {}),
     ...(episodeRunTimeMinutes !== undefined ? { episodeRunTimeMinutes } : {}),
@@ -424,6 +440,35 @@ export class TmdbProvider implements CatalogProvider {
     );
     return mapSearchResults(raw);
   }
+
+  async seriesByCreator(
+    personId: string,
+    options: { readonly signal?: AbortSignal } = {},
+  ): Promise<readonly SeriesSummary[]> {
+    const raw = await this.#get(
+      `/person/${encodeURIComponent(personId)}/tv_credits`,
+      {},
+      options.signal,
+    );
+    return mapPersonSeriesCredits(raw);
+  }
+}
+
+/** Reponse de `/person/{id}/tv_credits` : les series sont sous `cast` et `crew`. */
+export function mapPersonSeriesCredits(raw: unknown): readonly SeriesSummary[] {
+  const source = asRecord(raw);
+  const seen = new Set<string>();
+  const out: SeriesSummary[] = [];
+
+  for (const key of ['crew', 'cast']) {
+    for (const entry of asArray(source[key])) {
+      const summary = toSummary(entry);
+      if (summary === undefined || seen.has(summary.providerId)) continue;
+      seen.add(summary.providerId);
+      out.push(summary);
+    }
+  }
+  return out;
 }
 
 const DISCOVER_ENDPOINT: Readonly<Record<DiscoverKind, string>> = {

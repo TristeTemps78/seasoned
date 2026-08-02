@@ -102,6 +102,9 @@ const throughSearch = memoizeAsync(searchCache, SEARCH_TTL_MS);
 const throughSeason = memoizeAsync(seasonCache, SERIES_TTL_MS);
 const throughDiscover = memoizeAsync(discoverCache, SERIES_TTL_MS);
 
+const creatorCache = new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 1_000 });
+const throughCreator = memoizeAsync(creatorCache, SERIES_TTL_MS);
+
 /**
  * Duree mediane d'un episode d'une saison, en minutes.
  *
@@ -454,6 +457,52 @@ export async function waitingSeries(
     )
     .sort((a, b) => (b.status?.daysSinceLastAired ?? 0) - (a.status?.daysSinceLastAired ?? 0))
     .slice(0, limit);
+}
+
+/**
+ * Les autres series des createurs d'une serie.
+ *
+ * Seul maillage interne du site, et il est **factuel** : « du meme createur » est un
+ * credit de production, pas un calcul de similarite — ce qui le distingue de la
+ * recommandation algorithmique, ecartee par `ROADMAP.md` §3.
+ *
+ * Repond aussi au dernier trou du canal d'acquisition : une page serie ne renvoyait
+ * vers aucune autre, ce qui en faisait un cul-de-sac pour le visiteur comme pour le
+ * crawl.
+ *
+ * Un appel par createur, mis en cache 24 h — et la plupart des series n'en declarent
+ * qu'un, quand elles en declarent. Degrade en liste vide sans bruit : beaucoup de
+ * series, surtout hors des Etats-Unis, n'ont aucun credit de creation.
+ */
+export async function alsoByCreators(
+  detail: SeriesDetail,
+  limit = 6,
+): Promise<readonly SeriesSummary[]> {
+  const creators = detail.creators ?? [];
+  if (creators.length === 0) return [];
+
+  const lists = await Promise.all(
+    creators.slice(0, 2).map(async (creator) => {
+      try {
+        return await throughCreator(creator.providerId, () =>
+          getProvider().seriesByCreator(creator.providerId),
+        );
+      } catch {
+        return [];
+      }
+    }),
+  );
+
+  const seen = new Set<string>([detail.providerId]);
+  const out: SeriesSummary[] = [];
+  for (const series of lists.flat()) {
+    if (seen.has(series.providerId)) continue;
+    // Meme regle de vitrine qu'ailleurs : on ne met pas en avant un journal televise.
+    if (series.kind !== undefined && !isShowcased(series.kind)) continue;
+    seen.add(series.providerId);
+    out.push(series);
+  }
+  return out.slice(0, limit);
 }
 
 /** Tailles d'affiche proposees par le CDN de TMDB, avec leur largeur en pixels. */
