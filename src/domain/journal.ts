@@ -125,6 +125,15 @@ export interface JournalSnapshot {
   readonly statusLabel?: string;
   /** Date du prochain episode annonce, ISO 8601. C'est elle qui fait « Ca revient ». */
   readonly nextEpisodeAt?: string;
+  /**
+   * Note du public pour la serie, sur l'echelle en etoiles.
+   *
+   * Le seul moyen de dire « vous notez plus severement que le public » ailleurs que
+   * sur la page serie : la bibliotheque ne fait aucun appel, donc ce qu'elle ignore au
+   * moment du geste, elle l'ignorera pour toujours. Expire avec le reste de
+   * l'instantane.
+   */
+  readonly publicStars?: number;
   readonly cachedAt: string;
 }
 
@@ -279,12 +288,16 @@ function parseSnapshot(raw: unknown, now: string): JournalSnapshot | undefined {
   const posterPath = readText(source, 'posterPath');
   const statusLabel = readText(source, 'statusLabel');
   const nextEpisodeAt = readText(source, 'nextEpisodeAt');
+  const rawPublic = source['publicStars'];
+  const publicStars =
+    typeof rawPublic === 'number' && rawPublic > 0 && rawPublic <= 5 ? rawPublic : undefined;
   return {
     title,
     cachedAt: readInstant(source, 'cachedAt', now),
     ...(posterPath !== undefined ? { posterPath } : {}),
     ...(statusLabel !== undefined ? { statusLabel } : {}),
     ...(nextEpisodeAt !== undefined ? { nextEpisodeAt } : {}),
+    ...(publicStars !== undefined ? { publicStars } : {}),
   };
 }
 
