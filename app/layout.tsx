@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { TMDB_ATTRIBUTION } from '@/src/catalog/provider';
 import { siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
+import { DataSafety } from '@/app/components/DataSafety';
 import './globals.css';
 
 const DESCRIPTION =
@@ -79,7 +80,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-8">{children}</main>
+        <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-8">
+          {/* Au-dessus du contenu, et sur toutes les pages : le risque de perte ne
+              depend pas de l'endroit ou l'on se trouve. Ne rend rien tant qu'il n'y a
+              rien a perdre, ni si l'application est deja installee. */}
+          <DataSafety />
+          {children}
+        </main>
 
         <footer className="border-t border-(--color-edge) mt-12">
           <div className="mx-auto max-w-5xl px-4 py-6 text-xs text-(--color-muted) space-y-1">

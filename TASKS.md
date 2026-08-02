@@ -122,6 +122,66 @@ fusion**, que le format actuel du journal rend impossible sans perte.
 > commutativité, et un test qui ne l'aurait pas montré n'aurait rien prouvé.
 > `npm run check` : **276 tests verts**, typecheck strict vert.
 
+---
+
+## 🌍 A9 — le produit vise l'international (tranché par Tristan, 2026-08-02)
+
+**Ce n'est pas un élargissement du produit, c'est un multiplicateur du seul canal qui
+marche à froid.** Le SEO est le seul canal d'acquisition qui fonctionne sans utilisateurs
+(`ROADMAP.md` §0.2) ; une page en français ne capte pas *« is X worth watching »*, qui est
+un marché d'un ordre de grandeur plus grand.
+
+**Et le projet est structurellement bien placé pour le faire** :
+
+> Le différenciateur est **language-agnostic**. Statut réel, temps écoulé chiffré,
+> trajectoire, point d'arrêt, taux d'abandon se calculent **sans langue** — tout
+> `src/domain/` est déjà muet, et le reste muet : rien de `lib/i18n.ts` n'y est importé.
+> Un site de critiques doit traduire son contenu ; nous avons une centaine de chaînes.
+
+**Trois conséquences à ne pas perdre de vue** :
+
+1. **Le social structuré devient encore plus juste.** Le texte libre fragmente par langue
+   et rend la modération multilingue ingérable pour une personne seule. Un jeu fermé de
+   réactions s'agrège **mondialement** et se traduit une fois. L'international renforce
+   l'arbitrage social au lieu de le compliquer.
+2. **⚠️ Le coût catalogue est multiplié par le nombre de langues** : TMDB renvoie des
+   métadonnées traduites, donc une requête par langue. La rupture décrite au dimensionnement
+   arrive N fois plus vite avec N langues. À intégrer avant d'ajouter la troisième langue.
+3. **La négociation par en-tête n'existe pas sur une page statique.** Les pages sont
+   `force-static` — c'est ce qui tient le budget. La langue se décide donc soit à la
+   construction (routage par locale), soit côté client. Pas au rendu.
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| 1.57 | **Socle i18n** — `lib/i18n.ts` : langues servies, négociation `Accept-Language` tolérante, étiquette BCP 47, région de repli, dictionnaire typé | ✅ 2026-08-02 | 12 tests. **Le typage rend une clé manquante fatale à la compilation** : une traduction incomplète ne peut pas atteindre la production. `fr` fait foi. |
+| 1.58 | **Bandeau de sécurité des données** (A0 + A1 réunis) | ✅ 2026-08-02 | `app/components/DataSafety.tsx`. Voir ci-dessous. |
+| 1.59 | Migrer les chaînes existantes vers le dictionnaire | 🟢 libre | ~17 composants. **Volontairement pas fait dans le même lot** : sans test de composant, migrer 17 fichiers d'un coup est un risque sans filet. À faire **après** 1.61. |
+| 1.60 | **Routage par locale + `hreflang` + sitemap par langue** | 🟢 libre | ⚠️ C'est cela qui transforme la traduction en trafic — sans quoi 1.57 ne sert à rien. Multiplie les pages ISR : mesurer le coût avant. |
+| 1.61 | Harnais de test de composants (`jsdom`, `include` en `.tsx`) | 🟢 libre | Prérequis de 1.59. `vitest.config.ts` fixe `environment: 'node'` et `include: '**/*.test.ts'` : **aucun test de composant n'est possible aujourd'hui**, pour 14 modules `'use client'`. |
+| **A10** | **Quelle langue par défaut ?** | 🟡 **non tranché** | `fr` aujourd'hui, parce que c'est l'état du site. Basculer sur `en` est **probablement le plus gros levier SEO du projet**. À décider avec 1.60, explicitement — pas comme effet de bord. |
+
+### 1.58 — ce que le bandeau répare, et pourquoi il se tait la plupart du temps
+
+Le produit promet de garder la trace, et l'écrit dans `localStorage`. Or **Safari efface
+tout stockage inscriptible par script après sept jours d'usage du navigateur sans
+interaction avec le site**, et le public visé revient tous les un à trois mois. Le trou
+d'engagement (D9) n'était donc pas seulement un problème de rétention : c'était une
+**destruction de journal**.
+
+**La nuance qui change tout** : une application ajoutée à l'écran d'accueil y échappe. La
+protection existait déjà dans le produit — elle était conditionnée à un geste que rien
+n'invitait à faire. D'où la formulation : installer n'est pas un confort, c'est **ce qui
+empêche de perdre ses notes**.
+
+Trois règles pour que ce ne soit pas une nuisance : rien tant qu'il n'y a rien à perdre ;
+**rien si l'application est déjà installée** (le risque n'existe plus — continuer à
+l'annoncer apprendrait à ignorer nos messages) ; « plus tard » ne revient qu'après quatre
+gestes de plus — le refus se mesure en **gestes**, pas en jours, parce que ce qui augmente
+le risque est le travail accumulé.
+
+Vérifié : `npm run build` reste vert et **toutes les routes restent `○ Static`**, y compris
+`/serie/[id]`. Ajouter un composant client au layout n'a pas coûté le rendu statique.
+
 ### ⚠️ Trois corrections pour une seule feature — ce que ça a appris
 
 `computeTrajectory` était écrit et testé depuis le premier jour sans jamais servir : il

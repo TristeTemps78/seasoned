@@ -10,6 +10,17 @@
 
 ## État actuel (2026-08-01)
 
+- **🌍 A9 tranché par Tristan (2026-08-02) : le produit vise l'international.** Ce n'est pas
+  un élargissement, c'est le **multiplicateur du seul canal qui marche à froid** — une page
+  en français ne capte pas « is X worth watching ». Et le projet est bien placé : le
+  différenciateur est **language-agnostic** (statut, temps écoulé, trajectoire, abandons se
+  calculent sans langue ; `src/domain/` est muet et doit le rester — rien de `lib/i18n.ts`
+  n'y est importé). Conséquences : le social **structuré** devient encore plus juste (un jeu
+  fermé de réactions s'agrège mondialement, le texte libre fragmente par langue) ; ⚠️ **le
+  coût catalogue est multiplié par le nombre de langues** ; la négociation par en-tête
+  n'existe pas sur une page statique, donc la langue se décide à la construction ou côté
+  client. **A10 non tranché : quelle langue par défaut** — `en` est probablement le plus
+  gros levier SEO du projet.
 - **A1 tranché par Tristan : produit à utilisateurs.** Contraire à la recommandation de
   l'audit, actée. Les objections de l'audit ne disparaissent pas — elles deviennent le
   cahier des charges (`docs/ROADMAP-AUDIT.md` §6bis).
