@@ -380,6 +380,43 @@ peuvent pas être vérifiés, parce que **le code n'est pas déployé**.
 Quatre commits : `a1fab2d` (réservation + D14) · `9043233` (filet + i18n) · `26e7514`
 (vague A) · `96853ae` (XSS + langue du catalogue + en-têtes).
 
+## 🔄 REPRENDRE ICI — point d'entrée de la prochaine session (2026-08-03, fin)
+
+**État : tout est committé, poussé, déployé et vérifié en production.** `main` propre,
+508 tests verts, CI verte, rien en attente d'un humain sauf les arbitrages ci-dessous.
+
+### Les quatre choses à faire, par ordre de valeur
+
+1. **La n°2 de `docs/NEXT-FIVE-2.md` — les pages-listes calculées.** Le plus gros levier
+   SEO restant, et **ses calculs sont déjà écrits** (`findEntryPoint`, `stopPointAdvice`,
+   `computeTrajectory`). Une route `/listes/[slug]` en ISR quotidien. Elle referme aussi
+   le maillage interne. Garde-fou : ne publier que les listes où les chiffres tiennent.
+2. **A4 — le nom.** Seul arbitrage bloquant avant un vrai lancement public.
+   Recommandation `peaked.tv`, repli `howfar.tv`. **Décision de Tristan.**
+3. **0.9 — la relecture par un autre agent.** `AGENTS.md` pose « rédacteur ≠ relecteur »,
+   et **tout le dépôt a été écrit par le même agent**. C'est la dette de méthode la plus
+   ancienne, et elle grossit à chaque session.
+4. **Re-mesurer le seuil du point d'entrée.** Mesuré en production : *The Office* et
+   *Parks and Recreation*, au démarrage lent notoire, ne produisent aucun point d'entrée.
+   Le module rate des cas réels. ⚠️ **Ne pas resserrer au jugé** — c'est exactement la
+   faute qui a coûté trois passes à `trajectory.ts`. Mesurer sur un échantillon large.
+
+### Ce qu'il ne faut PAS refaire
+
+- ❌ Vider `TMDB_LANGUAGE` chez Vercel : **la variable n'est pas définie**, prouvé par la
+  production. Une note antérieure disait le contraire, elle est corrigée plus bas.
+- ❌ Vérifier les `hreflang` ou le cache : **fait, en production, le 2026-08-03**.
+
+### Les deux leçons de méthode de cette session
+
+1. **Une observation compatible avec deux causes ne prouve aucune des deux.** J'ai
+   attribué à une variable d'environnement ce qu'un changement de défaut expliquait déjà.
+2. **Sur un état asynchrone, `findByText` puis une assertion ne prouve rien.** Six tests
+   de placement restaient verts alors que le code qu'ils surveillaient était supprimé.
+   Vérifier un test en **injectant le défaut** est la seule façon de le savoir.
+
+---
+
 ### À faire en premier, dans cet ordre (mis à jour le 2026-08-03 au matin)
 
 0. ✅ **Push fait le 2026-08-03**, autorisé par Tristan. CI verte, déploiement passé,

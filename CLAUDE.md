@@ -25,12 +25,20 @@
     notées. *Se méfier de sa propre vérification* — deuxième faux négatif de ce genre.
 
 
-- **🔴 Le plus important, avant tout le reste : 21 commits ne sont pas poussés, et la
-  faille XSS est en ligne.** Vérifié en production ce matin : `/fr/serie/1396` répond
-  **404**, `<html lang>` vaut **`fr`**, aucun `hreflang`, et le JSON-LD d'une page destinée
-  à l'anglais sert une **description française** — preuve directe que `TMDB_LANGUAGE=fr-FR`
-  est bien posé chez Vercel. Le cache, lui, répond `HIT`. **Un push déclenche un
-  déploiement public : ce n'est pas à un agent de le décider.**
+- **✅ Tout est en ligne et vérifié en production (2026-08-03).** 26 commits poussés,
+  CI verte, déploiement passé. **La faille XSS n'est plus en ligne.** Vérifié sur
+  https://seasoned-two.vercel.app, pas déduit du code : `hreflang` réciproques et
+  auto-référents sur les pages série (**dette ouverte depuis trois sessions, levée**),
+  cache `HIT`, cinq en-têtes de sécurité, `robots.txt` couvrant les deux langues,
+  sitemap à 107 URLs / 214 alternates, `lang` correct sur les 8 routes testées.
+  - **`TMDB_LANGUAGE` : rien à faire, la variable n'est pas définie chez Vercel.**
+    ⚠️ J'avais affirmé le contraire le matin même — c'était une sur-interprétation, le
+    code alors déployé était antérieur à la bascule A10 et `DEFAULT_LOCALE` y valait
+    encore `fr`. Détail et leçon dans `TASKS.md`.
+  - **Les features vues sur de vraies séries** : BoJack Horseman « ça décolle à S1E8 »
+    (la source citée en écrivant la proposition disait *exactement* cet épisode — c'est
+    une concordance externe), Star Trek TNG S1E5 + décrochage S6, House of the Dragon
+    « saison 3, 0,6 sous la moyenne ». Le silence reste majoritaire, comme annoncé.
 - **Session du matin : les trois features de `NEXT-FIVE` qui se calculent sans un seul
   utilisateur.** 436 → **486 tests verts**, typecheck strict vert, build vert, 13 routes
   `○ Static`. Trois commits.
