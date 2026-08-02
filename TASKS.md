@@ -195,6 +195,49 @@ seul endroit où du contenu tiers entre dans une balise `<script>` est traité �
 
 ---
 
+### 🔒 Bloc du 2026-08-03 (matin) — les trois features calculables sans utilisateurs
+
+**Réservé — @claude-opus — 2026-08-03.** Motif : `docs/NEXT-FIVE.md` classe les cinq
+propositions par un seul critère — les trois premières se calculent **sans un seul
+utilisateur**, donc elles nourrissent le seul canal qui marche à froid. Les implémenter
+maintenant coûte trois modules purs et **zéro appel réseau supplémentaire** : toutes les
+données sont déjà chargées et en cache sur la page série.
+
+| # | Tâche | Statut | Motif |
+|---|---|---|---|
+| F1 | **Point d'entrée** — « ça commence vraiment à S1E8 » | 🔒 in-progress — @claude-opus — 2026-08-03 | Symétrique du point d'arrêt ; le biais de survie joue **en sa faveur** |
+| F4 | **Plan de rattrapage** — « 14 épisodes en 12 jours » | 🔒 in-progress — @claude-opus — 2026-08-03 | Croise A4 et la date du prochain épisode. Transforme une bibliothèque en plan |
+| F2 | **Verdict de la saison en cours** | 🔒 in-progress — @claude-opus — 2026-08-03 | Le seul moment où la question se pose et où personne ne répond |
+
+### 🔴 Vérification en production du 2026-08-03 — ce qu'elle a tranché
+
+La dette de vérification traînait depuis deux sessions (`hreflang` d'une page série, cache
+de `/fr/serie/1396`). Elle est **répondue, et pas comme prévu** : ces deux points ne
+peuvent pas être vérifiés, parce que **le code n'est pas déployé**.
+
+| Observé sur https://seasoned-two.vercel.app | Résultat |
+|---|---|
+| `X-Vercel-Cache` sur `/serie/1396` | **`HIT`** ✅ — le cache tient, c'est confirmé |
+| `/fr/serie/1396` | **404** — le routage par locale n'est pas en ligne |
+| `<html lang>` sur `/serie/1396` | **`fr`** — le site en ligne est monolingue français |
+| `hreflang` | **aucun** |
+| Description du JSON-LD sur la page anglaise | **en français** : « Un professeur de chimie atteint d'un cancer… » |
+
+> **⚠️ Trois faits qui en découlent, et qui ne sont pas des détails.**
+>
+> 1. **La faille XSS du JSON-LD est en ligne depuis le 2026-08-02.** Le correctif
+>    (`lib/jsonld.ts`) existe, il est testé, il n'est pas déployé.
+> 2. **`TMDB_LANGUAGE=fr-FR` est bien posé dans l'environnement Vercel** — la description
+>    française servie sur une page destinée à l'anglais en est la preuve directe. Le
+>    diagnostic du 2026-08-03 n'était donc pas théorique.
+> 3. **18 commits ne sont pas poussés.** Tout le travail des deux dernières sessions —
+>    i18n complète, vague A, correctifs de sécurité — est invisible en ligne.
+>
+> **Un push est nécessaire, et il n'appartient pas à un agent de le décider** : il
+> déclenche un déploiement public. À trancher par Tristan.
+
+---
+
 ## 🔄 Reprise à froid — état au 2026-08-03 (fin de session)
 
 **Tout est committé, `main` propre. 436 tests verts, typecheck strict vert, build vert,
