@@ -148,3 +148,46 @@ describe('LocalJournalStore', () => {
     expect(parseJournal(raw, NOW).entries).toEqual(journal.entries);
   });
 });
+
+describe('le renommage du produit ne coute pas le journal de l utilisateur', () => {
+  // Renommer une cle de stockage efface les donnees de tout le monde : le navigateur ne
+  // sait pas que l'ancienne et la nouvelle designent la meme chose. C'est la seule partie
+  // du renommage `seasoned` -> `Voltface` qui pouvait detruire quelque chose.
+  const LEGACY = 'seasoned.journal.v1';
+
+  it('relit un journal range sous l ancien nom', async () => {
+    const storage = new FakeStorage();
+    storage.setItem(LEGACY, serializeJournal(setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW)));
+
+    const store = new LocalJournalStore({ storage });
+    expect((await store.load()).entries[BB]?.position?.seasonNumber).toBe(3);
+  });
+
+  it('ecrit desormais sous le nouveau nom, sans effacer l ancien', async () => {
+    // L'original reste ou il est : supprimer pour economiser quelques kilo-octets ferait
+    // de tout defaut de migration une perte definitive.
+    const storage = new FakeStorage();
+    storage.setItem(LEGACY, serializeJournal(setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW)));
+
+    const store = new LocalJournalStore({ storage });
+    await store.save(setPosition(await store.load(), BB, 4, 2, NOW));
+
+    expect(parseJournal(storage.getItem(STORAGE_KEY)).entries[BB]?.position?.seasonNumber).toBe(4);
+    expect(storage.getItem(LEGACY)).not.toBeNull();
+  });
+
+  it('le nom courant l emporte sur l ancien', async () => {
+    // Quelqu'un qui a utilise les deux versions ne doit pas revenir en arriere.
+    const storage = new FakeStorage();
+    storage.setItem(LEGACY, serializeJournal(setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW)));
+    storage.setItem(STORAGE_KEY, serializeJournal(setPosition(EMPTY_JOURNAL, BB, 6, 9, NOW)));
+
+    const store = new LocalJournalStore({ storage });
+    expect((await store.load()).entries[BB]?.position?.seasonNumber).toBe(6);
+  });
+
+  it('la cle courante porte le nom du produit, et pas l ancien', () => {
+    expect(STORAGE_KEY).toContain('voltface');
+    expect(STORAGE_KEY).not.toContain('seasoned');
+  });
+});

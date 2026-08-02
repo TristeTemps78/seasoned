@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useT } from '@/app/i18n/LocaleProvider';
+import { PRODUCT_NAME } from '@/lib/site';
 
 export interface SharePoint {
   readonly seasonNumber: number;
@@ -110,7 +111,7 @@ export function ShareCard({ title, points }: {
     ctx.textAlign = 'right';
     ctx.fillStyle = '#e6e9ef';
     ctx.font = '600 26px ui-sans-serif, system-ui, sans-serif';
-    ctx.fillText('seasoned', WIDTH - 80, HEIGHT - 52);
+    ctx.fillText(PRODUCT_NAME.toLowerCase(), WIDTH - 80, HEIGHT - 52);
     ctx.textAlign = 'left';
 
     canvas.toBlob((blob) => {

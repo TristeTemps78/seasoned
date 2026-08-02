@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { DEFAULT_LOCALE, localeTag, t } from '@/lib/i18n';
+import { PRODUCT_NAME } from '@/lib/site';
 
 /**
  * Le manifeste qui rend l'application **installable sur les cinq plateformes**.
@@ -33,8 +34,8 @@ import { DEFAULT_LOCALE, localeTag, t } from '@/lib/i18n';
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `seasoned — ${t(DEFAULT_LOCALE, 'nav.tagline')}`,
-    short_name: 'seasoned',
+    name: `${PRODUCT_NAME} — ${t(DEFAULT_LOCALE, 'nav.tagline')}`,
+    short_name: PRODUCT_NAME,
     description: t(DEFAULT_LOCALE, 'meta.description'),
     lang: localeTag(DEFAULT_LOCALE),
     // L'accueil, et pas `/moi` : quelqu'un qui vient d'installer n'a pas de journal,

@@ -64,7 +64,7 @@ export function CalendarExport() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'seasoned.ics';
+    link.download = 'voltface.ics';
     link.click();
     URL.revokeObjectURL(url);
     setSaved(true);

@@ -23,7 +23,7 @@ describe('importForeign', () => {
   it('reconnait notre propre export et le prend en entier', () => {
     const mine = setSeasonRating(setWanted(EMPTY_JOURNAL, 'tmdb:1396', true, NOW), 'tmdb:1396', 1, 4.5, NOW);
     const out = importForeign(serializeJournal(mine), EMPTY_JOURNAL, NOW);
-    expect(out.source).toBe('seasoned');
+    expect(out.source).toBe('voltface');
     expect(out.journal.entries['tmdb:1396']?.seasonRatings?.['1']?.stars).toBe(4.5);
   });
 

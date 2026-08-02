@@ -59,6 +59,14 @@ interface InstallPromptEvent extends Event {
   readonly userChoice: Promise<{ readonly outcome: 'accepted' | 'dismissed' }>;
 }
 
+/**
+ * ⚠️ **Volontairement laissee sous l'ancien nom du produit.**
+ *
+ * Elle ne retient qu'une chose : que ce bandeau a deja ete ecarte. La migrer vers
+ * `voltface.*` le ferait **reapparaitre** a tous ceux qui l'avaient renvoye — un
+ * desagrement gratuit, pour une cle que personne ne lit jamais. Le journal, lui, portait
+ * une vraie donnee et a ete migre (`src/journal/local.ts`).
+ */
 const DISMISS_KEY = 'seasoned.safety.v1';
 /** Gestes supplementaires avant de reproposer, apres un « plus tard ». */
 const SNOOZE_GESTURES = 4;
@@ -135,7 +143,7 @@ export function DataSafety() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `seasoned-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `voltface-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
     setSaved(true);

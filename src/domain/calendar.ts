@@ -44,7 +44,20 @@ export interface UpcomingEpisode {
 }
 
 /** Nom du produit dans l'en-tete, tel que les clients l'afficheront. */
-const PRODID = '-//seasoned//Upcoming episodes//EN';
+const PRODID = '-//Voltface//Upcoming episodes//EN';
+
+/**
+ * Domaine des identifiants d'evenement — **volontairement inchange par le renommage**.
+ *
+ * Un `UID` est l'identite d'un evenement pour l'agenda qui l'a recu. Le changer ne renomme
+ * rien : il fabrique un **second** evenement a cote du premier, en double, dans un agenda
+ * que nous ne controlons pas et que nous ne pouvons pas reparer.
+ *
+ * D'ou la regle appliquee au renommage `seasoned` → `Voltface` : **on migre ce qu'on
+ * controle, on ne touche pas a ce qui est deja parti ailleurs.** Le journal est chez nous
+ * et a ete migre (`src/journal/local.ts`) ; ceci est parti et reste.
+ */
+const UID_DOMAIN = 'seasoned';
 
 /** RFC 5545 : les lignes se plient a 75 octets, hors le `CRLF` lui-meme. */
 const MAX_OCTETS = 75;
@@ -120,7 +133,7 @@ function uidFor(episode: UpcomingEpisode): string {
     episode.seasonNumber !== undefined && episode.episodeNumber !== undefined
       ? `s${episode.seasonNumber}e${episode.episodeNumber}`
       : toDateStamp(episode.airsOn);
-  return `${episode.key.replace(/[^a-z0-9:.-]/gi, '')}-${slot}@seasoned`;
+  return `${episode.key.replace(/[^a-z0-9:.-]/gi, '')}-${slot}@${UID_DOMAIN}`;
 }
 
 /** « Breaking Bad — S5E14 », ou juste le titre si l'on ignore le numero. */

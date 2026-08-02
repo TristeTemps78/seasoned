@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata, Viewport } from 'next';
 import { TMDB_ATTRIBUTION } from '@/src/catalog/provider';
-import { siteUrl } from '@/lib/site';
+import { PRODUCT_NAME, siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
 import { DataSafety } from '@/app/components/DataSafety';
 import { LanguagePicker } from '@/app/components/LanguagePicker';
@@ -48,7 +48,7 @@ export function SiteChrome({ locale, children }: {
                 lecteur francais vers l'accueil anglais serait le sortir de sa langue
                 sans qu'il l'ait demande. */}
             <Link href={pathIn('/', locale)} className="font-semibold tracking-tight">
-              seasoned
+              {PRODUCT_NAME}
             </Link>
             <span className="hidden text-sm text-(--color-muted) sm:inline">
               {t(locale, 'nav.tagline')}
@@ -104,17 +104,17 @@ export function SiteChrome({ locale, children }: {
 /** Les metadonnees communes, dans une langue. */
 export function siteMetadata(locale: Locale): Metadata {
   const description = t(locale, 'meta.description');
-  const title = `seasoned — ${t(locale, 'nav.tagline')}`;
+  const title = `${PRODUCT_NAME} — ${t(locale, 'nav.tagline')}`;
 
   return {
     // `metadataBase` rend absolues les URL relatives des pages — sans lui, les URL
     // canoniques et les images de partage sortent brisees.
     metadataBase: new URL(siteUrl()),
-    title: { default: title, template: '%s — seasoned' },
+    title: { default: title, template: `%s — ${PRODUCT_NAME}` },
     description,
     openGraph: {
       type: 'website',
-      siteName: 'seasoned',
+      siteName: PRODUCT_NAME,
       locale: localeTag(locale).replace('-', '_'),
       title,
       description,
@@ -126,7 +126,7 @@ export function siteMetadata(locale: Locale): Metadata {
     // moitie de la promesse multiplateforme (A8), et elle tient en trois lignes.
     appleWebApp: {
       capable: true,
-      title: 'seasoned',
+      title: PRODUCT_NAME,
       statusBarStyle: 'black-translucent',
     },
     icons: {

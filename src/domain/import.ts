@@ -54,8 +54,14 @@ import { ALL_STARS, type Stars } from './types';
 
 /** D'ou vient ce que l'on vient de lire. */
 export type ImportSource =
-  /** Notre propre export : le seul format dont on garantisse tout. */
-  | 'seasoned'
+  /**
+   * Notre propre export : le seul format dont on garantisse tout.
+   *
+   * Discriminant **interne** : il n'est jamais ecrit dans le fichier exporte
+   * (`serializeJournal` ne serialise que la version et les entrees). Le renommer avec le
+   * produit ne rend donc illisible aucun export deja telecharge.
+   */
+  | 'voltface'
   /** Un JSON tiers dans lequel on a trouve des identifiants. */
   | 'json'
   /** Un tableau a colonnes. */
@@ -356,7 +362,7 @@ export function importForeign(raw: string, into: Journal, now: Date): ImportOutc
   if (Object.keys(native.entries).length > 0) {
     return {
       journal: mergeJournals(into, native),
-      source: 'seasoned',
+      source: 'voltface',
       imported: Object.keys(native.entries).length,
       skipped: 0,
     };

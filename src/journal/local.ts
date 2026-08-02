@@ -32,7 +32,31 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
-export const STORAGE_KEY = 'seasoned.journal.v1';
+/**
+ * Ou le journal est range, sous le nom du produit.
+ *
+ * ## La regle du renommage (2026-08-03, `seasoned` → `Voltface`)
+ *
+ * Renommer une cle de stockage **efface les donnees de tout le monde** : le navigateur ne
+ * sait pas que l'ancienne et la nouvelle designent la meme chose. Ce n'est pas un detail
+ * cosmetique, c'est la donnee du produit.
+ *
+ * Deux cas, et la regle qui les separe : **on migre ce qu'on controle, on ne touche pas a
+ * ce qui est deja parti ailleurs.** Ici le journal est chez nous, dans un stockage qu'on
+ * lit a chaque demarrage — donc migrable sans risque. L'UID des evenements de calendrier,
+ * lui, est parti dans l'agenda de quelqu'un et **reste** (`src/domain/calendar.ts`).
+ */
+export const STORAGE_KEY = 'voltface.journal.v1';
+
+/**
+ * L'ancien nom, lu une derniere fois.
+ *
+ * Conserve **indefiniment** en lecture : un journal peut dormir des mois dans un navigateur
+ * ferme, et il n'existe aucune tache de fond pour faire le menage. Le supprimer un jour
+ * effacerait le journal de qui n'est pas revenu d'ici la — exactement ce que le produit
+ * promet de ne jamais faire (`AGENTS.md` regle 9).
+ */
+export const LEGACY_STORAGE_KEYS = ['seasoned.journal.v1'] as const;
 
 export interface LocalJournalStoreOptions {
   readonly storage: StorageLike;
@@ -94,9 +118,24 @@ export class LocalJournalStore implements JournalStore {
     };
   }
 
+  /**
+   * Lit le journal, en repliant sur les noms de cle abandonnes.
+   *
+   * L'ancienne cle n'est jamais **effacee** : la premiere ecriture depose le journal sous
+   * le nom courant, et l'ancienne copie reste ou elle est. C'est volontaire — supprimer
+   * l'original pour economiser quelques kilo-octets ferait de chaque bogue de migration
+   * une perte definitive, alors qu'une copie oubliee ne coute rien a personne.
+   */
   #read(): Journal {
     try {
-      return parseJournal(this.#storage.getItem(STORAGE_KEY));
+      const current = this.#storage.getItem(STORAGE_KEY);
+      if (current !== null) return parseJournal(current);
+
+      for (const legacy of LEGACY_STORAGE_KEYS) {
+        const raw = this.#storage.getItem(legacy);
+        if (raw !== null) return parseJournal(raw);
+      }
+      return EMPTY_JOURNAL;
     } catch {
       return EMPTY_JOURNAL;
     }
