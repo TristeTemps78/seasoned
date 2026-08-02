@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { medianRuntime } from '../lib/catalog';
+import { medianRuntime, posterDimensions, posterUrl } from '../lib/catalog';
 import { normalizeSeasons, representativeSeason } from '../src/domain/seasons';
 import type { SeasonDetail } from '../src/catalog/provider';
 
@@ -52,6 +52,23 @@ describe('medianRuntime — resiste aux episodes hors norme', () => {
     expect(medianRuntime(season([]))).toBeUndefined();
     expect(medianRuntime(season([undefined, undefined]))).toBeUndefined();
     expect(medianRuntime(season([0, 0]))).toBeUndefined();
+  });
+});
+
+describe('affiches — declarer les dimensions evite que la page saute', () => {
+  it('deduit la hauteur du ratio constant des affiches TMDB', () => {
+    // Sans width/height, le navigateur ne reserve pas la place : la page saute a
+    // l'arrivee des images. C'est un des trois indicateurs que Google mesure.
+    expect(posterDimensions('w342')).toEqual({ width: 342, height: 513 });
+    expect(posterDimensions('w185')).toEqual({ width: 185, height: 278 });
+    expect(posterDimensions('w500')).toEqual({ width: 500, height: 750 });
+  });
+
+  it('sert les affiches depuis le CDN du fournisseur, jamais depuis nous', () => {
+    // Une ligne du budget : optimiser des images qu'un CDN sert deja serait payer
+    // deux fois (`ROADMAP.md` §1.4).
+    expect(posterUrl('/abc.jpg', 'w342')).toBe('https://image.tmdb.org/t/p/w342/abc.jpg');
+    expect(posterUrl(undefined)).toBeUndefined();
   });
 });
 

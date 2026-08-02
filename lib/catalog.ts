@@ -456,8 +456,31 @@ export async function waitingSeries(
     .slice(0, limit);
 }
 
+/** Tailles d'affiche proposees par le CDN de TMDB, avec leur largeur en pixels. */
+export const POSTER_SIZES = { w185: 185, w342: 342, w500: 500 } as const;
+export type PosterSize = keyof typeof POSTER_SIZES;
+
+/**
+ * Rapport hauteur/largeur d'une affiche de serie : 3 pour 2.
+ *
+ * Constant chez TMDB, ce qui permet de **declarer les dimensions sans charger
+ * l'image**. Sans elles, le navigateur ne reserve pas la place et la page saute quand
+ * les affiches arrivent — un decalage de mise en page, l'un des trois indicateurs
+ * que Google mesure, et donc une perte seche sur le canal d'acquisition n°1.
+ */
+export const POSTER_ASPECT = 3 / 2;
+
 /** URL d'une affiche sur le CDN de TMDB. Jamais servie par nous — `next.config.ts`. */
-export function posterUrl(path: string | undefined, size: 'w185' | 'w342' | 'w500' = 'w342'): string | undefined {
+export function posterUrl(
+  path: string | undefined,
+  size: PosterSize = 'w342',
+): string | undefined {
   if (path === undefined) return undefined;
   return `https://image.tmdb.org/t/p/${size}${path}`;
+}
+
+/** Dimensions a declarer pour une affiche, afin que le navigateur reserve la place. */
+export function posterDimensions(size: PosterSize): { width: number; height: number } {
+  const width = POSTER_SIZES[size];
+  return { width, height: Math.round(width * POSTER_ASPECT) };
 }

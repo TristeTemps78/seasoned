@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { SeriesSummary } from '@/src/catalog/provider';
 import type { StatusResult } from '@/src/domain/status';
-import { posterUrl } from '@/lib/catalog';
+import { posterDimensions, posterUrl } from '@/lib/catalog';
 import { STATUS_TONE, shortStatus, year } from '@/lib/format';
 
 const TONE_TEXT = {
@@ -36,10 +36,17 @@ export function SeriesCard({ series, status }: {
         {poster !== undefined ? (
           // eslint-disable-next-line @next/next/no-img-element -- servi par le CDN TMDB,
           // jamais par nous : c'est une ligne du budget (`ROADMAP.md` §1.4).
+          // `width`/`height` declares : sans eux le navigateur ne reserve pas la
+          // place et la page saute a l'arrivee des affiches (decalage de mise en
+          // page, mesure par Google). Le ratio d'une affiche TMDB est constant, on
+          // peut donc les donner sans rien charger.
           <img
             src={poster}
             alt=""
             loading="lazy"
+            decoding="async"
+            width={posterDimensions('w342').width}
+            height={posterDimensions('w342').height}
             className="h-full w-full object-cover transition-opacity group-hover:opacity-85"
           />
         ) : (

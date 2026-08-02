@@ -1,15 +1,29 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TMDB_ATTRIBUTION } from '@/src/catalog/provider';
+import { siteUrl } from '@/lib/site';
 import './globals.css';
 
+const DESCRIPTION =
+  'Où en est une série, combien de temps elle demande, et jusqu’où elle reste bonne.';
+
 export const metadata: Metadata = {
+  // `metadataBase` rend absolues les URL relatives des pages — sans lui, les URL
+  // canoniques et les images de partage sortent brisees.
+  metadataBase: new URL(siteUrl()),
   title: {
     default: 'seasoned — est-ce que ça vaut le coup ?',
     template: '%s — seasoned',
   },
-  description:
-    'Où en est une série, combien de temps elle demande, et jusqu’où elle reste bonne.',
+  description: DESCRIPTION,
+  openGraph: {
+    type: 'website',
+    siteName: 'seasoned',
+    locale: 'fr_FR',
+    title: 'seasoned — est-ce que ça vaut le coup ?',
+    description: DESCRIPTION,
+  },
+  twitter: { card: 'summary' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

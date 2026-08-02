@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getSeriesPageData, posterUrl, publicTrajectory, stopPointAdvice } from '@/lib/catalog';
+import {
+  getSeriesPageData,
+  posterDimensions,
+  posterUrl,
+  publicTrajectory,
+  stopPointAdvice,
+} from '@/lib/catalog';
 import { STATUS_LABEL, formatCommitment, formatDate, year } from '@/lib/format';
 import { TmdbError } from '@/src/catalog/tmdb';
 import { StatusBadge } from '@/app/components/StatusBadge';
@@ -85,10 +91,31 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ...(totalRuntimeMinutes !== undefined ? [formatCommitment(totalRuntimeMinutes)] : []),
   ];
 
+  const title = started !== undefined ? `${detail.title} (${started})` : detail.title;
+  const description = `${detail.title} — ${parts.join(', ')}.`;
+  const image = posterUrl(detail.posterPath, 'w500');
+
   return {
-    title: started !== undefined ? `${detail.title} (${started})` : detail.title,
-    description: `${detail.title} — ${parts.join(', ')}.`,
+    title,
+    description,
     alternates: { canonical: `/serie/${id}` },
+    // Un lien partage sans apercu ne circule pas. L'affiche est verticale (2:3),
+    // d'ou `summary` et non `summary_large_image` : une carte large la rognerait.
+    openGraph: {
+      type: 'video.tv_show',
+      title,
+      description,
+      url: `/serie/${id}`,
+      ...(image !== undefined
+        ? { images: [{ url: image, ...posterDimensions('w500'), alt: detail.title }] }
+        : {}),
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      ...(image !== undefined ? { images: [image] } : {}),
+    },
   };
 }
 
@@ -135,9 +162,16 @@ export default async function SeriesPage({ params }: PageProps) {
 
       <header className="flex flex-col gap-6 sm:flex-row">
         {poster !== undefined ? (
+          // C'est le plus gros element visible au chargement, donc celui que Google
+          // chronometre. `fetchPriority="high"` le sort de la file d'attente ; les
+          // dimensions declarees empechent la page de sauter quand il arrive.
           <img
             src={poster}
             alt=""
+            fetchPriority="high"
+            decoding="async"
+            width={posterDimensions('w342').width}
+            height={posterDimensions('w342').height}
             className="w-36 shrink-0 self-start rounded-lg border border-(--color-edge)"
           />
         ) : null}
