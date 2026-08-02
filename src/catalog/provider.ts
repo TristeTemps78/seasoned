@@ -65,6 +65,19 @@ export interface SeriesDetail extends SeriesSummary {
   readonly nextAiringAt?: Date;
   readonly episodeRunTimeMinutes?: number;
   /**
+   * Le prochain episode, quand il est annonce.
+   *
+   * « Nouvel episode dans trois jours » laisse le lecteur calculer la date et ignorer
+   * de quel episode il s'agit. C'est la seule information du site qui donne une raison
+   * de revenir a une date precise.
+   */
+  readonly nextEpisode?: {
+    readonly seasonNumber: number;
+    readonly episodeNumber: number;
+    readonly title?: string;
+    readonly airsOn: Date;
+  };
+  /**
    * Createurs credites.
    *
    * Un **fait de production**, pas un calcul de similarite : c'est ce qui distingue ce

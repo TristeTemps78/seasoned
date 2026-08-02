@@ -287,6 +287,19 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
   const episodeRunTimeMinutes = readRuntime(source);
   const creators = readCreators(source);
 
+  const nextSeason = readNumber(nextEpisode, 'season_number');
+  const nextNumber = readNumber(nextEpisode, 'episode_number');
+  const nextTitle = readString(nextEpisode, 'name');
+  const nextFull =
+    nextAiringAt !== undefined && nextSeason !== undefined && nextNumber !== undefined
+      ? {
+          seasonNumber: nextSeason,
+          episodeNumber: nextNumber,
+          airsOn: nextAiringAt,
+          ...(nextTitle !== undefined ? { title: nextTitle } : {}),
+        }
+      : undefined;
+
   return {
     ...summary,
     externalIds: readExternalIds(source),
@@ -295,6 +308,7 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
     ...(creators.length > 0 ? { creators } : {}),
     ...(lastAiredAt !== undefined ? { lastAiredAt } : {}),
     ...(nextAiringAt !== undefined ? { nextAiringAt } : {}),
+    ...(nextFull !== undefined ? { nextEpisode: nextFull } : {}),
     ...(episodeRunTimeMinutes !== undefined ? { episodeRunTimeMinutes } : {}),
   };
 }

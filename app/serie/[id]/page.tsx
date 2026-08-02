@@ -199,6 +199,23 @@ export default async function SeriesPage({ params }: PageProps) {
               difference entre « entre deux saisons » et « morte depuis 18 mois ». */}
           <StatusBadge status={status} withDetail />
 
+          {/* La seule information du site qui donne une raison de revenir a une date
+              precise. « Dans trois jours » laissait le lecteur calculer et ignorer de
+              quel episode il s'agit. */}
+          {detail.nextEpisode !== undefined ? (
+            <p className="rounded-md bg-(--color-live)/10 px-3 py-2 text-sm">
+              <strong>
+                S{detail.nextEpisode.seasonNumber}E{detail.nextEpisode.episodeNumber}
+              </strong>
+              {detail.nextEpisode.title !== undefined
+                ? ` — ${detail.nextEpisode.title}`
+                : ''}{' '}
+              <span className="text-(--color-muted)">
+                le {formatDate(detail.nextEpisode.airsOn)}
+              </span>
+            </p>
+          ) : null}
+
           {detail.overview !== undefined ? (
             <p className="max-w-prose leading-relaxed text-(--color-muted)">
               {detail.overview}

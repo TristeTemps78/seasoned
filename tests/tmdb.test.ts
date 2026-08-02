@@ -105,6 +105,58 @@ describe('mapSeriesDetail — parsing tolerant', () => {
   });
 });
 
+describe('prochain episode — la seule raison de revenir a une date precise', () => {
+  it('extrait le numero, le titre et la date', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      next_episode_to_air: {
+        air_date: '2026-09-04',
+        season_number: 3,
+        episode_number: 7,
+        name: 'Le Retour',
+      },
+    });
+
+    expect(detail?.nextEpisode).toEqual({
+      seasonNumber: 3,
+      episodeNumber: 7,
+      title: 'Le Retour',
+      airsOn: new Date('2026-09-04T00:00:00.000Z'),
+    });
+  });
+
+  it('se passe du titre, souvent absent pour un episode a venir', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      next_episode_to_air: { air_date: '2026-09-04', season_number: 1, episode_number: 2 },
+    });
+    expect(detail?.nextEpisode?.title).toBeUndefined();
+    expect(detail?.nextEpisode?.episodeNumber).toBe(2);
+  });
+
+  it('n annonce rien sans date — un episode sans date n est pas une promesse', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      next_episode_to_air: { season_number: 3, episode_number: 7, name: 'x' },
+    });
+    expect(detail?.nextEpisode).toBeUndefined();
+  });
+
+  it('n annonce rien sans numero d episode', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      next_episode_to_air: { air_date: '2026-09-04' },
+    });
+    expect(detail?.nextEpisode).toBeUndefined();
+    // La date reste exploitable pour le statut, elle.
+    expect(detail?.nextAiringAt).toBeDefined();
+  });
+});
+
 describe('duree d episode — le champ que TMDB a abandonne', () => {
   // Constate en production le 2026-08-01 : `episode_run_time` revient vide sur la
   // grande majorite des series, y compris Breaking Bad. Aucun test hors ligne ne
