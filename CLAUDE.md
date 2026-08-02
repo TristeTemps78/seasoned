@@ -21,13 +21,26 @@
     Le renommage n'est pas fait et n'est pas trivial : `lib/site.ts`, les métadonnées, le
     manifeste PWA, le JSON-LD, les deux dictionnaires, le dépôt GitHub, le projet Vercel.
 - **🎨 Direction prise (2026-08-03) : passer d'une page à une application.** Onglets,
-  comptes, DA **cyberpunk**, et un logo en **cube 3D** aux faces colorées avec des éclairs
-  (fabriqué ailleurs — ne pas s'en occuper). Animation d'ouverture : **le cube se déplie en
-  patron, et les faces deviennent les onglets.** Rien n'est encore planifié ni écrit.
-  - ⚠️ **Deux conséquences à trancher avant d'écrire une ligne** : un cube a **six faces**,
-    donc six onglets, or le produit n'a aujourd'hui que quatre sections défendables ; et les
-    **comptes cassent** « le calcul se fait dans votre navigateur, rien ne sort » — l'argument
-    qui place le produit gratuitement là où Letterboxd fait payer (voir le bilan personnel).
+  comptes, social, DA **cyberpunk**, logo en **cube 3D** aux faces colorées (fabriqué
+  ailleurs — ne pas s'en occuper). Animation : **le cube se déplie en patron, les faces
+  deviennent les onglets.** Livré : le renommage, la DA, et `docs/ARCHITECTURE-APP.md`.
+  - **La DA est posée sur le châssis, jamais sur les vignettes** — « l'affiche est
+    l'interface » reste la règle. Aucune police chargée (`font-src 'self'`) : le caractère
+    vient de la **grille monospace appliquée aux chiffres**, qui sont le différenciateur.
+  - **Le renommage n'était pas mécanique.** Trois chaînes désignaient des données déjà
+    écrites chez l'utilisateur. Règle appliquée : **on migre ce qu'on contrôle, on ne touche
+    pas à ce qui est parti ailleurs** — clé du journal migrée (avec relecture indéfinie de
+    l'ancienne), UID des `.ics` **inchangé** (le changer créerait des doublons dans un agenda
+    qu'on ne peut pas réparer).
+  - ⚠️ **`connect-src 'self'` devra s'ouvrir vers Supabase.** Cette ligne rendait
+    « rien ne sort de ce navigateur » **vérifiable** ; après, c'est une déclaration. Le texte
+    de l'interface devra être réécrit, pas conservé.
+  - ⚠️ **Le prérequis n'est pas l'argent, c'est la modération** (5.0, ⛔ bloquant). Ça
+    démarre gratuitement — Supabase et Vercel offrent de quoi. Le DSA, non.
+  - **Correction actée : le fil d'activité des amis ne spoile pas.** J'avais affirmé le
+    contraire ; c'était surdimensionné. « Marie a noté *Breaking Bad* ★★★★ » ne révèle rien,
+    et le nombre de saisons est public. Ce qui spoile est plus étroit : **les titres
+    d'épisodes** et **les agrégats calculés**. Le fil remonte donc de la place 5 à la 4.
 
 - **⏱️ Bilan personnel livré — et trois défauts de la même famille trouvés en le posant.**
   508 → **546 tests verts**, typecheck strict vert, build vert, 13 routes `○ Static`.

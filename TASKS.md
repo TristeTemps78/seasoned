@@ -239,6 +239,57 @@ affichait **« à voir »** dès que son instantané n'avait pas de libellé de 
 arrive dès qu'il expire. La vignette contredisait la section qui la contient. La décision
 passe désormais avant le repli.
 
+### 🏁 Bloc du 2026-08-03 (soir) — Voltface : le nom, la peau, et le plan de l'application
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| A4 | **Le nom** | ✅ tranché | `VOLTFACE`. Voir en tête de fichier |
+| 1.67 | **Renommage `seasoned` → `Voltface`** | ✅ 2026-08-03 | Le nom vit dans **une seule** constante (`lib/site.ts`) ; il était en dur à sept endroits. **550 tests** |
+| 1.68 | **Direction artistique cyberpunk** | ✅ 2026-08-03 | `globals.css`. Sur le **châssis**, jamais sur les vignettes |
+| 1.69 | **Architecture de l'application** | ✅ 2026-08-03 | `docs/ARCHITECTURE-APP.md`. Document, aucun code |
+
+#### ⚠️ Le renommage n'était pas mécanique — trois chaînes sont des données d'utilisateur
+
+**La règle : on migre ce qu'on contrôle, on ne touche pas à ce qui est parti ailleurs.**
+
+| Chaîne | Décision | Motif |
+|---|---|---|
+| `STORAGE_KEY` | **migrée** vers `voltface.journal.v1` | Renommer sans plus **efface le journal de tout le monde** — le navigateur ignore que les deux clés désignent la même chose. L'ancienne est relue **indéfiniment** et jamais supprimée : un journal dort des mois dans un navigateur fermé |
+| **UID des `.ics`** | **inchangée** | Un UID est l'identité d'un événement pour l'agenda qui l'a reçu. Le changer ne renomme rien : il crée un **doublon** dans un agenda qu'on ne contrôle pas et **qu'on ne peut pas réparer** |
+| Clé du bandeau de sécurité | inchangée | Elle ne retient que « déjà écarté ». La migrer le ferait réapparaître pour rien |
+
+La source d'import `'seasoned'` était un **discriminant interne**, jamais écrit dans le
+fichier exporté (vérifié : `serializeJournal` ne sérialise que version et entrées).
+
+✅ **Migration confirmée en conditions réelles** au navigateur : le journal de test était
+rangé sous l'ancienne clé, la bibliothèque s'est affichée sans rien perdre. Plus quatre
+tests, vérifiés en débranchant la migration.
+
+#### 🔴 Correction : le fil d'activité des amis ne spoile pas
+
+J'avais écrit que la règle 7 bloquait le social. **C'était faux et surdimensionné**, corrigé
+par Tristan. « Marie a noté *Breaking Bad* ★★★★ » ne révèle rien de l'intrigue, et le nombre
+de saisons d'une série est public.
+
+Ce qui spoile est plus étroit, et se traite **à l'affichage** : les **titres d'épisodes**
+(beaucoup racontent l'épisode) et les **agrégats calculés** (« 78 % abandonnent après la
+S6 » est un jugement sur la suite — c'est le domaine de `redactTrajectory`).
+
+> **La leçon** : une règle de sécurité appliquée trop large coûte une feature entière. Le
+> fil passe de la place 5 à la place 4 dans l'ordre des lots.
+
+#### Ce que le passage à contre-sens a trouvé dans ma propre architecture
+
+**Un document JSON par utilisateur ne se requête pas.** « Les vingt derniers gestes de mes
+amis » aurait exigé de charger le journal entier de chaque ami — impossible dès la dizaine.
+D'où une **projection** (`activity`), dérivée du document et **entièrement
+reconstructible** : on peut donc se tromper sur sa forme sans rien perdre.
+
+Et deux pièges nommés : **l'inondation par import** (500 séries reprises = 500 lignes chez
+tous les amis — plafond de 20 par jour, puis une ligne agrégée) et **les dates de repli à
+l'epoch**, qui se neutralisent seules mais méritent un test, parce que quelqu'un
+« corrigera » ce repli un jour sans savoir ce qu'il tient.
+
 ### 🔒 Bloc du 2026-08-03 (après-midi) — le bilan personnel, et le trou qui le bloquait
 
 **Réservé — @claude-opus — 2026-08-03.** Motif : `docs/NEXT-FIVE-2.md` §4 annonce que le
