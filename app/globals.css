@@ -1,20 +1,47 @@
 @import 'tailwindcss';
 
 /**
- * Theme.
+ * Theme — Voltface.
  *
- * « L'affiche est l'interface » — la lecon UX de Letterboxd (`RESEARCH.md` §2.3) : les
- * affiches ne decorent pas, elles sont la navigation. Le reste doit donc etre sombre,
- * calme, et s'effacer derriere elles.
+ * ## Les deux regles qui gouvernent cette direction artistique
+ *
+ * 1. **« L'affiche est l'interface »** (`RESEARCH.md` §2.3). Les affiches ne decorent
+ *    pas, elles *sont* la navigation. Le cyberpunk se joue donc sur le **chassis** —
+ *    fond, aretes, accents, chiffres — et jamais sur les vignettes. Une page qui brille
+ *    partout ne met plus rien en avant, ce qui reviendrait a defaire la seule lecon d'UX
+ *    que ce projet a reprise de Letterboxd.
+ * 2. **Le neon ne porte jamais le texte de lecture.** Un cyan a 100 % de saturation sur
+ *    fond sombre est spectaculaire et illisible sur un paragraphe. Les accents servent
+ *    les **aretes, les etats et les chiffres** ; le corps de texte reste `--color-text`.
+ *
+ * ## Pourquoi aucune police n'est chargee
+ *
+ * `font-src 'self'` (`next.config.ts`) interdit Google Fonts, et c'est voulu : une
+ * webfont est un aller-retour reseau de plus sur le seul canal qui marche a froid. Le
+ * caractere vient donc d'ailleurs — de la **grille monospace tabulaire appliquee aux
+ * chiffres**, qui est a la fois le cliche du genre et la bonne decision fonctionnelle :
+ * « 537 h », « S5E3 », « 26 mois » sont le differenciateur du produit, et ils s'alignent.
  */
 @theme {
-  --color-ink: #0f1115;
-  --color-surface: #171a21;
-  --color-edge: #262b36;
-  --color-muted: #8b94a7;
-  --color-text: #e6e9ef;
+  /* Le fond descend vers un noir bleute : c'est lui qui fait exister la lueur.
+     Un gris neutre eteindrait les accents au lieu de les porter. */
+  --color-ink: #08090e;
+  --color-surface: #11131c;
+  --color-edge: #222739;
+  --color-muted: #8790a6;
+  --color-text: #e8ebf2;
 
-  /* Trois tons de statut, pas plus : le but est de faire ressortir l'anomalie
+  /* L'arc electrique — l'accent du produit, et la racine de son nom.
+     `volt` est la couleur d'interaction : liens actifs, focus, bordure vivante. */
+  --color-volt: #22d3ee;
+  --color-volt-dim: #0e7490;
+
+  /* Le second accent, pour ce qui se compte et se compare. Employe seul, jamais
+     en degrade avec le cyan : le duo cyan/magenta sature est le cliche fatigue du
+     genre, et il rend deux informations egalement criardes. */
+  --color-pulse: #e879f9;
+
+  /* Trois tons de statut, pas plus : le but reste de faire ressortir l'anomalie
      (une serie annoncee vivante et morte depuis 18 mois), pas de colorier la page. */
   --color-live: #4ade80;
   --color-warn: #fbbf24;
@@ -28,4 +55,109 @@ body {
   background-color: var(--color-ink);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
+
+  /*
+   * La lueur de fond : deux halos tres dilues, fixes, qui donnent une profondeur au noir
+   * sans rien couter. `background-attachment: fixed` evite qu'ils defilent — un halo qui
+   * suit le contenu se remarque, un halo immobile se ressent.
+   *
+   * Ecrit en `radial-gradient` et non en image : aucun octet a telecharger, et le rendu
+   * suit la taille de la fenetre au lieu de pixeliser.
+   */
+  background-image:
+    radial-gradient(60rem 40rem at 15% -10%, color-mix(in oklab, var(--color-volt) 7%, transparent), transparent),
+    radial-gradient(50rem 35rem at 85% 0%, color-mix(in oklab, var(--color-pulse) 5%, transparent), transparent);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/**
+ * Les chiffres, en grille.
+ *
+ * `tabular-nums` fige la chasse des chiffres : une colonne de durees cesse de danser
+ * quand un 1 remplace un 8. C'est la moitie fonctionnelle du choix ; l'autre moitie est
+ * que le monospace **est** le vocabulaire visuel du genre, obtenu ici sans charger
+ * quoi que ce soit.
+ *
+ * A poser sur ce qui se lit comme une mesure — durees, positions, compteurs — et non
+ * sur les titres de series.
+ */
+.numeric {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/**
+ * Le focus clavier — neon, et non negociable.
+ *
+ * C'est le seul endroit ou l'accessibilite et la direction artistique demandent la meme
+ * chose : un anneau franc, visible, qui ne depend pas de la couleur seule pour exister
+ * (il a une epaisseur). Le contour par defaut des navigateurs disparaissait sur ce fond.
+ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-volt);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/**
+ * Une surface qui reagit.
+ *
+ * Le liseré superieur est ce qui distingue une carte cyberpunk d'une carte sombre : un
+ * seul trait lumineux, en haut, qui s'allume au survol. Rien d'autre ne bouge — pas
+ * d'echelle, pas d'ombre portee, pour que le regard reste sur les affiches.
+ */
+.edge-lit {
+  position: relative;
+  isolation: isolate;
+}
+
+.edge-lit::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--color-volt) 60%, transparent),
+    transparent
+  );
+  opacity: 0.35;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+
+.edge-lit:hover::before {
+  opacity: 1;
+}
+
+/**
+ * Ce qui compte le plus sur un ecran : un chiffre qui brille juste assez.
+ *
+ * Reserve aux valeurs uniques et importantes — le total du bilan, l'engagement d'une
+ * serie. Pose sur chaque chiffre de la page, l'effet disparait par saturation.
+ */
+.glow {
+  color: var(--color-volt);
+  text-shadow: 0 0 24px color-mix(in oklab, var(--color-volt) 45%, transparent);
+}
+
+/**
+ * ⚠️ Toute animation d'ambiance se tait quand le systeme le demande.
+ *
+ * Ce n'est pas une politesse : les mouvements repetitifs declenchent des troubles
+ * vestibulaires reels, et le depliage du cube prevu a l'ouverture de l'application sera
+ * exactement le genre d'animation concernee.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -33,12 +33,14 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
 
   return (
     <section
-      className="space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
+      className="edge-lit space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
       aria-label={t('tally.aria')}
     >
       <h2 className="text-sm font-semibold">{t('tally.title')}</h2>
 
-      <p className="text-2xl font-semibold tracking-tight text-balance">
+      {/* Le seul chiffre du produit qui mérite de briller : il résume tout le reste.
+          `glow` posé ailleurs perdrait son sens par saturation. */}
+      <p className="numeric glow text-2xl font-semibold tracking-tight text-balance">
         {t('tally.atLeast', { commitment: formatCommitment(tally.minutes, locale) })}
       </p>
 

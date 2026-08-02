@@ -2,9 +2,17 @@ import type { StatusResult } from '@/src/domain/status';
 import { STATUS_TONE, describeStatus, statusLabel } from '@/lib/format';
 import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 
+/**
+ * Les tons de la pastille.
+ *
+ * Le fond reste discret et c'est **l'arete** qui porte la couleur : sur une grille de
+ * vingt vignettes, vingt pastilles pleines rivalisent avec les affiches, alors que
+ * l'affiche est l'interface (`RESEARCH.md` §2.3). Un seul etat s'autorise une lueur —
+ * `live`, celui qui veut dire « ca se passe maintenant ».
+ */
 const TONE_CLASS = {
-  live: 'bg-(--color-live)/15 text-(--color-live) border-(--color-live)/30',
-  warning: 'bg-(--color-warn)/15 text-(--color-warn) border-(--color-warn)/30',
+  live: 'bg-(--color-live)/10 text-(--color-live) border-(--color-live)/40 shadow-[0_0_12px_-4px_var(--color-live)]',
+  warning: 'bg-(--color-warn)/10 text-(--color-warn) border-(--color-warn)/40',
   neutral: 'bg-(--color-surface) text-(--color-muted) border-(--color-edge)',
 } as const;
 

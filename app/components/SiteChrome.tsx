@@ -42,12 +42,18 @@ export function SiteChrome({ locale, children }: {
     <html lang={locale}>
       <body className="min-h-screen flex flex-col">
       <LocaleProvider locale={locale}>
-        <header className="border-b border-(--color-edge)">
+        {/* Le liseré supérieur est la seule signature permanente de la direction
+            artistique : un arc électrique en haut de chaque page, et rien d'autre qui
+            brille tant qu'on n'interagit pas. */}
+        <header className="border-b border-(--color-edge) bg-(--color-ink)/70 backdrop-blur-sm sticky top-0 z-20 edge-lit">
           <div className="mx-auto max-w-5xl px-4 py-4 flex items-baseline gap-4">
             {/* Le logo ramene a l'accueil **de la langue courante** : renvoyer un
                 lecteur francais vers l'accueil anglais serait le sortir de sa langue
                 sans qu'il l'ait demande. */}
-            <Link href={pathIn('/', locale)} className="font-semibold tracking-tight">
+            <Link
+              href={pathIn('/', locale)}
+              className="font-semibold tracking-[0.18em] uppercase text-(--color-text) hover:text-(--color-volt) transition-colors"
+            >
               {PRODUCT_NAME}
             </Link>
             <span className="hidden text-sm text-(--color-muted) sm:inline">

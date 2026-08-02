@@ -79,9 +79,11 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
                 : tn('library.card.inDays', item.daysUntilNext)}
           </span>
         ) : position !== undefined ? (
-          <>
+          // Une coordonnee, donc en grille : sur une colonne de vignettes, « S3E7 » et
+          // « S10E12 » cessent de danser d'une ligne a l'autre.
+          <span className="numeric">
             S{position.seasonNumber}E{position.episodeNumber}
-          </>
+          </span>
         ) : (
           // ⚠️ La decision passe **avant** le repli « a voir ». Trouve a la
           // verification : une serie rangee dans « Terminees et abandonnees » affichait

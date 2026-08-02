@@ -146,7 +146,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
 
   return (
     <section
-      className="space-y-4 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
+      className="edge-lit space-y-4 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
       aria-label={t('progress.aria')}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
