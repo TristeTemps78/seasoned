@@ -92,6 +92,38 @@ vrai**, et chacune a été révélée par la production, pas par les tests.
 **Vérifié en production** : *Dexter* et *Stranger Things* signalent tous deux leur
 décrochage, et plus aucun jugement faux n'est affiché.
 
+### 🔴 1.23 — Audit de robustesse : le budget était violé depuis le début ✅ 2026-08-02
+
+Premier audit portant sur le **comportement HTTP réel** plutôt que sur le contenu. Il a
+trouvé le défaut le plus coûteux du projet, invisible dans le code comme dans les tests.
+
+| Ce que je croyais | Ce qui se passait |
+|---|---|
+| `revalidate = 86400` ⇒ page en cache | `X-Vercel-Cache: MISS`, `Cache-Control: no-store` |
+| Trafic gratuit | **Chaque visiteur** rejouait tous les appels TMDB — jusqu'à 10 pour une série de 8 saisons |
+
+Deux causes, corrigées séparément :
+
+1. **Le cache mémoire ne sert à rien en serverless.** Il est propre à chaque instance,
+   donc presque toujours vide. Les appels TMDB passent désormais par le **cache de
+   données** de l'hôte, partagé et persistant. Le provider reste agnostique : il
+   transmet un `RequestInit`, c'est `lib/catalog.ts` qui y met `{ next: { revalidate } }`.
+2. **`revalidate` ne suffit pas sur une route dynamique.** Sans `generateStaticParams`,
+   Next 16 rend à la demande sans jamais mettre en cache. `dynamic = 'force-static'`
+   rétablit l'ISR. Au build, `/serie/[id]` passe de `ƒ Dynamic` à `○ Static`.
+
+> **Ce qui m'avait trompé** : le build affichait « Revalidate 1d » sur la route. Cette
+> colonne décrit l'intention déclarée, **pas le cache effectif**. Seuls les en-têtes de
+> réponse en production disent la vérité.
+
+Vérifié après correctif : `X-Vercel-Cache: HIT` sur toutes les pages testées, y compris
+des séries jamais visitées.
+
+**Trouvaille secondaire du même audit** : `/serie/1396%2F..%2F..%2Fetc` répondait **200**.
+Une URL inventée devenait une page indexable, servie avec le repli « catalogue
+indisponible » et un code de succès. Un identifiant est désormais validé en amont
+(entier positif, sinon 404).
+
 ### 1.22 — « Arrête-toi après la saison N », chiffré ✅ 2026-08-01
 
 La phrase archétypale du domaine, enfin calculée : *« s'arrêter après la saison 6 ramène

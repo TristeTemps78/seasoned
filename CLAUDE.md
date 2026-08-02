@@ -52,7 +52,14 @@
 - **La trajectoire et le point d'arrêt sont en ligne**, dérivés des notes du public TMDB,
   derrière un geste explicite (règle de spoiler). *The Walking Dead* → arrêt après S6,
   ce qui correspond à sa réputation.
-- **Deux règles apprises à la dure, à ne pas défaire** :
+- **⚠️ Le cache est ce qui tient le budget, et il ne se vérifie qu'en production.**
+  Pendant tout le début du projet, les pages série répondaient `X-Vercel-Cache: MISS` et
+  `no-store` malgré leur `revalidate` — chaque visiteur rejouait tous les appels TMDB.
+  Deux choses sont nécessaires ensemble : `dynamic = 'force-static'` sur la route (sans
+  quoi Next 16 ne met jamais en cache une route dynamique) **et** le cache de données de
+  l'hôte sur les appels (`{ next: { revalidate } }`), le cache mémoire étant inutile en
+  serverless. La colonne « Revalidate » du build décrit l'intention, pas le cache réel.
+- **Trois règles apprises à la dure, à ne pas défaire** :
   1. **Un instrument taillé pour des notes humaines ne s'applique pas à des moyennes de
      foule.** L'échelle en demi-étoiles, le seuil de rupture à une étoile et la
      normalisation de la constance supposent une dispersion qui n'existe pas — les notes
@@ -61,6 +68,9 @@
      (forme, constance) sur des données de foule.
   2. **Un conseil exact mais sans portée ne vaut pas mieux que pas de conseil.** Un point
      d'arrêt qui épargne 8 % de la série ne s'affiche pas.
+  3. **Auditer le résultat, jamais l'intention.** Le SEO était un cul-de-sac alors que
+     tout le dispositif était en place ; le cache était inopérant alors que le build
+     affichait « 1d ». Dans les deux cas le code était juste et l'effet nul.
 - ⚠️ **Biais de survie, non résolu** : ceux qui ont vu la saison 6 de *Dexter* sont ceux
   qui ont persévéré, et ils la notent bien. Les notes publiques ne retrouvent pas les
   effondrements dont tout le monde parle.
