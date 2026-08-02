@@ -18,6 +18,7 @@ import { SeasonList } from '@/app/components/SeasonList';
 import { TrajectoryChart } from '@/app/components/TrajectoryChart';
 import { EpisodeGrid } from '@/app/components/EpisodeGrid';
 import { WatchOptions } from '@/app/components/WatchOptions';
+import { MyProgress } from '@/app/components/MyProgress';
 
 /**
  * Regeneration toutes les 24 h.
@@ -247,6 +248,16 @@ export default async function SeriesPage({ params }: PageProps) {
           ) : null}
         </dl>
       </section>
+
+      {/* Le seul element de la page qui vous connaisse. Il s'ajoute cote navigateur :
+          la page elle-meme reste statique et mise en cache. */}
+      <MyProgress
+        seriesId={id}
+        seasons={seasons.rateable.map((s) => ({
+          seasonNumber: s.ref.seasonNumber,
+          episodeCount: s.episodeCount,
+        }))}
+      />
 
       <WatchHere id={id} />
 
