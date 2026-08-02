@@ -204,6 +204,10 @@ export default async function SeriesPage({ params }: PageProps) {
       </header>
 
       <section aria-label="Ce que la série demande">
+        {/* Titre masque visuellement : les chiffres se lisent d'eux-memes, mais la
+            structure du document doit rester coherente pour qui navigue au clavier
+            ou au lecteur d'ecran — et pour les moteurs, qui lisent la hierarchie. */}
+        <h2 className="sr-only">Ce que la série demande</h2>
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Stat label="Saisons" value={String(seasons.rateable.length)} />
           <Stat label="Épisodes" value={String(episodeCount)} />
@@ -299,6 +303,7 @@ async function Trajectory({ id, seasons, totalRuntimeMinutes, episodeCount }: {
 
   return (
     <section aria-label="Trajectoire">
+      <h2 className="sr-only">Trajectoire saison par saison</h2>
       <details className="group rounded-lg border border-(--color-edge) bg-(--color-surface)">
         <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium marker:content-none">
           <span className="group-open:hidden">Voir la trajectoire saison par saison</span>
