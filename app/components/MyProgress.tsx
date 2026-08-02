@@ -1,47 +1,83 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
-import { journalKey } from '@/src/domain/journal';
+import { StarRating } from '@/app/components/StarRating';
+import { journalKey, suggestedSeasonRating } from '@/src/domain/journal';
 import type { Stars } from '@/src/domain/types';
-
-const STARS: readonly Stars[] = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
 
 export interface SeasonShape {
   readonly seasonNumber: number;
   readonly episodeCount: number;
 }
 
+/** Ce que la page sait deja de la serie, et qu'il suffit de memoriser. */
+export interface SeriesShape {
+  readonly title: string;
+  readonly posterPath?: string;
+  readonly statusLabel?: string;
+  readonly nextEpisodeAt?: string;
+  readonly publicStars?: number;
+}
+
 /**
  * Ce que le produit retient de vous, sur une serie.
  *
- * Trois gestes, dans l'ordre exact de la friction croissante decrite par
- * `docs/RATING-MODEL.md` §5 :
+ * Les gestes sont ranges par friction croissante (`docs/RATING-MODEL.md` §5), et le
+ * premier d'entre eux a longtemps manque :
  *
+ *   0. **« je veux la voir »** — ne suppose rien, ni d'avoir commence, ni d'avoir un
+ *      avis. C'est le seul geste possible pour la quasi-totalite des arrivants, qui
+ *      viennent d'un moteur de recherche et n'ont pas vu la serie. Sans lui, le
+ *      produit demandait de finir avant de pouvoir commencer ;
  *   1. **la position** — un geste, et tout ce qui precede est implicitement vu ;
- *   2. **la note de saison** — un geste de plus, et seulement si on le veut ;
+ *   2. **la note de saison** — un tap de plus, et seulement si on le veut ;
  *   3. **la decision** — continuer, mettre en pause, abandonner.
  *
- * Personne ne doit voir le niveau au-dessus de celui qu'il a choisi : les notes
- * n'apparaissent qu'une fois la position declaree, et la decision qu'ensuite.
+ * Personne ne voit le niveau au-dessus de celui qu'il a choisi.
  *
  * Tout est garde dans le navigateur. Aucun compte, aucune donnee envoyee nulle part —
  * et la page qui l'accueille reste statique et mise en cache.
  */
-export function MyProgress({ seriesId, seasons }: {
+export function MyProgress({ seriesId, seasons, series }: {
   readonly seriesId: string;
   readonly seasons: readonly SeasonShape[];
+  readonly series: SeriesShape;
 }) {
-  const { journal, ready, setPosition, setSeasonRating, setDecision } = useJournal();
+  const {
+    journal,
+    ready,
+    setPosition,
+    setSeasonRating,
+    setDecision,
+    setWanted,
+    rememberSnapshot,
+  } = useJournal();
+
   // Jamais l'identifiant nu : les cles du journal portent leur fournisseur, pour qu'un
   // changement de catalogue reste un remappage et non une perte (`journal.ts`).
   const key = journalKey(seriesId);
   const entry = journal.entries[key];
   const position = entry?.position;
+  const tracked = entry !== undefined;
+
+  // De quoi dessiner cette serie ailleurs — dans la bibliotheque — sans aucun appel.
+  // N'ecrit que si l'entree existe deja : passer sur une page ne doit pas remplir le
+  // journal, ni constituer une base de metadonnees que le contrat interdit.
+  useEffect(() => {
+    if (!ready || !tracked) return;
+    rememberSnapshot(key, series);
+  }, [ready, tracked, key, series, rememberSnapshot]);
 
   // Tant que le stockage n'a pas ete lu, on n'affiche rien : dire « vous n'avez rien
   // vu » a quelqu'un qui a tout note serait pire que d'attendre un instant.
+  //
+  // La hauteur reservee est celle du bloc **replie**, pas une valeur ronde : la
+  // premiere version reservait 96 px pour un bloc qui en fait bien plus, et
+  // reintroduisait ainsi le decalage de mise en page que la tache 1.24 avait supprime
+  // sur cette page meme.
   if (!ready || seasons.length === 0) {
-    return <div className="h-24" aria-hidden="true" />;
+    return <div className="h-[4.5rem]" aria-hidden="true" />;
   }
 
   const current = seasons.find((s) => s.seasonNumber === position?.seasonNumber);
@@ -51,96 +87,125 @@ export function MyProgress({ seriesId, seasons }: {
       className="space-y-4 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
       aria-label="Ma progression"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">Où j’en suis</h2>
         <span className="text-xs text-(--color-muted)">
           gardé dans ce navigateur, rien n’est envoyé
         </span>
       </div>
 
+      {/* Niveau 0 — le geste qui ne suppose rien. */}
       <div className="flex flex-wrap items-center gap-2">
-        <label className="text-sm text-(--color-muted)" htmlFor="season">
-          Saison
-        </label>
-        <select
-          id="season"
-          className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1.5 text-sm"
-          value={position?.seasonNumber ?? ''}
-          onChange={(e) => {
-            const season = Number(e.target.value);
-            if (Number.isNaN(season)) return;
-            setPosition(key, season, 1);
-          }}
+        <button
+          type="button"
+          aria-pressed={entry?.wanted !== undefined}
+          onClick={() => setWanted(key, entry?.wanted === undefined)}
+          className={`rounded-full border px-3 py-1.5 text-sm ${
+            entry?.wanted !== undefined
+              ? 'border-(--color-live)/40 bg-(--color-live)/15 text-(--color-live)'
+              : 'border-(--color-edge) hover:border-(--color-muted)'
+          }`}
         >
-          <option value="">—</option>
-          {seasons.map((s) => (
-            <option key={s.seasonNumber} value={s.seasonNumber}>
-              {s.seasonNumber}
-            </option>
-          ))}
-        </select>
+          {entry?.wanted !== undefined ? '✓ Dans ma liste' : 'Je veux la voir'}
+        </button>
 
-        {current !== undefined ? (
-          <>
-            <label className="text-sm text-(--color-muted)" htmlFor="episode">
-              Épisode
-            </label>
-            <select
-              id="episode"
-              className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1.5 text-sm"
-              value={position?.episodeNumber ?? 1}
-              onChange={(e) =>
-                setPosition(key, current.seasonNumber, Number(e.target.value))
-              }
-            >
-              {Array.from({ length: current.episodeCount }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-            <span className="text-xs text-(--color-muted)">
-              tout ce qui précède compte comme vu
-            </span>
-          </>
+        {position === undefined ? (
+          <button
+            type="button"
+            onClick={() => setPosition(key, seasons[0]?.seasonNumber ?? 1, 1)}
+            className="rounded-full border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+          >
+            Je l’ai commencée
+          </button>
         ) : null}
       </div>
 
-      {/* Niveau 1 : la note de saison n'apparait qu'une fois la position declaree. */}
+      {/* Niveau 1 — la position, qui n'apparait qu'une fois la serie commencee. */}
+      {position !== undefined ? (
+        <div className="flex flex-wrap items-center gap-2 border-t border-(--color-edge) pt-3">
+          <label className="text-sm text-(--color-muted)" htmlFor="season">
+            Saison
+          </label>
+          <select
+            id="season"
+            className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1.5 text-sm"
+            value={position.seasonNumber}
+            onChange={(e) => {
+              const season = Number(e.target.value);
+              if (Number.isNaN(season)) return;
+              setPosition(key, season, 1);
+            }}
+          >
+            {seasons.map((s) => (
+              <option key={s.seasonNumber} value={s.seasonNumber}>
+                {s.seasonNumber}
+              </option>
+            ))}
+          </select>
+
+          {current !== undefined ? (
+            <>
+              <label className="text-sm text-(--color-muted)" htmlFor="episode">
+                Épisode
+              </label>
+              <select
+                id="episode"
+                className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1.5 text-sm"
+                value={position.episodeNumber}
+                onChange={(e) =>
+                  setPosition(key, current.seasonNumber, Number(e.target.value))
+                }
+              >
+                {Array.from({ length: current.episodeCount }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs text-(--color-muted)">
+                ou cliquez un épisode dans la grille
+              </span>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Niveau 2 : les notes de saison. Jamais au-dela de la position — la regle de
+          spoiler vaut aussi pour la saisie : proposer de noter la saison 6 dit qu'elle
+          existe. */}
       {position !== undefined ? (
         <div className="space-y-2 border-t border-(--color-edge) pt-3">
           <p className="text-xs uppercase tracking-wide text-(--color-muted)">
             Mes notes de saison
           </p>
-          <ul className="space-y-1.5">
+          <ul className="space-y-1">
             {seasons
               .filter((s) => s.seasonNumber <= position.seasonNumber)
               .map((s) => {
                 const rating = entry?.seasonRatings?.[String(s.seasonNumber)];
+                const suggestion = suggestedSeasonRating(entry, s.seasonNumber);
                 return (
-                  <li key={s.seasonNumber} className="flex items-center gap-2 text-sm">
-                    <span className="w-16 text-(--color-muted)">Saison {s.seasonNumber}</span>
-                    <select
-                      aria-label={`Note de la saison ${s.seasonNumber}`}
-                      className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1 text-sm"
-                      value={rating?.stars ?? ''}
-                      onChange={(e) =>
-                        setSeasonRating(
-                          key,
-                          s.seasonNumber,
-                          e.target.value === ''
-                            ? undefined
-                            : (Number(e.target.value) as Stars),
-                        )
-                      }
-                    >
-                      <option value="">—</option>
-                      {STARS.map((v) => (
-                        <option key={v} value={v}>
-                          {v.toFixed(1)}
-                        </option>
-                      ))}
-                    </select>
+                  <li key={s.seasonNumber} className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="w-16 shrink-0 text-(--color-muted)">
+                      Saison {s.seasonNumber}
+                    </span>
+                    <StarRating
+                      value={rating?.stars}
+                      label={`la saison ${s.seasonNumber}`}
+                      onChange={(stars) => setSeasonRating(key, s.seasonNumber, stars)}
+                    />
+                    {/* On signale, on ne repare pas en silence (`AGENTS.md` regle 8) :
+                        des episodes notes suggerent une note de saison, ils ne
+                        l'ecrivent pas. */}
+                    {rating === undefined && suggestion !== undefined ? (
+                      <button
+                        type="button"
+                        onClick={() => setSeasonRating(key, s.seasonNumber, suggestion)}
+                        className="text-xs text-(--color-muted) underline decoration-dotted underline-offset-2 hover:text-(--color-text)"
+                      >
+                        vos épisodes donnent {suggestion.toFixed(1).replace('.', ',')}
+                      </button>
+                    ) : null}
                   </li>
                 );
               })}
@@ -148,7 +213,7 @@ export function MyProgress({ seriesId, seasons }: {
         </div>
       ) : null}
 
-      {/* Niveau 2 : la decision, qui est la donnee propre du produit. */}
+      {/* Niveau 3 : la decision, qui est la donnee propre du produit. */}
       {position !== undefined ? (
         <div className="flex flex-wrap items-center gap-2 border-t border-(--color-edge) pt-3">
           {(
@@ -181,3 +246,6 @@ export function MyProgress({ seriesId, seasons }: {
     </section>
   );
 }
+
+/** Re-export pour les appelants qui construisent la forme attendue. */
+export type { Stars };

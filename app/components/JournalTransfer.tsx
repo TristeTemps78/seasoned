@@ -1,0 +1,109 @@
+'use client';
+
+import { useRef, useState } from 'react';
+
+/**
+ * Sortir son journal, et le remettre.
+ *
+ * **`AGENTS.md` regle 9 : export integral des qu'il y a une donnee a exporter. Non
+ * negociable.** Il y avait une donnee depuis le 2026-08-02 et pas d'export : la regle
+ * etait violee, et le suivi la classait « dette » — un euphemisme. `exportJournal()`
+ * existait deja, ecrite, exportee, et appelee par rien.
+ *
+ * Ce n'est pas une politesse envers l'utilisateur. Vingt-six millions de personnes
+ * viennent de perdre leur historique parce que TV Time fermait ; un produit qui
+ * demande d'investir du temps sans offrir la porte de sortie n'a aucune legitimite a
+ * reclamer cette confiance-la.
+ *
+ * Ici, l'export a une seconde fonction, immediate : c'est **le pont entre appareils**.
+ * Tant qu'il n'y a pas de compte, cinq appareils font cinq journaux qui divergent —
+ * exporter d'un cote et importer de l'autre est la seule facon de les reunir. D'ou
+ * l'import qui **fusionne** au lieu de remplacer : importer sur un appareil deja
+ * utilise ne doit rien effacer de ce qu'on y a fait.
+ */
+export function JournalTransfer({ onExport, onImport, count }: {
+  readonly onExport: () => string;
+  readonly onImport: (raw: string) => number | undefined;
+  readonly count: number;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [message, setMessage] = useState<string | undefined>(undefined);
+
+  const download = () => {
+    const blob = new Blob([onExport()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `seasoned-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage(`${count} série${count > 1 ? 's' : ''} exportée${count > 1 ? 's' : ''}.`);
+  };
+
+  const upload = async (file: File) => {
+    const total = onImport(await file.text());
+    // Un import muet serait pire qu'une erreur : on dit ce qui est entre, ou que rien
+    // n'a pu etre lu.
+    setMessage(
+      total === undefined
+        ? 'Ce fichier ne contient pas de journal lisible. Rien n’a été modifié.'
+        : `Fusionné. Votre bibliothèque compte ${total} série${total > 1 ? 's' : ''}.`,
+    );
+  };
+
+  return (
+    <section
+      className="space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
+      aria-label="Sauvegarde"
+    >
+      <h2 className="text-sm font-semibold">Sauvegarder, ou changer d’appareil</h2>
+
+      {/* Dire la verite sur la fragilite du stockage fait partie du contrat : vider
+          son navigateur efface tout, et personne ne s'y attend. */}
+      <p className="max-w-prose text-xs leading-relaxed text-(--color-muted)">
+        Votre bibliothèque est gardée <strong>dans ce navigateur</strong>, et nulle part
+        ailleurs. Elle ne suit pas d’un appareil à l’autre, et vider les données du
+        navigateur l’efface. Le fichier ci-dessous est votre copie&nbsp;: il se relit
+        ici même, ou sur un autre appareil — l’import complète, il ne remplace pas.
+      </p>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={download}
+          disabled={count === 0}
+          className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted) disabled:opacity-40 disabled:hover:border-(--color-edge)"
+        >
+          Exporter mon journal
+        </button>
+
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+        >
+          Importer un fichier
+        </button>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file !== undefined) void upload(file);
+            // Remis a zero pour que reimporter le meme fichier redeclenche l'evenement.
+            e.target.value = '';
+          }}
+        />
+      </div>
+
+      {message !== undefined ? (
+        <p aria-live="polite" className="text-xs text-(--color-live)">
+          {message}
+        </p>
+      ) : null}
+    </section>
+  );
+}

@@ -13,6 +13,7 @@ import {
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { STATUS_LABEL, formatCommitment, formatDate, year } from '@/lib/format';
 import { TmdbError } from '@/src/catalog/tmdb';
+import { starsFromTen } from '@/src/domain/rating-scale';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { SeasonList } from '@/app/components/SeasonList';
 import { TrajectoryChart } from '@/app/components/TrajectoryChart';
@@ -148,6 +149,9 @@ export default async function SeriesPage({ params }: PageProps) {
   const { detail, seasons, status, episodeCount, totalRuntimeMinutes } = loaded.data;
   const poster = posterUrl(detail.posterPath, 'w342');
   const started = year(detail.firstAirDate);
+  // Sur la meme echelle que les notes de l'utilisateur : comparer un 8,4/10 a un
+  // 4,5/5 ne veut rien dire, et la conversion doit se faire une seule fois.
+  const publicStars = starsFromTen(detail.voteAverage);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -250,13 +254,26 @@ export default async function SeriesPage({ params }: PageProps) {
       </section>
 
       {/* Le seul element de la page qui vous connaisse. Il s'ajoute cote navigateur :
-          la page elle-meme reste statique et mise en cache. */}
+          la page elle-meme reste statique et mise en cache, et **aucune donnee de
+          journal ne traverse le serveur** — le HTML est partage entre tous les
+          visiteurs par le cache de bord. */}
       <MyProgress
         seriesId={id}
         seasons={seasons.rateable.map((s) => ({
           seasonNumber: s.ref.seasonNumber,
           episodeCount: s.episodeCount,
         }))}
+        // Ce que la page sait deja : memorise tel quel, la bibliotheque pourra
+        // dessiner cette serie sans un seul appel (`src/domain/library.ts`).
+        series={{
+          title: detail.title,
+          ...(detail.posterPath !== undefined ? { posterPath: detail.posterPath } : {}),
+          statusLabel: STATUS_LABEL[status.status],
+          ...(detail.nextEpisode !== undefined
+            ? { nextEpisodeAt: detail.nextEpisode.airsOn.toISOString() }
+            : {}),
+          ...(publicStars !== undefined ? { publicStars } : {}),
+        }}
       />
 
       <WatchHere id={id} />
@@ -366,7 +383,10 @@ async function Trajectory({ id, seasons, totalRuntimeMinutes, episodeCount }: {
           {grid.length > 0 ? (
             <div className="mt-6 border-t border-(--color-edge) pt-5">
               <h3 className="mb-3 text-sm font-medium">Épisode par épisode</h3>
-              <EpisodeGrid seasons={grid} />
+              <p className="mb-3 text-xs text-(--color-muted)">
+                Cliquez un épisode pour dire où vous en êtes, ou le noter.
+              </p>
+              <EpisodeGrid seriesId={id} seasons={grid} />
             </div>
           ) : null}
 

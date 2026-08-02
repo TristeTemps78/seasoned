@@ -1,6 +1,7 @@
 import { discover, waitingSeries, withStatus, type SeriesWithStatus } from '@/lib/catalog';
 import { SearchForm } from '@/app/components/SearchForm';
 import { SeriesCard } from '@/app/components/SeriesCard';
+import { ResumeStrip } from '@/app/components/ResumeStrip';
 
 /**
  * Regeneration quotidienne.
@@ -47,6 +48,11 @@ export default async function HomePage() {
         </div>
 
         <SearchForm />
+
+        {/* Le rappel que le produit s'interdit d'envoyer par notification : il ne
+            coute rien, ne reveille personne, et ne s'affiche que pour qui a deja un
+            journal. La page, elle, reste statique pour tout le monde. */}
+        <ResumeStrip />
       </section>
 
       {/* Cette rangee passe en premier a dessein : c'est la seule qui montre ce que

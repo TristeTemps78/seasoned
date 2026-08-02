@@ -21,6 +21,25 @@ import {
 import { browserJournalStore } from '@/src/journal/local';
 import type { JournalStore } from '@/src/journal/store';
 
+/** Delai en deca duquel un instantane identique n'est pas reecrit. */
+const SNAPSHOT_REWRITE_MS = 86_400_000;
+
+function isFresh(
+  existing: JournalSnapshot | undefined,
+  incoming: Omit<JournalSnapshot, 'cachedAt'>,
+): boolean {
+  if (existing === undefined) return false;
+  const age = Date.now() - new Date(existing.cachedAt).getTime();
+  if (Number.isNaN(age) || age > SNAPSHOT_REWRITE_MS) return false;
+  return (
+    existing.title === incoming.title &&
+    existing.posterPath === incoming.posterPath &&
+    existing.statusLabel === incoming.statusLabel &&
+    existing.nextEpisodeAt === incoming.nextEpisodeAt &&
+    existing.publicStars === incoming.publicStars
+  );
+}
+
 /**
  * Le journal personnel, cote navigateur.
  *
@@ -122,6 +141,12 @@ export function useJournal() {
     rememberSnapshot: useCallback(
       (key: JournalKey, snapshot: Omit<JournalSnapshot, 'cachedAt'>) => {
         const current = latest.current;
+        const entry = current.entries[key];
+        if (entry === undefined) return;
+        // Ne pas reecrire pour rien : une visite de plus sur une fiche inchangee ne
+        // doit pas provoquer une ecriture, ni faire tourner un cycle de rendu.
+        if (isFresh(entry.snapshot, snapshot)) return;
+
         const next = setSnapshotIn(current, key, snapshot);
         if (next !== current) update(next);
       },

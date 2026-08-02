@@ -59,6 +59,20 @@ describe('mapSeriesDetail — cas nominal', () => {
   });
 });
 
+describe('note du public de la serie', () => {
+  it('la lit quand elle existe', () => {
+    // Presente dans la meme reponse, donc gratuite — et c'est le seul moyen de dire
+    // « vous notez plus severement que le public » dans une bibliotheque qui ne fait
+    // aucun appel.
+    expect(mapSeriesDetail({ id: 1, name: 'x', vote_average: 8.4 })?.voteAverage).toBe(8.4);
+  });
+
+  it('ignore un zero, qui signifie « pas encore note » et non « nul »', () => {
+    expect(mapSeriesDetail({ id: 1, name: 'x', vote_average: 0 })?.voteAverage).toBeUndefined();
+    expect(mapSeriesDetail({ id: 1, name: 'x' })?.voteAverage).toBeUndefined();
+  });
+});
+
 describe('mapSeriesDetail — parsing tolerant', () => {
   it('ignore une cle inconnue sans broncher', () => {
     expect(mapSeriesDetail(SERIES_FIXTURE)).toBeDefined();

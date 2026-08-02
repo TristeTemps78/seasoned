@@ -300,11 +300,17 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
         }
       : undefined;
 
+  // Note du public pour la serie entiere. Presente dans la meme reponse, donc
+  // gratuite — et c'est la seule facon de dire « vous notez plus severement que le
+  // public » dans la bibliotheque, qui ne fait aucun appel.
+  const voteAverage = readNumber(source, 'vote_average');
+
   return {
     ...summary,
     externalIds: readExternalIds(source),
     production: readProductionStatus(source),
     seasons,
+    ...(voteAverage !== undefined && voteAverage > 0 ? { voteAverage } : {}),
     ...(creators.length > 0 ? { creators } : {}),
     ...(lastAiredAt !== undefined ? { lastAiredAt } : {}),
     ...(nextAiringAt !== undefined ? { nextAiringAt } : {}),

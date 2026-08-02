@@ -61,6 +61,8 @@ export interface SeriesDetail extends SeriesSummary {
   readonly externalIds: ExternalIds;
   readonly production: ProductionStatus;
   readonly seasons: readonly RawSeason[];
+  /** Note du public chez le fournisseur, sur 10. **Pas** une note de ce produit. */
+  readonly voteAverage?: number;
   readonly lastAiredAt?: Date;
   readonly nextAiringAt?: Date;
   readonly episodeRunTimeMinutes?: number;
