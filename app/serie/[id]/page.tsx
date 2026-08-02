@@ -27,7 +27,21 @@ interface PageProps {
  * `'unavailable'` — le catalogue est en panne ou mal configure : surtout **pas** une
  * 404, qui dirait a un moteur de recherche de desindexer une page valide. On degrade.
  */
+/**
+ * Un identifiant de serie est un entier positif.
+ *
+ * Sans cette verification, `/serie/1396%2F..%2F..%2Fetc` repondait **200** au lieu de
+ * 404 (constate en production le 2026-08-02) : l'appel partait chez le fournisseur,
+ * echouait, et la page de repli « catalogue indisponible » etait servie avec un code
+ * de succes. Une URL inventee devenait ainsi une page indexable — de quoi remplir
+ * l'index de pages vides.
+ */
+function isValidSeriesId(id: string): boolean {
+  return /^[0-9]+$/.test(id);
+}
+
 async function load(id: string) {
+  if (!isValidSeriesId(id)) return { kind: 'missing' as const };
   try {
     return { kind: 'ok' as const, data: await getSeriesPageData(id) };
   } catch (error) {

@@ -297,6 +297,30 @@ describe('TmdbProvider', () => {
     expect(captured?.searchParams.get('page')).toBe('3');
   });
 
+  it('transmet les options de requete de l hote a chaque appel', async () => {
+    // C'est ce qui branche le cache de donnees de Next. Sans lui, chaque visite
+    // rejouait tous les appels TMDB — constate en production le 2026-08-02.
+    const seen: RequestInit[] = [];
+    const provider = new TmdbProvider({
+      accessToken: 'x',
+      requestInit: { next: { revalidate: 86_400 } } as RequestInit,
+      fetchImpl: (async (_url: URL, init: RequestInit) => {
+        seen.push(init);
+        return new Response('{"results":[]}', { status: 200 });
+      }) as unknown as typeof fetch,
+    });
+
+    await provider.search('x');
+    await provider.discover('popular');
+
+    expect(seen).toHaveLength(2);
+    for (const init of seen) {
+      expect((init as { next?: unknown }).next).toEqual({ revalidate: 86_400 });
+      // Les en-tetes ne doivent pas avoir ete ecrasees au passage.
+      expect((init.headers as Record<string, string>)['authorization']).toBe('Bearer x');
+    }
+  });
+
   it('leve plutot que de rendre une fiche inexploitable', async () => {
     const provider = new TmdbProvider({
       accessToken: 'x',

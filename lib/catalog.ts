@@ -42,6 +42,14 @@ const SERIES_TTL_MS = 86_400_000;
 /** Duree de vie du cache recherche : une heure. Requetes plus variees, moins de valeur. */
 const SEARCH_TTL_MS = 3_600_000;
 
+/**
+ * Duree de vie des reponses TMDB dans le cache de donnees de l'hote, en secondes.
+ *
+ * Vingt-quatre heures, comme les pages : une grille de diffusion ne bouge pas plus
+ * souvent. C'est ce cache-la qui tient le budget, pas celui en memoire.
+ */
+const TMDB_FETCH_REVALIDATE_SECONDS = 86_400;
+
 let providerInstance: CatalogProvider | undefined;
 
 /**
@@ -61,7 +69,17 @@ export function getProvider(): CatalogProvider {
   }
 
   const language = process.env['TMDB_LANGUAGE'] ?? 'fr-FR';
-  providerInstance = new TmdbProvider({ accessToken, language });
+  providerInstance = new TmdbProvider({
+    accessToken,
+    language,
+    // Le cache de donnees de Next, partage entre toutes les instances et persistant —
+    // contrairement au cache memoire, propre a chaque instance sans etat.
+    //
+    // C'est LUI qui tient le budget. Verifie en production le 2026-08-02 : les pages
+    // serie repondaient `X-Vercel-Cache: MISS` malgre leur `revalidate`, donc chaque
+    // visite rejouait tous les appels TMDB.
+    requestInit: { next: { revalidate: TMDB_FETCH_REVALIDATE_SECONDS } } as RequestInit,
+  });
   return providerInstance;
 }
 

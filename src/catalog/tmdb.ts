@@ -317,6 +317,19 @@ export interface TmdbOptions {
   readonly language?: string;
   /** Injectable pour les tests. */
   readonly fetchImpl?: typeof fetch;
+  /**
+   * Options ajoutees a chaque requete.
+   *
+   * Sert a brancher le cache de donnees de l'hote — sous Next, `{ next: { revalidate } }`.
+   * Le module reste agnostique : il transmet, il n'interprete pas.
+   *
+   * Ce n'est pas un raffinement. Constate en production le 2026-08-02 : les pages
+   * serie repondaient `X-Vercel-Cache: MISS` et `Cache-Control: no-store` malgre un
+   * `revalidate` de 24 h, donc **chaque visiteur declenchait tous les appels TMDB** —
+   * jusqu'a dix pour une serie de huit saisons. Le cache en memoire ne rattrape rien :
+   * il est propre a chaque instance sans etat.
+   */
+  readonly requestInit?: RequestInit;
 }
 
 export class TmdbProvider implements CatalogProvider {
@@ -324,6 +337,7 @@ export class TmdbProvider implements CatalogProvider {
   readonly #accessToken: string;
   readonly #language: string;
   readonly #fetch: typeof fetch;
+  readonly #requestInit: RequestInit;
 
   constructor(options: TmdbOptions) {
     if (options.accessToken.trim().length === 0) {
@@ -332,6 +346,7 @@ export class TmdbProvider implements CatalogProvider {
     this.#accessToken = options.accessToken;
     this.#language = options.language ?? 'fr-FR';
     this.#fetch = options.fetchImpl ?? globalThis.fetch;
+    this.#requestInit = options.requestInit ?? {};
   }
 
   async #get(endpoint: string, params: Record<string, string>, signal?: AbortSignal): Promise<unknown> {
@@ -342,6 +357,7 @@ export class TmdbProvider implements CatalogProvider {
     }
 
     const response = await this.#fetch(url, {
+      ...this.#requestInit,
       headers: {
         authorization: `Bearer ${this.#accessToken}`,
         accept: 'application/json',
