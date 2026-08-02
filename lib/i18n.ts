@@ -510,6 +510,27 @@ const FR = {
   'taste.rewatchedTimes.one': 'vue {n} fois',
   'taste.rewatchedTimes.other': 'vue {n} fois',
 
+  // --- Le temps passé ------------------------------------------------------
+  // « Au moins », toujours : les instantanés expirent, les séries visitées avant que le
+  // journal mémorise la forme des séries ne sont pas comptées, et le catalogue ignore
+  // souvent la durée d'un épisode. Le chiffre est un minorant et le dit.
+  'tally.aria': 'Mon temps passé',
+  'tally.title': 'Le temps que j’y ai passé',
+  'tally.atLeast': 'Au moins {commitment}.',
+  'tally.episodes.one': '{n} épisode',
+  'tally.episodes.other': '{n} épisodes',
+  'tally.onSeries.one': '{episodes}, sur {n} série comptée',
+  'tally.onSeries.other': '{episodes}, sur {n} séries comptées',
+  'tally.heaviest': 'Surtout',
+  'tally.heaviestOnce': '{title} — {commitment}',
+  'tally.heaviestPasses.one': '{title} — {commitment}, vue {n} fois',
+  'tally.heaviestPasses.other': '{title} — {commitment}, vue {n} fois',
+  'tally.missing.one':
+    '{n} série suivie n’a pas pu être comptée : son instantané a expiré, ou le catalogue ignore la durée de ses épisodes. Le vrai total est plus élevé.',
+  'tally.missing.other':
+    '{n} séries suivies n’ont pas pu être comptées : leur instantané a expiré, ou le catalogue ignore la durée de leurs épisodes. Le vrai total est plus élevé.',
+  'tally.private': 'Calculé ici, dans ce navigateur. Rien n’est envoyé nulle part.',
+
   // --- Saison en cours -----------------------------------------------------
   'season.aired.one': '{n} épisode sorti',
   'season.aired.other': '{n} épisodes sortis',
@@ -870,6 +891,23 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'taste.rewatched': 'My comfort show',
   'taste.rewatchedTimes.one': 'watched {n} time',
   'taste.rewatchedTimes.other': 'watched {n} times',
+
+  'tally.aria': 'My time spent',
+  'tally.title': 'The time I have put in',
+  'tally.atLeast': 'At least {commitment}.',
+  'tally.episodes.one': '{n} episode',
+  'tally.episodes.other': '{n} episodes',
+  'tally.onSeries.one': '{episodes}, across {n} series counted',
+  'tally.onSeries.other': '{episodes}, across {n} series counted',
+  'tally.heaviest': 'Mostly',
+  'tally.heaviestOnce': '{title} — {commitment}',
+  'tally.heaviestPasses.one': '{title} — {commitment}, watched {n} time',
+  'tally.heaviestPasses.other': '{title} — {commitment}, watched {n} times',
+  'tally.missing.one':
+    '{n} show you follow could not be counted: its snapshot has expired, or the catalogue does not know how long its episodes are. The real total is higher.',
+  'tally.missing.other':
+    '{n} shows you follow could not be counted: their snapshots have expired, or the catalogue does not know how long their episodes are. The real total is higher.',
+  'tally.private': 'Worked out right here, in this browser. Nothing is sent anywhere.',
 
   'season.aired.one': '{n} episode out',
   'season.aired.other': '{n} episodes out',

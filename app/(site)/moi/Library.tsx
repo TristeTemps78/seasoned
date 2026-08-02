@@ -9,8 +9,10 @@ import { CalendarExport } from '@/app/components/CalendarExport';
 import { JournalTransfer } from '@/app/components/JournalTransfer';
 import { LibraryCard } from '@/app/components/LibraryCard';
 import { MyPlatforms } from '@/app/components/MyPlatforms';
+import { MyTally } from '@/app/components/MyTally';
 import { TasteCard } from '@/app/components/TasteCard';
 import { buildLibrary, type LibraryItem } from '@/src/domain/library';
+import { buildTally } from '@/src/domain/tally';
 import { buildTasteProfile } from '@/src/domain/taste';
 
 /**
@@ -43,6 +45,7 @@ export function Library() {
   // entrees, et il n'a aucune raison de recommencer a chaque rendu.
   const library = useMemo(() => buildLibrary(journal), [journal]);
   const taste = useMemo(() => buildTasteProfile(journal), [journal]);
+  const tally = useMemo(() => buildTally(journal), [journal]);
 
   if (!ready) {
     // Ne rien affirmer avant d'avoir lu : annoncer « votre bibliotheque est vide » a
@@ -74,6 +77,9 @@ export function Library() {
         subtitle={t('library.finished.subtitle')}
         items={library.finished}
       />
+
+      {/* Le chiffre global avant le trait de gout : « combien » se lit avant « comment ». */}
+      <MyTally tally={tally} />
 
       <TasteCard
         profile={taste}
