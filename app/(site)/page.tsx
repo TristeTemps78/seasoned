@@ -2,7 +2,9 @@ import { discover, waitingSeries, withStatus, type SeriesWithStatus } from '@/li
 import { SearchForm } from '@/app/components/SearchForm';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { ResumeStrip } from '@/app/components/ResumeStrip';
-import { DEFAULT_LOCALE, t } from '@/lib/i18n';
+import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
+import { alternatesFor } from '@/lib/routes';
+import type { Metadata } from 'next';
 
 /**
  * Regeneration quotidienne.
@@ -12,7 +14,14 @@ import { DEFAULT_LOCALE, t } from '@/lib/i18n';
  */
 export const revalidate = 86_400;
 
+export const metadata: Metadata = { alternates: alternatesFor('/', DEFAULT_LOCALE) };
+
 export default async function HomePage() {
+  return <Home locale={DEFAULT_LOCALE} />;
+}
+
+/** L'accueil, dans une langue. Reutilise tel quel par la route francaise. */
+export async function Home({ locale }: { readonly locale: Locale }) {
   // Correctif de l'audit du 2026-08-01 : sans ces liens, **aucune page serie n'etait
   // atteignable** depuis une page indexable — sitemap a une seule URL, `/recherche`
   // en `Disallow`, zero lien sortant. Le canal d'acquisition n°1 etait un cul-de-sac.
@@ -35,16 +44,16 @@ export default async function HomePage() {
       <section className="mx-auto max-w-2xl space-y-8 pt-6">
         <div className="space-y-4">
           <h1 className="text-3xl font-semibold tracking-tight text-balance">
-            {t(DEFAULT_LOCALE, 'home.h1')}
+            {t(locale, 'home.h1')}
           </h1>
           {/* Formulation revue le 2026-08-01 : la verification en reel a montre que la
               valeur n'est pas le cas extreme (la serie declaree vivante et morte depuis
               deux ans) mais le **temps ecoule chiffre**, qui vaut pour toutes les series
               en attente. Voir TASKS.md, « chasse au zombie ». */}
           <p className="text-(--color-muted) leading-relaxed">
-            {t(DEFAULT_LOCALE, 'home.lede.before')}
-            <em>{t(DEFAULT_LOCALE, 'home.lede.em')}</em>
-            {t(DEFAULT_LOCALE, 'home.lede.after')}
+            {t(locale, 'home.lede.before')}
+            <em>{t(locale, 'home.lede.em')}</em>
+            {t(locale, 'home.lede.after')}
           </p>
         </div>
 
@@ -60,25 +69,25 @@ export default async function HomePage() {
           fait le produit. Les deux autres ne contiennent, par construction, que des
           series actives — verifie en ligne le 2026-08-01. */}
       <Row
-        title={t(DEFAULT_LOCALE, 'home.waiting.title')}
-        subtitle={t(DEFAULT_LOCALE, 'home.waiting.subtitle')}
+        title={t(locale, 'home.waiting.title')}
+        subtitle={t(locale, 'home.waiting.subtitle')}
         series={waiting}
       />
 
       <Row
-        title={t(DEFAULT_LOCALE, 'home.week.title')}
-        subtitle={t(DEFAULT_LOCALE, 'home.week.subtitle')}
+        title={t(locale, 'home.week.title')}
+        subtitle={t(locale, 'home.week.subtitle')}
         series={trending}
       />
 
       <Row
-        title={t(DEFAULT_LOCALE, 'home.airing.title')}
-        subtitle={t(DEFAULT_LOCALE, 'home.airing.subtitle')}
+        title={t(locale, 'home.airing.title')}
+        subtitle={t(locale, 'home.airing.subtitle')}
         series={onTheAir}
       />
 
       {trending.length === 0 && onTheAir.length === 0 && waiting.length === 0 ? (
-        <p className="text-(--color-warn)">{t(DEFAULT_LOCALE, 'home.unavailable')}</p>
+        <p className="text-(--color-warn)">{t(locale, 'home.unavailable')}</p>
       ) : null}
     </div>
   );

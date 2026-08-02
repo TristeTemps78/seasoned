@@ -26,11 +26,24 @@
   « 0 jour » contre « 0 days »), `lib/format.ts` internationalisé **en premier parce que
   c'est lui qui est indexé**, plus le layout, l'accueil, la page série, les métadonnées et
   la langue du catalogue.
-  > ⚠️ **À réparer en priorité (tâche 1.60)** : en basculant le défaut sans routage par
-  > locale, **le français n'est plus servi nulle part**. Les traductions existent et sont
-  > testées, aucune URL ne les rend. Chaque changement était juste isolément et le résultat
-  > d'ensemble est une régression. **Changer un défaut ne suffit pas à servir une
-  > alternative — il faut d'abord qu'elle ait une adresse.**
+  > ✅ **Réparé le 2026-08-02 (1.60)** : `/` en anglais, `/fr` en français. Deux décisions
+  > contre-intuitives, motivées dans `lib/routes.ts` — **l'anglais n'a pas de préfixe**
+  > (préfixer casserait toutes les URL déjà indexées) et **aucune redirection selon
+  > `Accept-Language`** (un middleware s'exécute à chaque requête et casse le cache donc le
+  > budget ; Googlebot explore depuis les États-Unis et ne verrait jamais le français ;
+  > et atterrir dans une autre langue que le lien cliqué est un bug).
+  > La leçon reste : **changer un défaut ne suffit pas à servir une alternative — il faut
+  > d'abord qu'elle ait une adresse.**
+- **⚠️ Un `lang` qui ment, trouvé par la vérification et par elle seule.** Typage vert,
+  306 tests verts, build vert — et `/fr` servait du français en s'annonçant `lang="en"`.
+  Une page ne porte qu'un seul `<html>` ; il vivait dans une disposition racine unique qui
+  écrivait la langue par défaut en dur. Réparé par **deux dispositions racines**
+  (`app/(site)`, `app/(fr)`) de trois lignes chacune, tout le commun étant dans
+  `app/components/SiteChrome.tsx`.
+  > **Troisième occurrence de la même forme d'échec** — après le SEO en cul-de-sac et le
+  > cache inopérant. La règle ne bouge pas : **auditer le résultat, jamais l'intention.**
+  > ⚠️ Reste à vérifier **en production** : les `hreflang` des pages série n'ont pas pu être
+  > observés en local (catalogue indisponible, la page servait son repli).
 - **A1 tranché par Tristan : produit à utilisateurs.** Contraire à la recommandation de
   l'audit, actée. Les objections de l'audit ne disparaissent pas — elles deviennent le
   cahier des charges (`docs/ROADMAP-AUDIT.md` §6bis).

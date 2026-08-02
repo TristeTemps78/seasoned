@@ -156,7 +156,7 @@ un marché d'un ordre de grandeur plus grand.
 | 1.57 | **Socle i18n** — `lib/i18n.ts` : langues servies, négociation `Accept-Language` tolérante, étiquette BCP 47, région de repli, dictionnaire typé | ✅ 2026-08-02 | 12 tests. **Le typage rend une clé manquante fatale à la compilation** : une traduction incomplète ne peut pas atteindre la production. `fr` fait foi. |
 | 1.58 | **Bandeau de sécurité des données** (A0 + A1 réunis) | ✅ 2026-08-02 | `app/components/DataSafety.tsx`. Voir ci-dessous. |
 | 1.59 | Migrer les chaînes existantes vers le dictionnaire | 🟡 **partiel** | ✅ Faits : `lib/format.ts` (le différenciateur), `layout`, accueil, page série, métadonnées, langue du catalogue. 🟢 Restent : les ~14 composants `'use client'` (`/moi`, `EpisodeGrid`, `MyProgress`, `StarRating`, `ShareCard`, `TasteCard`…). **Volontairement pas fait dans le même lot** : sans test de composant, migrer 14 fichiers d'un coup est un risque sans filet. À faire après 1.61. |
-| 1.60 | **Routage par locale + `hreflang` + sitemap par langue** | 🟢 libre | ⚠️ **Devenu urgent, voir ci-dessous.** |
+| 1.60 | **Routage par locale + `hreflang` + sitemap par langue** | ✅ 2026-08-02 | `/` en anglais, `/fr` en français. `lib/routes.ts` (12 tests), deux dispositions racines, sélecteur de langue, `hreflang` réciproques, sitemap avec alternates. Deux décisions contre-intuitives : anglais **sans** préfixe, et **aucune redirection automatique**. Motifs ci-dessous. |
 | 1.61 | Harnais de test de composants (`jsdom`, `include` en `.tsx`) | 🟢 libre | Prérequis de 1.59. `vitest.config.ts` fixe `environment: 'node'` et `include: '**/*.test.ts'` : **aucun test de composant n'est possible aujourd'hui**, pour 15 modules `'use client'`. |
 | **A10** | **Quelle langue par défaut ?** | ✅ **`en`**, tranché 2026-08-02 | Sur un site statique, « par défaut » n'est pas une préférence : c'est **la langue de la page que les moteurs indexent**, donc une décision d'acquisition. Le français n'est pas rétrogradé, il cesse d'être implicite — et il est désormais **testé explicitement**, ce qu'il n'était pas : tant qu'il était le défaut, les tests qui ne précisaient rien le vérifiaient par accident. |
 
@@ -175,6 +175,62 @@ produit est monolingue — en anglais.
 Le raisonnement reste bon (l'anglais devait devenir la page indexée) ; c'est l'ordre qui
 était incomplet. La règle à en tirer : **changer un défaut ne suffit pas à servir une
 alternative — il faut d'abord qu'elle ait une adresse.**
+
+### 1.60 — les deux choix contre-intuitifs, et pourquoi
+
+**1. L'anglais reste sans préfixe.** `/serie/1396` sert l'anglais, `/fr/serie/1396` le
+français. La symétrie (`/en/…` et `/fr/…`) serait plus élégante et **casserait toutes les
+URL déjà indexées** — le site est en ligne depuis le 2026-08-01 avec un sitemap. Or le SEO
+est le canal n°1 : sacrifier l'indexation acquise pour de la symétrie serait payer cher un
+confort de lecture du code. L'asymétrie est le prix de la continuité, et elle est assumée.
+
+**2. ⛔ Aucune redirection automatique selon `Accept-Language`.** C'est le réflexe naturel,
+et c'est le mauvais choix ici, pour trois raisons qui se cumulent :
+- **Elle casserait le cache.** Un middleware s'exécute à *chaque* requête, y compris celles
+  que le CDN servirait sans nous. C'est une invocation facturée par visite — exactement le
+  coût par utilisateur que `ROADMAP.md` §1.4 interdit, et ce qui a tué TV Time.
+- **Elle saboterait le SEO.** Googlebot explore majoritairement depuis les États-Unis avec
+  un `Accept-Language` anglais. Redirigé, il pourrait ne **jamais** voir les pages
+  françaises — on aurait traduit pour un moteur qui ne le saurait pas.
+- **Elle surprend.** Cliquer sur un lien anglais partagé par quelqu'un et atterrir en
+  français est un bug du point de vue de l'utilisateur.
+
+→ Les adresses sont **explicites**, et le changement de langue est **un lien qu'on clique**,
+jamais une décision prise à notre place.
+
+**3. Les `hreflang` doivent être réciproques et auto-référents.** Chaque version déclare
+**toutes** les versions, y compris elle-même, plus un `x-default`. Une déclaration non
+réciproque est purement et simplement ignorée par Google — c'est l'erreur classique, et elle
+est silencieuse : la balise est là, elle a l'air juste, elle ne sert à rien.
+
+### 1.60 — ce que la vérification a trouvé, et que rien d'autre n'aurait trouvé
+
+Le typage était vert, les 306 tests verts, le build vert, **et `/fr` servait du français en
+s'annonçant `lang="en"`**. Un seul `<html>` existe par page, et il vivait dans une
+disposition racine unique qui écrivait la langue par défaut en dur.
+
+Ce n'est pas un détail cosmétique : un lecteur d'écran prononce alors le français avec la
+phonétique anglaise, et le signal envoyé aux moteurs contredit le contenu. **C'est la
+troisième fois que ce projet rencontre cette forme d'échec** — le SEO en cul-de-sac, le
+cache inopérant, et maintenant `lang` — et la règle tient : **auditer le résultat, jamais
+l'intention.**
+
+Réparé par **deux dispositions racines** (`app/(site)` et `app/(fr)`), chacune de trois
+lignes, tout ce qui pourrait diverger vivant dans `SiteChrome`. Une page ne portant qu'un
+seul `<html>`, c'est la seule façon correcte de faire varier `lang`.
+
+Deux autres trouvailles de la même vérification :
+- Le sitemap écrivait la racine sous **deux formes** (`…:3000` dans `<loc>`, `…:3000/` dans
+  l'alternate). Sans effet — Google normalise la racine — mais un document qui se contredit
+  fait chercher un bug ailleurs le jour où il y en aura un. Normalisé.
+- Le test de conformité `no-journal-on-server` est tombé au déplacement des fichiers : il
+  citait des chemins en dur. **C'est son rôle** — mais un test de conformité qui casse pour
+  un déplacement apprend à être ignoré, d'où le groupe nommé en constante.
+
+⚠️ **Ce que cette vérification n'a PAS pu prouver** : le catalogue était indisponible en
+local, donc les pages série ont servi leur repli et **leurs `hreflang` n'ont pas pu être
+observés**. Le chemin de code est le même (`alternatesFor`), couvert par 12 tests et
+vérifié sur l'accueil — mais **à re-vérifier en production**, comme le cache l'a été.
 
 ### 1.58 — ce que le bandeau répare, et pourquoi il se tait la plupart du temps
 

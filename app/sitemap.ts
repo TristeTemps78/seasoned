@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { discover } from '@/lib/catalog';
 import { siteUrl } from '@/lib/site';
+import { SUPPORTED_LOCALES, type Locale } from '@/lib/i18n';
+import { pathIn } from '@/lib/routes';
 
 /**
  * Regeneration quotidienne. Le sitemap est un fichier, pas une requete par visiteur.
@@ -32,6 +34,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ),
   );
 
+  /**
+   * Les equivalents d'une page dans les autres langues, au format du sitemap.
+   *
+   * Google accepte les `hreflang` **soit** dans le HTML, **soit** dans le sitemap. Les
+   * deux valent mieux qu'un : le sitemap est ce qui est lu en premier, et c'est lui qui
+   * fait decouvrir les URL francaises — sans quoi elles n'existent que pour qui clique
+   * sur le selecteur de langue, c'est-a-dire pour personne au moment ou il n'y a pas
+   * encore de visiteurs.
+   */
+  /**
+   * Une URL absolue, sous **une seule** forme.
+   *
+   * `base` ne porte pas de barre finale et `pathIn('/')` en rend une : concatener
+   * naivement produisait `…/` dans les alternates face a `…` dans le `<loc>` — deux
+   * ecritures de la meme adresse dans le meme document. Google normalise la racine, donc
+   * l'effet est nul ; mais un sitemap qui se contredit lui-meme est une invitation a
+   * chercher un bug ailleurs le jour ou il y en aura un.
+   */
+  const absolute = (path: string, locale: Locale): string => {
+    const p = pathIn(path, locale);
+    return p === '/' ? base : `${base}${p}`;
+  };
+
+  const languagesOf = (path: string): MetadataRoute.Sitemap[number]['alternates'] => ({
+    languages: Object.fromEntries(
+      SUPPORTED_LOCALES.map((locale) => [locale, absolute(path, locale)]),
+    ),
+  });
+
   // Une serie peut figurer dans plusieurs listes : on ne la publie qu'une fois.
   const seen = new Set<string>();
   const seriesEntries: MetadataRoute.Sitemap = [];
@@ -39,17 +70,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const series of list) {
       if (seen.has(series.providerId)) continue;
       seen.add(series.providerId);
+      const path = `/serie/${series.providerId}`;
+      // Une seule entree par serie, portant ses variantes de langue — et non une entree
+      // par langue, qui ferait passer deux traductions pour deux pages concurrentes.
       seriesEntries.push({
-        url: `${base}/serie/${series.providerId}`,
+        url: `${base}${path}`,
         lastModified: now,
         changeFrequency: 'weekly',
         priority: 0.8,
+        alternates: languagesOf(path),
       });
     }
   }
 
   return [
-    { url: base, lastModified: now, changeFrequency: 'daily', priority: 1 },
+    {
+      url: base,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 1,
+      alternates: languagesOf('/'),
+    },
     ...seriesEntries,
   ];
 }

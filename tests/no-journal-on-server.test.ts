@@ -26,6 +26,16 @@ import { describe, expect, it } from 'vitest';
 
 const CLIENT_MARK = /^\s*['"]use client['"]/;
 
+/**
+ * Le groupe de routes de la langue par defaut.
+ *
+ * Nomme ici parce que ce test cite des chemins precis, et qu'un chemin qui n'existe plus
+ * le ferait echouer pour une raison qui n'a rien a voir avec la regle qu'il protege — ce
+ * qui vient d'arriver au passage aux deux dispositions racines. Un test de conformite qui
+ * casse pour un deplacement de fichier apprend a etre ignore.
+ */
+const SITE_GROUP = '(site)';
+
 /** Ce qui n'a rien a faire dans un module rendu par le serveur. */
 const FORBIDDEN = [
   '@/app/journal/useJournal',
@@ -87,7 +97,7 @@ describe('le journal ne traverse jamais le serveur', () => {
       join('app', 'components', 'MyProgress.tsx'),
       join('app', 'components', 'EpisodeGrid.tsx'),
       join('app', 'components', 'ResumeStrip.tsx'),
-      join('app', 'moi', 'Library.tsx'),
+      join('app', SITE_GROUP, 'moi', 'Library.tsx'),
       join('app', 'journal', 'useJournal.ts'),
     ]) {
       expect(isClientModule(readFileSync(file, 'utf8')), file).toBe(true);
@@ -97,7 +107,7 @@ describe('le journal ne traverse jamais le serveur', () => {
   it('la page de la bibliotheque reste statique', () => {
     // Une route personnelle rendue a la demande couterait une invocation par visite,
     // et ferait tomber la garantie de cout du produit.
-    const page = readFileSync(join('app', 'moi', 'page.tsx'), 'utf8');
+    const page = readFileSync(join('app', SITE_GROUP, 'moi', 'page.tsx'), 'utf8');
     expect(page).toContain("dynamic = 'force-static'");
     expect(isClientModule(page)).toBe(false);
   });

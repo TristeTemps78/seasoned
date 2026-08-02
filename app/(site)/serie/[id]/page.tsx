@@ -12,7 +12,8 @@ import {
 } from '@/lib/catalog';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { formatCommitment, formatDate, statusLabel, year } from '@/lib/format';
-import { DEFAULT_LOCALE, t, tn } from '@/lib/i18n';
+import { DEFAULT_LOCALE, localeTag, t, tn, type Locale } from '@/lib/i18n';
+import { alternatesFor } from '@/lib/routes';
 import { TmdbError } from '@/src/catalog/tmdb';
 import { starsFromTen } from '@/src/domain/rating-scale';
 import { StatusBadge } from '@/app/components/StatusBadge';
@@ -81,10 +82,15 @@ async function load(id: string) {
   }
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
+/**
+ * Les metadonnees d'une page serie, dans une langue.
+ *
+ * Exportee pour que la route francaise (`app/fr/serie/[id]`) serve **exactement** la
+ * meme page dans une autre langue, au lieu d'en entretenir une copie qui divergera.
+ */
+export async function seriesMetadata(id: string, locale: Locale): Promise<Metadata> {
   const loaded = await load(id);
-  if (loaded.kind !== 'ok') return { title: t(DEFAULT_LOCALE, 'series.unavailableTitle') };
+  if (loaded.kind !== 'ok') return { title: t(locale, 'series.unavailableTitle') };
 
   const { detail, seasons, status, episodeCount, totalRuntimeMinutes } = loaded.data;
   const started = year(detail.firstAirDate);
@@ -93,27 +99,33 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // immediatement aux deux questions qu'on pose a une serie — ou elle en est, et
   // combien elle coute. C'est le canal d'acquisition n°1 (`ROADMAP.md` §0.2).
   const parts = [
-    statusLabel(status.status).toLowerCase(),
-    tn(DEFAULT_LOCALE, 'series.seasons', seasons.rateable.length),
-    tn(DEFAULT_LOCALE, 'series.episodes', episodeCount),
-    ...(totalRuntimeMinutes !== undefined ? [formatCommitment(totalRuntimeMinutes)] : []),
+    statusLabel(status.status, locale).toLowerCase(),
+    tn(locale, 'series.seasons', seasons.rateable.length),
+    tn(locale, 'series.episodes', episodeCount),
+    ...(totalRuntimeMinutes !== undefined
+      ? [formatCommitment(totalRuntimeMinutes, locale)]
+      : []),
   ];
 
   const title = started !== undefined ? `${detail.title} (${started})` : detail.title;
   const description = `${detail.title} — ${parts.join(', ')}.`;
   const image = posterUrl(detail.posterPath, 'w500');
+  // Canonique **de cette langue**, et declaration reciproque des autres. Pointer toutes
+  // les canoniques vers l'anglais reviendrait a demander la desindexation du francais.
+  const alternates = alternatesFor(`/serie/${id}`, locale);
 
   return {
     title,
     description,
-    alternates: { canonical: `/serie/${id}` },
+    alternates,
     // Un lien partage sans apercu ne circule pas. L'affiche est verticale (2:3),
     // d'ou `summary` et non `summary_large_image` : une carte large la rognerait.
     openGraph: {
       type: 'video.tv_show',
       title,
       description,
-      url: `/serie/${id}`,
+      url: alternates.canonical,
+      locale: localeTag(locale).replace('-', '_'),
       ...(image !== undefined
         ? { images: [{ url: image, ...posterDimensions('w500'), alt: detail.title }] }
         : {}),
@@ -127,8 +139,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function SeriesPage({ params }: PageProps) {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  return seriesMetadata(id, DEFAULT_LOCALE);
+}
+
+export async function SeriesView({ id, locale }: {
+  readonly id: string;
+  readonly locale: Locale;
+}) {
   const loaded = await load(id);
 
   if (loaded.kind === 'missing') notFound();
@@ -136,11 +155,9 @@ export default async function SeriesPage({ params }: PageProps) {
     return (
       <div className="mx-auto max-w-2xl py-12 space-y-4">
         <h1 className="text-2xl font-semibold tracking-tight">
-          {t(DEFAULT_LOCALE, 'series.unavailableHeading')}
+          {t(locale, 'series.unavailableHeading')}
         </h1>
-        <p className="text-(--color-muted)">
-          {t(DEFAULT_LOCALE, 'series.unavailableBody')}
-        </p>
+        <p className="text-(--color-muted)">{t(locale, 'series.unavailableBody')}</p>
       </div>
     );
   }
@@ -228,28 +245,28 @@ export default async function SeriesPage({ params }: PageProps) {
         </div>
       </header>
 
-      <section aria-label={t(DEFAULT_LOCALE, 'series.demands')}>
+      <section aria-label={t(locale, 'series.demands')}>
         {/* Titre masque visuellement : les chiffres se lisent d'eux-memes, mais la
             structure du document doit rester coherente pour qui navigue au clavier
             ou au lecteur d'ecran — et pour les moteurs, qui lisent la hierarchie. */}
-        <h2 className="sr-only">{t(DEFAULT_LOCALE, 'series.demands')}</h2>
+        <h2 className="sr-only">{t(locale, 'series.demands')}</h2>
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Stat label={t(DEFAULT_LOCALE, 'stat.seasons')} value={String(seasons.rateable.length)} />
-          <Stat label={t(DEFAULT_LOCALE, 'stat.episodes')} value={String(episodeCount)} />
+          <Stat label={t(locale, 'stat.seasons')} value={String(seasons.rateable.length)} />
+          <Stat label={t(locale, 'stat.episodes')} value={String(episodeCount)} />
           {totalRuntimeMinutes !== undefined ? (
             // Le tilde n'est pas cosmetique : le total est une estimation (mediane
             // d'une saison x nombre d'episodes), et l'annoncer comme exact serait
             // mentir sur la seule promesse chiffree de la page d'accueil.
             <Stat
-              label={t(DEFAULT_LOCALE, 'stat.commitment')}
-              value={`~ ${formatCommitment(totalRuntimeMinutes)}`}
+              label={t(locale, 'stat.commitment')}
+              value={`~ ${formatCommitment(totalRuntimeMinutes, locale)}`}
               emphasis
             />
           ) : null}
           {detail.lastAiredAt !== undefined ? (
             <Stat
-              label={t(DEFAULT_LOCALE, 'stat.lastEpisode')}
-              value={formatDate(detail.lastAiredAt)}
+              label={t(locale, 'stat.lastEpisode')}
+              value={formatDate(detail.lastAiredAt, locale)}
             />
           ) : null}
         </dl>
@@ -270,7 +287,7 @@ export default async function SeriesPage({ params }: PageProps) {
         series={{
           title: detail.title,
           ...(detail.posterPath !== undefined ? { posterPath: detail.posterPath } : {}),
-          statusLabel: statusLabel(status.status),
+          statusLabel: statusLabel(status.status, locale),
           ...(detail.nextEpisode !== undefined
             ? { nextEpisodeAt: detail.nextEpisode.airsOn.toISOString() }
             : {}),
@@ -290,9 +307,14 @@ export default async function SeriesPage({ params }: PageProps) {
 
       <SeasonList seasons={seasons} />
 
-      <AlsoByCreators detail={detail} />
+      <AlsoByCreators detail={detail} locale={locale} />
     </article>
   );
+}
+
+export default async function SeriesPage({ params }: PageProps) {
+  const { id } = await params;
+  return <SeriesView id={id} locale={DEFAULT_LOCALE} />;
 }
 
 /**
@@ -303,8 +325,9 @@ export default async function SeriesPage({ params }: PageProps) {
  * de similarite — ce qui le distingue de la recommandation algorithmique, ecartee
  * par `ROADMAP.md` §3.
  */
-async function AlsoByCreators({ detail }: {
+async function AlsoByCreators({ detail, locale }: {
   readonly detail: Awaited<ReturnType<typeof getSeriesPageData>>['detail'];
+  readonly locale: Locale;
 }) {
   const others = await alsoByCreators(detail);
   if (others.length === 0) return null;
@@ -312,13 +335,13 @@ async function AlsoByCreators({ detail }: {
   const names = (detail.creators ?? [])
     .slice(0, 2)
     .map((c) => c.name)
-    .join(t(DEFAULT_LOCALE, 'join.and'));
+    .join(t(locale, 'join.and'));
 
   return (
-    <section className="space-y-4" aria-label={t(DEFAULT_LOCALE, 'series.sameCreator')}>
+    <section className="space-y-4" aria-label={t(locale, 'series.sameCreator')}>
       <div>
         <h2 className="text-lg font-semibold tracking-tight">
-          {t(DEFAULT_LOCALE, 'series.sameCreator')}
+          {t(locale, 'series.sameCreator')}
         </h2>
         {names.length > 0 ? (
           <p className="text-sm text-(--color-muted)">{names}</p>
