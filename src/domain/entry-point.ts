@@ -108,6 +108,22 @@ export const MIN_EPISODES_AFTER = 6;
 export const MAX_ENTRY_FRACTION = 1 / 3;
 
 /**
+ * Plafond **absolu** d'episodes qu'on peut demander de passer.
+ *
+ * L'ordre de grandeur d'une saison entiere. Au-dela, « passez les deux premieres
+ * saisons » n'est plus un conseil d'entree : c'est une invitation a regarder autre chose,
+ * et le produit n'a pas a la formuler a la place du lecteur.
+ *
+ * ⚠️ **Cette borne est aussi ce qui rend la fonction sure sur les series-fleuves.** Sans
+ * elle, la boucle parcourt le tiers de la serie en triant a chaque pas : sur *Detective
+ * Conan* et ses ~1100 episodes, cela fait 366 iterations et de l'ordre de huit millions
+ * d'operations **a chaque regeneration de page**. La fraction seule ne borne rien, parce
+ * qu'elle grandit avec la serie. Trouve a l'audit, et c'est le meme correctif qui
+ * repond aux deux problemes — le signe habituel qu'une borne manquait vraiment.
+ */
+export const MAX_SKIPPED_EPISODES = 25;
+
+/**
  * Ecart minimal, **sur 10**, pour qu'un decollage soit autre chose que du bruit.
  *
  * Un demi-point sur dix, soit exactement `PUBLIC_BREAK_POINT_MIN_DROP` (0,25 etoile sur
@@ -147,7 +163,7 @@ export function findEntryPoint(episodes: readonly RatedEpisode[]): EntryPoint | 
   const total = trusted.length;
   if (total < MIN_SKIPPED_EPISODES + MIN_EPISODES_AFTER) return undefined;
 
-  const latest = Math.floor(total * MAX_ENTRY_FRACTION);
+  const latest = Math.min(Math.floor(total * MAX_ENTRY_FRACTION), MAX_SKIPPED_EPISODES);
   let best: EntryPoint | undefined;
   let bestLift = MIN_ENTRY_LIFT;
 

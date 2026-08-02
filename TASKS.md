@@ -205,9 +205,47 @@ données sont déjà chargées et en cache sur la page série.
 
 | # | Tâche | Statut | Motif |
 |---|---|---|---|
-| F1 | **Point d'entrée** — « ça commence vraiment à S1E8 » | 🔒 in-progress — @claude-opus — 2026-08-03 | Symétrique du point d'arrêt ; le biais de survie joue **en sa faveur** |
-| F4 | **Plan de rattrapage** — « 14 épisodes en 12 jours » | 🔒 in-progress — @claude-opus — 2026-08-03 | Croise A4 et la date du prochain épisode. Transforme une bibliothèque en plan |
-| F2 | **Verdict de la saison en cours** | 🔒 in-progress — @claude-opus — 2026-08-03 | Le seul moment où la question se pose et où personne ne répond |
+| F1 | **Point d'entrée** — « ça commence vraiment à S1E8 » | ✅ 2026-08-03 | `src/domain/entry-point.ts`, 15 tests. Le biais de survie joue **en sa faveur** |
+| F4 | **Plan de rattrapage** — « 14 épisodes en 12 jours » | ✅ 2026-08-03 | `src/domain/catch-up.ts`, 11 tests. Le chiffre qui compte est le **temps** |
+| F2 | **Verdict de la saison en cours** | ✅ 2026-08-03 | `src/domain/current-season.ts`, 10 tests. Se tait la plupart du temps |
+
+### Ce que la boucle d'audit a trouvé sur ces trois features
+
+**1. Une cinquième règle, trouvée par les tests (F1).** La première version maximisait le
+seul écart de médianes et conseillait de commencer sur **un épisode encore mauvais** : la
+médiane de « tout le reste » est trop robuste pour voir un creux d'un épisode. Or le
+conseil dit *« à partir d'ici, c'est bon »* — celui qui le suit tombe sur cet épisode en
+premier. La règle ajoutée a corrigé **deux cas de test d'un coup**, le signe habituel
+qu'elle décrit une propriété réelle et non une rustine.
+
+**2. ⚠️ Un test creux, trouvé en injectant le défaut (F2).** Les six tests de placement
+restaient **verts** quand on supprimait purement et simplement le rendu hors dépliant.
+Cause : `useJournal` lit le stockage de façon asynchrone, donc au premier rendu la position
+est inconnue et la note apparaît dans le dépliant ; `findByText` résolvait sur ce
+rendu-là, et l'assertion suivante mesurait un état transitoire.
+
+> **La leçon, et elle est générale** : sur un composant dont l'état arrive de façon
+> asynchrone, `findByText` puis une assertion **ne prouve rien** — il faut attendre la
+> condition finale elle-même. Un test qui ne tombe pas quand on casse ce qu'il surveille
+> donne une confiance imméritée, ce qui est pire qu'un test absent.
+
+**3. Une borne manquante, à la fois performance et produit (F1).** `MAX_ENTRY_FRACTION`
+seule ne borne rien : elle *grandit avec la série*. Sur une série-fleuve comme *Detective
+Conan* (~1100 épisodes), la boucle faisait 366 itérations en triant à chaque pas — de
+l'ordre de **8 millions d'opérations à chaque régénération de page** — et pouvait proposer
+de passer des centaines d'épisodes, ce qui n'est pas un conseil d'entrée. Un plafond
+absolu (`MAX_SKIPPED_EPISODES = 25`) répond aux deux à la fois.
+
+### Mesures de cette session
+
+| Sujet | Résultat |
+|---|---|
+| **Poids JS** | **166,3 Ko gzip** sur `/moi` contre 166,0 avant : **+0,3 Ko** pour les trois features. Les modules de calcul sont importés `import type` par la couche client — ils restent **entièrement côté serveur**, le navigateur ne reçoit que le résultat. |
+| Appels réseau ajoutés | **Zéro.** Les trois features lisent des données déjà chargées pour la grille et la courbe. |
+| En-têtes | CSP, `nosniff`, `Referrer-Policy`, `X-Frame-Options` toujours servis ; aucune erreur console. |
+| Seuils | `tests/thresholds.test.ts` — les seuils sont verrouillés dans leurs **rapports**, pas dans leurs valeurs : chacun reste réglable, mais deux qui doivent rester liés ne peuvent plus diverger en silence. |
+| CVE `sharp` | Inchangée et toujours **non exploitable** (pas de `next/image`, `images.unoptimized`). |
+| Dépendances majeures | `typescript@7`, `jsdom@30`, `@types/node@26` disponibles. **Volontairement non mises à jour** : trois changements majeurs en autonomie, sans bénéfice immédiat, contre un projet dont la preuve est la CI verte. À faire en présence de Tristan. |
 
 ### 🔴 Vérification en production du 2026-08-03 — ce qu'elle a tranché
 

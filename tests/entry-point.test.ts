@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   MAX_ENTRY_FRACTION,
+  MAX_SKIPPED_EPISODES,
   MIN_SKIPPED_EPISODES,
   findEntryPoint,
   type RatedEpisode,
@@ -68,6 +69,24 @@ describe('findEntryPoint — ce qu’il refuse de dire', () => {
     if (found !== undefined) {
       expect(found.skipped).toBeLessThanOrEqual(Math.floor(24 * MAX_ENTRY_FRACTION));
     }
+  });
+
+  it('ne demande jamais de passer plus d’une saison entiere', () => {
+    // Trouve a l'audit : la fraction seule ne borne rien, elle grandit avec la serie.
+    // Sur une serie-fleuve, le module proposait de passer des centaines d'episodes —
+    // ce qui n'est pas un conseil d'entree — et triait a chaque pas de boucle.
+    const longRun = [...Array(200).fill(6), ...Array(400).fill(8.5)];
+    const found = findEntryPoint(series(longRun));
+    expect(found?.skipped ?? 0).toBeLessThanOrEqual(MAX_SKIPPED_EPISODES);
+  });
+
+  it('reste rapide sur une serie-fleuve', () => {
+    // Detective Conan compte ~1100 episodes. Sans plafond absolu, c'etait 366
+    // iterations et ~8 M d'operations a chaque regeneration de page.
+    const huge = series([...Array(400).fill(6.5), ...Array(700).fill(8.4)]);
+    const started = Date.now();
+    findEntryPoint(huge);
+    expect(Date.now() - started).toBeLessThan(200);
   });
 
   it('se tait faute d’episodes exploitables', () => {
