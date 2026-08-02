@@ -283,7 +283,21 @@ peuvent pas être vérifiés, parce que **le code n'est pas déployé**.
 Quatre commits : `a1fab2d` (réservation + D14) · `9043233` (filet + i18n) · `26e7514`
 (vague A) · `96853ae` (XSS + langue du catalogue + en-têtes).
 
-### À faire en premier, dans cet ordre
+### À faire en premier, dans cet ordre (mis à jour le 2026-08-03 au matin)
+
+0. **🔴 Décider du push.** 21 commits d'avance sur `origin/main`. La faille XSS du JSON-LD
+   est **en ligne** depuis le 2026-08-02, et tout le travail des trois dernières sessions
+   est invisible. Le push déclenche un déploiement public — c'est une décision de Tristan,
+   pas d'un agent. Vérifié ce matin, voir le tableau plus haut.
+1. **⚠️ Vider `TMDB_LANGUAGE` chez Vercel** — désormais **prouvé** nécessaire, et non plus
+   supposé : la production sert une description française dans le JSON-LD d'une page
+   destinée à l'anglais.
+2. **`docs/NEXT-FIVE-2.md`** — cinq nouvelles propositions. La n°1 (**rewatch**) est la
+   seule qui se **périme** : chaque journal écrit sans elle perd une donnée pour toujours,
+   exactement comme les trois décisions de la v2 du journal.
+3. **A4 (le nom)** reste le seul arbitrage bloquant avant un lancement public.
+
+### L'ancienne liste, conservée pour mémoire
 
 1. **⚠️ Vérifier en production, c'est la seule chose que le local ne peut pas prouver.**
    Le catalogue est **indisponible en local** (`TMDB_ACCESS_TOKEN` vide dans `.env`), donc

@@ -8,7 +8,38 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03)
+## État actuel (2026-08-03, matin)
+
+- **🔴 Le plus important, avant tout le reste : 21 commits ne sont pas poussés, et la
+  faille XSS est en ligne.** Vérifié en production ce matin : `/fr/serie/1396` répond
+  **404**, `<html lang>` vaut **`fr`**, aucun `hreflang`, et le JSON-LD d'une page destinée
+  à l'anglais sert une **description française** — preuve directe que `TMDB_LANGUAGE=fr-FR`
+  est bien posé chez Vercel. Le cache, lui, répond `HIT`. **Un push déclenche un
+  déploiement public : ce n'est pas à un agent de le décider.**
+- **Session du matin : les trois features de `NEXT-FIVE` qui se calculent sans un seul
+  utilisateur.** 436 → **486 tests verts**, typecheck strict vert, build vert, 13 routes
+  `○ Static`. Trois commits.
+  - **F1 point d'entrée** (`entry-point.ts`) — « ça commence vraiment à S1E8 ». Le
+    symétrique du point d'arrêt, et **le biais de survie joue en sa faveur** : ceux qui
+    notent l'épisode 3 incluent tous ceux qui ont abandonné après.
+  - **F4 plan de rattrapage** (`catch-up.ts`) — le chiffre qui compte est le **temps**, pas
+    le nombre d'épisodes. Les plans intenables sont annoncés aussi.
+  - **F2 verdict de la saison en cours** (`current-season.ts`) — se tait la plupart du
+    temps, et son **placement dépend de la position** (règle 7).
+  - **Coût mesuré : +0,3 Ko gzip et zéro appel réseau.** Les modules sont importés
+    `import type` par la couche client : le calcul reste serveur.
+  - **Deux trouvailles d'audit** : une borne manquante (`MAX_ENTRY_FRACTION` *grandit avec
+    la série* — 8 M d'opérations sur *Detective Conan*, et un « conseil » de passer
+    300 épisodes), et surtout **un test creux** — six tests de placement restaient verts
+    quand on supprimait le code qu'ils surveillaient.
+    > **La leçon** : sur un composant dont l'état arrive de façon asynchrone,
+    > `findByText` puis une assertion **ne prouve rien**. Il faut attendre la condition
+    > finale elle-même.
+  - **Cinq nouvelles propositions** : `docs/NEXT-FIVE-2.md`. ⚠️ **Letterboxd bloque
+    l'accès automatisé** (403 sur `/talk/` et `/about/suggestions/`, domaine refusé par le
+    navigateur), Reddit aussi — les sources sont donc autres et le document le dit.
+
+## État précédent (2026-08-03, nuit)
 
 - **Session du 2026-08-03 : le filet, la langue, cinq gestes, et un audit qui a trouvé une
   faille.** 306 → **436 tests verts**, typecheck strict vert, build vert, 13 routes
