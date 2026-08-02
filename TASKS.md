@@ -102,6 +102,53 @@ fusion**, que le format actuel du journal rend impossible sans perte.
 
 ---
 
+## 🔄 Reprise à froid — état au 2026-08-02 (fin de session)
+
+**Tout est committé, `main` propre. 306 tests verts, typecheck strict vert, build vert,
+toutes les routes `○ Static`.** Cinq commits : `a46b4cf` (fusion) · `2fa1292` (i18n +
+DataSafety) · `2ae1816` (bascule `en`) · `40b4f99` (doc) · `bfd070e` (routage locale).
+
+### À faire en premier, dans cet ordre
+
+1. **Vérifier en production** (rien d'autre ne peut le prouver) : les `hreflang` d'une page
+   série (`/serie/1396` et `/fr/serie/1396`) — non observables en local, le catalogue y
+   était indisponible ; et `X-Vercel-Cache: HIT|PRERENDER` sur `/fr/serie/1396`.
+2. **⚠️ Vider `TMDB_LANGUAGE` dans l'environnement Vercel.** Un `fr-FR` oublié servirait
+   des synopsis français sur des pages `lang="en"` — pire que ne pas traduire.
+3. **1.61 harnais de test de composants** (`jsdom` + testing-library, `include` en `.tsx`).
+   15 modules `'use client'`, zéro test — dont `DataSafety` et `LanguagePicker`, livrés
+   sans filet. Prérequis de 1.59.
+4. **1.59 migrer les ~14 composants restants** vers le dictionnaire (`/moi`, `EpisodeGrid`,
+   `MyProgress`, `StarRating`, `ShareCard`, `TasteCard`…). Encore en français en dur.
+5. **Vague A** (plan complet dans le fichier de plan de session) : A4 « il vous reste
+   14 épisodes · 9 h 20 », A5 rappel de noter la saison, A2 import, A3 `/convertir`,
+   A6 calendrier `.ics`.
+
+### La méthodologie qui a produit ces cinq commits
+
+Elle a trouvé trois défauts réels que ni le typage, ni les tests, ni le build ne voyaient.
+À rejouer telle quelle :
+
+1. **Prendre l'hypothèse et la retourner** avant d'écrire. « localStorage est gratuit » →
+   c'est une perte de données silencieuse. « Le social demande de la modération » → pas les
+   réactions structurées. « Détecter la langue du visiteur » → casse le cache **et** le SEO.
+2. **Réserver dans `TASKS.md`**, en y écrivant *le motif*, pas la tâche.
+3. **Écrire le test qui échoue d'abord si possible — sinon vérifier qu'il échouerait.**
+   Preuve exigée : en réintroduisant le défaut, 4 des 8 lois de fusion tombent. Un test qui
+   passe avant et après ne prouve rien.
+4. **`npm run check` puis `npm run build`.**
+5. **Puis auditer le résultat servi, pas l'intention.** C'est l'étape qui paie : `lang="en"`
+   sur `/fr`, le sitemap contradictoire, les alternates. ⚠️ Et se méfier de sa propre
+   vérification — la première passe sur les pages série était **biaisée** (catalogue en
+   panne, page de repli) et ne prouvait rien.
+6. **Commit atomique**, message qui dit *pourquoi*, doc à jour dans le même commit.
+
+> **La règle du projet confirmée une troisième fois** (après le SEO en cul-de-sac et le
+> cache inopérant) : **le code peut être juste et l'effet nul.** Rien ne remplace de
+> regarder ce qui sort.
+
+---
+
 ## Lot 0 — ce qui doit être corrigé **avant** qu'il existe deux appareils
 
 > Découvert le 2026-08-02 en préparant la synchro. Ces trois points sont invisibles
