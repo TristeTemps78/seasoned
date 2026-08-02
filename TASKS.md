@@ -155,10 +155,26 @@ un marché d'un ordre de grandeur plus grand.
 |---|---|---|---|
 | 1.57 | **Socle i18n** — `lib/i18n.ts` : langues servies, négociation `Accept-Language` tolérante, étiquette BCP 47, région de repli, dictionnaire typé | ✅ 2026-08-02 | 12 tests. **Le typage rend une clé manquante fatale à la compilation** : une traduction incomplète ne peut pas atteindre la production. `fr` fait foi. |
 | 1.58 | **Bandeau de sécurité des données** (A0 + A1 réunis) | ✅ 2026-08-02 | `app/components/DataSafety.tsx`. Voir ci-dessous. |
-| 1.59 | Migrer les chaînes existantes vers le dictionnaire | 🟢 libre | ~17 composants. **Volontairement pas fait dans le même lot** : sans test de composant, migrer 17 fichiers d'un coup est un risque sans filet. À faire **après** 1.61. |
-| 1.60 | **Routage par locale + `hreflang` + sitemap par langue** | 🟢 libre | ⚠️ C'est cela qui transforme la traduction en trafic — sans quoi 1.57 ne sert à rien. Multiplie les pages ISR : mesurer le coût avant. |
-| 1.61 | Harnais de test de composants (`jsdom`, `include` en `.tsx`) | 🟢 libre | Prérequis de 1.59. `vitest.config.ts` fixe `environment: 'node'` et `include: '**/*.test.ts'` : **aucun test de composant n'est possible aujourd'hui**, pour 14 modules `'use client'`. |
-| **A10** | **Quelle langue par défaut ?** | 🟡 **non tranché** | `fr` aujourd'hui, parce que c'est l'état du site. Basculer sur `en` est **probablement le plus gros levier SEO du projet**. À décider avec 1.60, explicitement — pas comme effet de bord. |
+| 1.59 | Migrer les chaînes existantes vers le dictionnaire | 🟡 **partiel** | ✅ Faits : `lib/format.ts` (le différenciateur), `layout`, accueil, page série, métadonnées, langue du catalogue. 🟢 Restent : les ~14 composants `'use client'` (`/moi`, `EpisodeGrid`, `MyProgress`, `StarRating`, `ShareCard`, `TasteCard`…). **Volontairement pas fait dans le même lot** : sans test de composant, migrer 14 fichiers d'un coup est un risque sans filet. À faire après 1.61. |
+| 1.60 | **Routage par locale + `hreflang` + sitemap par langue** | 🟢 libre | ⚠️ **Devenu urgent, voir ci-dessous.** |
+| 1.61 | Harnais de test de composants (`jsdom`, `include` en `.tsx`) | 🟢 libre | Prérequis de 1.59. `vitest.config.ts` fixe `environment: 'node'` et `include: '**/*.test.ts'` : **aucun test de composant n'est possible aujourd'hui**, pour 15 modules `'use client'`. |
+| **A10** | **Quelle langue par défaut ?** | ✅ **`en`**, tranché 2026-08-02 | Sur un site statique, « par défaut » n'est pas une préférence : c'est **la langue de la page que les moteurs indexent**, donc une décision d'acquisition. Le français n'est pas rétrogradé, il cesse d'être implicite — et il est désormais **testé explicitement**, ce qu'il n'était pas : tant qu'il était le défaut, les tests qui ne précisaient rien le vérifiaient par accident. |
+
+### ⚠️ Ce que la bascule a révélé, et qu'il faut regarder en face
+
+**En basculant le défaut sur `en` sans routage par locale, le français n'est plus servi
+nulle part.** Les traductions existent, elles sont complètes, elles sont testées — et
+**aucune URL ne les rend**. « Traduire vers l'anglais » a donc, de fait, *retiré* une
+langue du site au lieu d'en ajouter une.
+
+C'est le genre d'effet qu'on ne voit pas en lisant le diff : chaque changement était juste
+isolément, et le résultat d'ensemble est une régression. Conséquence : **1.60 n'est plus
+une amélioration SEO, c'est la réparation d'une perte**. Tant qu'il n'est pas fait, le
+produit est monolingue — en anglais.
+
+Le raisonnement reste bon (l'anglais devait devenir la page indexée) ; c'est l'ordre qui
+était incomplet. La règle à en tirer : **changer un défaut ne suffit pas à servir une
+alternative — il faut d'abord qu'elle ait une adresse.**
 
 ### 1.58 — ce que le bandeau répare, et pourquoi il se tait la plupart du temps
 

@@ -19,8 +19,18 @@
   fermé de réactions s'agrège mondialement, le texte libre fragmente par langue) ; ⚠️ **le
   coût catalogue est multiplié par le nombre de langues** ; la négociation par en-tête
   n'existe pas sur une page statique, donc la langue se décide à la construction ou côté
-  client. **A10 non tranché : quelle langue par défaut** — `en` est probablement le plus
-  gros levier SEO du projet.
+  client. **A10 tranché : `en` par défaut** (2026-08-02). Sur un site statique, « par
+  défaut » n'est pas une préférence : c'est la langue de la page que les moteurs indexent.
+  Livré : `lib/i18n.ts` (dictionnaire typé sur le français, donc clé manquante = erreur de
+  compilation ; pluriel par `Intl.PluralRules` parce que le désaccord commence à **zéro** —
+  « 0 jour » contre « 0 days »), `lib/format.ts` internationalisé **en premier parce que
+  c'est lui qui est indexé**, plus le layout, l'accueil, la page série, les métadonnées et
+  la langue du catalogue.
+  > ⚠️ **À réparer en priorité (tâche 1.60)** : en basculant le défaut sans routage par
+  > locale, **le français n'est plus servi nulle part**. Les traductions existent et sont
+  > testées, aucune URL ne les rend. Chaque changement était juste isolément et le résultat
+  > d'ensemble est une régression. **Changer un défaut ne suffit pas à servir une
+  > alternative — il faut d'abord qu'elle ait une adresse.**
 - **A1 tranché par Tristan : produit à utilisateurs.** Contraire à la recommandation de
   l'audit, actée. Les objections de l'audit ne disparaissent pas — elles deviennent le
   cahier des charges (`docs/ROADMAP-AUDIT.md` §6bis).
