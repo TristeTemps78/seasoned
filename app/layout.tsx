@@ -4,25 +4,29 @@ import { TMDB_ATTRIBUTION } from '@/src/catalog/provider';
 import { siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
 import { DataSafety } from '@/app/components/DataSafety';
+import { DEFAULT_LOCALE, localeTag, t } from '@/lib/i18n';
 import './globals.css';
 
-const DESCRIPTION =
-  'Où en est une série, combien de temps elle demande, et jusqu’où elle reste bonne.';
+// Le titre et la description du site sont ce qu'un moteur affiche avant tout clic : ils
+// doivent etre dans la langue servie, sans quoi le seul canal d'acquisition parle une
+// langue et la page une autre.
+const DESCRIPTION = t(DEFAULT_LOCALE, 'meta.description');
+const SITE_TITLE = `seasoned — ${t(DEFAULT_LOCALE, 'nav.tagline')}`;
 
 export const metadata: Metadata = {
   // `metadataBase` rend absolues les URL relatives des pages — sans lui, les URL
   // canoniques et les images de partage sortent brisees.
   metadataBase: new URL(siteUrl()),
   title: {
-    default: 'seasoned — est-ce que ça vaut le coup ?',
+    default: SITE_TITLE,
     template: '%s — seasoned',
   },
   description: DESCRIPTION,
   openGraph: {
     type: 'website',
     siteName: 'seasoned',
-    locale: 'fr_FR',
-    title: 'seasoned — est-ce que ça vaut le coup ?',
+    locale: localeTag(DEFAULT_LOCALE).replace('-', '_'),
+    title: SITE_TITLE,
     description: DESCRIPTION,
   },
   twitter: { card: 'summary' },
@@ -59,7 +63,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    // `lang` doit dire la langue **reellement servie** : c'est ce que lisent les
+    // moteurs et les lecteurs d'ecran. Le laisser a « fr » sur une page anglaise ferait
+    // prononcer l'anglais avec la phonetique francaise, et brouillerait l'indexation.
+    <html lang={DEFAULT_LOCALE}>
       <body className="min-h-screen flex flex-col">
         <header className="border-b border-(--color-edge)">
           <div className="mx-auto max-w-5xl px-4 py-4 flex items-baseline gap-4">
@@ -67,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               seasoned
             </Link>
             <span className="hidden text-sm text-(--color-muted) sm:inline">
-              est-ce que ça vaut le coup&nbsp;?
+              {t(DEFAULT_LOCALE, 'nav.tagline')}
             </span>
             {/* Le seul lien permanent vers ce que le produit retient de vous. Sans
                 lui, la bibliotheque n'existe que pour qui connait son adresse. */}
@@ -75,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               href="/moi"
               className="ml-auto text-sm text-(--color-muted) hover:text-(--color-text)"
             >
-              Ma bibliothèque
+              {t(DEFAULT_LOCALE, 'nav.library')}
             </Link>
           </div>
         </header>
@@ -93,9 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {/* Obligation contractuelle TMDB, pas un choix de mise en page :
                 le texte doit accompagner toute donnee TMDB affichee. */}
             <p>{TMDB_ATTRIBUTION}</p>
-            <p>
-              Ce produit utilise l’API TMDB sans être approuvé ni certifié par TMDB.
-            </p>
+            <p>{t(DEFAULT_LOCALE, 'footer.disclaimer')}</p>
           </div>
         </footer>
 

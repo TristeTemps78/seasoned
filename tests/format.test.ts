@@ -1,6 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { describeStatus, formatCommitment, shortStatus, year } from '../lib/format';
+import {
+  describeStatus as describeStatusIn,
+  formatCommitment as formatCommitmentIn,
+  shortStatus as shortStatusIn,
+  year,
+} from '../lib/format';
 import { deriveStatus } from '../src/domain/status';
+
+/**
+ * Ces tests-ci disent le **francais**, explicitement.
+ *
+ * Ils ont ete ecrits quand le francais etait la seule langue, donc quand ne rien preciser
+ * revenait a le demander. Depuis que la langue par defaut est l'anglais, ne rien preciser
+ * voudrait dire « la langue du moment » — et un test qui change de reponse selon une
+ * constante d'un autre module ne teste plus rien. Le francais est verifie ici, l'anglais
+ * dans le bloc du bas.
+ */
+const describeStatus = (status: Parameters<typeof describeStatusIn>[0]): string =>
+  describeStatusIn(status, 'fr');
+const shortStatus = (status: Parameters<typeof shortStatusIn>[0]): string | undefined =>
+  shortStatusIn(status, 'fr');
+const formatCommitment = (minutes: number): string => formatCommitmentIn(minutes, 'fr');
 
 const NOW = new Date('2026-08-01T00:00:00Z');
 
@@ -159,5 +179,80 @@ describe('year', () => {
     // Sans UTC, une date du 1er janvier bascule d'une annee selon le serveur.
     expect(year(new Date('2008-01-01T00:00:00Z'))).toBe(2008);
     expect(year(undefined)).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// L'anglais, qui est desormais la langue par defaut — donc celle qui est indexee
+// ---------------------------------------------------------------------------
+
+describe('en — le differenciateur doit se dire aussi bien en anglais', () => {
+  it('chiffre le silence d une serie declaree vivante', () => {
+    const status = deriveStatus({ production: 'returning', lastAiredAt: daysAgo(760) }, NOW);
+    expect(describeStatusIn(status, 'en')).toBe(
+      'Listed as returning, but no episode for 25 months.',
+    );
+  });
+
+  it('est bien la langue par defaut : ne rien preciser rend de l anglais', () => {
+    // C'est **le** test de la bascule. S'il tombe, la decision « en par defaut » a ete
+    // annulee quelque part sans que personne ne le remarque.
+    const status = deriveStatus({ production: 'returning', lastAiredAt: daysAgo(760) }, NOW);
+    expect(describeStatusIn(status)).toBe(describeStatusIn(status, 'en'));
+  });
+
+  it('accorde le pluriel anglais, qui n est pas le pluriel francais', () => {
+    // 1 : les deux langues disent le singulier.
+    expect(formatCommitmentIn(60, 'en')).toBe('1 hour');
+    expect(formatCommitmentIn(60, 'fr')).toBe('1 heure');
+    expect(formatCommitmentIn(120, 'en')).toBe('2 hours');
+  });
+
+  it('accorde zero comme l anglais l accorde, et non comme le francais', () => {
+    // Le desaccord commence a zero : le francais dit « 0 jour », l'anglais « 0 days ».
+    // C'est exactement la faute qu'un ternaire `n > 1` produit sans qu'on la voie, et la
+    // raison pour laquelle la selection passe par `Intl.PluralRules`.
+    const status = deriveStatus(
+      { production: 'returning', lastAiredAt: daysAgo(5), nextAiringAt: inDays(0) },
+      NOW,
+    );
+    // Cas nominal a zero jour : les deux langues ont une phrase dediee, verifions-la.
+    expect(describeStatusIn(status, 'en')).toBe('New episode today.');
+    expect(describeStatusIn(status, 'fr')).toBe('Nouvel épisode aujourd’hui.');
+  });
+
+  it('tient sur une vignette en anglais aussi', () => {
+    // La contrainte d'affichage ne dispense pas la traduction : l'anglais est souvent
+    // plus court, mais « waiting · 12 months » ne l'est pas.
+    const cases = [
+      deriveStatus({ production: 'returning', lastAiredAt: daysAgo(1000) }, NOW),
+      deriveStatus({ production: 'returning', lastAiredAt: daysAgo(200) }, NOW),
+      deriveStatus({ production: 'returning', lastAiredAt: daysAgo(2), nextAiringAt: inDays(40) }, NOW),
+    ];
+    for (const status of cases) {
+      expect(shortStatusIn(status, 'en')!.length).toBeLessThanOrEqual(24);
+    }
+  });
+
+  it('ne laisse aucune trace de francais dans les phrases anglaises', () => {
+    // Un dictionnaire se copie-colle, et une cle oubliee reste en francais sans que rien
+    // ne le signale : le typage garantit la presence, pas la traduction.
+    const statuses = [
+      deriveStatus({ production: 'returning', lastAiredAt: daysAgo(760) }, NOW),
+      deriveStatus({ production: 'returning', lastAiredAt: daysAgo(200) }, NOW),
+      deriveStatus({ production: 'ended', lastAiredAt: daysAgo(9) }, NOW),
+      deriveStatus({ production: 'canceled', lastAiredAt: daysAgo(100) }, NOW),
+      deriveStatus({ production: 'planned' }, NOW),
+      deriveStatus({ production: 'unknown' }, NOW),
+      deriveStatus({ production: 'returning', lastAiredAt: daysAgo(2), nextAiringAt: inDays(3) }, NOW),
+    ];
+    const french = /[éèêàçôûù]|\bmois\b|\bjours?\b|\bheures?\b|\bépisode\b/i;
+    for (const status of statuses) {
+      expect(describeStatusIn(status, 'en')).not.toMatch(french);
+      const chip = shortStatusIn(status, 'en');
+      if (chip !== undefined) expect(chip).not.toMatch(french);
+    }
+    expect(formatCommitmentIn(62 * 60, 'en')).not.toMatch(french);
+    expect(formatCommitmentIn(20, 'en')).not.toMatch(french);
   });
 });

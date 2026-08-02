@@ -1,5 +1,5 @@
 import type { StatusResult } from '@/src/domain/status';
-import { STATUS_LABEL, STATUS_TONE, describeStatus } from '@/lib/format';
+import { STATUS_TONE, describeStatus, statusLabel } from '@/lib/format';
 
 const TONE_CLASS = {
   live: 'bg-(--color-live)/15 text-(--color-live) border-(--color-live)/30',
@@ -26,7 +26,7 @@ export function StatusBadge({ status, withDetail = false }: {
       <span
         className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${TONE_CLASS[tone]}`}
       >
-        {STATUS_LABEL[status.status]}
+        {statusLabel(status.status)}
       </span>
       {withDetail ? (
         <span className="text-sm text-(--color-muted)">{describeStatus(status)}</span>

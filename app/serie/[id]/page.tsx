@@ -11,7 +11,8 @@ import {
   watchOptions,
 } from '@/lib/catalog';
 import { SeriesCard } from '@/app/components/SeriesCard';
-import { STATUS_LABEL, formatCommitment, formatDate, year } from '@/lib/format';
+import { formatCommitment, formatDate, statusLabel, year } from '@/lib/format';
+import { DEFAULT_LOCALE, t, tn } from '@/lib/i18n';
 import { TmdbError } from '@/src/catalog/tmdb';
 import { starsFromTen } from '@/src/domain/rating-scale';
 import { StatusBadge } from '@/app/components/StatusBadge';
@@ -83,7 +84,7 @@ async function load(id: string) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const loaded = await load(id);
-  if (loaded.kind !== 'ok') return { title: 'Série indisponible' };
+  if (loaded.kind !== 'ok') return { title: t(DEFAULT_LOCALE, 'series.unavailableTitle') };
 
   const { detail, seasons, status, episodeCount, totalRuntimeMinutes } = loaded.data;
   const started = year(detail.firstAirDate);
@@ -92,9 +93,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // immediatement aux deux questions qu'on pose a une serie — ou elle en est, et
   // combien elle coute. C'est le canal d'acquisition n°1 (`ROADMAP.md` §0.2).
   const parts = [
-    STATUS_LABEL[status.status].toLowerCase(),
-    `${seasons.rateable.length} saison${seasons.rateable.length > 1 ? 's' : ''}`,
-    `${episodeCount} épisodes`,
+    statusLabel(status.status).toLowerCase(),
+    tn(DEFAULT_LOCALE, 'series.seasons', seasons.rateable.length),
+    tn(DEFAULT_LOCALE, 'series.episodes', episodeCount),
     ...(totalRuntimeMinutes !== undefined ? [formatCommitment(totalRuntimeMinutes)] : []),
   ];
 
@@ -135,11 +136,10 @@ export default async function SeriesPage({ params }: PageProps) {
     return (
       <div className="mx-auto max-w-2xl py-12 space-y-4">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Catalogue indisponible
+          {t(DEFAULT_LOCALE, 'series.unavailableHeading')}
         </h1>
         <p className="text-(--color-muted)">
-          Impossible de récupérer cette série pour le moment. Réessayez dans un
-          instant.
+          {t(DEFAULT_LOCALE, 'series.unavailableBody')}
         </p>
       </div>
     );
@@ -228,26 +228,29 @@ export default async function SeriesPage({ params }: PageProps) {
         </div>
       </header>
 
-      <section aria-label="Ce que la série demande">
+      <section aria-label={t(DEFAULT_LOCALE, 'series.demands')}>
         {/* Titre masque visuellement : les chiffres se lisent d'eux-memes, mais la
             structure du document doit rester coherente pour qui navigue au clavier
             ou au lecteur d'ecran — et pour les moteurs, qui lisent la hierarchie. */}
-        <h2 className="sr-only">Ce que la série demande</h2>
+        <h2 className="sr-only">{t(DEFAULT_LOCALE, 'series.demands')}</h2>
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Stat label="Saisons" value={String(seasons.rateable.length)} />
-          <Stat label="Épisodes" value={String(episodeCount)} />
+          <Stat label={t(DEFAULT_LOCALE, 'stat.seasons')} value={String(seasons.rateable.length)} />
+          <Stat label={t(DEFAULT_LOCALE, 'stat.episodes')} value={String(episodeCount)} />
           {totalRuntimeMinutes !== undefined ? (
             // Le tilde n'est pas cosmetique : le total est une estimation (mediane
             // d'une saison x nombre d'episodes), et l'annoncer comme exact serait
             // mentir sur la seule promesse chiffree de la page d'accueil.
             <Stat
-              label="Engagement"
+              label={t(DEFAULT_LOCALE, 'stat.commitment')}
               value={`~ ${formatCommitment(totalRuntimeMinutes)}`}
               emphasis
             />
           ) : null}
           {detail.lastAiredAt !== undefined ? (
-            <Stat label="Dernier épisode" value={formatDate(detail.lastAiredAt)} />
+            <Stat
+              label={t(DEFAULT_LOCALE, 'stat.lastEpisode')}
+              value={formatDate(detail.lastAiredAt)}
+            />
           ) : null}
         </dl>
       </section>
@@ -267,7 +270,7 @@ export default async function SeriesPage({ params }: PageProps) {
         series={{
           title: detail.title,
           ...(detail.posterPath !== undefined ? { posterPath: detail.posterPath } : {}),
-          statusLabel: STATUS_LABEL[status.status],
+          statusLabel: statusLabel(status.status),
           ...(detail.nextEpisode !== undefined
             ? { nextEpisodeAt: detail.nextEpisode.airsOn.toISOString() }
             : {}),
@@ -306,12 +309,17 @@ async function AlsoByCreators({ detail }: {
   const others = await alsoByCreators(detail);
   if (others.length === 0) return null;
 
-  const names = (detail.creators ?? []).slice(0, 2).map((c) => c.name).join(' et ');
+  const names = (detail.creators ?? [])
+    .slice(0, 2)
+    .map((c) => c.name)
+    .join(t(DEFAULT_LOCALE, 'join.and'));
 
   return (
-    <section className="space-y-4" aria-label="Du même créateur">
+    <section className="space-y-4" aria-label={t(DEFAULT_LOCALE, 'series.sameCreator')}>
       <div>
-        <h2 className="text-lg font-semibold tracking-tight">Du même créateur</h2>
+        <h2 className="text-lg font-semibold tracking-tight">
+          {t(DEFAULT_LOCALE, 'series.sameCreator')}
+        </h2>
         {names.length > 0 ? (
           <p className="text-sm text-(--color-muted)">{names}</p>
         ) : null}

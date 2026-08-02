@@ -36,6 +36,7 @@ import {
   starsFromTen,
 } from '../src/domain/rating-scale';
 import { computeTrajectory, type SeasonScore, type Trajectory } from '../src/domain/trajectory';
+import { DEFAULT_LOCALE, localeTag, watchRegion } from './i18n';
 
 /** Duree de vie du cache serie : une journee. Les grilles de diffusion bougent peu. */
 const SERIES_TTL_MS = 86_400_000;
@@ -69,7 +70,10 @@ export function getProvider(): CatalogProvider {
     );
   }
 
-  const language = process.env['TMDB_LANGUAGE'] ?? 'fr-FR';
+  // La langue du catalogue doit suivre celle du site : servir une page anglaise avec des
+  // synopsis francais serait pire que ne pas traduire du tout — le lecteur y verrait une
+  // erreur, et un moteur une page a la langue incoherente avec sa balise `lang`.
+  const language = process.env['TMDB_LANGUAGE'] ?? localeTag(DEFAULT_LOCALE);
   providerInstance = new TmdbProvider({
     accessToken,
     language,
@@ -433,10 +437,15 @@ export function stopPointAdvice(
  * Pays pour lequel la disponibilite est demandee.
  *
  * La disponibilite est **toujours** nationale : afficher celle d'un autre pays serait
- * pire que ne rien afficher. Le site etant en francais, la France est le defaut ;
- * quand il y aura des comptes, ce sera une preference.
+ * pire que ne rien afficher.
+ *
+ * ⚠️ **C'est le repli le plus fragile du produit, et il faut le dire.** Deduire le pays
+ * de la langue est faux par construction : un anglophone n'est pas americain, un
+ * francophone n'est ni belge ni canadien par defaut. Tant qu'il n'y a ni compte ni
+ * preference, ce repli sert a ne pas afficher une page vide — il ne sert pas a etre
+ * juste. La preference explicite (`MyPlatforms`, puis le compte) est ce qui le remplace.
  */
-export const DEFAULT_WATCH_REGION = 'FR';
+export const DEFAULT_WATCH_REGION = watchRegion(DEFAULT_LOCALE);
 
 /**
  * Ou regarder une serie.
