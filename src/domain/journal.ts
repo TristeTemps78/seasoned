@@ -249,7 +249,28 @@ function readPositiveInt(source: Record<string, unknown>, key: string): number |
     : undefined;
 }
 
-/** Une date lisible, ou l'instant present : mieux vaut une date approximative que rien. */
+/**
+ * Date de repli d'un **fait** dont la date est absente ou illisible.
+ *
+ * ## Pourquoi l'epoch et surtout pas l'instant present
+ *
+ * C'etait `new Date()` — l'horloge de **celui qui lit**. Tant qu'il n'y a qu'un
+ * appareil, cela ne se voit pas. Des qu'il y en a deux, c'est une corruption
+ * silencieuse : deux appareils lisant **le meme** journal donnent au meme fait deux
+ * dates differentes, et la fusion tranche alors au hasard de qui a ouvert l'application
+ * en dernier. Un fait sans date ne devient pas plus recent parce qu'on le relit.
+ *
+ * L'epoch dit la seule chose vraie : « ce fait existe, on ne sait pas quand ». Il perd
+ * donc contre n'importe quelle date connue — ce qui est le bon arbitrage, puisqu'une
+ * date connue est une information et son absence n'en est pas une.
+ *
+ * L'horloge de lecture reste legitime pour l'**expiration** (pierres tombales,
+ * instantanes) : la question n'y est pas « quand est-ce arrive » mais « est-ce encore
+ * valable maintenant ».
+ */
+const UNDATED = new Date(0).toISOString();
+
+/** Une date lisible, ou la date de repli. */
 function readInstant(source: Record<string, unknown>, key: string, fallback: string): string {
   const value = source[key];
   if (typeof value !== 'string') return fallback;
@@ -261,7 +282,7 @@ function readText(source: Record<string, unknown>, key: string): string | undefi
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-function parsePosition(raw: unknown, now: string): JournalPosition | undefined {
+function parsePosition(raw: unknown): JournalPosition | undefined {
   const source = asRecord(raw);
   const seasonNumber = readPositiveInt(source, 'seasonNumber');
   const episodeNumber = readPositiveInt(source, 'episodeNumber');
@@ -269,18 +290,18 @@ function parsePosition(raw: unknown, now: string): JournalPosition | undefined {
   return {
     seasonNumber,
     episodeNumber,
-    declaredAt: readInstant(source, 'declaredAt', now),
+    declaredAt: readInstant(source, 'declaredAt', UNDATED),
   };
 }
 
-function parseRating(raw: unknown, now: string): JournalRating | undefined {
+function parseRating(raw: unknown): JournalRating | undefined {
   const source = asRecord(raw);
   const stars = source['stars'];
   if (typeof stars !== 'number' || !VALID_STARS.has(stars)) return undefined;
-  return { stars: stars as Stars, at: readInstant(source, 'at', now) };
+  return { stars: stars as Stars, at: readInstant(source, 'at', UNDATED) };
 }
 
-function parseDecision(raw: unknown, now: string): JournalDecision | undefined {
+function parseDecision(raw: unknown): JournalDecision | undefined {
   const source = asRecord(raw);
   const kind = source['kind'];
   if (typeof kind !== 'string' || !VALID_DECISIONS.has(kind)) return undefined;
@@ -289,13 +310,13 @@ function parseDecision(raw: unknown, now: string): JournalDecision | undefined {
   const atEpisode = readPositiveInt(source, 'atEpisode');
   return {
     kind: kind as DecisionKind,
-    at: readInstant(source, 'at', now),
+    at: readInstant(source, 'at', UNDATED),
     ...(atSeason !== undefined ? { atSeason } : {}),
     ...(atEpisode !== undefined ? { atEpisode } : {}),
   };
 }
 
-function parseSnapshot(raw: unknown, now: string): JournalSnapshot | undefined {
+function parseSnapshot(raw: unknown): JournalSnapshot | undefined {
   const source = asRecord(raw);
   const title = readText(source, 'title');
   if (title === undefined) return undefined;
@@ -308,7 +329,12 @@ function parseSnapshot(raw: unknown, now: string): JournalSnapshot | undefined {
     typeof rawPublic === 'number' && rawPublic > 0 && rawPublic <= 5 ? rawPublic : undefined;
   return {
     title,
-    cachedAt: readInstant(source, 'cachedAt', now),
+    // Un instantane sans date lisible est traite comme perime, donc jete a la premiere
+    // lecture. C'est volontairement severe : le considerer frais reviendrait a garder
+    // une metadonnee du catalogue sans savoir depuis quand — soit exactement ce que le
+    // plafond contractuel de six mois interdit (`AGENTS.md` regle 1). Il se redepose
+    // seul a la visite suivante.
+    cachedAt: readInstant(source, 'cachedAt', UNDATED),
     ...(posterPath !== undefined ? { posterPath } : {}),
     ...(statusLabel !== undefined ? { statusLabel } : {}),
     ...(nextEpisodeAt !== undefined ? { nextEpisodeAt } : {}),
@@ -316,15 +342,11 @@ function parseSnapshot(raw: unknown, now: string): JournalSnapshot | undefined {
   };
 }
 
-function parseRatings(
-  raw: unknown,
-  now: string,
-  keyPattern: RegExp,
-): Record<string, JournalRating> {
+function parseRatings(raw: unknown, keyPattern: RegExp): Record<string, JournalRating> {
   const out: Record<string, JournalRating> = {};
   for (const [key, value] of Object.entries(asRecord(raw))) {
     if (!keyPattern.test(key)) continue;
-    const rating = parseRating(value, now);
+    const rating = parseRating(value);
     if (rating !== undefined) out[key] = rating;
   }
   return out;
@@ -351,20 +373,21 @@ function parseTombstones(raw: unknown, now: Date): JournalTombstones {
   return out;
 }
 
-function parseEntry(raw: unknown, now: string, at: Date): JournalEntry | undefined {
+function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
   const source = asRecord(raw);
 
-  const position = parsePosition(source['position'], now);
-  const decision = parseDecision(source['decision'], now);
-  const snapshot = parseSnapshot(source['snapshot'], now);
-  const seasonRatings = parseRatings(source['seasonRatings'], now, SEASON_KEY);
-  const episodeRatings = parseRatings(source['episodeRatings'], now, EPISODE_KEY);
+  const position = parsePosition(source['position']);
+  const decision = parseDecision(source['decision']);
+  const snapshot = parseSnapshot(source['snapshot']);
+  const seasonRatings = parseRatings(source['seasonRatings'], SEASON_KEY);
+  const episodeRatings = parseRatings(source['episodeRatings'], EPISODE_KEY);
+  // `at` — l'horloge de lecture — ne sert qu'ici, a l'expiration. Voir `UNDATED`.
   const removed = parseTombstones(source['removed'], at);
 
   const wantedSource = source['wanted'];
   const wanted =
     wantedSource !== undefined && wantedSource !== null
-      ? { at: readInstant(asRecord(wantedSource), 'at', now) }
+      ? { at: readInstant(asRecord(wantedSource), 'at', UNDATED) }
       : undefined;
 
   const entry: JournalEntry = {
@@ -432,7 +455,9 @@ function migrateKey(key: string): JournalKey {
  * Ne leve jamais. Une entree illisible est ecartee, les autres survivent : perdre tout
  * un journal parce qu'une ligne est corrompue serait indefendable.
  *
- * @param now instant de repli pour les dates manquantes, injecte pour les tests.
+ * @param now instant de reference pour l'**expiration** (pierres tombales, instantanes),
+ *   injecte pour les tests. Ce n'est **pas** la date de repli des faits sans date : voir
+ *   {@link UNDATED}, et la raison pour laquelle ce fut un defaut.
  */
 export function parseJournal(raw: string | null | undefined, now = new Date()): Journal {
   if (raw === null || raw === undefined || raw.trim().length === 0) return EMPTY_JOURNAL;
@@ -452,11 +477,10 @@ export function parseJournal(raw: string | null | undefined, now = new Date()): 
     return EMPTY_JOURNAL;
   }
 
-  const stamp = now.toISOString();
   const entries: Record<JournalKey, JournalEntry> = {};
   for (const [key, value] of Object.entries(asRecord(source['entries']))) {
     if (key.length === 0) continue;
-    const entry = parseEntry(value, stamp, now);
+    const entry = parseEntry(value, now);
     if (entry !== undefined) entries[migrateKey(key)] = entry;
   }
 
@@ -779,6 +803,46 @@ export function suggestedSeasonRating(
 // Fusion
 // ---------------------------------------------------------------------------
 
+/**
+ * Une forme canonique et stable d'une valeur, pour departager deux faits ex aequo.
+ *
+ * Les cles sont triees : deux objets identiques ecrits dans un ordre different doivent
+ * rendre la **meme** chaine, sans quoi le departage dependrait de l'ordre d'insertion —
+ * c'est-a-dire, encore une fois, de l'appareil.
+ */
+function canonical(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null';
+  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  const parts = keys.map(
+    (k) => `${JSON.stringify(k)}:${canonical((value as Record<string, unknown>)[k])}`,
+  );
+  return `{${parts.join(',')}}`;
+}
+
+/**
+ * Le plus recent de deux faits — et, a date egale, **toujours le meme des deux**.
+ *
+ * ## Le defaut que cette fonction a porte
+ *
+ * C'etait `dateOf(b) > dateOf(a) ? b : a` : un `>` strict, donc a date egale c'est la
+ * **position des arguments** qui tranchait. `mergeJournals(A, B)` et
+ * `mergeJournals(B, A)` rendaient alors deux resultats differents. Consequence sur deux
+ * appareils : chacun fusionne la paire dans son propre ordre, chacun obtient un journal
+ * different, chacun le renvoie a l'autre comme etant le bon — **un battement qui ne se
+ * stabilise jamais**. Le pire des symptomes : une note qui change toute seule, par
+ * intermittence, sans que rien dans l'interface ne l'explique.
+ *
+ * On croit volontiers l'egalite de date impossible « en pratique », a la milliseconde
+ * pres. Elle ne l'est pas : c'est le cas **nominal** d'un import, ou de nombreux faits
+ * recoivent la meme date de repli (voir {@link UNDATED}), et d'un geste qui ecrit
+ * plusieurs champs dans le meme tour de boucle.
+ *
+ * Le departage par forme canonique est arbitraire — c'est assume, et c'est le point :
+ * il n'existe aucune raison de preferer l'un des deux. Ce qu'on exige de lui n'est pas
+ * d'avoir raison, c'est d'etre **total, deterministe et identique partout**, pour que la
+ * fusion soit commutative et que les appareils convergent.
+ */
 function laterOf<T>(
   a: T | undefined,
   b: T | undefined,
@@ -786,7 +850,17 @@ function laterOf<T>(
 ): T | undefined {
   if (a === undefined) return b;
   if (b === undefined) return a;
-  return new Date(dateOf(b)).getTime() > new Date(dateOf(a)).getTime() ? b : a;
+
+  const ta = new Date(dateOf(a)).getTime();
+  const tb = new Date(dateOf(b)).getTime();
+  // Une date illisible perd contre une date lisible ; si les deux le sont, on retombe
+  // sur le departage canonique, jamais sur l'ordre des arguments.
+  if (!Number.isNaN(ta) && Number.isNaN(tb)) return a;
+  if (Number.isNaN(ta) && !Number.isNaN(tb)) return b;
+  if (tb > ta) return b;
+  if (ta > tb) return a;
+
+  return canonical(b) > canonical(a) ? b : a;
 }
 
 /** Une valeur datee survit-elle a la pierre tombale qui la vise ? */

@@ -29,7 +29,21 @@
     `robots.txt`, `sitemap.xml`. ISR 24 h ; le build ne touche aucune API.
 - **En ligne : https://seasoned-two.vercel.app** — dépôt public
   https://github.com/TristeTemps78/seasoned, redéploiement automatique à chaque push.
-  115 tests verts.
+  **276 tests verts** (2026-08-02).
+- **⚠️ Deux défauts de fusion corrigés le 2026-08-02, avant qu'il existe deux appareils**
+  (`TASKS.md` lot 0). Ils étaient invisibles à un seul appareil et corrompaient
+  silencieusement les données dès qu'il y en aurait eu deux :
+  1. `laterOf` départageait les dates **égales** par l'ordre des arguments, donc
+     `merge(a,b) ≠ merge(b,a)` : deux appareils fusionnant la même paire dans leur propre
+     ordre divergeaient et se renvoyaient indéfiniment des journaux différents.
+  2. Un fait sans date lisible recevait l'horloge de **celui qui lit** — deux appareils
+     lisant le même journal donnaient au même fait deux dates. Repli passé à l'epoch ;
+     l'horloge de lecture ne sert plus qu'à l'**expiration**.
+  > **La leçon** : les deux se composaient. Un import donne la même date de repli à
+  > beaucoup de faits, donc fabrique en masse les ex aequo que le premier défaut traitait
+  > mal. Et surtout : `tests/journal.test.ts` couvrait la fusion par 410 lignes
+  > d'**exemples** sans jamais rejouer une paire dans l'autre sens. **Un exemple prouve un
+  > cas, une loi prouve la classe** — d'où `tests/journal-merge.test.ts`.
 - **Le premier contact avec l'API réelle a révélé deux défauts** que les fixtures ne
   pouvaient pas voir, tous deux sur la promesse « ce qu'elle vous demande » (`TASKS.md`
   §1.10) : `episode_run_time` est abandonné par TMDB, et le repli sur le dernier épisode

@@ -118,7 +118,31 @@ describe('parseJournal — ne perd jamais tout', () => {
       version: JOURNAL_VERSION,
       entries: { [BB]: { position: { seasonNumber: 1, episodeNumber: 1, declaredAt: 'hier' } } },
     });
-    expect(parseJournal(raw, NOW).entries[BB]?.position?.declaredAt).toBe(NOW.toISOString());
+    const position = parseJournal(raw, NOW).entries[BB]?.position;
+    // L'entree survit — c'est ce que ce test defend depuis le debut.
+    expect(position?.seasonNumber).toBe(1);
+    // Mais la date de repli n'est plus l'instant de lecture. Elle valait `NOW` ici, et
+    // cette assertion-la codifiait un defaut : deux appareils lisant ce meme journal
+    // donnaient a ce fait deux dates differentes, et la fusion tranchait selon lequel
+    // avait ouvert l'application en dernier.
+    expect(position?.declaredAt).toBe(new Date(0).toISOString());
+  });
+
+  it('une date illisible perd contre une date connue, quel que soit l ordre', () => {
+    const undated = JSON.stringify({
+      version: JOURNAL_VERSION,
+      entries: { [BB]: { position: { seasonNumber: 9, episodeNumber: 9, declaredAt: 'hier' } } },
+    });
+    const dated = JSON.stringify({
+      version: JOURNAL_VERSION,
+      entries: {
+        [BB]: { position: { seasonNumber: 2, episodeNumber: 4, declaredAt: '2026-03-01T00:00:00.000Z' } },
+      },
+    });
+    const a = parseJournal(undated, NOW);
+    const b = parseJournal(dated, NOW);
+    expect(mergeJournals(a, b).entries[BB]?.position?.seasonNumber).toBe(2);
+    expect(mergeJournals(b, a).entries[BB]?.position?.seasonNumber).toBe(2);
   });
 
   it('conserve l appareil et les plateformes', () => {

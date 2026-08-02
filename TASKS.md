@@ -100,6 +100,28 @@ fusion**, que le format actuel du journal rend impossible sans perte.
 | 1.55 | Vérification au navigateur, PWA comprise (hors-ligne) | 🟢 libre | — |
 | 1.56 | Mesures : poids JS, coût à 100 000, en-têtes en production | 🟢 libre | B13, B26, B27 |
 
+---
+
+## Lot 0 — ce qui doit être corrigé **avant** qu'il existe deux appareils
+
+> Découvert le 2026-08-02 en préparant la synchro. Ces trois points sont invisibles
+> aujourd'hui (un seul appareil, un seul journal) et **corrompent silencieusement les
+> données dès qu'il y en a deux**. `mergeJournals` est la primitive sur laquelle repose
+> toute la phase 2 : elle doit être juste avant d'être utilisée, pas après.
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| 0.10 | **`laterOf` n'est pas commutatif sur l'égalité de date** | ✅ 2026-08-02 | `journal.ts` l. 789 : `>` strict, donc à date égale c'est **l'ordre des arguments** qui tranche. `merge(A,B) ≠ merge(B,A)` → deux appareils divergent et se battent indéfiniment. Départager par un ordre stable et total. |
+| 0.11 | **La date de repli d'un fait est l'horloge du lecteur** | ✅ 2026-08-02 | `journal.ts` l. 253 `readInstant(…, fallback)` : un fait sans date lisible reçoit `new Date()` **de celui qui lit**. Deux appareils lisant le même export lui donnent deux dates. Repli sur l'epoch pour les **faits** ; l'horloge de lecture ne reste légitime que pour l'**expiration** des pierres tombales. |
+| 0.12 | **Les deux défauts se composent** | ✅ 2026-08-02 | Un import où plusieurs faits n'ont pas de date leur donne **tous la même** date de repli → égalités exactes → 0.10 se déclenche en masse. C'est précisément le scénario de l'import multi-formats (A2). |
+| 0.13 | Tests de propriété sur `mergeJournals` (idempotence, commutativité, associativité, convergence) | ✅ 2026-08-02 | `tests/journal-merge.test.ts`, sans nouvelle dépendance (générateur congruentiel déterministe, dates piochées dans un jeu de **trois** pour forcer les ex aequo). Les 410 lignes de `tests/journal.test.ts` étaient des **exemples** ; aucune ne vérifiait les lois. Lois énoncées sur les **entrées** : `deviceId` n'est pas commutatif **par contrat**, `platforms` est un ensemble non ordonné. |
+
+> **Vérifié, et c'est le point** : en réintroduisant l'ancien départage, **4 des 8 tests
+> tombent** (commutativité, convergence, et les deux cas ciblés) — tandis qu'idempotence
+> et associativité restent vertes. La fusion n'était donc cassée que sur la
+> commutativité, et un test qui ne l'aurait pas montré n'aurait rien prouvé.
+> `npm run check` : **276 tests verts**, typecheck strict vert.
+
 ### ⚠️ Trois corrections pour une seule feature — ce que ça a appris
 
 `computeTrajectory` était écrit et testé depuis le premier jour sans jamais servir : il
@@ -430,6 +452,7 @@ par les liens » — sans que ces liens existent.
 | D8 | **La thèse SEO n'est pas quantifiée** | Motif qualitatif confirmé, **aucun volume chiffré** — il faudrait Ahrefs/SEMrush. Le canal d'acquisition n°1 repose sur un pari raisonnable, pas sur une mesure. |
 | D9 | Trou d'engagement de 3 mois (diffusion hebdomadaire) | Audit §4.3, resté ouvert et devenu un problème de **rétention** en mode produit. La saison est la bonne unité de jugement ; l'épisode est peut-être la bonne unité de **rythme**. |
 | D10 | **Fixtures écrites de mémoire** | Cause directe du bug `episode_run_time`. Les prochaines doivent être **capturées** depuis une réponse réelle (tâche 1.17). |
-| **D13** | **194 Ko de JS pour zéro composant client** | Le site n'a aucune interactivité — formulaire et dépliant sont natifs, aucun `'use client'` dans le projet. C'est le coût structurel de Next App Router, non retirable sans changer de framework. Mesuré le 2026-08-02. À reconsidérer seulement si les Core Web Vitals deviennent bloquants pour le SEO. |
+| **D13** | **194 Ko de JS** — mesure faite avant les gestes | ⚠️ **Cette ligne était fausse et disait le contraire du code.** Elle affirmait « aucun `'use client'` dans le projet » alors qu'il y en a **14 modules** (toute la couche des gestes : `StarRating`, `EpisodeGrid`, `MyProgress`, `Library`…). Le chiffre de 194 Ko date d'**avant** cette couche et ne vaut plus. À **re-mesurer**, et à ne plus citer d'ici là. Corrigé le 2026-08-02. |
+| **D14** | **La documentation ment sur le code** | Constaté le 2026-08-02 : ~20 tâches livrées (1.39→1.53) encore marquées `🟢 libre`, D13 affirmait un fait faux, `CLAUDE.md` annonçait 115 tests pour ~267 réels. Dans un projet dont la règle de reprise à froid est « lire la documentation d'abord », une doc fausse coûte plus cher qu'une doc absente : elle est **crue**. À remettre en accord, et à traiter comme une étape de fin de session, pas comme du rangement. |
 | D11 | Listes TMDB polluées par des programmes non narratifs | **Partiellement réglé** le 2026-08-01 par `src/domain/program.ts` : *Tagesschau* et *Paradise Hotel* ont disparu de la vitrine, le sitemap est passé de 146 à 110 pages série (~25 % écartés). **Mais le filtre par genre n'attrape pas tout** : *Die Ratgeber*, magazine de conseils allemand, reste en tête de la rangée « En attente » — TMDB ne l'étiquette ni `news` ni `talk`. La longue traîne échappe au genre. |
 | **D12** | **Le facteur d'anomalie ×2 est arbitraire** | `CADENCE_ANOMALY_FACTOR` vaut 2 — « deux cycles manqués ». Observé le 2026-08-01 : *Die Ratgeber*, silencieuse depuis 20 mois avec un rythme annuel, repasse en « entre deux saisons » (609 j < seuil 730 j). Défendable, mais probablement **trop permissif** : une série annuelle qui manque son créneau de six mois est déjà un signal. ×1,5 donnerait 18 mois. **Non tranché faute de données** — il faudrait mesurer la distribution réelle des intervalles sur un échantillon large, pas régler au jugé. |
