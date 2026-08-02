@@ -16,6 +16,8 @@
 | A4 | Le nom | 🟡 Tristan | 6 domaines libres à 35 $/an. Reco **`peaked.tv`**, repli `howfar.tv`. Bloquant **avant le premier déploiement public**, pas avant |
 | A5 | TMDB ou TheTVDB ? | ✅ 2026-07-31 | TMDB, derrière `CatalogProvider` — réversible |
 | A6 | **Monétisation** | 🟡 non fermée | Volontairement non décidée. ⚠️ L'usage TMDB reste **non commercial** : affiliation ou freemium = accord écrit requis (`ROADMAP.md` §4.1) |
+| A7 | **Note complète par épisode ?** | ✅ 2026-08-02 | **Oui, tranché par Tristan.** Contraire à `RATING-MODEL.md` §3 couche 2 (« on ne note pas les épisodes, on les distingue »). Comme A1 : les objections deviennent le cahier des charges — `docs/RATING-MODEL.md` §6ter |
+| A8 | **Multiplateforme et passage à l'échelle** | ✅ 2026-08-02 | **Cinq plateformes (web, iOS, Android, macOS, Windows) par PWA installable**, et chaque feature doit passer le test « et si 100 000 personnes le font ? ». Renforce `ROADMAP.md` §1.1 au lieu de le contredire — le natif reste matériellement impossible ici |
 
 ---
 
@@ -64,6 +66,39 @@ ni base. C'est ce qui rend une page utile à zéro critique (`ROADMAP.md` §0.1)
 | 1.19 | **Seuil de « sans nouvelle » relatif au rythme de la série** | ✅ 2026-08-01 | `src/domain/cadence.ts`. Corrige *Les Griffin*, préserve *Majhi Manasa*. Calibrage du facteur ouvert → D12 |
 | 1.20 | Calibrer `CADENCE_ANOMALY_FACTOR` sur un échantillon réel | 🟢 libre | D12. Mesurer, pas régler au jugé |
 | 1.21 | **La trajectoire s'affiche**, sur les notes du public TMDB | ✅ 2026-08-01 | Derrière un geste explicite. `computeTrajectory` servait enfin — après trois corrections, voir ci-dessous |
+
+### 🔒 1.35 → 1.56 — Bloc du 2026-08-02, sous contraintes A7 et A8
+
+**Réservé — @claude-opus — 2026-08-02.** Vingt-six boucles à contre-sens (détail dans le
+plan de session) ont fait apparaître trois failles de fond : le produit **se souvient sans
+lieu de restitution** ; le **seul geste offert suppose la série déjà commencée** alors que
+les arrivants viennent du SEO ; et le **multiplateforme est un problème d'identité et de
+fusion**, que le format actuel du journal rend impossible sans perte.
+
+| # | Tâche | Statut | Boucle |
+|---|---|---|---|
+| 1.35 | **Clés de journal préfixées par fournisseur** (`tmdb:1396`) | 🔒 in-progress — @claude-opus — 2026-08-02 | B25 — `types.ts` interdit de pointer un id fournisseur ; le journal le faisait |
+| 1.36 | **Fusion au niveau du champ** — deux appareils ne se perdent pas | 🔒 in-progress — @claude-opus — 2026-08-02 | B24 — irréparable après coup |
+| 1.37 | **Port `JournalStore`** — patron `CatalogProvider` | 🔒 in-progress — @claude-opus — 2026-08-02 | B23, B28 |
+| 1.38 | **Garantie anti-fuite** : aucun journal côté serveur | 🔒 in-progress — @claude-opus — 2026-08-02 | B12 — le HTML est partagé par le cache de bord |
+| 1.39 | **Manifeste + icônes** — l'application devient installable | 🟢 libre | B22 — la PWA était écrite dans `ROADMAP` §1.1, jamais implémentée |
+| 1.40 | **Service worker minimal + page hors-ligne** | 🟢 libre | B21 — `/moi` marche dans le métro |
+| 1.41 | Journal v2 : watchlist, notes d'épisode, snapshot à TTL, plateformes | 🟢 libre | B2, B6, A7 |
+| 1.42 | `src/domain/library.ts` et `taste.ts` — purs | 🟢 libre | B1, B16 |
+| 1.43 | **« Je veux la voir »** — le premier geste possible | 🟢 libre | B2 |
+| 1.44 | **Étoiles cliquables** au lieu du `<select>` | 🟢 libre | B7 |
+| 1.45 | **Grille d'épisodes vivante** : position + mes notes + commutateur | 🟢 libre | B8, B9, B10 |
+| 1.46 | `MyProgress` : suggestion de note de saison, placeholder correct | 🟢 libre | B11, A7 |
+| 1.47 | **`/moi`** — le lieu qui manquait, zéro appel API | 🟢 libre | B1, B14, B26 |
+| 1.48 | **Export / import JSON** — règle 9 d'`AGENTS.md`, violée aujourd'hui | 🟢 libre | B3, B4 |
+| 1.49 | Bande **« Reprendre »** sur l'accueil | 🟢 libre | B15 |
+| 1.50 | **`redactTrajectory` branché** — la courbe se révèle à mesure | 🟢 libre | B5 |
+| 1.51 | **Mes plateformes** — « dispo chez vous » | 🟢 libre | B19 |
+| 1.52 | **Profil de goût** | 🟢 libre | B16, B17 |
+| 1.53 | **Trajectoire partageable en image** (canvas, côté client) | 🟢 libre | B17 |
+| 1.54 | `npm run check` + build `○ Static` + test anti-fuite | 🟢 libre | B12, B20 |
+| 1.55 | Vérification au navigateur, PWA comprise (hors-ligne) | 🟢 libre | — |
+| 1.56 | Mesures : poids JS, coût à 100 000, en-têtes en production | 🟢 libre | B13, B26, B27 |
 
 ### ⚠️ Trois corrections pour une seule feature — ce que ça a appris
 
