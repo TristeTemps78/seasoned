@@ -501,6 +501,31 @@ const FR = {
   'watch.buy': 'À l’achat',
   'watch.region': 'Disponibilité : {region}.',
 
+  // --- Saison en cours -----------------------------------------------------
+  'season.aired.one': '{n} épisode sorti',
+  'season.aired.other': '{n} épisodes sortis',
+  // Un fait sur ce qui est diffusé, jamais un pronostic sur la suite.
+  'season.below':
+    'Saison {season} — {episodes}, notés {current}/10, soit {gap} sous la moyenne de la série.',
+  'season.above':
+    'Saison {season} — {episodes}, notés {current}/10, soit {gap} au-dessus de la moyenne de la série.',
+
+  // --- Rattrapage ----------------------------------------------------------
+  'catchup.days.one': '{n} jour',
+  'catchup.days.other': '{n} jours',
+  'catchup.pace': '{episodes} en {days} avant la suite — {time} par jour.',
+  // Formulation distincte quand le rythme ne tient pas dans une soirée : « il faudrait »
+  // reconnaît que ce n'est pas un plan, au lieu de le présenter comme tel.
+  'catchup.tight': '{episodes} en {days} avant la suite — il faudrait {time} par jour.',
+  'catchup.plain': '{episodes} en {days} avant la suite.',
+
+  // --- Point d'entree ------------------------------------------------------
+  'entry.title': 'Elle démarre lentement',
+  'entry.body.one':
+    'Le premier épisode est noté {before}/10 ; la suite, {after}/10. Ça décolle à S{s}E{e}.',
+  'entry.body.other':
+    'Les {n} premiers épisodes sont notés {before}/10 ; la suite, {after}/10. Ça décolle à S{s}E{e}.',
+
   // --- Trajectoire ---------------------------------------------------------
   'traj.aria': 'Trajectoire',
   'traj.srTitle': 'Trajectoire saison par saison',
@@ -828,6 +853,25 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'watch.rent': 'To rent',
   'watch.buy': 'To buy',
   'watch.region': 'Availability: {region}.',
+
+  'season.aired.one': '{n} episode out',
+  'season.aired.other': '{n} episodes out',
+  'season.below':
+    'Season {season} — {episodes}, rated {current}/10, which is {gap} below the show’s average.',
+  'season.above':
+    'Season {season} — {episodes}, rated {current}/10, which is {gap} above the show’s average.',
+
+  'catchup.days.one': '{n} day',
+  'catchup.days.other': '{n} days',
+  'catchup.pace': '{episodes} in {days} before the next one — {time} a day.',
+  'catchup.tight': '{episodes} in {days} before the next one — that would take {time} a day.',
+  'catchup.plain': '{episodes} in {days} before the next one.',
+
+  'entry.title': 'It starts slowly',
+  'entry.body.one':
+    'The first episode is rated {before}/10; what follows, {after}/10. It picks up at S{s}E{e}.',
+  'entry.body.other':
+    'The first {n} episodes are rated {before}/10; what follows, {after}/10. It picks up at S{s}E{e}.',
 
   'traj.aria': 'Trajectory',
   'traj.srTitle': 'Season-by-season trajectory',

@@ -13,6 +13,8 @@ import {
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { formatCommitment, formatDate, statusLabel, year } from '@/lib/format';
 import { DEFAULT_LOCALE, localeTag, t, tn, watchRegion, type Locale } from '@/lib/i18n';
+import { judgeCurrentSeason } from '@/src/domain/current-season';
+import { findEntryPoint } from '@/src/domain/entry-point';
 import { serializeJsonLd } from '@/lib/jsonld';
 import { alternatesFor } from '@/lib/routes';
 import { TmdbError } from '@/src/catalog/tmdb';
@@ -320,6 +322,7 @@ export async function SeriesView({ id, locale }: {
         locale={locale}
         episodeCount={episodeCount}
         {...(totalRuntimeMinutes !== undefined ? { totalRuntimeMinutes } : { totalRuntimeMinutes: undefined })}
+        airingSeason={detail.nextEpisode?.seasonNumber}
       />
 
       <SeasonList seasons={seasons} locale={locale} />
@@ -406,13 +409,15 @@ async function WatchHere({ id, locale }: {
  * traverser le serveur. Sans position, tout reste derriere le geste explicite ; avec,
  * la courbe se decouvre a mesure qu'on avance.
  */
-async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCount, locale }: {
+async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCount, locale, airingSeason }: {
   readonly id: string;
   readonly title: string;
   readonly seasons: Awaited<ReturnType<typeof getSeriesPageData>>['seasons'];
   readonly totalRuntimeMinutes: number | undefined;
   readonly episodeCount: number;
   readonly locale: Locale;
+  /** Saison en cours de diffusion, quand un episode est annonce. */
+  readonly airingSeason: number | undefined;
 }) {
   // Les deux partagent le meme cache de saisons : afficher la grille en plus de la
   // courbe ne coute pas un appel supplementaire.
@@ -423,6 +428,15 @@ async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCoun
   if (trajectory === undefined) return null;
 
   const advice = stopPointAdvice(trajectory, seasons, totalRuntimeMinutes, episodeCount);
+  // Aucun appel supplementaire : la grille est deja chargee pour l'affichage, et le
+  // point d'entree n'est qu'une lecture de plus sur les memes donnees.
+  const rated = grid.flatMap((season) => season.episodes);
+  const entry = findEntryPoint(rated);
+  // La saison en cours est celle du prochain episode annonce. Deduire « la plus haute
+  // saison notee » serait faux : le catalogue annonce parfois la suivante avant qu'elle
+  // ne soit diffusee.
+  const current =
+    airingSeason !== undefined ? judgeCurrentSeason(rated, airingSeason) : undefined;
 
   return (
     <TrajectorySection
@@ -431,6 +445,8 @@ async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCoun
       trajectory={trajectory}
       grid={grid}
       advice={advice}
+      entryPoint={entry}
+      currentSeason={current}
     />
   );
 }

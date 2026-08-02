@@ -5,6 +5,7 @@ import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { StarRating } from '@/app/components/StarRating';
 import { journalKey, suggestedSeasonRating } from '@/src/domain/journal';
+import { catchUpPlan } from '@/src/domain/catch-up';
 import { seasonToRate } from '@/src/domain/nudge';
 import { remainingAfter } from '@/src/domain/remaining';
 import { formatCommitment } from '@/lib/format';
@@ -102,6 +103,15 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
   );
   const toRate = seasonToRate(seasons, position, rated);
 
+  // « 14 episodes en 12 jours » : ce qui reste, rapporte a la date de retour. Croiser
+  // les deux transforme une bibliotheque en plan — et ne coute rien, tout est deja la.
+  const plan = catchUpPlan(
+    left,
+    series.nextEpisodeAt !== undefined ? new Date(series.nextEpisodeAt) : undefined,
+    new Date(),
+    episodeMinutes,
+  );
+
   return (
     <section
       className="space-y-4 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
@@ -150,6 +160,26 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
                 ? `~ ${formatCommitment(left.minutes, locale)}`
                 : '—',
           })}
+        </p>
+      ) : null}
+
+      {/* Le plan de rattrapage. Il s'affiche meme quand il est intenable : « il faudrait
+          5 h par jour » est precisement l'information qui evite un marathon perdu
+          d'avance. Le domaine donne le chiffre, c'est ici qu'on choisit la formulation. */}
+      {plan !== undefined ? (
+        <p
+          className={`text-sm ${plan.withinReach ? 'text-(--color-live)' : 'text-(--color-warn)'}`}
+        >
+          {plan.minutesPerDay !== undefined
+            ? t(plan.withinReach ? 'catchup.pace' : 'catchup.tight', {
+                episodes: translateN(locale, 'series.episodes', plan.episodes),
+                days: translateN(locale, 'catchup.days', plan.days),
+                time: formatCommitment(plan.minutesPerDay, locale),
+              })
+            : t('catchup.plain', {
+                episodes: translateN(locale, 'series.episodes', plan.episodes),
+                days: translateN(locale, 'catchup.days', plan.days),
+              })}
         </p>
       ) : null}
 

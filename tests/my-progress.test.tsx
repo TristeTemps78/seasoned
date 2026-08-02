@@ -97,6 +97,41 @@ describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
     expect(screen.queryByText(/Vous venez de finir/)).toBeNull();
   });
 
+  it('affiche le plan de rattrapage quand une date de retour est connue', async () => {
+    // Prouve le **branchement**, que `catch-up.test.ts` ne peut pas voir. Trois modules
+    // de ce projet ont dormi des semaines, ecrits et testes, appeles par rien.
+    const soon = new Date(Date.now() + 10 * 86_400_000).toISOString();
+    store(setPosition(EMPTY_JOURNAL, KEY, 2, 5));
+    render(
+      <LocaleProvider locale="fr">
+        <MyProgress
+          seriesId="1396"
+          seasons={SEASONS}
+          series={{ ...SERIES, nextEpisodeAt: soon }}
+          episodeMinutes={45}
+        />
+      </LocaleProvider>,
+    );
+    // 15 épisodes restants sur 10 jours à 45 min : 68 min par jour, donc tenable.
+    expect(await screen.findByText(/15 épisodes en 10 jours avant la suite/)).toBeDefined();
+  });
+
+  it('reconnait un rattrapage intenable au lieu de le presenter comme un plan', async () => {
+    const soon = new Date(Date.now() + 2 * 86_400_000).toISOString();
+    store(setPosition(EMPTY_JOURNAL, KEY, 1, 1));
+    render(
+      <LocaleProvider locale="fr">
+        <MyProgress
+          seriesId="1396"
+          seasons={SEASONS}
+          series={{ ...SERIES, nextEpisodeAt: soon }}
+          episodeMinutes={50}
+        />
+      </LocaleProvider>,
+    );
+    expect(await screen.findByText(/il faudrait/)).toBeDefined();
+  });
+
   it('parle la langue de la page', async () => {
     store(setPosition(EMPTY_JOURNAL, KEY, 2, 5));
     renderAt('en', 45);
