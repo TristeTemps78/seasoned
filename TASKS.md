@@ -277,7 +277,74 @@ absolu (`MAX_SKIPPED_EPISODES = 25`) répond aux deux à la fois.
 | CVE `sharp` | Inchangée et toujours **non exploitable** (pas de `next/image`, `images.unoptimized`). |
 | Dépendances majeures | `typescript@7`, `jsdom@30`, `@types/node@26` disponibles. **Volontairement non mises à jour** : trois changements majeurs en autonomie, sans bénéfice immédiat, contre un projet dont la preuve est la CI verte. À faire en présence de Tristan. |
 
-### 🔴 Vérification en production du 2026-08-03 — ce qu'elle a tranché
+### ✅ Audit en production du 2026-08-03, **après déploiement** — tout est vérifié
+
+**24 commits poussés, CI verte, déploiement passé.** Ce qui suit est mesuré sur
+https://seasoned-two.vercel.app, pas déduit du code.
+
+| Vérification | Résultat |
+|---|---|
+| **`hreflang` des pages série** — dette ouverte depuis **trois sessions** | ✅ **Réciproques et auto-référents.** `/serie/1396` et `/fr/serie/1396` déclarent toutes deux `fr-FR`, `en-US` et `x-default`, avec des cibles identiques |
+| Canonique par langue | ✅ Chaque page pointe la sienne — le français ne demande pas sa propre désindexation |
+| **Cache de bord** | ✅ `HIT` sur `/`, `/serie/1396`, `/fr/serie/1396`, `/convertir` (le premier appel d'une page jamais rendue est un `MISS`, c'est l'ISR normal) |
+| **Faille XSS du JSON-LD** | ✅ **Corrigée en ligne** : plus aucun `<` brut dans le bloc `ld+json` |
+| En-têtes de sécurité | ✅ Les cinq servis : CSP, `nosniff`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy` |
+| `robots.txt` | ✅ Les six chemins exclus, **dans les deux langues** |
+| `sitemap.xml` | ✅ 107 URLs, 214 alternates, `/convertir` présent |
+| `lang` servi | ✅ `en` sur `/`, `fr` sur `/fr` — sur les huit routes testées |
+
+### ⚠️ Correction d'une conclusion fausse écrite le matin même
+
+J'ai écrit, en tête de ce fichier : *« la description française servie sur une page
+destinée à l'anglais est la **preuve directe** que `TMDB_LANGUAGE=fr-FR` est posé chez
+Vercel »*. **C'était faux, et c'était une sur-interprétation.**
+
+Le code alors déployé (`08a8d43`) est **antérieur à la bascule A10** : `DEFAULT_LOCALE`
+y valait encore `fr`. Le français s'expliquait donc entièrement par le code, sans qu'aucune
+variable d'environnement soit en cause. J'avais une explication suffisante et j'en ai
+affirmé une autre.
+
+**Ce que la production dit maintenant**, et qui tranche pour de bon :
+
+| Page | Description servie |
+|---|---|
+| `/serie/1396` | *« Walter White, a New Mexico chemistry teacher… »* — **anglais** |
+| `/fr/serie/1396` | *« Un professeur de chimie atteint d'un cancer… »* — **français** |
+
+Or `TMDB_LANGUAGE`, s'il était défini, **écraserait toutes les langues d'un coup**
+(`lib/catalog.ts`). L'anglais sortant en anglais, **la variable n'est pas définie chez
+Vercel.** ✅ L'action « la vider » n'a donc jamais eu lieu d'être — elle est retirée de la
+liste des choses à faire.
+
+> **La leçon, et elle vaut d'être gardée** : *une observation compatible avec deux causes
+> ne prouve aucune des deux.* Le produit avait changé de défaut **et** la variable était
+> suspecte ; j'ai attribué au second ce qui suffisait au premier. La bonne conduite était
+> d'écrire « unverified » jusqu'au déploiement, ce que la règle du projet demande
+> explicitement.
+
+### Les trois features de ce matin, vues sur de vraies séries
+
+| Série | Ce que la production affiche |
+|---|---|
+| **BoJack Horseman** | *« It starts slowly — 7,3/10 puis 8,2/10, ça décolle à **S1E8** »* |
+| **Star Trek TNG** | *« 6,3 → 7,0, ça décolle à S1E5 »*, plus un décrochage en S6 |
+| **House of the Dragon** | *« Saison 3 — 6 épisodes sortis, notés 6,7/10, soit 0,6 sous la moyenne de la série »* |
+| Breaking Bad, The Office, Parks & Rec, Agents of SHIELD | **se taisent** |
+
+> 🎯 **La validation la plus forte est celle de BoJack.** La source citée en écrivant la
+> proposition disait que la série *« devient un chef-d'œuvre vers l'épisode 8 de la
+> saison 1 »*. Le module, qui ne connaît que des notes publiques et n'a jamais lu cette
+> phrase, sort **exactement le même épisode**. C'est une concordance externe, pas un
+> réglage sur nos propres exemples.
+
+**Et le silence est majoritaire, comme annoncé** : un verdict de saison en cours sur
+**14 séries** testées, et quatre séries sur six sans point d'entrée. ⚠️ *The Office* et
+*Parks and Recreation*, dont le démarrage lent est notoire, n'en produisent pas — le
+module rate donc des cas réels. C'est **le bon sens de l'erreur** (se taire plutôt que
+d'inventer), mais c'est une limite à connaître, et le seuil mériterait d'être re-mesuré
+sur un échantillon large plutôt que resserré au jugé.
+
+### 🔴 Vérification en production du 2026-08-03 (matin, **avant** déploiement)
 
 La dette de vérification traînait depuis deux sessions (`hreflang` d'une page série, cache
 de `/fr/serie/1396`). Elle est **répondue, et pas comme prévu** : ces deux points ne
@@ -315,17 +382,19 @@ Quatre commits : `a1fab2d` (réservation + D14) · `9043233` (filet + i18n) · `
 
 ### À faire en premier, dans cet ordre (mis à jour le 2026-08-03 au matin)
 
-0. **🔴 Décider du push.** 21 commits d'avance sur `origin/main`. La faille XSS du JSON-LD
-   est **en ligne** depuis le 2026-08-02, et tout le travail des trois dernières sessions
-   est invisible. Le push déclenche un déploiement public — c'est une décision de Tristan,
-   pas d'un agent. Vérifié ce matin, voir le tableau plus haut.
-1. **⚠️ Vider `TMDB_LANGUAGE` chez Vercel** — désormais **prouvé** nécessaire, et non plus
-   supposé : la production sert une description française dans le JSON-LD d'une page
-   destinée à l'anglais.
-2. **`docs/NEXT-FIVE-2.md`** — cinq nouvelles propositions. La n°1 (**rewatch**) est la
-   seule qui se **périme** : chaque journal écrit sans elle perd une donnée pour toujours,
-   exactement comme les trois décisions de la v2 du journal.
+0. ✅ **Push fait le 2026-08-03**, autorisé par Tristan. CI verte, déploiement passé,
+   **tout est vérifié en production** — voir le tableau d'audit plus haut. La faille XSS
+   n'est plus en ligne.
+1. ✅ **`TMDB_LANGUAGE` : rien à faire.** La variable n'est pas définie chez Vercel —
+   prouvé par la production, qui sert désormais de l'anglais sur `/serie/*` et du français
+   sur `/fr/serie/*`. Ma conclusion inverse du matin était fausse, voir la correction.
+2. **`docs/NEXT-FIVE-2.md`** — il reste quatre pistes sur cinq (la n°1, le rewatch, est
+   livrée). La n°2 (**pages-listes**) est le plus gros levier SEO restant, et ses calculs
+   sont déjà écrits.
 3. **A4 (le nom)** reste le seul arbitrage bloquant avant un lancement public.
+4. **0.9 — la relecture par un autre agent n'a jamais eu lieu.** `AGENTS.md` pose
+   « rédacteur ≠ relecteur » et le projet entier a été écrit par le même agent. C'est la
+   dette de méthode la plus ancienne du dépôt.
 
 ### L'ancienne liste, conservée pour mémoire
 
