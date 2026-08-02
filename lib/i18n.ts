@@ -501,6 +501,15 @@ const FR = {
   'watch.buy': 'À l’achat',
   'watch.region': 'Disponibilité : {region}.',
 
+  // --- Revisionnage --------------------------------------------------------
+  'rewatch.done.one': 'Vue une fois, en entier.',
+  'rewatch.done.other': 'Vue {n} fois, en entier.',
+  'rewatch.again.one': 'Vous la revoyez.',
+  'rewatch.again.other': '{n}e visionnage.',
+  'taste.rewatched': 'Ma série-refuge',
+  'taste.rewatchedTimes.one': 'vue {n} fois',
+  'taste.rewatchedTimes.other': 'vue {n} fois',
+
   // --- Saison en cours -----------------------------------------------------
   'season.aired.one': '{n} épisode sorti',
   'season.aired.other': '{n} épisodes sortis',
@@ -853,6 +862,14 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'watch.rent': 'To rent',
   'watch.buy': 'To buy',
   'watch.region': 'Availability: {region}.',
+
+  'rewatch.done.one': 'Watched once, all the way through.',
+  'rewatch.done.other': 'Watched {n} times, all the way through.',
+  'rewatch.again.one': 'You are watching it again.',
+  'rewatch.again.other': 'Watch number {n}.',
+  'taste.rewatched': 'My comfort show',
+  'taste.rewatchedTimes.one': 'watched {n} time',
+  'taste.rewatchedTimes.other': 'watched {n} times',
 
   'season.aired.one': '{n} episode out',
   'season.aired.other': '{n} episodes out',

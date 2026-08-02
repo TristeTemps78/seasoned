@@ -27,6 +27,16 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
   const poster = posterUrl(item.snapshot?.posterPath, 'w342');
   const position = item.entry.position;
 
+  const decision = item.entry.decision?.kind;
+  const decisionLabel =
+    decision === 'completed'
+      ? t('decision.completed')
+      : decision === 'abandoned'
+        ? t('decision.abandoned')
+        : decision === 'paused'
+          ? t('decision.paused')
+          : undefined;
+
   return (
     <Link
       href={href}
@@ -73,7 +83,12 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
             S{position.seasonNumber}E{position.episodeNumber}
           </>
         ) : (
-          (item.snapshot?.statusLabel ?? t('library.card.toWatch'))
+          // ⚠️ La decision passe **avant** le repli « a voir ». Trouve a la
+          // verification : une serie rangee dans « Terminees et abandonnees » affichait
+          // « a voir » des que son instantane n'avait pas de libelle de statut — ce qui
+          // arrive des qu'il expire. La vignette contredisait alors la section qui la
+          // contient, et c'est le genre de detail qui fait douter de tout le reste.
+          decisionLabel ?? item.snapshot?.statusLabel ?? t('library.card.toWatch')
         )}
       </p>
     </Link>

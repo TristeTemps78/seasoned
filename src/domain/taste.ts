@@ -54,6 +54,20 @@ export interface TasteProfile {
   readonly completionRate?: number;
   /** Saison mediane a laquelle on abandonne. La donnee propre du produit. */
   readonly medianAbandonSeason?: number;
+  /**
+   * La serie revue le plus souvent, et combien de fois.
+   *
+   * ## Pourquoi elle merite sa place ici plutot qu'une statistique de plus
+   *
+   * Le « comfort rewatching » — revoir la meme serie pour le confort qu'elle procure —
+   * est un comportement documente et massif, qu'aucun tracker ne restitue vraiment. Et
+   * c'est **le trait de gout le plus difficile a falsifier** : on peut poser cinq etoiles
+   * par enthousiasme d'un soir, on ne revoit pas trois fois quarante heures par erreur.
+   *
+   * ⚠️ Absente tant qu'aucune serie n'a ete revue. Une « serie-refuge » annoncee sur un
+   * seul visionnage serait un contresens sur le mot.
+   */
+  readonly comfortSeries?: { readonly key: string; readonly times: number };
   /** Assez de matiere pour enoncer quelque chose ? */
   readonly speaks: boolean;
 }
@@ -88,6 +102,15 @@ export function buildTasteProfile(journal: Journal, now: Date = new Date()): Tas
   let episodeRatings = 0;
   let completed = 0;
   let abandoned = 0;
+
+  let comfortSeries: { key: string; times: number } | undefined;
+  for (const [key, entry] of Object.entries(journal.entries)) {
+    const times = entry.completions?.length ?? 0;
+    // Strictement plus d'une fois : « revue une fois » n'est pas un refuge, c'est une
+    // serie finie. Et `>` garde la premiere a egalite, ce qui rend le resultat stable
+    // d'un rendu a l'autre.
+    if (times > 1 && times > (comfortSeries?.times ?? 1)) comfortSeries = { key, times };
+  }
 
   for (const entry of entries) {
     const stars = starsOf(entry);
@@ -126,6 +149,7 @@ export function buildTasteProfile(journal: Journal, now: Date = new Date()): Tas
     ...(gapToPublic !== undefined ? { gapToPublic } : {}),
     ...(medianAbandonSeason !== undefined ? { medianAbandonSeason } : {}),
     ...(decided > 0 ? { completionRate: completed / decided } : {}),
+    ...(comfortSeries !== undefined ? { comfortSeries } : {}),
   };
 }
 

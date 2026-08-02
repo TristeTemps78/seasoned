@@ -75,7 +75,14 @@ export function Library() {
         items={library.finished}
       />
 
-      <TasteCard profile={taste} />
+      <TasteCard
+        profile={taste}
+        journalTitles={Object.fromEntries(
+          Object.entries(journal.entries)
+            .map(([key, entry]) => [key, entry.snapshot?.title])
+            .filter((pair): pair is [string, string] => pair[1] !== undefined),
+        )}
+      />
 
       {/* Le rappel que le produit ne peut pas se payer, delegue au calendrier que tout
           le monde a deja. Ne s'affiche que si au moins une date est connue. */}

@@ -5,6 +5,7 @@ import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import type { Locale } from '@/lib/i18n';
 import {
   EMPTY_JOURNAL,
+  markCompleted,
   serializeJournal,
   setPosition,
   setSeasonRating,
@@ -130,6 +131,25 @@ describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
       </LocaleProvider>,
     );
     expect(await screen.findByText(/il faudrait/)).toBeDefined();
+  });
+
+  it('compte les visionnages acheves', async () => {
+    // Prouve le branchement du rewatch. Le journal ne connaissait aucune notion de
+    // revisionnage : la position etant un pointeur unique, recommencer ecrasait la
+    // progression precedente et le fait etait perdu pour toujours.
+    let journal = markCompleted(EMPTY_JOURNAL, KEY, new Date('2024-01-01T00:00:00Z'));
+    journal = markCompleted(journal, KEY, new Date('2026-01-01T00:00:00Z'));
+    store(journal);
+    renderAt('fr');
+    expect(await screen.findByText(/Vue 2 fois, en entier/)).toBeDefined();
+  });
+
+  it('reconnait un revisionnage en cours', async () => {
+    let journal = markCompleted(EMPTY_JOURNAL, KEY, new Date('2024-01-01T00:00:00Z'));
+    journal = setPosition(journal, KEY, 1, 2);
+    store(journal);
+    renderAt('fr');
+    expect(await screen.findByText(/2e visionnage/)).toBeDefined();
   });
 
   it('parle la langue de la page', async () => {

@@ -47,7 +47,7 @@
 import type { DecisionKind, SeriesId, Stars } from './types';
 
 /** Version du format. Toute lecture d'une version inconnue repart de zero. */
-export const JOURNAL_VERSION = 2;
+export const JOURNAL_VERSION = 3;
 
 /**
  * Fournisseur de catalogue dont proviennent les identifiants ecrits aujourd'hui.
@@ -102,6 +102,42 @@ export interface JournalDecision {
 
 /** « Je veux la voir » — le premier geste possible, et le seul qui ne suppose rien. */
 export interface JournalWanted {
+  readonly at: string;
+}
+
+/**
+ * Une fois ou la serie a ete menee au bout.
+ *
+ * ## Version 3 (2026-08-03) — la quatrieme decision irreparable
+ *
+ * Le journal ne connaissait **aucune** notion de revisionnage. La position etant un
+ * pointeur unique, quelqu'un qui recommence *The Office* pour la troisieme fois
+ * **ecrasait** sa progression precedente : le produit ne perdait pas une statistique, il
+ * perdait le fait.
+ *
+ * Or le rewatch n'est pas un detail d'usage :
+ *
+ * > **C'est le seul comportement qui distingue une serie aimee d'une serie finie.** Une
+ * > note de cinq etoiles posee une fois et un troisieme visionnage disent deux choses
+ * > differentes, et la seconde est bien plus difficile a falsifier.
+ *
+ * Comme les trois decisions de la v2, celle-ci **ne se rattrape pas** : les visionnages
+ * passes qu'on n'a pas enregistres ne se devinent pas. D'ou son ecriture maintenant,
+ * tant qu'il y a peu de journaux a preserver.
+ *
+ * ## Pourquoi une liste de dates, et rien de plus
+ *
+ * On aurait pu modeliser des « passages » complets — debut, fin, notes propres a chaque
+ * vision. Ce serait plus riche et **beaucoup** plus dur a fusionner : deux appareils
+ * devraient s'accorder sur l'identite d'un passage, ce qui demande un identifiant stable
+ * qu'aucun des deux ne peut attribuer seul.
+ *
+ * Une liste de dates est un **ensemble**. L'union de deux ensembles est commutative,
+ * associative et idempotente **par construction** — donc les huit lois de fusion
+ * (`tests/journal-merge.test.ts`) tiennent sans effort. Le fait irreparable est capture ;
+ * le reste peut s'ajouter plus tard sans rien perdre.
+ */
+export interface JournalCompletion {
   readonly at: string;
 }
 
@@ -195,6 +231,14 @@ export interface JournalEntry {
   readonly episodeRatings?: Readonly<Record<string, JournalRating>>;
   readonly decision?: JournalDecision;
   readonly wanted?: JournalWanted;
+  /**
+   * Chaque fois que la serie a ete menee au bout. Voir {@link JournalCompletion}.
+   *
+   * Volontairement **hors de `removed`** : une trace de suppression sert a empecher un
+   * fait efface de revenir par la fusion. Ici, il n'y a rien a effacer — un visionnage a
+   * eu lieu ou n'a pas eu lieu, et l'oublier serait precisement le defaut qu'on repare.
+   */
+  readonly completions?: readonly JournalCompletion[];
   readonly snapshot?: JournalSnapshot;
   readonly removed?: JournalTombstones;
 }
@@ -373,6 +417,49 @@ function parseTombstones(raw: unknown, now: Date): JournalTombstones {
   return out;
 }
 
+/**
+ * Lit la liste des visionnages acheves, de facon tolerante.
+ *
+ * Une entree illisible est **ecartee**, jamais fatale (`AGENTS.md` regle 4). Les dates
+ * sont normalisees et dedupliquees des la lecture : un journal ecrit par une version
+ * fautive ne doit pas propager ses doublons.
+ */
+function parseCompletions(raw: unknown): readonly JournalCompletion[] {
+  if (!Array.isArray(raw)) return [];
+  const days = new Set<string>();
+  for (const item of raw) {
+    const at = readInstant(asRecord(item), 'at', '');
+    if (at.length === 0) continue;
+    days.add(at);
+  }
+  return dedupeByDay([...days].map((at) => ({ at })));
+}
+
+/**
+ * Un achevement par jour, au plus.
+ *
+ * ⚠️ **Par jour et non par instant**, et c'est le point delicat. Deux appareils qui
+ * synchronisent, ou un import rejoue, enregistrent le meme achevement a quelques
+ * millisecondes d'ecart : dedupliquer sur l'horodatage exact laisserait passer les
+ * doublons, et « vu 4 fois » compterait des synchronisations au lieu de visionnages.
+ *
+ * La contrepartie — terminer deux fois la meme serie le meme jour ne compte que pour un —
+ * est acceptee : elle n'arrive pas, et l'erreur inverse arriverait tout le temps.
+ */
+function dedupeByDay(
+  completions: readonly JournalCompletion[],
+): readonly JournalCompletion[] {
+  const byDay = new Map<string, JournalCompletion>();
+  for (const completion of completions) {
+    const day = completion.at.slice(0, 10);
+    const existing = byDay.get(day);
+    // A jour egal, on garde la date la plus ancienne : c'est celle du visionnage, les
+    // suivantes n'etant que des rejeux.
+    if (existing === undefined || completion.at < existing.at) byDay.set(day, completion);
+  }
+  return [...byDay.values()].sort((a, b) => a.at.localeCompare(b.at));
+}
+
 function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
   const source = asRecord(raw);
 
@@ -390,10 +477,13 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
       ? { at: readInstant(asRecord(wantedSource), 'at', UNDATED) }
       : undefined;
 
+  const completions = parseCompletions(source['completions']);
+
   const entry: JournalEntry = {
     ...(position !== undefined ? { position } : {}),
     ...(decision !== undefined ? { decision } : {}),
     ...(wanted !== undefined ? { wanted } : {}),
+    ...(completions.length > 0 ? { completions } : {}),
     ...(snapshot !== undefined ? { snapshot } : {}),
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
     ...(Object.keys(episodeRatings).length > 0 ? { episodeRatings } : {}),
@@ -417,6 +507,7 @@ export function hasContent(entry: JournalEntry | undefined): boolean {
     entry.position !== undefined ||
     entry.decision !== undefined ||
     entry.wanted !== undefined ||
+    (entry.completions ?? []).length > 0 ||
     Object.keys(entry.seasonRatings ?? {}).length > 0 ||
     Object.keys(entry.episodeRatings ?? {}).length > 0
   );
@@ -666,6 +757,57 @@ export function setDecision(
 }
 
 /**
+ * Enregistre que la serie vient d'etre menee au bout.
+ *
+ * ## Pourquoi ce geste est distinct de la decision « terminee »
+ *
+ * `setDecision(key, 'completed')` decrit un **etat courant**, et il se retire : on peut
+ * l'avoir clique par erreur. Un visionnage acheve est un **evenement**, et il ne se
+ * retire pas — c'est arrive. Confondre les deux ferait disparaitre un fait a chaque
+ * changement d'avis, ce qui est exactement le defaut que la v3 repare.
+ *
+ * D'ou l'appel des deux cotes : l'interface pose la decision **et** enregistre le
+ * passage. Le second est idempotent dans la journee, donc une bascule repetee ne compte
+ * jamais deux fois.
+ */
+export function markCompleted(
+  journal: Journal,
+  key: JournalKey,
+  now = new Date(),
+): Journal {
+  const entry = journal.entries[key] ?? {};
+  const completions = dedupeByDay([
+    ...(entry.completions ?? []),
+    { at: now.toISOString() },
+  ]);
+  // Rien de neuf : on rend le journal **tel quel**, pour qu'un rendu React ne se
+  // declenche pas sur une egalite de reference perdue pour rien.
+  if (completions.length === (entry.completions ?? []).length) return journal;
+  return withEntry(journal, key, { ...entry, completions });
+}
+
+/**
+ * Combien de fois la serie a ete menee au bout.
+ *
+ * Zero pour une serie en cours : c'est le nombre de **passages acheves**, pas le nombre
+ * de fois qu'on l'a ouverte.
+ */
+export function completionCount(entry: JournalEntry | undefined): number {
+  return entry?.completions?.length ?? 0;
+}
+
+/**
+ * Est-on en train de la revoir ?
+ *
+ * Vrai quand la serie a deja ete achevee **et** qu'une position courante existe. C'est
+ * la definition la plus simple qui ne se trompe pas : reposer une position apres avoir
+ * fini, c'est recommencer.
+ */
+export function isRewatching(entry: JournalEntry | undefined): boolean {
+  return completionCount(entry) > 0 && entry?.position !== undefined;
+}
+
+/**
  * « Je veux la voir. »
  *
  * Le premier geste possible, et le seul qui ne suppose **rien** — ni d'avoir commence,
@@ -910,6 +1052,11 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
   const wanted = survives(wantedWinner?.at, removed['wanted']) ? wantedWinner : undefined;
   const snapshot = laterOf(a.snapshot, b.snapshot, (s) => s.cachedAt);
 
+  // Union, et non « le plus recent gagne » : un visionnage acheve sur un appareil ne
+  // peut pas etre invalide par un autre. C'est un ensemble, donc la fusion est
+  // commutative, associative et idempotente sans rien faire de plus.
+  const completions = dedupeByDay([...(a.completions ?? []), ...(b.completions ?? [])]);
+
   const seasonRatings = mergeRatings(
     a.seasonRatings,
     b.seasonRatings,
@@ -927,6 +1074,7 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
     ...(position !== undefined ? { position } : {}),
     ...(decision !== undefined ? { decision } : {}),
     ...(wanted !== undefined ? { wanted } : {}),
+    ...(completions.length > 0 ? { completions } : {}),
     ...(snapshot !== undefined ? { snapshot } : {}),
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
     ...(Object.keys(episodeRatings).length > 0 ? { episodeRatings } : {}),

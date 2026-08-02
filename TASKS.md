@@ -209,6 +209,36 @@ données sont déjà chargées et en cache sur la page série.
 | F4 | **Plan de rattrapage** — « 14 épisodes en 12 jours » | ✅ 2026-08-03 | `src/domain/catch-up.ts`, 11 tests. Le chiffre qui compte est le **temps** |
 | F2 | **Verdict de la saison en cours** | ✅ 2026-08-03 | `src/domain/current-season.ts`, 10 tests. Se tait la plupart du temps |
 
+### 🔁 Rewatch — journal v3 (2026-08-03) ✅
+
+**La quatrième décision irréparable**, et la seule proposition de `NEXT-FIVE-2` qui se
+périmait. Le journal ne connaissait **aucune** notion de revisionnage : la position étant
+un pointeur unique, recommencer une série **écrasait** la progression précédente. Le
+produit ne perdait pas une statistique, il perdait le fait — et les visionnages passés
+qu'on n'enregistre pas ne se devinent pas.
+
+| Décision | Motif |
+|---|---|
+| Une **liste de dates**, pas des « passages » complets | Un ensemble : l'union est commutative, associative et idempotente **par construction**, donc les huit lois de fusion tiennent sans effort. Des passages identifiés demanderaient un identifiant stable qu'aucun appareil ne peut attribuer seul |
+| Déduplication **par jour**, pas par instant | Deux appareils qui synchronisent enregistrent le même achèvement à quelques millisecondes d'écart. Dédupliquer sur l'horodatage exact ferait de « vu 4 fois » un compteur de synchronisations |
+| Fusion par **union**, jamais « le plus récent gagne » | Un visionnage achevé sur un appareil ne peut pas être invalidé par un autre. Vérifié en cassant la règle : 2 tests sur 20 tombent |
+| Geste attaché à la décision « terminée » | La décision décrit un **état** qui se retire ; un visionnage est un **événement** qui ne se retire pas. `markCompleted` étant idempotent dans la journée, basculer dix fois ne compte jamais dix visionnages |
+
+**La série-refuge** en découle (`taste.ts`) : *« Ma série-refuge — Breaking Bad — vue
+3 fois »*. C'est **le trait de goût le plus difficile à falsifier** — on peut poser cinq
+étoiles par enthousiasme d'un soir, on ne revoit pas trois fois quarante heures par erreur.
+
+> ⚠️ **Vérifié au navigateur sur un journal v2 réel**, donc migration comprise. Et la
+> première vérification n'a rien prouvé : ma fixture avait des instantanés vieux de sept
+> mois — donc **expirés par le plafond contractuel**, comportement correct — et trop peu de
+> séries notées pour que le profil parle. *Se méfier de sa propre vérification* reste la
+> règle : c'est la deuxième fois qu'une fixture biaisée donne un faux négatif.
+
+**Trouvé par cette même vérification** : une série rangée dans « Terminées et abandonnées »
+affichait **« à voir »** dès que son instantané n'avait pas de libellé de statut — ce qui
+arrive dès qu'il expire. La vignette contredisait la section qui la contient. La décision
+passe désormais avant le repli.
+
 ### Ce que la boucle d'audit a trouvé sur ces trois features
 
 **1. Une cinquième règle, trouvée par les tests (F1).** La première version maximisait le

@@ -35,7 +35,7 @@ Je le dis plutôt que d'habiller des idées inventées d'une source que je n'ai 
 
 ---
 
-## 1. Le rewatch, et la série-refuge
+## 1. Le rewatch, et la série-refuge — ✅ **livré le 2026-08-03**
 
 **Ce n'est pas une feature, c'est un trou dans le modèle — et il se referme mal.**
 
@@ -155,7 +155,7 @@ que j'ai déjà ? »*
 
 | Ordre | Feature | Motif |
 |---|---|---|
-| **1** | **Rewatch (§1)** | Non pas la plus rentable, mais **la seule qui se périme**. Chaque journal écrit sans elle est une donnée perdue pour toujours |
+| ~~1~~ | ~~**Rewatch (§1)**~~ | ✅ **Livré** — journal v3, série-refuge, 20 tests. Voir `TASKS.md` |
 | **2** | **Pages-listes (§2)** | Le plus gros levier SEO restant, sur des calculs déjà écrits, et il referme le maillage interne |
 | **3** | **Bilan personnel (§4)** | Zéro coût, fort en partage, et positionnement direct contre un paywall |
 | **4** | **Comparateur (§3)** | Excellent rapport valeur/effort, mais demande de traiter l'explosion quadratique avant d'ouvrir |

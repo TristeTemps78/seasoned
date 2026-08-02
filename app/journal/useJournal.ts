@@ -7,6 +7,7 @@ import {
   mergeJournals,
   parseJournal,
   serializeJournal,
+  markCompleted as markCompletedIn,
   setDecision as setDecisionIn,
   setEpisodeRating as setEpisodeRatingIn,
   setPlatforms as setPlatformsIn,
@@ -118,9 +119,20 @@ export function useJournal() {
         mutate((j) => setEpisodeRatingIn(j, key, season, episode, stars)),
       [mutate],
     ),
+    /**
+     * Pose la decision, et **enregistre le passage** quand elle vaut « terminee ».
+     *
+     * Les deux ensemble, et pas l'un a la place de l'autre : la decision decrit un etat
+     * courant qui se retire, un visionnage acheve est un evenement qui ne se retire pas.
+     * `markCompleted` est idempotent dans la journee, donc basculer la decision dix fois
+     * ne compte jamais dix visionnages.
+     */
     setDecision: useCallback(
       (key: JournalKey, kind: DecisionKind | undefined) =>
-        mutate((j) => setDecisionIn(j, key, kind)),
+        mutate((j) => {
+          const withDecision = setDecisionIn(j, key, kind);
+          return kind === 'completed' ? markCompletedIn(withDecision, key) : withDecision;
+        }),
       [mutate],
     ),
     setWanted: useCallback(

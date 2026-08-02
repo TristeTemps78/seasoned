@@ -14,7 +14,17 @@ import { severityOf, type TasteProfile } from '@/src/domain/taste';
  * erreur que le point d'arret qui epargnait 8 % de la serie, et qu'on a appris a ne
  * pas afficher.
  */
-export function TasteCard({ profile }: { readonly profile: TasteProfile }) {
+export function TasteCard({ profile, journalTitles = {} }: {
+  readonly profile: TasteProfile;
+  /**
+   * Titres memorises, par cle de journal.
+   *
+   * Passes plutot que relus : le profil est un objet **pur** du domaine, il ne connait
+   * que des cles. Lui faire porter des titres le rendrait dependant des instantanes du
+   * catalogue, donc de leur expiration.
+   */
+  readonly journalTitles?: Readonly<Record<string, string>>;
+}) {
   const { t, tn, n } = useT();
   if (!profile.speaks) return null;
 
@@ -56,6 +66,18 @@ export function TasteCard({ profile }: { readonly profile: TasteProfile }) {
             label={t('taste.completedLabel')}
             value={`${Math.round(profile.completionRate * 100)} %`}
             hint={`${tn('taste.finished', profile.completed)}, ${tn('taste.dropped', profile.abandoned)}`}
+          />
+        ) : null}
+
+        {/* Le trait de gout le plus difficile a falsifier : on ne revoit pas trois fois
+            quarante heures par erreur. */}
+        {profile.comfortSeries !== undefined ? (
+          <Figure
+            label={t('taste.rewatched')}
+            value={
+              journalTitles[profile.comfortSeries.key] ?? t('library.card.tracked')
+            }
+            hint={tn('taste.rewatchedTimes', profile.comfortSeries.times)}
           />
         ) : null}
 

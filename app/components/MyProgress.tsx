@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { StarRating } from '@/app/components/StarRating';
-import { journalKey, suggestedSeasonRating } from '@/src/domain/journal';
+import { completionCount, isRewatching, journalKey, suggestedSeasonRating } from '@/src/domain/journal';
 import { catchUpPlan } from '@/src/domain/catch-up';
 import { seasonToRate } from '@/src/domain/nudge';
 import { remainingAfter } from '@/src/domain/remaining';
@@ -63,7 +63,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
     setWanted,
     rememberSnapshot,
   } = useJournal();
-  const { t, n, locale } = useT();
+  const { t, tn, n, locale } = useT();
 
   // Jamais l'identifiant nu : les cles du journal portent leur fournisseur, pour qu'un
   // changement de catalogue reste un remappage et non une perte (`journal.ts`).
@@ -103,6 +103,12 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
   );
   const toRate = seasonToRate(seasons, position, rated);
 
+  // Le revisionnage : le seul comportement qui distingue une serie aimee d'une serie
+  // simplement finie. Une note de cinq etoiles se pose une fois ; un troisieme passage
+  // est bien plus difficile a falsifier.
+  const passes = completionCount(entry);
+  const again = isRewatching(entry);
+
   // « 14 episodes en 12 jours » : ce qui reste, rapporte a la date de retour. Croiser
   // les deux transforme une bibliotheque en plan — et ne coute rien, tout est deja la.
   const plan = catchUpPlan(
@@ -121,6 +127,12 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
         <h2 className="text-sm font-semibold">{t('progress.title')}</h2>
         <span className="text-xs text-(--color-muted)">{t('progress.local')}</span>
       </div>
+
+      {passes > 0 ? (
+        <p className="text-sm text-(--color-live)">
+          {again ? tn('rewatch.again', passes + 1) : tn('rewatch.done', passes)}
+        </p>
+      ) : null}
 
       {/* Niveau 0 — le geste qui ne suppose rien. */}
       <div className="flex flex-wrap items-center gap-2">
