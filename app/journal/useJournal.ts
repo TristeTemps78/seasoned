@@ -174,6 +174,17 @@ export function useJournal() {
       [update],
     ),
 
+    /**
+     * Ecrit un journal deja construit.
+     *
+     * Reserve aux appelants qui ont fait la fusion eux-memes — l'import d'un export
+     * tiers, ou `src/domain/import.ts` fusionne deja avec l'existant. Volontairement
+     * distinct de {@link importJournal} : celui-la lit **notre** format, celui-ci
+     * accepte un resultat quelconque, et confondre les deux ferait passer un journal
+     * etranger pour un des notres.
+     */
+    replaceJournal: useCallback((next: Journal) => update(next), [update]),
+
     /** Le journal entier, tel qu'il sera ecrit dans le fichier d'export. */
     exportJournal: useCallback(() => serializeJournal(latest.current), []),
   };

@@ -91,6 +91,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
       alternates: languagesOf('/'),
     },
+    {
+      // `/convertir` est la seule page **non-serie** qui reponde a une intention de
+      // recherche reelle : 26,4 millions de personnes ont perdu leur historique a la
+      // fermeture de TV Time. La laisser hors du sitemap la rendrait invisible a ceux
+      // qui la cherchent — le meme cul-de-sac que l'audit SEO du 2026-08-01.
+      url: `${base}/convertir`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+      alternates: languagesOf('/convertir'),
+    },
     ...seriesEntries,
   ];
 }

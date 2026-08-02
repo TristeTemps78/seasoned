@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
+import { CalendarExport } from '@/app/components/CalendarExport';
 import { JournalTransfer } from '@/app/components/JournalTransfer';
 import { LibraryCard } from '@/app/components/LibraryCard';
 import { MyPlatforms } from '@/app/components/MyPlatforms';
@@ -75,6 +76,10 @@ export function Library() {
       />
 
       <TasteCard profile={taste} />
+
+      {/* Le rappel que le produit ne peut pas se payer, delegue au calendrier que tout
+          le monde a deja. Ne s'affiche que si au moins une date est connue. */}
+      <CalendarExport />
 
       <MyPlatforms />
 

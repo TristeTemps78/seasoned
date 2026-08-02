@@ -5,6 +5,10 @@ import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { StarRating } from '@/app/components/StarRating';
 import { journalKey, suggestedSeasonRating } from '@/src/domain/journal';
+import { seasonToRate } from '@/src/domain/nudge';
+import { remainingAfter } from '@/src/domain/remaining';
+import { formatCommitment } from '@/lib/format';
+import { tn as translateN } from '@/lib/i18n';
 import type { Stars } from '@/src/domain/types';
 
 export interface SeasonShape {
@@ -40,10 +44,15 @@ export interface SeriesShape {
  * Tout est garde dans le navigateur. Aucun compte, aucune donnee envoyee nulle part —
  * et la page qui l'accueille reste statique et mise en cache.
  */
-export function MyProgress({ seriesId, seasons, series }: {
+export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
   readonly seriesId: string;
   readonly seasons: readonly SeasonShape[];
   readonly series: SeriesShape;
+  /**
+   * Duree mediane d'un episode. Absente sur les series dont TMDB ne dit rien — et
+   * c'est le cas courant, pas l'exception (`TASKS.md` §1.10).
+   */
+  readonly episodeMinutes?: number;
 }) {
   const {
     journal,
@@ -54,7 +63,7 @@ export function MyProgress({ seriesId, seasons, series }: {
     setWanted,
     rememberSnapshot,
   } = useJournal();
-  const { t, n } = useT();
+  const { t, n, locale } = useT();
 
   // Jamais l'identifiant nu : les cles du journal portent leur fournisseur, pour qu'un
   // changement de catalogue reste un remappage et non une perte (`journal.ts`).
@@ -83,6 +92,16 @@ export function MyProgress({ seriesId, seasons, series }: {
   }
 
   const current = seasons.find((s) => s.seasonNumber === position?.seasonNumber);
+
+  // Ce qu'il reste, et la saison qu'on peut noter maintenant : deux calculs purs, tires
+  // de la seule position. Le serveur n'en sait rien et n'a pas a en savoir.
+  const left = remainingAfter(seasons, position, episodeMinutes);
+  const rated = new Set(
+    Object.keys(entry?.seasonRatings ?? {})
+      .map(Number)
+      .filter((n) => Number.isFinite(n)),
+  );
+  const toRate = seasonToRate(seasons, position, rated);
 
   return (
     <section
@@ -119,6 +138,21 @@ export function MyProgress({ seriesId, seasons, series }: {
           </button>
         ) : null}
       </div>
+
+      {/* Le chiffre du produit, enfin soustrait. « ~62 h » ne parle qu'a un arrivant :
+          des qu'on a commence, c'est un cout deja paye en partie. Or c'est au milieu
+          d'une serie qu'on se demande si on la finit. */}
+      {left !== undefined && !left.done ? (
+        <p className="border-t border-(--color-edge) pt-3 text-sm">
+          {t('progress.remaining', {
+            episodes: translateN(locale, 'series.episodes', left.episodes),
+            time:
+              left.minutes !== undefined
+                ? `~ ${formatCommitment(left.minutes, locale)}`
+                : '—',
+          })}
+        </p>
+      ) : null}
 
       {/* Niveau 1 — la position, qui n'apparait qu'une fois la serie commencee. */}
       {position !== undefined ? (
@@ -176,6 +210,16 @@ export function MyProgress({ seriesId, seasons, series }: {
           <p className="text-xs uppercase tracking-wide text-(--color-muted)">
             {t('progress.seasonRatings')}
           </p>
+
+          {/* Le moment ou une note a le plus de sens est celui ou l'on vient de finir
+              la saison. Le produit connaissait ce moment et n'en faisait rien : la
+              note de saison etait offerte, jamais demandee. Un seul rappel a la fois —
+              en reclamer six n'en ferait satisfaire aucun. */}
+          {toRate !== undefined ? (
+            <p className="text-sm text-(--color-live)">
+              {t('progress.rateSeason', { n: toRate })}
+            </p>
+          ) : null}
           <ul className="space-y-1">
             {seasons
               .filter((s) => s.seasonNumber <= position.seasonNumber)

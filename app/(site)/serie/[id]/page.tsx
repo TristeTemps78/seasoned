@@ -299,6 +299,11 @@ export async function SeriesView({ id, locale }: {
             : {}),
           ...(publicStars !== undefined ? { publicStars } : {}),
         }}
+        // Mediane deduite du total : `lib/catalog.ts` l'a deja calculee sur une saison
+        // representative, la redemander couterait un appel pour rien.
+        {...(totalRuntimeMinutes !== undefined && episodeCount > 0
+          ? { episodeMinutes: totalRuntimeMinutes / episodeCount }
+          : {})}
       />
 
       <WatchHere id={id} locale={locale} />

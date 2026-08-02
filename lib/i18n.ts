@@ -253,6 +253,7 @@ const FR = {
     'Où en est une série, combien de temps elle demande, et jusqu’où elle reste bonne.',
   'nav.tagline': 'est-ce que ça vaut le coup ?',
   'nav.library': 'Ma bibliothèque',
+  'nav.convert': 'Vous venez de TV Time, Trakt ou Simkl ? Reprenez votre historique.',
   'footer.disclaimer': 'Ce produit utilise l’API TMDB sans être approuvé ni certifié par TMDB.',
 
   'home.h1': 'Une série n’est pas un long film.',
@@ -426,6 +427,40 @@ const FR = {
   'backup.merged.one': 'Fusionné. Votre bibliothèque compte {n} série.',
   'backup.merged.other': 'Fusionné. Votre bibliothèque compte {n} séries.',
 
+  // --- Reprendre un historique venu d'ailleurs ------------------------------
+  'convert.title': 'Reprendre votre historique',
+  'convert.lede':
+    'TV Time a fermé le 15 juillet 2026, et vingt-six millions de personnes y ont perdu leur historique. Si vous en avez sauvé un fichier — de TV Time, Trakt, Simkl, ou d’ailleurs — vous pouvez le déposer ici.',
+  'convert.aria': 'Import',
+  'convert.pick': 'Choisir un fichier',
+  'convert.local':
+    'Le fichier est lu dans votre navigateur. Il n’est envoyé nulle part, et nous n’en gardons rien.',
+  'convert.imported.one': '{n} série reprise.',
+  'convert.imported.other': '{n} séries reprises.',
+  'convert.skipped.one':
+    '{n} série n’a pas pu être reprise : son identifiant TMDB manque dans le fichier.',
+  'convert.skipped.other':
+    '{n} séries n’ont pas pu être reprises : leur identifiant TMDB manque dans le fichier.',
+  'convert.unreadable':
+    'Rien de reconnaissable dans ce fichier. Votre bibliothèque est intacte — rien n’a été modifié.',
+  'convert.tooBig': 'Ce fichier est trop volumineux pour être un export de séries.',
+  'convert.honestTitle': 'Ce qui marche, et ce qui ne marche pas',
+  'convert.honestBody':
+    'Nous ne prétendons connaître aucun format en particulier : nous cherchons des identifiants TMDB partout où ils se trouvent, dans un JSON comme dans un tableau. Une série sans identifiant n’est pas reprise — la retrouver par son titre demanderait une recherche par série, et se tromperait sur les remakes, qui portent le même nom. Le compte de ce qui n’est pas passé s’affiche : gardez votre fichier d’origine.',
+  'convert.mergeTitle': 'L’import complète, il ne remplace pas',
+  'convert.mergeBody':
+    'Importer sur un appareil déjà utilisé n’efface rien de ce que vous y avez fait. Vous pouvez donc importer plusieurs fichiers à la suite.',
+
+  // --- Calendrier ----------------------------------------------------------
+  'calendar.aria': 'Calendrier',
+  'calendar.title': 'Les retours, dans mon agenda',
+  'calendar.body':
+    'Une saison sort tous les trois mois, et personne ne revient entre-temps. Ce fichier dépose les dates connues dans le calendrier que vous avez déjà : il vous rappellera la suite même si vous ne rouvrez pas ce site. Rien n’est envoyé nulle part, et aucune autorisation ne vous est demandée.',
+  'calendar.download': 'Ajouter à mon calendrier',
+  'calendar.count.one': '{n} date connue',
+  'calendar.count.other': '{n} dates connues',
+  'calendar.saved': 'Fichier enregistré.',
+
   // --- Mon gout ------------------------------------------------------------
   'taste.aria': 'Mon goût',
   'taste.title': 'La forme de mon goût',
@@ -567,6 +602,7 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
     'Where a series stands, how much time it asks of you, and how long it stays good.',
   'nav.tagline': 'is it worth watching?',
   'nav.library': 'My library',
+  'nav.convert': 'Coming from TV Time, Trakt or Simkl? Bring your history with you.',
   'footer.disclaimer': 'This product uses the TMDB API but is not endorsed or certified by TMDB.',
 
   'home.h1': 'A series is not a long film.',
@@ -724,6 +760,38 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'backup.unreadable': 'This file contains no readable journal. Nothing was changed.',
   'backup.merged.one': 'Merged. Your library now holds {n} series.',
   'backup.merged.other': 'Merged. Your library now holds {n} series.',
+
+  'convert.title': 'Bring your history with you',
+  'convert.lede':
+    'TV Time shut down on 15 July 2026, and twenty-six million people lost their history with it. If you saved a file — from TV Time, Trakt, Simkl, or anywhere else — you can drop it here.',
+  'convert.aria': 'Import',
+  'convert.pick': 'Choose a file',
+  'convert.local':
+    'The file is read in your browser. It is not uploaded anywhere, and we keep none of it.',
+  'convert.imported.one': '{n} series brought over.',
+  'convert.imported.other': '{n} series brought over.',
+  'convert.skipped.one':
+    '{n} series could not be brought over: its TMDB identifier is missing from the file.',
+  'convert.skipped.other':
+    '{n} series could not be brought over: their TMDB identifiers are missing from the file.',
+  'convert.unreadable':
+    'Nothing recognisable in this file. Your library is untouched — nothing was changed.',
+  'convert.tooBig': 'This file is too large to be a series export.',
+  'convert.honestTitle': 'What works, and what does not',
+  'convert.honestBody':
+    'We do not claim to know any format in particular: we look for TMDB identifiers wherever they are, in JSON as in a spreadsheet. A series without an identifier is not brought over — finding it by title would take one search per series, and would get remakes wrong, since they share their name. The count of what did not make it is shown: keep your original file.',
+  'convert.mergeTitle': 'Importing adds, it does not replace',
+  'convert.mergeBody':
+    'Importing on a device you already use erases nothing you did there. You can import several files in a row.',
+
+  'calendar.aria': 'Calendar',
+  'calendar.title': 'Returns, in my calendar',
+  'calendar.body':
+    'A season airs every three months, and nobody comes back in between. This file drops the known dates into the calendar you already use: it will remind you even if you never reopen this site. Nothing is sent anywhere, and no permission is asked of you.',
+  'calendar.download': 'Add to my calendar',
+  'calendar.count.one': '{n} known date',
+  'calendar.count.other': '{n} known dates',
+  'calendar.saved': 'File saved.',
 
   'taste.aria': 'My taste',
   'taste.title': 'The shape of my taste',

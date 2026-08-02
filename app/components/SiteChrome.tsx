@@ -78,6 +78,15 @@ export function SiteChrome({ locale, children }: {
 
         <footer className="border-t border-(--color-edge) mt-12">
           <div className="mx-auto max-w-5xl px-4 py-6 text-xs text-(--color-muted) space-y-1">
+            {/* Un lien depuis chaque page, et pas seulement depuis la bibliotheque :
+                ceux qui cherchent ou remettre leur historique n'ont, par definition,
+                pas encore de bibliotheque. Et un moteur ne trouve une page que si
+                quelque chose y mene — c'est la lecon de l'audit SEO du 2026-08-01. */}
+            <p>
+              <Link href={pathIn('/convertir', locale)} className="hover:text-(--color-text)">
+                {t(locale, 'nav.convert')}
+              </Link>
+            </p>
             {/* Obligation contractuelle TMDB, pas un choix de mise en page :
                 le texte doit accompagner toute donnee TMDB affichee. */}
             <p>{TMDB_ATTRIBUTION}</p>
