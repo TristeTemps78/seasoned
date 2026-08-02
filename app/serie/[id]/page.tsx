@@ -16,6 +16,21 @@ import { TrajectoryChart } from '@/app/components/TrajectoryChart';
  */
 export const revalidate = 86_400;
 
+/**
+ * ⚠️ Indispensable, et pas une optimisation.
+ *
+ * `revalidate` **ne suffit pas** sur une route dynamique : sans `generateStaticParams`,
+ * Next la rend a la demande et ne la met jamais en cache. Verifie en production le
+ * 2026-08-02 — la page repondait `X-Vercel-Cache: MISS` et `Cache-Control: no-store`
+ * pendant que l'accueil, route statique, repondait `PRERENDER`.
+ *
+ * `force-static` retablit le comportement attendu : rendu a la premiere demande, puis
+ * servi depuis le cache jusqu'a expiration. `dynamicParams` restant vrai par defaut,
+ * une serie encore inconnue est rendue a la volee puis mise en cache a son tour — on
+ * ne pre-genere donc rien, ce que le budget interdirait de toute facon.
+ */
+export const dynamic = 'force-static';
+
 interface PageProps {
   readonly params: Promise<{ readonly id: string }>;
 }
