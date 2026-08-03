@@ -322,6 +322,11 @@ const FR = {
   // La question de l'appareil partagé. Le défaut est **non**, et le texte doit rendre ce
   // « non » confortable : garder un journal hors d'un compte se répare, l'y avoir versé
   // par erreur ne se répare pas.
+  'report.open': 'Signaler',
+  'report.which': 'Pour quel motif ? Cette liste est celle des règles, et rien d’autre ne se retire.',
+  'report.cancel': 'Annuler',
+  'report.sent': 'Signalement reçu. Nous répondons sous 72 h, à l’adresse des règles.',
+  'report.failed': 'Le signalement n’est pas parti. Réessayez, ou écrivez-nous.',
   'face.friends': 'Mes amis',
   'friendsPage.title': 'Mes amis',
   'friendsPage.lede':
@@ -918,6 +923,11 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
     'This installation is not connected to a database. Your notes stay in this browser, and the library works as usual.',
   'account.notSynced':
     'Your notes now follow your account: they stay in this browser and a copy goes to our servers, so you find them on your other devices. If the server is unreachable, nothing stops — everything keeps working here.',
+  'report.open': 'Report',
+  'report.which': 'On what ground? This list is the rules, and nothing else gets removed.',
+  'report.cancel': 'Cancel',
+  'report.sent': 'Report received. We answer within 72 h, at the address on the rules page.',
+  'report.failed': 'The report did not go through. Try again, or write to us.',
   'face.friends': 'Friends',
   'friendsPage.title': 'Friends',
   'friendsPage.lede':

@@ -9,6 +9,7 @@ import { projectActivity, redactActivity } from '@/src/domain/activity';
 import { checkHandle } from '@/src/domain/handles';
 import type { JournalKey } from '@/src/domain/journal';
 import { SocialClient, type FeedItem, type Profile } from '@/src/social/client';
+import { ReportButton } from '@/app/components/ReportButton';
 
 /**
  * La face « Mes amis » : reclamer un nom, suivre quelqu'un, lire le fil.
@@ -201,6 +202,17 @@ export function Friends() {
                       stars: item.stars.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-GB'),
                     })
                   : null}
+                {/* ⚠️ Sur chaque ligne, et non dans un menu de profil : on signale ce qu'on
+                    vient de lire, au moment ou on le lit. Une voie de signalement qui
+                    demande de retrouver la personne ailleurs n'en est pas une — c'est le
+                    meme raisonnement qui a mis `/regles` en pied de page de tout le site. */}
+                <ReportButton
+                  onReport={(ground) =>
+                    client === undefined || userId === undefined
+                      ? Promise.resolve(false)
+                      : client.report(userId, item.authorId, ground)
+                  }
+                />
               </li>
             ))}
           </ul>

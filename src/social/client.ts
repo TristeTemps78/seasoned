@@ -38,6 +38,8 @@ export type ClaimOutcome =
 /** Un fait du fil, tel qu'il revient du serveur — augmente de son auteur. */
 export interface FeedItem extends ActivityItem {
   readonly handle: string;
+  /** L'auteur du fait — necessaire pour pouvoir le signaler. */
+  readonly authorId: string;
 }
 
 function rowToProfile(row: Record<string, unknown>): Profile {
@@ -200,11 +202,11 @@ export class SocialClient {
    */
   async feed(limit = 50): Promise<readonly FeedItem[]> {
     const rows = await this.#json<Record<string, unknown>[]>(
-      `activity?select=kind,subject,season,stars,happened_on,profiles!inner(handle)&order=happened_on.desc&limit=${limit}`,
+      `activity?select=kind,subject,season,stars,happened_on,profiles!inner(handle,user_id)&order=happened_on.desc&limit=${limit}`,
     );
     return (rows ?? []).flatMap((row) => {
-      const author = row['profiles'] as { handle?: unknown } | undefined;
-      if (typeof author?.handle !== 'string') return [];
+      const author = row['profiles'] as { handle?: unknown; user_id?: unknown } | undefined;
+      if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
       const season = row['season'];
       const stars = row['stars'];
       return [
@@ -213,6 +215,7 @@ export class SocialClient {
           subject: row['subject'] as FeedItem['subject'],
           happenedOn: String(row['happened_on']),
           handle: author.handle,
+          authorId: author.user_id,
           ...(typeof season === 'number' ? { season } : {}),
           ...(stars === null || stars === undefined
             ? {}
@@ -248,6 +251,34 @@ export class SocialClient {
         ),
       });
       return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Signale quelqu'un.
+   *
+   * ⚠️ **Rien ne revient, et c'est voulu.** La table n'a aucune politique de lecture : un
+   * signalement relisible par son auteur devient un accuse de reception, donc une promesse
+   * de suivi a tenir dans l'interface. La reponse passe par l'adresse annoncee sur
+   * `/regles`. Ici on rend seulement « c'est parti » ou « ca n'est pas parti ».
+   */
+  async report(reporterId: string, subjectId: string, ground: string, note?: string): Promise<boolean> {
+    try {
+      const response = await this.#fetch(this.#url('reports'), {
+        method: 'POST',
+        headers: this.#headers({ Prefer: 'return=minimal' }),
+        body: JSON.stringify({
+          reporter_id: reporterId,
+          subject_id: subjectId,
+          ground,
+          ...(note === undefined || note.trim().length === 0 ? {} : { note: note.trim() }),
+        }),
+      });
+      // 409 : deja signale pour ce motif. Le dire comme un echec serait pousser a
+      // recommencer ; c'est un succes du point de vue de la personne.
+      return response.ok || response.status === 409;
     } catch {
       return false;
     }
