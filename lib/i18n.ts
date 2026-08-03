@@ -553,6 +553,26 @@ const FR = {
   'watch.buy': 'À l’achat',
   'watch.region': 'Disponibilité : {region}.',
 
+  // --- Decoupages concurrents (4.4) ----------------------------------------
+  //
+  // Formulation deliberee : **on annonce la convention suivie, on ne crie pas a
+  // l'erreur**. Nos chiffres ne sont pas faux — ils suivent l'ordre de diffusion de
+  // TMDB. Ce qui serait faux est de laisser croire qu'il n'y en a qu'un, alors que
+  // quelqu'un qui regarde sur Netflix compte autrement. Regle 8 : on signale.
+  'ordering.title': 'Ce découpage n’est pas le seul',
+  'ordering.explain':
+    'Les chiffres de cette page suivent l’ordre de diffusion : {seasons} · {episodes}.',
+  'ordering.seasons.one': '{n} saison',
+  'ordering.seasons.other': '{n} saisons',
+  'ordering.episodes.one': '{n} épisode',
+  'ordering.episodes.other': '{n} épisodes',
+  'ordering.alsoKnown': 'Elle existe aussi en :',
+  'ordering.entry': '{name} — {seasons}, {episodes}',
+  'ordering.more.one': 'et {n} autre découpage.',
+  'ordering.more.other': 'et {n} autres découpages.',
+  'ordering.caution':
+    'Si vous la suivez dans un autre découpage, vos numéros de saison ne correspondent pas à ceux-ci.',
+
   // --- Revisionnage --------------------------------------------------------
   'rewatch.done.one': 'Vue une fois, en entier.',
   'rewatch.done.other': 'Vue {n} fois, en entier.',
@@ -984,6 +1004,20 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'watch.rent': 'To rent',
   'watch.buy': 'To buy',
   'watch.region': 'Availability: {region}.',
+
+  'ordering.title': 'This is not the only cut',
+  'ordering.explain':
+    'The numbers on this page follow the original air order: {seasons} · {episodes}.',
+  'ordering.seasons.one': '{n} season',
+  'ordering.seasons.other': '{n} seasons',
+  'ordering.episodes.one': '{n} episode',
+  'ordering.episodes.other': '{n} episodes',
+  'ordering.alsoKnown': 'It also exists as:',
+  'ordering.entry': '{name} — {seasons}, {episodes}',
+  'ordering.more.one': 'and {n} other cut.',
+  'ordering.more.other': 'and {n} other cuts.',
+  'ordering.caution':
+    'If you are following it in another cut, your season numbers will not match these.',
 
   'rewatch.done.one': 'Watched once, all the way through.',
   'rewatch.done.other': 'Watched {n} times, all the way through.',

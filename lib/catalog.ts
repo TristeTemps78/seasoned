@@ -14,6 +14,7 @@ import { TmdbProvider } from '../src/catalog/tmdb';
 import type {
   CatalogProvider,
   DiscoverKind,
+  EpisodeGrouping,
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
@@ -112,7 +113,18 @@ export function getProvider(locale: Locale = DEFAULT_LOCALE): CatalogProvider {
   return provider;
 }
 
-/** Remplace le fournisseur — reserve aux tests. */
+/**
+ * Remplace le fournisseur — reserve aux tests.
+ *
+ * ⚠️ **Vider TOUS les caches, sans exception.** Un cache oublie ici survit au changement de
+ * fournisseur : le double injecte par un test recoit alors la reponse du **fournisseur
+ * precedent**, ce qui fait passer un test qui devrait echouer — ou echouer un test selon
+ * l'ordre d'execution des fichiers, le pire des deux.
+ *
+ * `creatorCache` et `watchCache` manquaient depuis leur creation ; le defaut est reste
+ * invisible parce qu'aucun test n'injectait deux fournisseurs de suite en s'appuyant sur eux.
+ * Corrige le 2026-08-03 en ajoutant `groupingCache`, qui aurait ete le troisieme oubli.
+ */
 export function setProvider(provider: CatalogProvider | undefined): void {
   providerInstance = provider;
   providersByLocale.clear();
@@ -120,6 +132,9 @@ export function setProvider(provider: CatalogProvider | undefined): void {
   searchCache.clear();
   seasonCache.clear();
   discoverCache.clear();
+  creatorCache.clear();
+  watchCache.clear();
+  groupingCache.clear();
 }
 
 const seriesCache = new ExpiringCache<SeriesDetail>({ maxEntries: 2_000 });
@@ -137,6 +152,34 @@ const throughCreator = memoizeAsync(creatorCache, SERIES_TTL_MS);
 
 const watchCache = new ExpiringCache<readonly WatchOption[]>({ maxEntries: 2_000 });
 const throughWatch = memoizeAsync(watchCache, SERIES_TTL_MS);
+
+const groupingCache = new ExpiringCache<readonly EpisodeGrouping[]>({ maxEntries: 2_000 });
+const throughGroupings = memoizeAsync(groupingCache, SERIES_TTL_MS);
+
+/**
+ * Les decoupages concurrents d'une serie, prets a comparer.
+ *
+ * ## Ce que ca coute, et pourquoi c'est acceptable
+ *
+ * **Un appel de plus par serie et par cycle de cache.** La page serie en fait deja
+ * plusieurs, la route est `force-static` avec un `revalidate` de 24 h, et la reponse est
+ * minuscule (quelques lignes par decoupage). Le budget tient.
+ *
+ * **Pas de langue dans la cle** : les noms de decoupages sont saisis par les contributeurs
+ * TMDB (« Netflix Seasons », « German DVD Release ») et ne sont pas traduits. Y mettre la
+ * locale doublerait le cache pour un contenu identique — meme raisonnement que
+ * {@link watchOptions}.
+ *
+ * Degrade en liste vide : n'avoir aucun decoupage alternatif est le **cas courant**, pas une
+ * erreur, et une serie dont on ne sait pas repondre doit s'afficher comme les autres.
+ */
+export async function episodeGroupings(id: string): Promise<readonly EpisodeGrouping[]> {
+  try {
+    return await throughGroupings(id, () => getProvider().episodeGroups(id));
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Duree mediane d'un episode d'une saison, en minutes.

@@ -23,6 +23,7 @@ import { StatusBadge } from '@/app/components/StatusBadge';
 import { SeasonList } from '@/app/components/SeasonList';
 import { TrajectorySection } from '@/app/components/TrajectorySection';
 import { WatchOptions } from '@/app/components/WatchOptions';
+import { SeriesOrderings } from '@/app/components/SeriesOrderings';
 import { MyProgress } from '@/app/components/MyProgress';
 
 /**
@@ -311,6 +312,15 @@ export async function SeriesView({ id, locale }: {
         {...(totalRuntimeMinutes !== undefined && episodeCount > 0
           ? { episodeMinutes: totalRuntimeMinutes / episodeCount }
           : {})}
+      />
+
+      {/* Juste apres les chiffres qu'il qualifie : il ne dit pas « erreur », il dit
+          quelle convention ces chiffres suivent. Se tait sur la majorite des series. */}
+      <SeriesOrderings
+        id={id}
+        seasonCount={seasons.rateable.length}
+        episodeCount={episodeCount}
+        locale={locale}
       />
 
       <WatchHere id={id} locale={locale} />

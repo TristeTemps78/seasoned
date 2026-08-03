@@ -8,7 +8,44 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, soir — `episode_groups` livré et vérifié en vrai)
+## État actuel (2026-08-03, soir — l'avertissement des découpages est en ligne)
+
+- **✅ 4.4b livré : le bandeau est câblé et vérifié en production. 639 → 655 tests**,
+  typecheck strict vert, build vert, 21 routes statiques. **Poussé, CI verte.**
+  - **Vérifié au navigateur sur de vraies séries, pas déduit du code** — `npm run start`,
+    vraies réponses TMDB :
+    - ***Money Heist*** (`/fr/serie/71446`) : « Ce découpage n'est pas le seul » ·
+      « 3 saisons · 41 épisodes » · « **Parts (edited version) — 5 saisons, 48 épisodes** » ·
+      « Italian Parts » · « Seasons (edited version) » · « **et 1 autre découpage** » ·
+      « Si vous la suivez dans un autre découpage, vos numéros de saison ne correspondent
+      pas à ceux-ci. »
+    - ***One Piece*** : « et **12 autres découpages** » — le plafond fonctionne.
+    - ***Game of Thrones*** et ***The Walking Dead*** : **silence**, comme attendu.
+  - **Composants serveur, zéro octet de JS** (`OrderingNotice`, `SeriesOrderings`) : rien ici
+    ne dépend du journal, donc le bandeau part dans le HTML mis en cache au bord. C'est la
+    différence entre *informer* et *personnaliser*, et elle se paie en kilo-octets.
+  - **La formulation est une décision** : le bandeau annonce **la convention suivie**, il ne
+    crie pas à l'erreur. Nos chiffres ne sont pas faux — ils suivent l'ordre de diffusion.
+    Ce qui serait faux est de laisser croire qu'il n'en existe qu'un.
+  - 🔴 **Le maillon que rien ne couvrait, et c'est le trou exact d'`episodeMinutes`.** Ni le
+    test du calcul ni celui du composant ne prouvaient que **la page appelle quoi que ce
+    soit**. Deux réponses : (a) la partie asynchrone extraite dans `SeriesOrderings`, dont le
+    rendu est synchrone — donc `render(await …)` traverse **fournisseur → cache → domaine →
+    écran** en une ligne ; (b) un test qui **lit la source de la page**, procédé déjà employé
+    ici par `no-hardcoded-strings` et `no-journal-on-server`.
+    > **Mutation vérifiée** : retirer `<SeriesOrderings />` de la page fait tomber un test.
+    > Sans ce test, la suppression laissait **655 tests verts**.
+  - ⚠️ **Défaut latent réparé au passage** : `setProvider` ne vidait que **4 caches sur 7** —
+    `creatorCache` et `watchCache` y échappaient depuis leur création. Un double injecté par un
+    test pouvait donc recevoir la réponse du **fournisseur précédent**, selon l'ordre
+    d'exécution des fichiers. Le pire genre de défaut : il fait passer un test qui devrait
+    échouer.
+  - ⚠️ **Et une de mes vérifications était fausse** : j'ai d'abord « prouvé » l'absence de
+    `'use client'` avec un `grep -c "use client"`, qui comptait les mots **dans mes propres
+    commentaires** et renvoyait 1 pour chaque fichier. Vérifié correctement ensuite
+    (`^'use client'` → 0). *Une vérification mal ancrée est pire qu'aucune : elle rassure.*
+
+## État précédent (2026-08-03, soir — `episode_groups` livré et vérifié en vrai)
 
 - **🔁 A13 révisé par Tristan : séries seulement pour le moment, pas les films.** ✅ **Rien
   n'est perdu** — le garde-fou 5.10a livré une heure plus tôt **devient l'implémentation de
