@@ -17,7 +17,44 @@
 | A5 | TMDB ou TheTVDB ? | ✅ 2026-07-31 | TMDB, derrière `CatalogProvider` — réversible |
 | A6 | **Monétisation** | 🟡 non fermée | Volontairement non décidée. ⚠️ L'usage TMDB reste **non commercial** : affiliation ou freemium = accord écrit requis (`ROADMAP.md` §4.1) |
 | A7 | **Note complète par épisode ?** | ✅ 2026-08-02 | **Oui, tranché par Tristan.** Contraire à `RATING-MODEL.md` §3 couche 2 (« on ne note pas les épisodes, on les distingue »). Comme A1 : les objections deviennent le cahier des charges — `docs/RATING-MODEL.md` §6ter |
-| A8 | **Multiplateforme et passage à l'échelle** | ✅ 2026-08-02 | **Cinq plateformes (web, iOS, Android, macOS, Windows) par PWA installable**, et chaque feature doit passer le test « et si 100 000 personnes le font ? ». Renforce `ROADMAP.md` §1.1 au lieu de le contredire — le natif reste matériellement impossible ici |
+| A8 | **Multiplateforme et passage à l'échelle** | ✅ 2026-08-02 | **Cinq plateformes (web, iOS, Android, macOS, Windows) par PWA installable**, et chaque feature doit passer le test « et si 100 000 personnes le font ? ». ⚠️ **La dernière clause de cette ligne était fausse et a été retirée le 2026-08-03** : elle disait « le natif reste matériellement impossible ici ». Voir **A11** — c'était une conclusion, pas un fait, et elle était démentie par le projet voisin. La PWA reste juste ; ce qui était faux, c'est qu'elle soit le **seul** chemin |
+| A9 | **Le produit vise l'international** | ✅ 2026-08-02 | Tranché par Tristan. Détail §« 🌍 A9 » plus bas |
+| A10 | **Quelle langue par défaut ?** | ✅ 2026-08-02 | **`en`.** Détail §« 🌍 A9 » plus bas |
+| **A11** | **Applications natives iOS / Android ?** | ✅ **tranché par Tristan, 2026-08-03** | **Oui.** Et la contrainte qui l'interdisait était **fausse** : `AGENTS.md` observait « pas de Mac, pas de Xcode » (vrai) et en concluait « aucune application native » (faux). Vérifié : **EAS Build compile iOS sur des runners macOS en nuage, EAS Submit dépose depuis Windows** — 15 builds iOS/mois en gratuit. **Preuve dans le projet voisin** : `Limits` a produit un **IPA en Release** depuis ce PC, en CI ; il n'a jamais buté sur le *build* mais sur le **sideload sans compte développeur** (WSL2, `usbipd`, Sideloadly). Le mur n'est donc pas matériel, c'est **99 $/an Apple + 25 $ Google** — une ligne budgétaire, donc une décision de Tristan, prise. ⚠️ Conséquences en chaîne : **D16** (l'achat intégré Apple ponctionne A6), **D17** (un webview nu se fait refuser → le natif rend le push obligatoire → coût marginal par utilisateur) |
+| **A12** | **Médias riches (GIF, mèmes) dans les critiques ?** | ✅ **tranché par Tristan, 2026-08-03** | **Oui, mais par sélecteur d'un catalogue tiers + copie proxifiée, dédupliquée par hash. Jamais d'upload libre.** Les trois variantes sont chiffrées dans `docs/CONVERGENCE-RAPPORTS.md` §2. L'upload est écarté (stockage non borné, droit d'auteur à notre charge) ; le *hotlink* aussi (Tenor appartient à Google : chaque affichage enverrait IP + referer, ce qui casse « pas de publicité donc pas de traçage », l'argument même qui rend A6 cohérent). ⛔ **Livraison après 5.0** (modération, DSA) : ce n'est pas le GIF qui crée l'obligation, c'est la couche sociale — mais le **plafond de nuisance** d'une image n'est pas celui d'un texte |
+| **A13** | **Le produit suit-il les films, ou seulement les séries ?** | 🟡 **en attente de Tristan** | Ma reco : **les listes acceptent les films, le produit ne les suit pas.** ⚠️ **Le seul arbitrage de cette session qui touche `src/domain/types.ts`** : tout ce qui est utilisateur pointe vers `SeriesId`, et accueillir un film demande une notion de type d'œuvre à ce niveau — **peu coûteux maintenant, cher plus tard**, exactement la forme du rewatch et d'`episodeMinutes`. Explication en clair dans `docs/CONVERGENCE-RAPPORTS.md` §1 |
+
+---
+
+## 🔀 Lot 4 — convergence de deux rapports externes (2026-08-03, soir)
+
+> Deux rapports Gemini sur « la plateforme ultime de suivi de séries », confrontés au dépôt.
+> Analyse complète et motifs : **`docs/CONVERGENCE-RAPPORTS.md`**.
+> **Verdict : on ne refait rien.** Retire des rapports ce qui est (a) impossible ici,
+> (b) déjà livré, (c) un coût par utilisateur qui a tué TV Time — il reste trois éléments,
+> tous petits. Ce que les rapports apportent de plus utile n'est pas une feature : c'est la
+> **confirmation externe** que le diagnostic de `RESEARCH.md` est bon, par quelqu'un qui ne
+> l'avait pas lu.
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| 4.1 | **`AGENTS.md` : la contrainte natif était fausse** | 🔒 in-progress — @claude-opus — 2026-08-03 | A11. C'est la source de vérité lue par **tous** les agents : une contrainte fausse y est plus coûteuse qu'absente, elle est **crue** (D14) |
+| 4.2 | **`docs/CONVERGENCE-RAPPORTS.md`** | 🔒 in-progress — @claude-opus — 2026-08-03 | Les quatre arbitrages et leurs motifs, pour qu'aucune session ne les rejoue |
+| 4.3 | **`VALARM` dans le `.ics`** | 🔒 in-progress — @claude-opus — 2026-08-03 | 🔴 **Défaut réel** : `calendar.ts` émet `VEVENT` et **aucun** `VALARM` — les événements arrivent dans l'agenda et **rien ne sonne**. La feature « le rappel que quelqu'un d'autre paie » ne rappelle rien. Même famille que les trois défauts de l'après-midi : *une fonctionnalité écrite n'est pas une fonctionnalité qui marche* |
+| 4.4 | **`episode_groups` : détecter et signaler** | 🟢 libre | 🔴 **La vraie trouvaille des rapports**, et zéro occurrence dans le dépôt. `/3/tv/{id}/episode_groups` (vérifié en documentation, **pas** contre l'API : `TMDB_ACCESS_TOKEN` est **vide** dans `.env`). Enjeu : chez un tracker un mauvais ordre = une case mal cochée, **visible**. Ici l'ordre est l'**entrée de tous les calculs** (`trajectory`, `entry-point`, point d'arrêt, `remaining`, `tally`) : le produit rendrait un conseil **faux avec assurance**, et **rien ne le montrerait**. Réponse = règle 8 : **signaler**, une méthode sur `CatalogProvider` (règle 3). Le sélecteur d'ordre **seulement si** l'avertissement se révèle fréquent |
+| 4.5 | **Q8 : mesurer la taille du journal** | 🟢 libre | À faire **avant** de livrer les listes. Un `UPSERT` de `jsonb` réécrit **tout** le document : 500 titres repartent quand on ajoute le 501ᵉ. Les listes sont la première donnée de **taille non bornée** que le produit offrira. Si la mesure est mauvaise → sync **par delta**, pas un broker |
+| 4.6 | **Option de masquage des heures** | 🟢 libre | `tally.ts` annonce « au moins 537 heures » et n'a **aucune** option de masquage (vérifié). Les rapports notent, à raison, que la métrique est anxiogène pour une part réelle des gens |
+| 4.7 | **Rapport des titres non appariés à l'import** | 🟢 libre | Ne jamais écarter en silence : lister, et laisser résoudre à la main. Règles 8 et 9. ⚠️ Ne pas investir dans la voie TV Time (`DioCache.db` par ADB sur Android rooté) : population minuscule, et le flux **se tarit** depuis la fermeture du 2026-07-15 |
+| 4.8 | **Piste natif : Android TWA d'abord, iOS Expo ensuite** | 🟢 libre | ⛔ **Ne pas ouvrir avant D16** (l'achat intégré Apple change A6). `src/domain/` n'importe **rien** : la règle 2, écrite pour la testabilité, se révèle être de la **portabilité** — les 19 modules partent tels quels. Ce qui ne part pas : `app/`, Tailwind, la couche SEO. ⚠️ **Un second codebase est ce qui tue les projets d'une personne seule** → partager le domaine, ne pas réécrire |
+
+### Ce qui est **fermé** par ce lot, et ne doit pas être rouvert sans fait nouveau
+
+| Écarté | Motif chiffré |
+|---|---|
+| **Kafka / Redis write-behind** | Le mécanisme d'effondrement décrit (contention de lignes chaudes) **ne peut pas se produire** sur ce schéma : `user_id uuid primary key`, chaque compte écrit sa propre ligne. Ce n'est pas « pas encore assez d'utilisateurs », c'est structurel. Et le motif *write-behind* **perd des données** au crash du broker — à prescrire en dernier à un produit dont le traumatisme fondateur est 26 M d'historiques perdus. Le vrai axe est **4.5**, pas le débit |
+| **Scrobbling — webhooks Plex/Jellyfin/Emby** | Exigerait la première route serveur du projet (`find app -name route.ts` : **zéro**), un jeton par utilisateur, la `service_role` côté serveur, donc la principale surface d'écriture authentifiée à défendre. Pour refaire ce que Trakt fait depuis dix ans |
+| **Scrobbling — lire Trakt comme source de position** | 🔴 J'avais recommandé d'investiguer ; **l'investigation dit non**. Un compte Trakt gratuit ne connecte qu'**une seule** application externe — donc quelqu'un qui a déjà branché son scrobbler Plex, c'est-à-dire exactement la population visée, **ne peut pas brancher VOLTFACE**. VIP est passé de 30 à **60 $/an**. Et l'usage commercial de l'API **exige une approbation** (même forme que D6). Demander à quelqu'un de payer 60 $/an à un concurrent pour utiliser notre produit gratuit n'est pas une fonctionnalité |
+| **Widgets** | Aucun accès utilisable depuis une PWA sur iOS ni Android |
 
 ---
 
