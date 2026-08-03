@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
+import { WhereItLives } from '@/app/components/WhereItLives';
 import { StarRating } from '@/app/components/StarRating';
 import {
   completionCount,
@@ -160,7 +161,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{t('progress.title')}</h2>
-        <span className="text-xs text-(--color-muted)">{t('progress.local')}</span>
+        <WhereItLives />
       </div>
 
       {passes > 0 ? (

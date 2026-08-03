@@ -1,6 +1,7 @@
 'use client';
 
 import { useT } from '@/app/i18n/LocaleProvider';
+import { WhereItLives } from '@/app/components/WhereItLives';
 import { formatCommitment } from '@/lib/format';
 import type { Tally } from '@/src/domain/tally';
 
@@ -77,7 +78,9 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
         </p>
       ) : null}
 
-      <p className="text-xs text-(--color-muted)">{t('tally.private')}</p>
+      <p className="text-xs text-(--color-muted)">
+        {t('tally.private')} <WhereItLives className="" />
+      </p>
     </section>
   );
 }

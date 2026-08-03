@@ -500,7 +500,8 @@ const FR = {
   // --- Ma progression ------------------------------------------------------
   'progress.aria': 'Ma progression',
   'progress.title': 'Où j’en suis',
-  'progress.local': 'gardé dans ce navigateur, rien n’est envoyé',
+  'lives.local': 'gardé sur cet appareil, rien n’est envoyé',
+  'lives.synced': 'gardé sur cet appareil, et sur votre compte',
   'progress.want': 'Je veux la voir',
   'progress.wanted': '✓ Dans ma liste',
   'progress.start': 'Je l’ai commencée',
@@ -545,7 +546,7 @@ const FR = {
   'library.empty.before': 'Ouvrez une série et dites ',
   'library.empty.em': '« je veux la voir »',
   'library.empty.after':
-    ', ou cliquez un épisode pour marquer où vous en êtes. Tout reste dans ce navigateur.',
+    ', ou cliquez un épisode pour marquer où vous en êtes.',
   'library.empty.browse': 'Parcourir',
   'library.empty.search': 'Chercher une série',
   'library.card.tracked': 'Série suivie',
@@ -740,7 +741,7 @@ const FR = {
     '{n} série suivie n’a pas pu être comptée : son instantané a expiré, ou le catalogue ignore la durée de ses épisodes. Le vrai total est plus élevé.',
   'tally.missing.other':
     '{n} séries suivies n’ont pas pu être comptées : leur instantané a expiré, ou le catalogue ignore la durée de leurs épisodes. Le vrai total est plus élevé.',
-  'tally.private': 'Calculé ici, dans ce navigateur. Rien n’est envoyé nulle part.',
+  'tally.private': 'Calculé ici, sur cet appareil — ce chiffre ne part nulle part.',
 
   // --- Saison en cours -----------------------------------------------------
   'season.aired.one': '{n} épisode sorti',
@@ -1088,7 +1089,8 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
 
   'progress.aria': 'My progress',
   'progress.title': 'Where I am',
-  'progress.local': 'kept in this browser, nothing is sent',
+  'lives.local': 'kept on this device, nothing is sent',
+  'lives.synced': 'kept on this device, and on your account',
   'progress.want': 'I want to watch it',
   'progress.wanted': '✓ On my list',
   'progress.start': 'I’ve started it',
@@ -1131,7 +1133,7 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'library.empty.before': 'Open a series and say ',
   'library.empty.em': '“I want to watch it”',
   'library.empty.after':
-    ', or click an episode to mark where you are. Everything stays in this browser.',
+    ', or click an episode to mark where you are.',
   'library.empty.browse': 'Browse',
   'library.empty.search': 'Search for a series',
   'library.card.tracked': 'Tracked series',
@@ -1303,7 +1305,7 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
     '{n} show you follow could not be counted: its snapshot has expired, or the catalogue does not know how long its episodes are. The real total is higher.',
   'tally.missing.other':
     '{n} shows you follow could not be counted: their snapshots have expired, or the catalogue does not know how long their episodes are. The real total is higher.',
-  'tally.private': 'Worked out right here, in this browser. Nothing is sent anywhere.',
+  'tally.private': 'Worked out right here, on this device — this figure goes nowhere.',
 
   'season.aired.one': '{n} episode out',
   'season.aired.other': '{n} episodes out',
@@ -1353,7 +1355,14 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
 
 export type MessageKey = keyof typeof FR;
 
-const DICTIONARIES: Readonly<Record<Locale, Readonly<Record<MessageKey, string>>>> = {
+/**
+ * Les deux dictionnaires, exportes **pour les tests**.
+ *
+ * Certaines regles portent sur le texte lui-meme et non sur un composant — « aucune phrase
+ * ne promet que rien ne sort d'ici », par exemple. Les verifier en relisant le fichier
+ * source serait fragile ; les verifier sur l'objet est exact.
+ */
+export const DICTIONARIES: Readonly<Record<Locale, Readonly<Record<MessageKey, string>>>> = {
   fr: FR,
   en: EN,
 };
