@@ -1288,8 +1288,9 @@ par les liens » — sans que ces liens existent.
 
 | # | Tâche | Statut | Note |
 |---|---|---|---|
-| 5.0 | **Dispositif de modération** (signalement, retrait, contact) | ⛔ | **Prérequis bloquant** — DSA, audit §5 |
-| 5.1 | Suivre, fil d'activité, listes, commentaires | ⛔ | N'ouvre pas sans 5.0 |
+| 5.0a | **La procédure : règles, motifs typés, procédure de retrait** | 🔒 in-progress — @claude-opus — 2026-08-03 | Le socle **décidé et publié**, avant qu'il existe une seule ligne de contenu de tiers. Contient ce qui ne s'improvise pas au moment où un signalement arrive : les **motifs typés**, l'**exposé des motifs** dû à l'auteur, le **délai**, et la règle « **on masque, on ne supprime jamais** » — un retrait erroné doit être réversible. ⚖️ **Je ne suis pas une source juridique** : le mécanisme est construit, le texte est à faire relire |
+| 5.0b | **Le canal de signalement** | 🟢 libre | Dépend de 5.0a. **Pas de table `reports` pour l'instant** — la même raison que `001_journal.sql` refuse les tables sociales « pendant qu'on y est » : une table qu'on peut remplir avant de savoir traiter un signalement est un piège. Le point de contact publié suffit tant qu'il n'existe aucun contenu de tiers ; le formulaire viendra **avec** le contenu |
+| 5.1 | Suivre, fil d'activité, listes, commentaires | ⛔ | N'ouvre pas sans 5.0a **et** 5.0b |
 
 ---
 
