@@ -44,6 +44,18 @@
   > asynchrone, on attend **la condition finale elle-même**, jamais l'absence. Le test attend
   > désormais la même asynchronie que le composant, via une sonde branchée sur le même
   > journal — et un **ancrage** prouve d'abord que le bandeau parle dans ce montage exact.
+- **✅ Deux règles de design écrites, pas seulement appliquées** :
+  1. **Une couleur, un sens.** Le vert parlait à la fois de la série (« en diffusion ») et
+     du bouton actif sur la fiche série. La règle est maintenant dans `globals.css` :
+     **le vert parle de la série, le volt parle de vous.**
+  2. **`@layer components`** — et ce n'est pas décoratif. Sans la couche, mes classes sont
+     du CSS nu et **gagnent** sur les utilitaires Tailwind : `class="btn px-3 py-1 text-xs"`
+     n'avait aucun effet, et les quatre boutons de décision avaient grossi sans que personne
+     l'ait demandé. *Un défaut qu'aucun typage ni aucun test ne voit, et qu'une capture
+     d'écran voit en une seconde.*
+- **L'état choisi n'a plus aucune classe conditionnelle** : `.btn[aria-pressed='true']` le
+  porte. L'apparence dérive de l'attribut d'accessibilité au lieu de le doubler — et c'est
+  l'attribut, pas la classe, qui dit la vérité à un lecteur d'écran.
 - **`.env.example` perd son piège** : la consigne « laisser VIDE » **était** la cause du bogue
   de langue. Une ligne commentée ne peut plus poser la question.
 
