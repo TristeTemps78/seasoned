@@ -8,7 +8,50 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, soir — l'avertissement des découpages est en ligne)
+## État actuel (2026-08-03, soir — 5.0a : le verrou du social est levé à moitié)
+
+- **✅ 5.0a livré — la procédure de modération existe, décidée et publiée.** Choix de Tristan :
+  débloquer 5.0 plutôt que polir le profil personnel, et c'est le bon ordre — **un profil que
+  personne ne voit n'est pas un profil**, et les cosmétiques d'A6 ne valent que s'ils sont vus.
+  **655 → 682 tests**, typecheck strict vert, build vert, 21 → **23 routes statiques**.
+  - `src/domain/moderation.ts` (pur) + **`/regles`** et `/fr/regles` — au sitemap, et **en pied
+    de page sur toutes les pages** : une voie de signalement introuvable n'en est pas une.
+  - **Trois décisions figées, et ce sont elles qui comptent** :
+    1. **On masque, on ne supprime jamais.** Supprimer rendrait une erreur irréparable et une
+       contestation inexaminable — on ne peut pas rendre ce qu'on a effacé. Et *le premier à se
+       tromper sera nous*.
+    2. **Tout retrait porte un motif typé, jamais seulement du texte libre.** Ce n'est pas de la
+       bureaucratie : une personne seule ne peut pas rédiger une explication sur mesure à chaque
+       fois. Un motif typé se **gabarise**, donc l'auteur reçoit toujours une explication, même
+       le jour où l'on n'a pas le temps.
+    3. **L'auteur peut contester** — `restore()` existe parce qu'*un dispositif qui sait retirer
+       mais pas rendre n'est pas de la modération, c'est de la censure*.
+  - ✅ **La page ne peut pas mentir sur le code qu'elle décrit** : les motifs viennent de
+    `REPORT_GROUNDS`, le délai de `REVIEW_DEADLINE_HOURS`. **Mutation vérifiée : ajouter un
+    motif au domaine sans le publier ne compile plus** — le typage l'interdit, ce qui vaut mieux
+    qu'un test. Une règle appliquée sans avoir été annoncée est exactement l'arbitraire que
+    cette page existe pour empêcher.
+  - **`spoiler` est un motif de retrait**, et il fallait y penser : ailleurs c'est une
+    impolitesse, ici c'est une atteinte à la promesse centrale (règle 7). L'omettre aurait dit
+    qu'on ne le retire pas.
+  - **`triage()` empêche qu'un spoiler passe devant une menace.** Une file traitée dans l'ordre
+    d'arrivée ferait exactement ça — le défaut qu'on ne remarque que le jour où il coûte cher.
+  - **Le délai est 72 h, et c'est un choix de personne seule** : celui qu'on tient en étant
+    absent un week-end. Annoncer 24 h serait une promesse qu'un déplacement casse — et une
+    promesse de modération non tenue est **vérifiable par celui qui attend**.
+  - ⚖️ **Textes à faire relire par quelqu'un dont c'est le métier.** Je ne suis pas une source
+    juridique : ce module encode une **procédure**, pas une conformité.
+- ⛔ **Deux choses bloquent encore l'ouverture du social, et les deux sont des actions de
+  Tristan** :
+  1. **`LEGAL_CONTACT_EMAIL` n'est pas renseigné.** Sans adresse, il n'y a nulle part où
+     signaler — donc le dispositif n'existe pas. La page le **dit** au lieu d'afficher une
+     section muette, mais aucun contenu public ne doit s'ouvrir avant.
+  2. **5.0b, le canal** : pas de table `reports` pour l'instant, **délibérément** — même raison
+     que `001_journal.sql` refuse les tables sociales « pendant qu'on y est ». Une table qu'on
+     peut remplir avant de savoir traiter un signalement est un piège. Le formulaire viendra
+     **avec** le contenu.
+
+## État précédent (2026-08-03, soir — l'avertissement des découpages est en ligne)
 
 - **✅ 4.4b livré : le bandeau est câblé et vérifié en production. 639 → 655 tests**,
   typecheck strict vert, build vert, 21 routes statiques. **Poussé, CI verte.**

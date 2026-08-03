@@ -91,9 +91,12 @@ export function SiteChrome({ locale, children }: {
                 {t(locale, 'nav.convert')}
               </Link>
             </p>
-            {/* Les deux pages que la loi exige d'atteindre. Dans le pied de page et
+            {/* Les trois pages que la loi exige d'atteindre. Dans le pied de page et
                 sur **toutes** les pages : une obligation legale qui ne serait accessible
-                que depuis une seule vue n'est pas accessible. */}
+                que depuis une seule vue n'est pas accessible.
+                `/regles` s'y ajoute avec 5.0a — c'est la page qu'on cherche quand on veut
+                signaler quelque chose, et une voie de signalement introuvable n'est pas
+                une voie de signalement. */}
             <p className="flex flex-wrap gap-x-4">
               <Link href={pathIn('/mentions', locale)} className="hover:text-(--color-text)">
                 {t(locale, 'legal.title')}
@@ -103,6 +106,9 @@ export function SiteChrome({ locale, children }: {
                 className="hover:text-(--color-text)"
               >
                 {t(locale, 'privacy.title')}
+              </Link>
+              <Link href={pathIn('/regles', locale)} className="hover:text-(--color-text)">
+                {t(locale, 'rules.title')}
               </Link>
             </p>
             {/* Obligation contractuelle TMDB, pas un choix de mise en page :

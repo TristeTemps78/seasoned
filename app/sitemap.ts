@@ -105,7 +105,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Les pages legales : peu visitees, mais elles doivent etre **trouvables**, y
     // compris par quelqu'un qui cherche a qui s'adresser. Priorite basse, elles ne
     // disputent pas le budget de crawl aux pages serie.
-    ...['/mentions', '/confidentialite'].map((path) => ({
+    // `/regles` y figure pour la meme raison, et une plus forte : c'est la page qu'on
+    // cherche quand on veut signaler quelque chose. Introuvable, elle ne sert a rien.
+    ...['/mentions', '/confidentialite', '/regles'].map((path) => ({
       url: `${base}${path}`,
       lastModified: now,
       changeFrequency: 'yearly' as const,

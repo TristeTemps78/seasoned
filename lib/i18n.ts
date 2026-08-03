@@ -553,6 +553,43 @@ const FR = {
   'watch.buy': 'À l’achat',
   'watch.region': 'Disponibilité : {region}.',
 
+  // --- Regles et moderation (5.0a) -----------------------------------------
+  //
+  // ⚖️ Textes a faire relire par quelqu'un dont c'est le metier. Ce qui est certain :
+  // improviser au moment ou le premier signalement arrive est la pire des options.
+  'rules.title': 'Les règles, et comment signaler',
+  'rules.intro':
+    'Ce que vous écrivez ici est visible par d’autres. Ces règles disent ce qui est retiré, comment le signaler, et ce que vous pouvez faire si vous n’êtes pas d’accord.',
+  'rules.nothingYet.title': 'Rien de tout cela n’est encore ouvert',
+  'rules.nothingYet.body':
+    'Il n’existe aujourd’hui aucun profil public, aucun commentaire, aucune liste partagée. Ces règles sont publiées **avant** — parce qu’un dispositif de signalement écrit sous la pression du premier signalement est un dispositif raté.',
+  'rules.grounds.title': 'Ce qui est retiré',
+  'rules.grounds.intro': 'Cette liste est courte, et c’est délibéré : ce qui n’y figure pas ne se retire pas.',
+  'rules.ground.illegal': 'Contenu illicite — ce qui relève de la loi, pas de nos goûts.',
+  'rules.ground.abuse': 'Harcèlement, menace, incitation à la haine visant une personne.',
+  'rules.ground.privacy': 'Divulgation de la vie privée d’autrui : adresse, identité, image.',
+  'rules.ground.spam': 'Spam, publicité, contenu automatisé.',
+  'rules.ground.spoiler':
+    'Révéler l’intrigue au-delà de ce qui est annoncé. Ailleurs c’est une impolitesse ; ici c’est une atteinte à la promesse du produit.',
+  'rules.how.title': 'Comment signaler',
+  'rules.how.body':
+    'Écrivez à l’adresse de contact ci-dessous, en indiquant la page concernée et le motif. Un formulaire arrivera en même temps que les contenus publics.',
+  'rules.how.noContact':
+    'L’adresse de contact n’est pas encore renseignée. Tant qu’elle manque, aucun contenu public ne sera ouvert.',
+  'rules.delay.title': 'Le délai',
+  'rules.delay.body':
+    'Réponse sous {hours} heures. Les signalements pour contenu illicite, harcèlement ou vie privée sont traités sans attendre ce délai.',
+  'rules.delay.why':
+    'Ce délai est celui d’une personne seule qui peut être absente un week-end. Annoncer plus court serait une promesse qu’un seul déplacement casse.',
+  'rules.decision.title': 'Ce qui se passe ensuite',
+  'rules.decision.hidden':
+    'Un contenu retiré est **masqué, jamais supprimé** : son auteur le voit toujours, et une erreur de notre part reste réparable.',
+  'rules.decision.told':
+    'Son auteur est informé, avec le motif — pas seulement « votre contenu a été retiré ».',
+  'rules.decision.contest':
+    'Il peut contester à la même adresse. Un dispositif qui sait retirer mais pas rendre n’est pas de la modération.',
+  'rules.contact.title': 'Point de contact',
+
   // --- Decoupages concurrents (4.4) ----------------------------------------
   //
   // Formulation deliberee : **on annonce la convention suivie, on ne crie pas a
@@ -1004,6 +1041,39 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'watch.rent': 'To rent',
   'watch.buy': 'To buy',
   'watch.region': 'Availability: {region}.',
+
+  'rules.title': 'The rules, and how to report',
+  'rules.intro':
+    'What you write here is visible to others. These rules say what gets removed, how to report it, and what you can do if you disagree.',
+  'rules.nothingYet.title': 'None of this is open yet',
+  'rules.nothingYet.body':
+    'There are currently no public profiles, no comments, no shared lists. These rules are published **first** — because a reporting process written under the pressure of the first report is a failed one.',
+  'rules.grounds.title': 'What gets removed',
+  'rules.grounds.intro': 'This list is short, and deliberately so: what is not on it does not get removed.',
+  'rules.ground.illegal': 'Illegal content — what the law covers, not what we dislike.',
+  'rules.ground.abuse': 'Harassment, threats, or incitement to hatred aimed at a person.',
+  'rules.ground.privacy': 'Disclosing someone else’s private life: address, identity, image.',
+  'rules.ground.spam': 'Spam, advertising, automated content.',
+  'rules.ground.spoiler':
+    'Revealing the plot beyond what is announced. Elsewhere that is rudeness; here it breaks the product’s promise.',
+  'rules.how.title': 'How to report',
+  'rules.how.body':
+    'Write to the contact address below, giving the page concerned and the ground. A form will arrive together with public content.',
+  'rules.how.noContact':
+    'The contact address is not set yet. Until it is, no public content will be opened.',
+  'rules.delay.title': 'The deadline',
+  'rules.delay.body':
+    'Answer within {hours} hours. Reports for illegal content, harassment or privacy are handled without waiting for it.',
+  'rules.delay.why':
+    'This deadline is one a single person can keep while away for a weekend. Promising less would be a promise one trip breaks.',
+  'rules.decision.title': 'What happens next',
+  'rules.decision.hidden':
+    'Removed content is **hidden, never deleted**: its author still sees it, and a mistake on our part stays fixable.',
+  'rules.decision.told':
+    'Its author is told, with the ground — not merely “your content was removed”.',
+  'rules.decision.contest':
+    'They can contest it at the same address. A process that can remove but not restore is not moderation.',
+  'rules.contact.title': 'Point of contact',
 
   'ordering.title': 'This is not the only cut',
   'ordering.explain':
