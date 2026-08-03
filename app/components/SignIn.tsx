@@ -64,7 +64,11 @@ export function SignIn() {
   const ready = oldEnough && email.trim().length > 3 && email.includes('@');
 
   return (
-    <section aria-label={t('account.aria')} className="space-y-4">
+    // ⚠️ Une largeur de lecture, pas la largeur de la page : un champ e-mail de mille
+    // pixels de long n'aide personne a taper son adresse, et signale surtout qu'aucune
+    // mise en page n'a ete decidee. La carte fait le reste — c'est la meme surface que
+    // partout ailleurs dans le produit.
+    <section aria-label={t('account.aria')} className="card max-w-md space-y-4">
       <form onSubmit={onSend} className="space-y-3">
         <div className="space-y-1">
           <label htmlFor={emailId} className="block text-sm text-(--color-muted)">

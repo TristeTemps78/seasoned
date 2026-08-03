@@ -82,7 +82,7 @@ export function JournalSync() {
 
   return (
     <section className="mx-auto w-full max-w-3xl px-4 py-3">
-      <div className="space-y-3 rounded-lg border border-(--color-warn)/40 bg-(--color-surface) px-4 py-4">
+      <div className="card space-y-3 border-(--color-warn)/40">
         <h2 className="font-semibold">{t('sync.adopt.title')}</h2>
         <p className="max-w-prose leading-relaxed text-(--color-muted)">
           {tn('sync.adopt.body', ask)}

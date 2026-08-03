@@ -29,7 +29,7 @@ export function AccountPanel() {
 
   if (!configured) {
     return (
-      <section className="space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4">
+      <section className="card max-w-md space-y-3">
         <h2 className="font-semibold">{t('account.unavailable.title')}</h2>
         <p className="leading-relaxed text-(--color-muted)">
           {t('account.unavailable.body')}
@@ -46,7 +46,7 @@ export function AccountPanel() {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4">
+      <section className="card max-w-md space-y-3">
         <p>{t('account.signedInAs', { email: account.email ?? '' })}</p>
         <button
           type="button"
@@ -59,7 +59,7 @@ export function AccountPanel() {
 
       <p className="max-w-prose text-sm text-(--color-muted)">{t('account.notSynced')}</p>
 
-      <section className="space-y-3 rounded-lg border border-(--color-warn)/40 px-4 py-4">
+      <section className="card max-w-md space-y-3 border-(--color-warn)/40">
         <h2 className="font-semibold">{t('account.delete.title')}</h2>
         <p className="max-w-prose leading-relaxed text-(--color-muted)">
           {t('account.delete.body')}
