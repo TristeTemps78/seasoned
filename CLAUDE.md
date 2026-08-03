@@ -42,8 +42,10 @@
        bureaucratie : une personne seule ne peut pas rédiger une explication sur mesure à chaque
        fois. Un motif typé se **gabarise**, donc l'auteur reçoit toujours une explication, même
        le jour où l'on n'a pas le temps.
-    3. **L'auteur peut contester** — `restore()` existe parce qu'*un dispositif qui sait retirer
-       mais pas rendre n'est pas de la modération, c'est de la censure*.
+    3. **L'auteur peut contester** — *un dispositif qui sait retirer mais pas rendre n'est pas
+       de la modération, c'est de la censure*.
+    > ⚠️ Ces trois promesses vivent désormais dans le **texte** de `/regles`, pas dans du code :
+    > les fonctions qui les portaient ont été retirées le jour même (voir « État actuel »).
   - ✅ **La page ne peut pas mentir sur le code qu'elle décrit** : les motifs viennent de
     `REPORT_GROUNDS`, le délai de `REVIEW_DEADLINE_HOURS`. **Mutation vérifiée : ajouter un
     motif au domaine sans le publier ne compile plus** — le typage l'interdit, ce qui vaut mieux
@@ -52,8 +54,6 @@
   - **`spoiler` est un motif de retrait**, et il fallait y penser : ailleurs c'est une
     impolitesse, ici c'est une atteinte à la promesse centrale (règle 7). L'omettre aurait dit
     qu'on ne le retire pas.
-  - **`triage()` empêche qu'un spoiler passe devant une menace.** Une file traitée dans l'ordre
-    d'arrivée ferait exactement ça — le défaut qu'on ne remarque que le jour où il coûte cher.
   - **Le délai est 72 h, et c'est un choix de personne seule** : celui qu'on tient en étant
     absent un week-end. Annoncer 24 h serait une promesse qu'un déplacement casse — et une
     promesse de modération non tenue est **vérifiable par celui qui attend**.
