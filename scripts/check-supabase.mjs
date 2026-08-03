@@ -19,13 +19,7 @@
  * conversation ou une capture d'ecran.
  */
 
-import { readFileSync } from 'node:fs';
-
-const RESET = '[0m';
-const RED = '[31m';
-const GREEN = '[32m';
-const YELLOW = '[33m';
-const DIM = '[2m';
+import { DIM, GREEN, RED, RESET, YELLOW, readEnv } from './env.mjs';
 
 let failures = 0;
 
@@ -41,30 +35,6 @@ function bad(message, whatToDo) {
 
 function info(message) {
   console.log(`${DIM}  ${message}${RESET}`);
-}
-
-/** Lit `.env` sans dependance : ce script doit tourner avant tout `npm install`. */
-function readEnv() {
-  const values = { ...process.env };
-  for (const file of ['.env', '.env.local']) {
-    try {
-      // ⚠️ `split(/\r?\n/)` et non `split('\n')` : sous Windows le fichier est en CRLF, et
-      // le `\r` restait alors en fin de ligne. Or en JavaScript `.` ne matche **pas** `\r`,
-      // et `$` sans le drapeau `m` exige la fin de chaine — donc le motif ci-dessous
-      // echouait sur **toute ligne renseignee**, tandis que les lignes vides matchaient
-      // (leur `\s*` avalait le `\r`). Le diagnostic annoncait « la variable est absente »
-      // pour des variables parfaitement renseignees. Un outil qui ment est pire qu'aucun.
-      for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
-        const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*)$/.exec(line);
-        if (match === null) continue;
-        const value = match[2].trim().replace(/^["']|["']$/g, '');
-        if (value.length > 0) values[match[1]] = value;
-      }
-    } catch {
-      // Fichier absent : ce n'est pas une erreur, `.env.local` est optionnel.
-    }
-  }
-  return values;
 }
 
 const env = readEnv();
@@ -163,7 +133,7 @@ try {
     const known = typeof payload?.code === 'string' && payload.code.startsWith('PGRST');
     bad(
       'La table « journals » n existe pas',
-      'Ouvrir supabase/001_journal.sql, tout copier, et le coller dans SQL Editor → New query → Run.',
+      'Lancer `npm run db:push` : il applique supabase/*.sql sans passer par le tableau de bord.',
     );
     if (known) info('La cle, elle, est acceptee : il ne manque que la table.');
   } else if (response.status === 401 || response.status === 403) {
@@ -177,7 +147,7 @@ try {
     if (Array.isArray(rows) && rows.length > 0) {
       bad(
         `⛔ RLS NE PROTEGE RIEN : ${rows.length} ligne(s) lue(s) sans etre connecte`,
-        'Reappliquer supabase/001_journal.sql en entier — la partie « alter table … enable row level security » manque.',
+        '`npm run db:push` pour tout rejouer — la partie « alter table … enable row level security » manque.',
       );
     } else {
       ok('RLS filtre : aucune ligne visible sans compte');
