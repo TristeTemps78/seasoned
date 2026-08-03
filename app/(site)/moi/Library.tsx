@@ -138,7 +138,7 @@ function EmptyLibrary() {
         <em>{t('library.empty.em')}</em>
         {t('library.empty.after')}
       </p>
-      <div className="empty-state-actions">
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
         <Link href={pathIn('/', locale)} className="btn">
           {t('library.empty.browse')}
         </Link>

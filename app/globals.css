@@ -425,14 +425,16 @@ body::before {
     color: var(--color-muted);
   }
 
-  /* Les actions respirent plus que le texte : c'est la seule chose a faire sur cet ecran. */
-  .empty-state-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 1.25rem;
-  }
+  /*
+   * ⚠️ Il n'y a **pas** de `.empty-state-actions`, et c'est deliberе.
+   *
+   * Elle avait ete ecrite ici le 2026-08-04, puis retiree le jour meme : **un seul** des
+   * quatre ecrans vides porte des actions, et la regle de ce fichier est de n'extraire que
+   * ce qui est deja repete trois fois. Une classe posee « pour la prochaine fois » est
+   * exactement ce que le 6.7 s'etait interdit, et l'audit de la passe l'a trouvee dans son
+   * propre travail. La bibliotheque aligne donc ses deux boutons avec des utilitaires,
+   * puisqu'elle est seule a le faire.
+   */
 
   /**
    * La tuile de mesure — un libelle en capitales, un chiffre en grille.
