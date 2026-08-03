@@ -52,6 +52,22 @@ const nextConfig: NextConfig = {
    * de visionnage a des gens qui ne l'ont pas demande.
    */
   async headers() {
+    // L'origine du projet Supabase, derivee de l'URL publique. On ouvre la CSP vers
+    // **cet hote precis**, jamais vers `*.supabase.co` : un joker autoriserait le
+    // navigateur a parler au projet de n'importe qui, ce qui est exactement le genre de
+    // permission qu'une injection cherche.
+    const supabaseOrigin = ((): string | undefined => {
+      const raw = process.env['NEXT_PUBLIC_SUPABASE_URL'];
+      if (raw === undefined || raw.trim().length === 0) return undefined;
+      try {
+        return new URL(raw).origin;
+      } catch {
+        // URL illisible : on ne fabrique pas une directive a partir d'une valeur qu'on
+        // ne comprend pas — la CSP resterait ouverte sur une chaine arbitraire.
+        return undefined;
+      }
+    })();
+
     return [
       {
         source: '/:path*',
@@ -79,9 +95,20 @@ const nextConfig: NextConfig = {
               // Les affiches viennent du CDN de TMDB, jamais de nous.
               "img-src 'self' https://image.tmdb.org data: blob:",
               "font-src 'self'",
-              // Le produit ne parle a aucun service tiers depuis le navigateur : le
-              // journal ne sort pas d'ici, et cette ligne le rend verifiable.
-              "connect-src 'self'",
+              // ⚠️ **La ligne qui a change de sens le 2026-08-03.**
+              //
+              // Elle disait « le produit ne parle a aucun service tiers depuis le
+              // navigateur », et c'etait la forme *executable* de la promesse « rien ne
+              // sort d'ici » : n'importe qui pouvait la lire dans l'inspecteur.
+              //
+              // Les comptes la rouvrent, mais **vers un seul hote** — celui du projet, et
+              // rien d'autre. Ce n'est plus une preuve que rien ne sort ; c'est une preuve
+              // que rien ne va **ailleurs** que chez nous, ce qui reste verifiable et
+              // reste utile.
+              //
+              // Tant que la variable est absente, la CSP conserve sa forme la plus
+              // stricte : on n'ouvre pas « au cas ou ».
+              `connect-src 'self'${supabaseOrigin === undefined ? '' : ` ${supabaseOrigin}`}`,
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",

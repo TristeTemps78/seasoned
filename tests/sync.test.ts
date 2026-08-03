@@ -1,0 +1,162 @@
+import { describe, expect, it } from 'vitest';
+import { decideAdoption, syncJournals } from '../src/journal/sync';
+import {
+  EMPTY_JOURNAL,
+  journalKey,
+  setPosition,
+  setSeasonRating,
+  type Journal,
+} from '../src/domain/journal';
+
+const NOW = new Date('2026-08-03T12:00:00Z');
+const BB = journalKey('1396');
+const DEXTER = journalKey('1405');
+const ME = 'user-a';
+const SOMEONE_ELSE = 'user-b';
+
+describe('⚠️ l appareil partage — le defaut que ce module existe pour empecher', () => {
+  const local = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
+
+  it('demande avant de verser un journal inconnu dans un compte', () => {
+    // Un ordinateur familial, un poste de bibliotheque, un telephone prete. Fusionner
+    // en silence verserait le journal de quelqu'un d'autre dans ce compte, et c'est
+    // irreversible : une fois fusionne, on ne sait plus quoi appartenait a qui.
+    expect(decideAdoption(local, SOMEONE_ELSE, ME)).toEqual({ kind: 'ask', entries: 1 });
+  });
+
+  it('demande aussi quand le journal n a AUCUN proprietaire connu', () => {
+    // C'est le cas le plus delicat : « premier compte de quelqu'un » et « appareil
+    // partage » sont indiscernables. Une seule des deux erreurs se repare.
+    expect(decideAdoption(local, undefined, ME)).toEqual({ kind: 'ask', entries: 1 });
+  });
+
+  it('adopte sans rien demander quand le journal est deja le sien', () => {
+    expect(decideAdoption(local, ME, ME)).toEqual({ kind: 'adopt' });
+  });
+
+  it('ne demande rien pour un journal vide', () => {
+    // Il n'y a rien a perdre, donc rien a arbitrer : une question ici serait du bruit.
+    expect(decideAdoption(EMPTY_JOURNAL, undefined, ME)).toEqual({
+      kind: 'nothing_to_adopt',
+    });
+  });
+
+  it('compte ce qu il y a a perdre, pour que la question soit informee', () => {
+    let j = setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW);
+    j = setPosition(j, DEXTER, 2, 2, NOW);
+    const decision = decideAdoption(j, undefined, ME);
+    expect(decision).toEqual({ kind: 'ask', entries: 2 });
+  });
+});
+
+describe('syncJournals — ce qui doit etre reecrit, et rien de plus', () => {
+  it('pousse le local quand le compte n a encore rien', () => {
+    const local = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
+    expect(syncJournals(local, undefined)).toEqual({
+      merged: local,
+      writeLocal: false,
+      writeRemote: true,
+    });
+  });
+
+  it('ne pousse rien quand il n y a rien des deux cotes', () => {
+    // Sans ce cas, une premiere visite sans aucun geste declencherait une ecriture
+    // distante d'un journal vide.
+    expect(syncJournals(EMPTY_JOURNAL, undefined).writeRemote).toBe(false);
+  });
+
+  it('n ecrit nulle part quand les deux cotes sont deja d accord', () => {
+    // Le cas le plus frequent, et de loin : ouvrir une page. Sans cette comparaison,
+    // chaque ouverture couterait une requete et un cycle de rendu pour rien.
+    const same = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
+    expect(syncJournals(same, same)).toEqual({
+      merged: same,
+      writeLocal: false,
+      writeRemote: false,
+    });
+  });
+
+  it('fusionne les deux apports et reecrit des deux cotes', () => {
+    const local = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
+    const remote = setPosition(EMPTY_JOURNAL, DEXTER, 1, 1, NOW);
+
+    const out = syncJournals(local, remote);
+    expect(Object.keys(out.merged.entries).sort()).toEqual([BB, DEXTER].sort());
+    expect(out.writeLocal).toBe(true);
+    expect(out.writeRemote).toBe(true);
+  });
+
+  it('ne reecrit que le cote en retard', () => {
+    const local = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
+    const remote = setSeasonRating(local, BB, 1, 4, NOW);
+
+    const out = syncJournals(local, remote);
+    // Le distant contient deja tout : seul le local doit rattraper.
+    expect(out.writeLocal).toBe(true);
+    expect(out.writeRemote).toBe(false);
+  });
+});
+
+describe('les lois de la synchronisation', () => {
+  /** Trois journaux qui se recouvrent partiellement. */
+  function fixtures(): readonly Journal[] {
+    const a = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
+    const b = setSeasonRating(setPosition(EMPTY_JOURNAL, DEXTER, 1, 1, NOW), DEXTER, 1, 5, NOW);
+    const c = setSeasonRating(a, BB, 2, 3, NOW);
+    return [EMPTY_JOURNAL, a, b, c];
+  }
+
+  /** Compare le CONTENU, pas l ordre d insertion des cles. */
+  function sameContent(a: unknown, b: unknown): boolean {
+    const stable = (v: unknown): string =>
+      JSON.stringify(v, (_k, item: unknown) =>
+        item === null || typeof item !== 'object' || Array.isArray(item)
+          ? item
+          : Object.fromEntries(
+              Object.entries(item as Record<string, unknown>).sort(([x], [y]) =>
+                x < y ? -1 : x > y ? 1 : 0,
+              ),
+            ),
+      );
+    return stable(a) === stable(b);
+  }
+
+  it('le resultat ne depend pas du sens de la synchronisation', () => {
+    // La propriete qui fait qu'un appareil A et un appareil B convergent au lieu de se
+    // renvoyer indefiniment des journaux differents. Elle vient de `mergeJournals`, et
+    // ce test verifie qu'on ne l'a pas perdue en composant.
+    for (const local of fixtures()) {
+      for (const remote of fixtures()) {
+        // ⚠️ Sur le CONTENU : l ordre des cles suit l ordre des arguments, et c est
+        // precisement ce qui a demasque le defaut de `sameJournal` — voir `sync.ts`.
+        expect(
+          sameContent(syncJournals(local, remote).merged, syncJournals(remote, local).merged),
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('synchroniser deux fois ne change rien de plus', () => {
+    // Idempotence : apres une synchronisation, une seconde ne doit rien avoir a ecrire.
+    // Sans cela, deux appareils s'ecriraient mutuellement en boucle.
+    for (const local of fixtures()) {
+      for (const remote of fixtures()) {
+        const first = syncJournals(local, remote);
+        const second = syncJournals(first.merged, first.merged);
+        expect(second.writeLocal).toBe(false);
+        expect(second.writeRemote).toBe(false);
+      }
+    }
+  });
+
+  it('une synchronisation ne perd jamais une entree', () => {
+    for (const local of fixtures()) {
+      for (const remote of fixtures()) {
+        const { merged } = syncJournals(local, remote);
+        for (const key of [...Object.keys(local.entries), ...Object.keys(remote.entries)]) {
+          expect(merged.entries[key]).toBeDefined();
+        }
+      }
+    }
+  });
+});
