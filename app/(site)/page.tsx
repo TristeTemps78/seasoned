@@ -40,17 +40,21 @@ export async function Home({ locale }: { readonly locale: Locale }) {
   ]);
 
   return (
-    <div className="space-y-14">
-      <section className="mx-auto max-w-2xl space-y-8 pt-6">
-        <div className="space-y-4">
-          <h1 className="text-3xl font-semibold tracking-tight text-balance">
+    <div className="space-y-12">
+      {/* ⚠️ Compact **a dessein**. La premiere version occupait la hauteur entiere d'un
+          ecran de 800 px pour trois lignes de texte : on arrivait sur le produit sans voir
+          une seule serie. Or les series **sont** le produit, et l'accueil doit prouver ce
+          qu'il annonce dans la meme vue que l'annonce. */}
+      <section className="max-w-2xl space-y-5 pt-2">
+        <div className="space-y-3">
+          <h1 className="text-3xl font-semibold tracking-[-0.02em] text-balance sm:text-4xl">
             {t(locale, 'home.h1')}
           </h1>
           {/* Formulation revue le 2026-08-01 : la verification en reel a montre que la
               valeur n'est pas le cas extreme (la serie declaree vivante et morte depuis
               deux ans) mais le **temps ecoule chiffre**, qui vaut pour toutes les series
               en attente. Voir TASKS.md, « chasse au zombie ». */}
-          <p className="text-(--color-muted) leading-relaxed">
+          <p className="text-(--color-muted) leading-relaxed text-pretty">
             {t(locale, 'home.lede.before')}
             <em>{t(locale, 'home.lede.em')}</em>
             {t(locale, 'home.lede.after')}
@@ -106,8 +110,11 @@ function Row({ title, subtitle, series, locale }: {
 
   return (
     <section className="space-y-4" aria-label={title}>
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+      {/* Le titre de rangee porte un filet lumineux a gauche : sur une page qui empile
+          trois grilles identiques, c'est ce qui donne un debut a chacune. Un seul trait
+          suffit — repete sur chaque element, l'effet se dissout. */}
+      <div className="border-l-2 border-(--color-volt)/60 pl-3">
+        <h2 className="text-base font-semibold tracking-tight uppercase">{title}</h2>
         <p className="text-sm text-(--color-muted)">{subtitle}</p>
       </div>
       <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">

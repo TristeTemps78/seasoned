@@ -451,15 +451,49 @@ async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCoun
   );
 }
 
+/**
+ * Un chiffre de la fiche.
+ *
+ * ## `emphasis` designe **la** reponse de la page, et une seule
+ *
+ * « ~ 50 heures — 2 jours et 2 h » repond a la question que pose le nom du site. Elle
+ * s'affichait avec exactement le meme poids visuel que « 29 septembre 2013 » : quatre
+ * cartes identiques, dont une seule comptait. Le regard n'avait aucune raison d'aller au
+ * bon endroit.
+ *
+ * Elle porte donc l'accent du produit, la grille monospace et un liseré lumineux — et les
+ * trois autres restent volontairement plates. Mettre deux chiffres en avant reviendrait a
+ * n'en mettre aucun.
+ */
 function Stat({ label, value, emphasis = false }: {
   readonly label: string;
   readonly value: string;
   readonly emphasis?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-3">
-      <dt className="text-xs uppercase tracking-wide text-(--color-muted)">{label}</dt>
-      <dd className={`mt-1 ${emphasis ? 'text-lg font-semibold' : 'text-sm'}`}>{value}</dd>
+    <div
+      className={`rounded-lg border px-4 py-3 ${
+        emphasis
+          ? 'border-(--color-volt)/40 bg-(--color-volt)/[0.06] shadow-[0_0_24px_-12px_var(--color-volt)]'
+          : 'border-(--color-edge) bg-(--color-surface)'
+      }`}
+    >
+      <dt
+        className={`text-xs uppercase tracking-wide ${
+          emphasis ? 'text-(--color-volt)/80' : 'text-(--color-muted)'
+        }`}
+      >
+        {label}
+      </dt>
+      <dd
+        className={`numeric mt-1 ${
+          emphasis
+            ? 'text-lg font-semibold text-(--color-volt) text-balance'
+            : 'text-sm'
+        }`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

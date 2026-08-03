@@ -160,16 +160,36 @@ export function DataSafety() {
   if (dismissedAt >= 0 && gestures < dismissedAt + SNOOZE_GESTURES) return null;
 
   return (
+    // ⚠️ **Repliable, et replie par defaut.** Deploye, ce bandeau occupait un tiers de la
+    // hauteur utile **sur chaque page** : le contenu reel — les series, le bilan, le
+    // calendrier — passait sous la ligne de flottaison partout. Un avertissement qu'on
+    // voit trop cesse d'etre lu, et il coutait ici la premiere impression du produit.
+    //
+    // Il garde toute sa fonction : le titre reste visible en permanence et les deux
+    // actions restent a un clic. Seule l'explication se deplie, pour qui la veut.
     <aside
       aria-label={t('safety.title')}
-      className="mx-auto mb-6 max-w-3xl space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
+      className="mb-6 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-3"
     >
-      <h2 className="text-sm font-semibold">{t('safety.title')}</h2>
-      <p className="max-w-prose text-xs leading-relaxed text-(--color-muted)">
-        {t('safety.body')}
-      </p>
+      <details className="group">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold marker:content-none">
+          <span aria-hidden="true" className="text-(--color-warn)">
+            ●
+          </span>
+          {t('safety.title')}
+          <span
+            aria-hidden="true"
+            className="ml-auto text-xs text-(--color-muted) transition-transform group-open:rotate-180"
+          >
+            ▾
+          </span>
+        </summary>
+        <p className="mt-3 max-w-prose text-xs leading-relaxed text-(--color-muted)">
+          {t('safety.body')}
+        </p>
+      </details>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {prompt !== undefined ? (
           <button
             type="button"

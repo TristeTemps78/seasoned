@@ -12,6 +12,7 @@ import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
  */
 const TONE_CLASS = {
   live: 'bg-(--color-live)/10 text-(--color-live) border-(--color-live)/40 shadow-[0_0_12px_-4px_var(--color-live)]',
+  waiting: 'bg-(--color-volt)/10 text-(--color-volt) border-(--color-volt)/40',
   warning: 'bg-(--color-warn)/10 text-(--color-warn) border-(--color-warn)/40',
   neutral: 'bg-(--color-surface) text-(--color-muted) border-(--color-edge)',
 } as const;

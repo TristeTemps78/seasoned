@@ -32,15 +32,20 @@ export function statusLabel(status: RealStatus, locale: Locale = DEFAULT_LOCALE)
 }
 
 /** Ton de la pastille — trois niveaux, pour ne pas peindre un sapin de Noël. */
-export type StatusTone = 'live' | 'neutral' | 'warning';
+export type StatusTone = 'live' | 'waiting' | 'neutral' | 'warning';
 
 export const STATUS_TONE: Readonly<Record<RealStatus, StatusTone>> = {
   airing: 'live',
-  between_seasons: 'neutral',
+  // ⚠️ `waiting` et non `neutral`, corrige le 2026-08-03. « En attente · 7 mois » est
+  // **le differenciateur du produit** — la reponse chiffree que personne d'autre
+  // n'affiche — et il etait peint en gris, c'est-a-dire comme une metadonnee de second
+  // rang. Il porte desormais l'accent du produit : ni « ca se passe maintenant » (live),
+  // ni « anomalie » (warning), mais **l'attente qualifiee**.
+  between_seasons: 'waiting',
   awaiting_renewal: 'warning',
   ended: 'neutral',
   cancelled: 'warning',
-  upcoming: 'neutral',
+  upcoming: 'waiting',
   unknown: 'neutral',
 };
 
