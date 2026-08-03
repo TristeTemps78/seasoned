@@ -279,6 +279,42 @@ déjà ce que les comptes changeront, avec la règle qui va avec : **cette page 
 avant que le comportement change, jamais après.** Une politique qui décrit l'état précédent
 est pire qu'une absence — l'absence n'affirme rien.
 
+| 1.71 | **Le design cesse de cacher le différenciateur** | ✅ 2026-08-03 | Ton `waiting`, pastille sur l'affiche, engagement en évidence, hero compact, bandeau repliable |
+
+#### 1.71 — le diagnostic tenait en une phrase
+
+**La direction artistique n'existait que sur l'onglet actif, et le différenciateur du
+produit était peint en gris.** Quatre corrections, toutes sur la même faute — *le regard
+n'avait aucune raison d'aller au bon endroit* :
+
+| Défaut | Correction |
+|---|---|
+| « en attente · 7 mois » avait le ton **`neutral`**, donc gris | Un ton **`waiting`** : ni « ça se passe maintenant », ni « anomalie », mais **l'attente qualifiée** — l'accent du produit |
+| Le statut vivait **sous** l'affiche, en fin de ligne | Il passe **sur** l'affiche, en pastille. Sur vingt vignettes on lit l'état d'un coup d'œil, **sans lire** |
+| « ~50 heures » avait le même poids que « 29 septembre 2013 » | Une seule carte brille. En mettre deux en avant reviendrait à n'en mettre aucune |
+| Le hero occupait un écran entier pour trois lignes | Compacté : on voit des séries dans la même vue que la promesse |
+
+Le bandeau de sécurité devient **repliable** : déployé sur chaque page, il poussait le
+contenu réel sous la ligne de flottaison partout. *Un avertissement qu'on voit trop cesse
+d'être lu.*
+
+#### 🔴 Ce que le design a rendu visible : la vitrine montre du mauvais contenu
+
+En regardant la rangée « En attente » avec ses pastilles enfin lisibles : **Inspecteur
+Barnaby, Saber y Ganar, 1 Rue Sésame, Hockey Psychology.** C'est D11 — le filtre par genre
+n'attrape pas la longue traîne — **mais il y a une cause plus profonde, et elle est
+mécanique** :
+
+> **Trier par attente décroissante sélectionne les séries obscures.** Les séries populaires
+> en attente ont 1 à 5 mois ; celles à 7 mois et plus sont, par construction, dans la longue
+> traîne. Le tri optimise le **spectaculaire** (le plus long silence) au détriment de la
+> **reconnaissance** — et la vitrine du produit en paie le prix.
+
+⚠️ **Non corrigé** : c'est un arbitrage éditorial, pas un défaut technique. Trois options, à
+trancher par Tristan — filtrer sur une popularité minimale avant de trier par attente ;
+pondérer les deux ; ou assumer et changer le sous-titre. **Aucun travail de design ne
+compensera une vitrine dont les titres ne parlent à personne.**
+
 #### A6 — ce que le freemium cosmétique débloque, et ce qu'il bloque
 
 C'est le seul modèle qui **ne contredise aucune promesse déjà faite** : pas de paywall sur
