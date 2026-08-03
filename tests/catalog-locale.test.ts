@@ -66,6 +66,13 @@ function fake(): { provider: CatalogProvider; calls: string[] } {
     async watchOptions() {
       return [];
     },
+    // Ajoutee avec les decoupages concurrents (4.4). Le typage a **exige** cette ligne :
+    // un double incomplet ne compile plus. C'est la raison pour laquelle la methode vit
+    // sur `CatalogProvider` et pas ailleurs (`AGENTS.md` regle 3) — un fournisseur qui
+    // oublie de repondre se signale a la compilation, pas a l'execution.
+    async episodeGroups() {
+      return [];
+    },
   } as CatalogProvider;
   return { provider, calls };
 }

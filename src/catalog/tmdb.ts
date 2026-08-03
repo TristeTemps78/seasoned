@@ -17,6 +17,7 @@ import type {
   Creator,
   DiscoverKind,
   EpisodeDetail,
+  EpisodeGrouping,
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
@@ -475,6 +476,18 @@ export class TmdbProvider implements CatalogProvider {
     return mapWatchOptions(raw, region);
   }
 
+  async episodeGroups(
+    providerId: string,
+    options: { readonly signal?: AbortSignal } = {},
+  ): Promise<readonly EpisodeGrouping[]> {
+    const raw = await this.#get(
+      `/tv/${encodeURIComponent(providerId)}/episode_groups`,
+      {},
+      options.signal,
+    );
+    return mapEpisodeGroups(raw);
+  }
+
   async seriesByCreator(
     personId: string,
     options: { readonly signal?: AbortSignal } = {},
@@ -486,6 +499,68 @@ export class TmdbProvider implements CatalogProvider {
     );
     return mapPersonSeriesCredits(raw);
   }
+}
+
+/**
+ * Noms des natures de decoupage codees par TMDB.
+ *
+ * ⚠️ **Capture depuis l'API reelle le 2026-08-03**, pas ecrite de memoire — c'est la dette
+ * D10, dont la cause etait exactement une fixture inventee. Observes en conditions reelles :
+ * `1` sur *Game of Thrones* (« Aired Order ») et sur trois decoupages de *One Piece*, `2` sur
+ * ses ordres absolus, `3` sur le DVD de *Breaking Bad*, `4` sur les parts de *Money Heist*.
+ * Les valeurs `5` a `7` sont documentees par TMDB mais **je ne les ai pas observees** : elles
+ * sont ici pour ne pas se taire si elles arrivent, pas parce que je les ai vues.
+ *
+ * Une valeur inconnue ne casse rien : {@link mapEpisodeGroups} garde le numero brut et
+ * laisse `kindName` absent. Le bareme appartient au fournisseur et peut s'etendre.
+ */
+const GROUP_KIND_NAMES: Readonly<Record<number, string>> = {
+  1: 'original air date',
+  2: 'absolute',
+  3: 'DVD',
+  4: 'digital',
+  5: 'story arc',
+  6: 'production',
+  7: 'TV',
+};
+
+/**
+ * Reponse de `/tv/{id}/episode_groups`.
+ *
+ * Parsing tolerant (`AGENTS.md` regle 4) : une entree sans nom, sans compte ou mal typee est
+ * **ecartee** plutot que de faire echouer la liste entiere. Un decoupage perdu vaut mieux
+ * qu'une page perdue — et ici le cout d'une perte est nul, puisque la liste ne sert qu'a
+ * **signaler**, jamais a calculer.
+ */
+export function mapEpisodeGroups(raw: unknown): readonly EpisodeGrouping[] {
+  const out: EpisodeGrouping[] = [];
+
+  for (const entry of asArray(asRecord(raw)['results'])) {
+    const source = asRecord(entry);
+    const id = readString(source, 'id');
+    const name = readString(source, 'name');
+    const kind = readNumber(source, 'type');
+    const groupCount = readNumber(source, 'group_count');
+    const episodeCount = readNumber(source, 'episode_count');
+
+    // Sans identite ni chiffres, un decoupage ne peut ni s'afficher ni se comparer.
+    if (id === undefined || name === undefined) continue;
+    if (groupCount === undefined || episodeCount === undefined) continue;
+    // Un decoupage vide n'est pas un decoupage : TMDB en heberge que personne n'a rempli.
+    if (groupCount <= 0 || episodeCount <= 0) continue;
+
+    const kindName = kind === undefined ? undefined : GROUP_KIND_NAMES[kind];
+    out.push({
+      id,
+      name,
+      kind: kind ?? 0,
+      ...(kindName === undefined ? {} : { kindName }),
+      groupCount,
+      episodeCount,
+    });
+  }
+
+  return out;
 }
 
 /**

@@ -50,6 +50,53 @@ export interface WatchOption {
   readonly logoPath?: string;
 }
 
+/**
+ * Un decoupage **alternatif** d'une serie en saisons et episodes.
+ *
+ * ## Pourquoi ce type existe, avec des chiffres
+ *
+ * TMDB sert un decoupage par defaut (son `seasons`), et en connait d'autres : ordre DVD,
+ * ordre d'une plateforme, ordre absolu, arcs narratifs. Mesure faite le 2026-08-03 contre
+ * l'API reelle :
+ *
+ *   - **Money Heist** — defaut TMDB : **3 saisons, 41 episodes**. Netflix, c'est-a-dire la
+ *     ou tout le monde la regarde : **5 parts, 48 episodes**. Quelqu'un qui dit « je suis
+ *     saison 4 » designe donc une saison **qui n'existe pas** dans notre modele, et
+ *     « il vous reste X episodes » se trompe de **17 %**.
+ *   - **One Piece** — defaut : 23 saisons / 1181 episodes, dont une saison de **197
+ *     episodes** ; l'ordre TVDB en compte 24 et 1210.
+ *
+ * ## Pourquoi c'est plus grave ici que chez un tracker
+ *
+ * Chez un tracker, un mauvais ordre donne une case cochee au mauvais endroit : **visible**,
+ * et l'utilisateur corrige. Ici l'ordre est l'**entree de tous les calculs** — trajectoire,
+ * point d'entree, point d'arret, temps restant, bilan d'heures. Le produit rendrait un
+ * conseil **faux avec assurance**, et rien ne le montrerait : aucune case n'a l'air fausse,
+ * le chiffre est juste faux.
+ *
+ * D'ou la reponse, qui est la regle 8 d'`AGENTS.md` : **on signale, on ne repare jamais en
+ * silence.** Ce type ne sert pas a corriger un decoupage — il sert a savoir qu'il en existe
+ * d'autres, et a le dire.
+ */
+export interface EpisodeGrouping {
+  readonly id: string;
+  readonly name: string;
+  /**
+   * Nature du decoupage telle que TMDB la code.
+   *
+   * Conserve **brut**, et accompagne de {@link kindName} : le bareme est celui du
+   * fournisseur, il peut s'etendre, et un module de domaine n'a pas a connaitre ses
+   * numeros (`AGENTS.md` regle 3).
+   */
+  readonly kind: number;
+  /** Nom lisible de la nature, quand on sait la nommer. */
+  readonly kindName?: string;
+  /** Nombre de groupes — l'equivalent des saisons dans ce decoupage. */
+  readonly groupCount: number;
+  /** Nombre total d'episodes dans ce decoupage. */
+  readonly episodeCount: number;
+}
+
 /** Une personne creditee a la creation d'une serie. */
 export interface Creator {
   readonly providerId: string;
@@ -171,6 +218,18 @@ export interface CatalogProvider {
     region: string,
     options?: { readonly signal?: AbortSignal },
   ): Promise<readonly WatchOption[]>;
+
+  /**
+   * Les decoupages alternatifs connus pour une serie. Voir {@link EpisodeGrouping}.
+   *
+   * @returns une liste eventuellement **vide** — c'est le cas courant, et ce n'est pas une
+   *   absence de reponse. Jamais `undefined` : un fournisseur qui ne sait pas repondre rend
+   *   une liste vide, ce qui se traite comme « aucun decoupage alternatif connu ».
+   */
+  episodeGroups(
+    providerId: string,
+    options?: { readonly signal?: AbortSignal },
+  ): Promise<readonly EpisodeGrouping[]>;
 }
 
 /**

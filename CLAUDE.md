@@ -8,7 +8,53 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, soir — le garde-fou des films est posé)
+## État actuel (2026-08-03, soir — `episode_groups` livré et vérifié en vrai)
+
+- **🔁 A13 révisé par Tristan : séries seulement pour le moment, pas les films.** ✅ **Rien
+  n'est perdu** — le garde-fou 5.10a livré une heure plus tôt **devient l'implémentation de
+  cette décision** : `seriesEntries` *est* ce qui garde les films hors des agrégats. Ce qui
+  était une préparation devient l'application. `movieKey` / `isMovieKey` restent, testés, à
+  coût nul, et documentent la couture pour le jour où ça rebasculera. ✅ Et ça referme sans
+  arbitrage la question « un film compte-t-il dans le bilan d'heures ? ».
+- **✅ 4.4a livré — `episode_groups`, la vraie trouvaille des rapports. 624 → 639 tests**,
+  typecheck strict vert, build vert, 21 routes statiques.
+  - `EpisodeGrouping` + `episodeGroups()` sur `CatalogProvider`, `mapEpisodeGroups` (parsing
+    tolérant, règle 4), et **`src/domain/ordering.ts`** — pur, il **signale** et ne convertit
+    **rien** (règle 8 : réparer en silence déplacerait des notes déjà posées par saison).
+  - ✅ **Vérifié contre l'API réelle**, jeton en place. Les fixtures sont des **captures**,
+    pas des souvenirs (dette D10, dont la cause était exactement une fixture inventée) :
+    - ***Money Heist*** : défaut TMDB **3 saisons / 41 épisodes**, Netflix **5 parts / 48**.
+      Donc « il vous reste X épisodes · Y heures » se trompait de **17 %**, et quelqu'un qui
+      dit « je suis saison 4 » désigne une saison **qui n'existe pas** dans notre modèle.
+    - ***One Piece*** : **18 découpages**, dont Funimation à **−414 épisodes**. Défaut : 23
+      saisons dont une de **197 épisodes**.
+    - ***Breaking Bad*** : 62 épisodes des deux côtés, **5 saisons contre 6** — l'axe des
+      conseils par saison casse même quand les totaux concordent.
+  - 🔴 **Faire tourner la vraie chaîne a trouvé deux défauts que les captures ne pouvaient pas
+    montrer**, et les deux tests correspondants n'existaient pas :
+    1. ***Game of Thrones* était un faux positif** — son unique groupe « Aired Order » compte
+       102 épisodes contre 73, mais c'est **l'ordre de diffusion qu'on affiche déjà**, avec les
+       spéciaux. D'où `AIRED_ORDER_KIND` exclu.
+    2. ***One Piece* sortait 17 découpages divergents** — illisible, et l'anime est justement
+       la catégorie qui en a le plus besoin. D'où `MAX_NAMED_ORDERINGS = 3` + un `total`.
+    > **La leçon** : mes captures venaient de l'API et étaient justes. C'est le **comportement
+    > d'ensemble** sur six séries qui a montré les défauts. *Auditer le résultat, jamais
+    > l'intention* — une fixture juste ne dit rien du comportement juste.
+  - **Sélectif, vérifié** : sur six séries, **trois se taisent** (GoT, The Walking Dead,
+    Stranger Things). Le silence reste majoritaire, comme partout dans ce produit.
+  - **Le typage a exigé une ligne dans un double de test** qui n'implémentait pas la nouvelle
+    méthode : c'est pourquoi elle vit sur `CatalogProvider` (règle 3) — un fournisseur muet se
+    signale à la **compilation**.
+- 🔴 **4.4b est la tâche prioritaire, et c'est un piège connu : `ordering.ts` n'est appelé par
+  RIEN.** *Une fonctionnalité écrite n'est pas une fonctionnalité qui marche* — `episodeMinutes`
+  a été livré mort-né exactement comme ça. Reste : l'enveloppeur dans `lib/catalog.ts` (+1 appel
+  par série et par 24 h), le rendu, deux entrées de dictionnaire. Formulation à respecter :
+  **« voici la convention que suivent nos chiffres »**, pas « attention erreur ».
+- ⚠️ **Jeton TMDB en place dans `.env`** (non suivi par git, vérifié). Il a transité par la
+  conversation : **à régénérer sur TMDB** — il est en lecture seule (`api_read`), donc le risque
+  est le quota, pas les données.
+
+## État précédent (2026-08-03, soir — le garde-fou des films)
 
 - **✅ 5.10a livré — le garde-fou de A13. 610 → 624 tests**, typecheck strict vert, build vert.
   Fait **sans jeton TMDB** : le domaine est pur, donc il ne dépend ni du réseau ni de l'API.
