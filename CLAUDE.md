@@ -8,7 +8,46 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, nuit — l'apparence, et ce qu'elle a fait sortir du bois)
+## État actuel (2026-08-04, nuit — le signalement, et trois écrans qui mentaient)
+
+- **✅ 6.5 livré : le canal de signalement existe.** **731 tests**, typecheck strict vert,
+  build vert, 29 routes statiques. Tout est poussé, le lot 6 est **entièrement fermé**.
+- **La table `reports` avait été refusée deux fois, et pour la bonne raison** : *une table
+  qu'on peut remplir avant de savoir traiter un signalement est un piège*. Les deux
+  conditions sont maintenant réunies — la procédure est publiée sur `/regles` depuis 5.0a, et
+  le fil montre du contenu de tiers depuis 6.6.
+  - **Les motifs du menu sont les clés de `/regles`, mot pour mot.** Pas de libellés courts
+    écrits pour l'occasion : c'est ce qui rend impossible la dérive où l'on retire pour un
+    motif qu'on n'a pas publié. Le prix est un bouton qui porte une phrase.
+  - **Aucune politique de lecture sur la table, et c'est la décision du fichier.** Relisible
+    par son auteur, un signalement devient un accusé de réception — donc une promesse de
+    suivi à tenir dans l'interface. Relisible par la personne visée, une dénonciation
+    nominative. Les deux sont pires que le silence.
+  - **Six scénarios rejoués contre la base** : signaler passe ; signaler au nom d'un autre, se
+    signaler soi-même, inventer un motif, redéposer le même sont refusés ; et **personne ne
+    peut relire, pas même l'auteur**.
+- 🔴 **Le lot 6.3 avait rendu quatre écrans menteurs, et personne ne l'avait vu.**
+  - Le bandeau de sauvegarde dit « ces notes ne vivent que dans ce navigateur » et tout son
+    propos est le risque que Safari efface le stockage local. **Avec un compte, la phrase est
+    fausse et le risque n'existe plus.** Il se tait désormais.
+  - La fiche série, le bilan et la bibliothèque vide promettaient « rien n'est envoyé ».
+    Corriger les trois aurait suffi ce jour-là et **raté la quatrième**, écrite plus tard par
+    quelqu'un qui se souvient de la promesse d'origine. La phrase vit maintenant à un seul
+    endroit — `WhereItLives` — et **un test interdit de la réécrire ailleurs**.
+    > Ce test a une valeur inattendue : il n'interdit pas la phrase, **il oblige à la
+    > justifier**. Quatre clés la portent encore, chacune pour une raison désormais écrite.
+- 🔴 **Et le test qui accompagnait le bandeau était CREUX — la mutation l'a montré.**
+  Vérifier un **silence** ne prouve rien sur un composant dont le silence est l'état par
+  défaut : il se tait aussi avant d'avoir lu le journal. Pire, `waitFor(textContent === '')`
+  **réussit au premier tick**, avant toute lecture.
+  > **La règle, et c'est la deuxième fois que ce dépôt la réapprend** : sur un état
+  > asynchrone, on attend **la condition finale elle-même**, jamais l'absence. Le test attend
+  > désormais la même asynchronie que le composant, via une sonde branchée sur le même
+  > journal — et un **ancrage** prouve d'abord que le bandeau parle dans ce montage exact.
+- **`.env.example` perd son piège** : la consigne « laisser VIDE » **était** la cause du bogue
+  de langue. Une ligne commentée ne peut plus poser la question.
+
+## État précédent (2026-08-03, nuit — l'apparence, et ce qu'elle a fait sortir du bois)
 
 - **✅ 6.7 livré : le vocabulaire visuel existe.** **722 tests**, typecheck strict vert, build
   vert, 29 routes statiques. Tout est poussé.
