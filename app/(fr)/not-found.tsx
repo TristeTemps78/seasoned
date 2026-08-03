@@ -5,7 +5,7 @@ import { t } from '@/lib/i18n';
 export default function FrenchNotFound() {
   return (
     <div className="mx-auto max-w-2xl py-12 space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('fr', 'notFound.heading')}</h1>
+      <h1 className="page-title">{t('fr', 'notFound.heading')}</h1>
       <p className="text-(--color-muted)">{t('fr', 'notFound.body')}</p>
       <SearchForm locale="fr" />
     </div>

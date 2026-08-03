@@ -12,7 +12,7 @@ import { DEFAULT_LOCALE, t } from '@/lib/i18n';
 export default function NotFound() {
   return (
     <div className="mx-auto max-w-2xl py-12 space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">
+      <h1 className="page-title">
         {t(DEFAULT_LOCALE, 'notFound.heading')}
       </h1>
       <p className="text-(--color-muted)">{t(DEFAULT_LOCALE, 'notFound.body')}</p>

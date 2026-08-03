@@ -23,7 +23,7 @@ export const metadata: Metadata = offlineMetadata(DEFAULT_LOCALE);
 export function OfflineView({ locale }: { readonly locale: Locale }) {
   return (
     <div className="mx-auto max-w-md space-y-4 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">{t(locale, 'offline.heading')}</h1>
+      <h1 className="page-title">{t(locale, 'offline.heading')}</h1>
       <p className="leading-relaxed text-(--color-muted)">{t(locale, 'offline.body')}</p>
       <Link
         href={pathIn('/moi', locale)}

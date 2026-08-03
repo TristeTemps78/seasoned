@@ -55,7 +55,7 @@ export function MyPlatforms() {
       aria-label={t('platforms.aria')}
     >
       <div>
-        <h2 className="text-sm font-semibold">{t('platforms.title')}</h2>
+        <h2 className="card-title">{t('platforms.title')}</h2>
         <p className="text-xs text-(--color-muted)">{t('platforms.subtitle')}</p>
       </div>
 

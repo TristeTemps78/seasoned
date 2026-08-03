@@ -33,7 +33,7 @@ export function PrivacyView({ locale }: { readonly locale: Locale }) {
   return (
     <div className="mx-auto max-w-2xl space-y-8 py-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t(locale, 'privacy.title')}</h1>
+        <h1 className="page-title">{t(locale, 'privacy.title')}</h1>
         <p className="text-sm text-(--color-muted)">{t(locale, 'privacy.updated')}</p>
       </header>
 

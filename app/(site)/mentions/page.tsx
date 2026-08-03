@@ -37,7 +37,7 @@ export function LegalView({ locale }: { readonly locale: Locale }) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 py-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t(locale, 'legal.title')}</h1>
+      <h1 className="page-title">{t(locale, 'legal.title')}</h1>
 
       {!complete ? (
         <div className="rounded-lg border border-(--color-warn)/40 bg-(--color-warn)/10 px-4 py-4">

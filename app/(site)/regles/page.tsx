@@ -58,7 +58,7 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 py-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t(locale, 'rules.title')}</h1>
+      <h1 className="page-title">{t(locale, 'rules.title')}</h1>
       <p className="text-(--color-muted)">{t(locale, 'rules.intro')}</p>
 
       {/* On ne laisse pas croire a un espace social qui n'est pas ouvert. */}
@@ -70,7 +70,7 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold tracking-tight">{t(locale, 'rules.grounds.title')}</h2>
+        <h2 className="section-heading">{t(locale, 'rules.grounds.title')}</h2>
         <p className="text-sm text-(--color-muted)">{t(locale, 'rules.grounds.intro')}</p>
         {/* La liste vient de `REPORT_GROUNDS`, pas d'une enumeration recopiee ici : un motif
             ajoute au domaine sans etre publie serait un motif qu'on applique sans l'avoir
@@ -85,14 +85,14 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold tracking-tight">{t(locale, 'rules.how.title')}</h2>
+        <h2 className="section-heading">{t(locale, 'rules.how.title')}</h2>
         <p className="text-sm text-(--color-muted)">
           {contact === undefined ? t(locale, 'rules.how.noContact') : t(locale, 'rules.how.body')}
         </p>
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold tracking-tight">{t(locale, 'rules.delay.title')}</h2>
+        <h2 className="section-heading">{t(locale, 'rules.delay.title')}</h2>
         {/* Le chiffre vient du domaine : annoncer ici un delai different de celui que le
             triage applique serait une promesse que le code ne tient pas. */}
         <p className="text-sm">
@@ -102,7 +102,7 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold tracking-tight">
+        <h2 className="section-heading">
           {t(locale, 'rules.decision.title')}
         </h2>
         <ul className="space-y-2 text-sm">
@@ -113,7 +113,7 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold tracking-tight">
+        <h2 className="section-heading">
           {t(locale, 'rules.contact.title')}
         </h2>
         {contact !== undefined ? (

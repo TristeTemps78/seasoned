@@ -66,7 +66,7 @@ export function CalendarExport() {
       aria-label={t('calendar.aria')}
     >
       <div>
-        <h2 className="text-sm font-semibold">{t('calendar.title')}</h2>
+        <h2 className="card-title">{t('calendar.title')}</h2>
         <p className="max-w-prose text-xs leading-relaxed text-(--color-muted)">
           {t('calendar.body')}
         </p>

@@ -73,7 +73,13 @@ export async function SearchView({ query, locale }: {
 
   return (
     <div className="space-y-8">
-      <SearchForm defaultValue={query} autoFocus={query.length === 0} locale={locale} />
+      {/* ⚠️ Borne a la meme largeur que sur l'accueil. Le formulaire prenait les 1024 px
+          de la colonne pour saisir trois mots — un champ aussi large se lit comme une
+          zone de texte, pas comme une recherche, et l'oeil doit traverser tout l'ecran
+          pour aller du dernier caractere tape au bouton. */}
+      <div className="max-w-2xl">
+        <SearchForm defaultValue={query} autoFocus={query.length === 0} locale={locale} />
+      </div>
 
       {query.length === 0 ? (
         <p className="text-(--color-muted)">{t(locale, 'search.prompt')}</p>

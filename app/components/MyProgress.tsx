@@ -160,7 +160,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
       aria-label={t('progress.aria')}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">{t('progress.title')}</h2>
+        <h2 className="card-title">{t('progress.title')}</h2>
         <WhereItLives />
       </div>
 

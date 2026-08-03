@@ -209,6 +209,73 @@ body::before {
    * ici « au cas ou ».
    */
 
+  /* =============================================================================
+   * L'echelle typographique — quatre crans, et c'est tout
+   * =============================================================================
+   *
+   * ## Le defaut repare : il n'y avait pas d'echelle, il y avait des habitudes
+   *
+   * `text-2xl font-semibold tracking-tight` etait recopie **seize fois** pour un titre de
+   * page, `text-lg font-semibold tracking-tight` **huit fois** pour un titre de section.
+   * Meme forme d'echec que le bouton secondaire du 6.7 : aucune des copies ne savait
+   * qu'elle en etait une, donc chaque ecran neuf en inventait une variante.
+   *
+   * ⚠️ **Et trois ecrans etaient deja partis** : `Agenda`, `MyStats` et `Friends`
+   * ecrivaient leur `h2` en `font-semibold` **nu**, c'est-a-dire a `1rem` — exactement la
+   * taille du corps de texte. Sur ces trois pages la hierarchie n'existait pas : seule la
+   * graisse distinguait un titre d'un paragraphe. C'est le vrai defaut, bien plus que le
+   * choix d'une valeur.
+   *
+   * ## Les quatre crans
+   *
+   * `1.75rem` · `1.125rem` · `1rem` · `0.875rem` — un rapport d'environ 1.25 entre les
+   * crans hauts. Assez pour que la hierarchie se voie d'un coup d'oeil, assez peu pour que
+   * l'interface reste dense : ce produit affiche des grilles d'affiches, pas des articles.
+   *
+   * Les deux crans bas ne sont pas des classes : `1rem` est le defaut du navigateur et
+   * `0.875rem` est `text-sm`, deja partout. On ne nomme que ce qui etait recopie.
+   */
+
+  /** Le titre d'une page — un seul par page, c'est le `h1`. */
+  .page-title {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* La montee ne se fait qu'a partir de 640 px : sur un telephone, `1.75rem` sur un titre
+     de deux lignes mange le tiers de la hauteur utile avant le moindre contenu. */
+  @media (width >= 40rem) {
+    .page-title {
+      font-size: 1.75rem;
+    }
+  }
+
+  /** Le titre d'une section — le `h2`. */
+  .section-heading {
+    font-size: 1.125rem;
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /**
+   * Le titre d'un panneau — `MyProgress`, `TasteCard`, `CalendarExport`…
+   *
+   * ⚠️ **Ce cran existait deja, ecrit `text-sm font-semibold` huit fois.** Il n'a pas ete
+   * invente ici : il a ete trouve en cherchant ce que le test anti-regression allait
+   * refuser. Il est deliberement **sous** le corps de texte en taille et au-dessus en
+   * graisse — un panneau vit a l'interieur d'un ecran qui a deja un titre, et deux titres
+   * de meme poids sur un meme ecran se disputent la premiere lecture.
+   */
+  .card-title {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+
   /**
    * Le bouton.
    *
@@ -237,6 +304,22 @@ body::before {
   .btn:hover:not(:disabled) {
     border-color: color-mix(in oklab, var(--color-volt) 55%, transparent);
     color: var(--color-volt);
+  }
+
+  /*
+   * ⚠️ La hauteur tactile, mesuree le 2026-08-04 a 360 px : les boutons faisaient **38 px**.
+   * Apple recommande 44 px, Android 48 px. Le rembourrage seul ne peut pas y suffire sans
+   * grossir le texte, d'ou une hauteur minimale — et **seulement sur mobile**, parce qu'un
+   * bouton de 44 px de haut a la souris est simplement gros.
+   *
+   * Le rembourrage vertical descend a `0.375rem` pour que le libelle reste centre sans que
+   * la boite ne depasse la hauteur demandee sur deux lignes.
+   */
+  @media (width < 40rem) {
+    .btn {
+      min-height: 2.75rem;
+      padding-block: 0.375rem;
+    }
   }
 
   .btn:disabled {
@@ -284,6 +367,71 @@ body::before {
     border: 1px solid var(--color-edge);
     background-color: color-mix(in oklab, var(--color-surface) 80%, transparent);
     padding: 1rem 1.25rem;
+  }
+
+  /**
+   * L'ecran vide — la premiere impression de tout le monde.
+   * =============================================================================
+   *
+   * ## Pourquoi cette forme existe
+   *
+   * Il y avait **quatre** ecrans vides et **quatre** mises en page differentes :
+   * `EmptyLibrary` centre sur `max-w-md` avec deux boutons, `EmptyAgenda` et `MyStats` en
+   * boites alignees a gauche, et le fil d'amis reduit a un paragraphe nu. Or c'est
+   * exactement l'etat dans lequel **tout le monde** voit le produit la premiere fois : les
+   * quatre ecrans vides sont, pour un arrivant, les quatre seuls ecrans qui existent.
+   *
+   * ⚠️ Deux d'entre eux **recopiaient a la main** `.card` et `.btn`, extraits au 6.7 —
+   * la duplication s'etait reformee dans les fichiers que ce lot n'avait pas ouverts.
+   *
+   * ## Centre, et c'est une decision
+   *
+   * Un etat vide n'a rien autour de lui pour ancrer la lecture : centre, il se lit comme
+   * une adresse au visiteur ; aligne a gauche, il se lit comme un contenu manquant. La
+   * largeur est bornee parce qu'une phrase sur 1080 px ne se lit pas.
+   *
+   * ## Il dit quoi faire, il ne constate pas
+   *
+   * La regle vaut deja pour le fil d'amis (« mieux vaut se taire que compter zero ») :
+   * un ecran vide qui affiche « 0 element » a decrit l'etat sans rien ouvrir. Ceux qui
+   * portent une action lui donnent `.btn` — il n'y a pas de bouton special ici.
+   */
+  .empty-state {
+    margin-inline: auto;
+    max-width: 32rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-edge);
+    background-color: color-mix(in oklab, var(--color-surface) 80%, transparent);
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+  }
+
+  .empty-state > * + * {
+    margin-top: 0.75rem;
+  }
+
+  /* Le titre d'un ecran vide est un cran sous celui d'une section : il ouvre une page qui
+     n'a rien a hierarchiser, donc il annonce sans peser. */
+  .empty-state-title {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .empty-state-body {
+    margin-inline: auto;
+    max-width: 34ch;
+    line-height: 1.6;
+    color: var(--color-muted);
+  }
+
+  /* Les actions respirent plus que le texte : c'est la seule chose a faire sur cet ecran. */
+  .empty-state-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
   }
 
   /**
@@ -342,7 +490,12 @@ body::before {
    * prochaine section lui ressemble sans avoir a la retrouver.
    */
   .section-title {
-    border-left: 2px solid var(--color-volt);
+    /* ⚠️ **60 %, pas 100 %.** L'accueil portait ce filet a `--color-volt/60` et c'est cette
+       version-la qui a ete regardee et jugee bonne ; la classe extraite au 6.7 avait pris
+       le volt plein sans que personne le voie, puisqu'elle n'etait utilisee nulle part.
+       Trois filets de cyan sature empiles sur une meme page se disputent l'attention des
+       affiches, ce que « l'affiche est l'interface » interdit. */
+    border-left: 2px solid color-mix(in oklab, var(--color-volt) 60%, transparent);
     padding-left: 0.75rem;
   }
 

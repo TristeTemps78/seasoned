@@ -56,7 +56,7 @@ export function SeasonList({ seasons, locale = DEFAULT_LOCALE }: {
 
   return (
     <section className="space-y-4" aria-label={t(locale, 'seasons.title')}>
-      <h2 className="text-lg font-semibold tracking-tight">{t(locale, 'seasons.title')}</h2>
+      <h2 className="section-heading">{t(locale, 'seasons.title')}</h2>
 
       {notes.length > 0 ? (
         <ul className="space-y-1.5 text-sm text-(--color-warn)">

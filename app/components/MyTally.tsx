@@ -37,7 +37,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
       className="edge-lit space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
       aria-label={t('tally.aria')}
     >
-      <h2 className="text-sm font-semibold">{t('tally.title')}</h2>
+      <h2 className="card-title">{t('tally.title')}</h2>
 
       {/* Le seul chiffre du produit qui mérite de briller : il résume tout le reste.
           `glow` posé ailleurs perdrait son sens par saturation. */}

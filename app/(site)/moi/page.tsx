@@ -46,7 +46,7 @@ export function LibraryView({ locale }: { readonly locale: Locale }) {
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t(locale, 'library.title')}</h1>
+        <h1 className="page-title">{t(locale, 'library.title')}</h1>
         <p className="text-(--color-muted)">{t(locale, 'library.lede')}</p>
       </header>
 

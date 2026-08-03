@@ -36,7 +36,7 @@ export function TasteCard({ profile, journalTitles = {} }: {
       className="edge-lit space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
       aria-label={t('taste.aria')}
     >
-      <h2 className="text-sm font-semibold">{t('taste.title')}</h2>
+      <h2 className="card-title">{t('taste.title')}</h2>
 
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {profile.averageStars !== undefined ? (

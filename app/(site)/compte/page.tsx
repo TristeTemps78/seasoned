@@ -31,7 +31,7 @@ export function AccountView({ locale }: { readonly locale: Locale }) {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t(locale, 'account.title')}</h1>
+        <h1 className="page-title">{t(locale, 'account.title')}</h1>
         <p className="max-w-prose text-(--color-muted)">{t(locale, 'account.lede')}</p>
       </header>
       <AccountPanel />

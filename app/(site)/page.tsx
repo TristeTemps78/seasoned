@@ -112,9 +112,15 @@ function Row({ title, subtitle, series, locale }: {
     <section className="space-y-4" aria-label={title}>
       {/* Le titre de rangee porte un filet lumineux a gauche : sur une page qui empile
           trois grilles identiques, c'est ce qui donne un debut a chacune. Un seul trait
-          suffit — repete sur chaque element, l'effet se dissout. */}
-      <div className="border-l-2 border-(--color-volt)/60 pl-3">
-        <h2 className="text-base font-semibold tracking-tight uppercase">{title}</h2>
+          suffit — repete sur chaque element, l'effet se dissout.
+
+          ⚠️ C'est `.section-title`, et non plus la copie a la main qui vivait ici. Elle
+          avait ete extraite au 6.7 **d'apres cet ecran** et n'etait utilisee nulle part —
+          l'original avait continue sa vie de son cote. Il en avait garde `text-base
+          tracking-tight uppercase`, c'est-a-dire des capitales **resserrees** : les
+          capitales demandent plus d'interlettrage, jamais moins. */}
+      <div className="section-title">
+        <h2>{title}</h2>
         <p className="text-sm text-(--color-muted)">{subtitle}</p>
       </div>
       <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">

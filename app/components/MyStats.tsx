@@ -47,16 +47,14 @@ export function MyStats() {
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('tallyPage.title')}</h1>
+        <h1 className="page-title">{t('tallyPage.title')}</h1>
         <p className="text-(--color-muted)">{t('tallyPage.lede')}</p>
       </header>
 
       {silent ? (
-        <div className="rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-6">
-          <h2 className="font-semibold">{t('tallyPage.empty.title')}</h2>
-          <p className="mt-2 leading-relaxed text-(--color-muted)">
-            {t('tallyPage.empty.body')}
-          </p>
+        <div className="empty-state">
+          <h2 className="empty-state-title">{t('tallyPage.empty.title')}</h2>
+          <p className="empty-state-body">{t('tallyPage.empty.body')}</p>
         </div>
       ) : (
         <>

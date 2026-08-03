@@ -37,7 +37,7 @@ export function FriendsView({ locale }: { readonly locale: Locale }) {
     // un demi-centimetre que personne ne sait nommer et que tout le monde voit.
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">{t(locale, 'friendsPage.title')}</h1>
+        <h1 className="page-title">{t(locale, 'friendsPage.title')}</h1>
         <p className="max-w-prose leading-relaxed text-(--color-muted)">
           {t(locale, 'friendsPage.lede')}
         </p>

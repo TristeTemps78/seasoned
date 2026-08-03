@@ -180,13 +180,13 @@ export function Friends() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-semibold">{t('friends.feed.title')}</h2>
+        <h2 className="section-heading">{t('friends.feed.title')}</h2>
         {visible.length === 0 ? (
           // ⚠️ Mieux vaut se taire que compter zero : un fil vide dit quoi faire, il
           // n'affiche pas « 0 activite ».
-          <p className="max-w-prose leading-relaxed text-(--color-muted)">
-            {t('friends.feed.empty')}
-          </p>
+          <div className="empty-state">
+            <p className="empty-state-body">{t('friends.feed.empty')}</p>
+          </div>
         ) : (
           <ul className="space-y-2">
             {visible.map((item, index) => (

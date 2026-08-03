@@ -66,7 +66,7 @@ export function WatchOptions({ options, region }: {
 
   return (
     <section className="space-y-3" aria-label={t('watch.aria')}>
-      <h2 className="text-lg font-semibold tracking-tight">{t('watch.title')}</h2>
+      <h2 className="section-heading">{t('watch.title')}</h2>
 
       {available.length > 0 ? (
         <p className="rounded-md bg-(--color-live)/10 px-3 py-2 text-sm text-(--color-live)">

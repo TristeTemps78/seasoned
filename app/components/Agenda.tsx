@@ -53,7 +53,7 @@ export function Agenda() {
   return (
     <div className="space-y-10">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('agenda.title')}</h1>
+        <h1 className="page-title">{t('agenda.title')}</h1>
         <p className="text-(--color-muted)">{t('agenda.lede')}</p>
       </header>
 
@@ -126,12 +126,12 @@ function EmptyAgenda() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('agenda.title')}</h1>
+        <h1 className="page-title">{t('agenda.title')}</h1>
         <p className="text-(--color-muted)">{t('agenda.lede')}</p>
       </header>
-      <div className="rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-6">
-        <h2 className="font-semibold">{t('agenda.empty.title')}</h2>
-        <p className="mt-2 leading-relaxed text-(--color-muted)">{t('agenda.empty.body')}</p>
+      <div className="empty-state">
+        <h2 className="empty-state-title">{t('agenda.empty.title')}</h2>
+        <p className="empty-state-body">{t('agenda.empty.body')}</p>
       </div>
     </div>
   );

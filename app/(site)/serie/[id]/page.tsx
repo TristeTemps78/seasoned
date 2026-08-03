@@ -158,7 +158,7 @@ export async function SeriesView({ id, locale }: {
   if (loaded.kind === 'unavailable') {
     return (
       <div className="mx-auto max-w-2xl py-12 space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="page-title">
           {t(locale, 'series.unavailableHeading')}
         </h1>
         <p className="text-(--color-muted)">{t(locale, 'series.unavailableBody')}</p>
@@ -213,7 +213,7 @@ export async function SeriesView({ id, locale }: {
 
         <div className="space-y-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="page-title">
               {detail.title}
               {started !== undefined ? (
                 <span className="ml-2 font-normal text-(--color-muted)">{started}</span>
@@ -376,7 +376,7 @@ async function AlsoByCreators({ detail, locale }: {
   return (
     <section className="space-y-4" aria-label={t(locale, 'series.sameCreator')}>
       <div>
-        <h2 className="text-lg font-semibold tracking-tight">
+        <h2 className="section-heading">
           {t(locale, 'series.sameCreator')}
         </h2>
         {names.length > 0 ? (

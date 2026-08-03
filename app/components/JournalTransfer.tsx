@@ -56,7 +56,7 @@ export function JournalTransfer({ onExport, onImport, count }: {
       className="space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
       aria-label={t('backup.aria')}
     >
-      <h2 className="text-sm font-semibold">{t('backup.title')}</h2>
+      <h2 className="card-title">{t('backup.title')}</h2>
 
       {/* Dire la verite sur la fragilite du stockage fait partie du contrat : vider
           son navigateur efface tout, et personne ne s'y attend. */}

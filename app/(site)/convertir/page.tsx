@@ -36,21 +36,21 @@ export function ConvertView({ locale }: { readonly locale: Locale }) {
   return (
     <div className="mx-auto max-w-2xl space-y-8 py-6">
       <header className="space-y-3">
-        <h1 className="text-2xl font-semibold tracking-tight">{t(locale, 'convert.title')}</h1>
+        <h1 className="page-title">{t(locale, 'convert.title')}</h1>
         <p className="leading-relaxed text-(--color-muted)">{t(locale, 'convert.lede')}</p>
       </header>
 
       <ForeignImport />
 
       <section className="space-y-2 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4">
-        <h2 className="text-sm font-semibold">{t(locale, 'convert.honestTitle')}</h2>
+        <h2 className="card-title">{t(locale, 'convert.honestTitle')}</h2>
         <p className="text-xs leading-relaxed text-(--color-muted)">
           {t(locale, 'convert.honestBody')}
         </p>
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold">{t(locale, 'convert.mergeTitle')}</h2>
+        <h2 className="card-title">{t(locale, 'convert.mergeTitle')}</h2>
         <p className="text-xs leading-relaxed text-(--color-muted)">
           {t(locale, 'convert.mergeBody')}
         </p>
