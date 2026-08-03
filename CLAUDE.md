@@ -8,7 +8,56 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, soir — convergence de deux rapports externes)
+## État actuel (2026-08-03, soir — convergence, et le lot 5 trié)
+
+- **✅ Tout est poussé** (`c919a64..4c11706`) — 4 commits, CI déclenchée. `main` propre.
+- **🎬 A13 tranché par Tristan : suivi complet des films.** **Contraire à ma recommandation**
+  (« les listes acceptent les films, le produit ne les suit pas »), actée — comme A1 et A7,
+  mes objections deviennent le cahier des charges. Ce qui reste vrai de l'objection : un film
+  n'a ni saison, ni position, ni trajectoire, donc **aucun** des quatre différenciateurs ne s'y
+  applique. **La conséquence n'est pas de refuser, c'est de ne pas prétendre** — une fiche film
+  doit être honnêtement sobre.
+  - ✅ **Aucune migration de journal**, trouvé en vérifiant : la clé est `<espace>:<id>` et
+    `parseJournalKey` coupe au **premier** `:`. Les séries gardent `tmdb:1396` **inchangé**,
+    les films prennent un espace neuf. Le préfixe identifiait déjà l'**espace
+    d'identifiants** — et c'est exact, chez TMDB le film 550 et la série 550 sont deux objets.
+  - 🔴 **Le vrai risque n'est pas les types : huit modules parcourent `journal.entries` en
+    supposant des saisons** (`tally`, `remaining`, `trajectory`, `entry-point`, `catch-up`,
+    `current-season`, `nudge`, `calendar`). Un film non filtré ne plante pas — il **empoisonne
+    silencieusement chaque agrégat** — et le typage ne dira rien, puisqu'une clé reste une chaîne.
+    > **Donc l'ordre est : border les huit modules d'abord, écrire la première entrée film
+    > ensuite.** L'inverse produit des chiffres faux dont on ne saura pas depuis quand.
+  - **Bénéfice inattendu** : un film **a une durée**, donc il compte légitimement dans le bilan
+    d'heures. Le seul endroit où les films renforcent un différenciateur au lieu de le diluer.
+- **🎯 Lot 5 : les idées de Tristan triées** (parité Serializd, VPN, quiz, scrobbling) —
+  **`docs/IDEES-TRIEES.md`**. Rien n'est écarté : tout est soit déjà fait (huit items), soit
+  chiffré, soit rangé derrière son prérequis. Et le prérequis n'est presque jamais technique,
+  c'est **5.0 la modération**.
+  - 🔴 **Le VPN : la question était bonne, la méthode non.** Détecter un VPN exige d'inspecter
+    l'IP côté serveur — donc du **traçage**, ce qui casse l'argument qui rend A6 cohérent — et
+    c'est peu fiable. Or `/watch/providers` renvoie **tous les pays d'un coup**, dans l'appel
+    qu'on fait déjà. **On ne devine pas l'utilisateur, on le laisse choisir ses pays.** Même
+    forme que le `.ics` et que le `VALARM` à 9 h locales : *la solution qui n'a pas besoin de
+    l'information vaut mieux que celle qui va la chercher.*
+  - 🔴 **Le quiz personnel est la meilleure idée de la liste.** « Quelle série avez-vous vue le
+    7 janvier ? » se calcule sur le **journal local** : zéro serveur, zéro compte, zéro
+    modération, hors ligne, et **structurellement incopiable** — il faut *votre* journal.
+  - ⚠️ **Les quiz publics ont deux pièges** : le **spoiler** (« devine d'après les notes par
+    épisode » révèle une trajectoire, et `spoiler.ts` existe pour ça) et la **triche** (toute
+    réponse est dans l'API TMDB, donc un classement exige un score calculé côté serveur).
+  - ⛔ **L'écran d'accueil fait de critiques contredit une décision fondatrice** : le corpus de
+    textes ne s'amorce pas, donc une page doit valoir le détour **avec zéro critique**. Un tel
+    accueil est vide le premier jour. À reformuler en « accueil qui se remplit ».
+  - **Changer l'affiche** (la feature la plus aimée de Serializd) se fait **sans upload** : on
+    choisit parmi les images que TMDB porte déjà. Même ruse que A12.
+  - ⚠️ **Compteurs « 0 vu · 0 critique » : mieux vaut se taire que compter zéro.** Le vrai
+    sujet du social n'est pas la modération, c'est le démarrage à froid.
+  - **Scrobbling, 3ᵉ demande : question d'ordre, pas de principe.** Deux faits nouveaux —
+    **Serializd n'a aucun scrobbling** et c'est lui qui occupe la place ; et D17 fait qu'un
+    planificateur serveur existera de toute façon, donc le coût marginal baisse **après**.
+    D15 (Trakt) reste fermé.
+
+## État précédent (2026-08-03, soir — convergence de deux rapports externes)
 
 - **🔀 Deux rapports Gemini confrontés au dépôt. Verdict : on ne refait rien** — et le
   raisonnement est vérifiable, pas affaire de goût. Analyse complète :
