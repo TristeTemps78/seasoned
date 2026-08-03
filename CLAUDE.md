@@ -8,7 +8,99 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, soir)
+## État actuel (2026-08-03, soir — convergence de deux rapports externes)
+
+- **🔀 Deux rapports Gemini confrontés au dépôt. Verdict : on ne refait rien** — et le
+  raisonnement est vérifiable, pas affaire de goût. Analyse complète :
+  **`docs/CONVERGENCE-RAPPORTS.md`**. **610 tests verts**, typecheck strict vert.
+  - **L'inversion à retenir, parce qu'elle est dans les rapports eux-mêmes** : les deux
+    ouvrent sur « TV Time est mort avec 26,4 M d'installations » et concluent « donc la place
+    est libre ». Mais 26,4 M d'installations **sont** la demande — il est mort parce que son
+    coût par utilisateur ne se monétisait pas. Or leurs recommandations sont presque
+    intégralement une liste de coûts par utilisateur (Kafka, Redis, push, hébergement de GIF,
+    modération de médias, sync Plex, apps tablette).
+    > **Les rapports prescrivent en détail la cause de mort du cas qu'ils citent en ouverture.**
+  - Retire ce qui est (a) impossible ici, (b) **déjà livré** — sept de leurs recommandations
+    « indispensables » le sont —, (c) un coût par utilisateur : il reste **trois** éléments,
+    tous petits. Ce que les rapports apportent de plus utile n'est pas une feature, c'est la
+    **confirmation externe** que le diagnostic de `RESEARCH.md` est bon, par quelqu'un qui ne
+    l'avait pas lu.
+- **🔴 A11 — la contrainte « aucune application native » était FAUSSE, et c'est le résultat le
+  plus important de la session.** `AGENTS.md` observait « pas de Mac, pas de Xcode » (vrai) et
+  en concluait « aucune application native » (faux). Le contre-exemple était dans la phrase :
+  `Limits` a produit un **IPA en Release** depuis ce PC, en CI, sur un runner macOS hébergé.
+  Il n'a **jamais** buté sur le build — il a buté sur le **sideload sans compte développeur**.
+  Les quatre arguments alignés par `ROADMAP.md` §1.1 (*sans compte* · *sans signature* · *sans
+  magasin* · *sans le cycle de sept jours*) décrivent **tous** les conséquences du *free
+  provisioning*, aucun celles du natif.
+  - **Tranché par Tristan : natif iOS + Android.** Le mur était **~99 $/an + 25 $**, pas une
+    impossibilité matérielle. Corrigé dans `AGENTS.md`, `ROADMAP.md` §1.1 et `app/manifest.ts`.
+  - ⛔ **D16 : l'achat intégré Apple ponctionne A6** (15–30 %). A6 a été tranché *le matin
+    même*, sans Apple dans l'équation — **à rechiffrer**. Bloque la tâche 4.8.
+  - ⚠️ **D17 : le natif rend le push obligatoire** (un webview nu se fait refuser, règle 4.2),
+    et le push ramène le planificateur serveur, donc le coût par utilisateur.
+  - **Le web reste premier**, mais pour la bonne raison : une application n'a pas de SEO, donc
+    le natif est un canal de **rétention**, pas d'acquisition. Et `src/domain/` n'important
+    **rien**, la règle 2 — écrite pour la testabilité — se révèle être de la **portabilité**.
+  > **La leçon** : *auditer le résultat, jamais l'intention* — **y compris celui de sa propre
+  > documentation**. « Pas de Mac » est un fait ; « donc pas de natif » est une **inférence**,
+  > restée écrite comme un fait et marquée « non négociable » dans le fichier que tous les
+  > agents lisent en premier. **Une contrainte fausse dans une source de vérité coûte plus
+  > cher qu'une contrainte absente : elle est crue, et personne ne la revérifie.**
+- **🔴 Le calendrier déposait un pense-bête muet.** `calendar.ts` écrivait des `VEVENT` et
+  **aucun** `VALARM` : les dates arrivaient dans l'agenda et **rien ne sonnait**. La promesse
+  de son propre en-tête — « le rappel arrive même si l'on n'a pas rouvert le site depuis un
+  mois » — était fausse. **12 → 20 tests.**
+  - **Le déclencheur est positif (`PT9H`)** et ça ressemble à une faute : sur un événement de
+    journée entière `DTSTART` vaut minuit, donc `-PT1H` sonnerait **à 23 h la veille** —
+    exactement le rappel nocturne que le choix de la journée entière évitait. Et un
+    `DTSTART;VALUE=DATE` n'ayant pas de fuseau, le même fichier sonne à 9 h **locales**
+    partout, **sans que nous sachions où est qui**.
+  - **Deux mutations vérifiées** plutôt que crues : retirer le `VALARM` fait tomber 5 tests,
+    inverser le signe en fait tomber 1.
+  > **La leçon** : les 12 tests d'origine vérifiaient tous la **conformité** du fichier, aucun
+  > son **effet**. Un `.ics` valide qui ne rappelle rien passe toutes les vérifications qu'on
+  > avait pensé à écrire. Le défaut a été trouvé **en confrontant, pas en relisant**.
+- **Trois arbitrages tranchés, un en attente** (`TASKS.md`, tableau des arbitrages) :
+  - ✅ **A11** natif iOS/Android (ci-dessus) ;
+  - ✅ **A12** médias riches : **sélecteur d'un catalogue tiers + copie proxifiée, jamais
+    d'upload**. Le *hotlink* est écarté parce que **Tenor appartient à Google** : chaque
+    affichage enverrait IP + referer, ce qui casse « pas de publicité donc pas de traçage » —
+    l'argument même qui rend A6 cohérent. ⛔ Livraison après 5.0 (modération).
+    🔴 **Ma première objection était fausse** : ce n'est pas le GIF qui crée l'obligation DSA,
+    c'est la couche sociale, texte compris. Ce que le GIF change est le **plafond de nuisance**.
+  - 🟡 **A13 — le produit suit-il les films ? EN ATTENTE DE TRISTAN.** Le seul arbitrage de la
+    session qui touche `src/domain/types.ts`, donc le seul qu'il vaut mieux ne pas prendre en
+    retard. Ma reco : **les listes acceptent les films, le produit ne les suit pas** — un film
+    n'a ni saison, ni position, ni trajectoire, donc **aucun** des quatre différenciateurs ne
+    s'y applique, et on se mesurerait à Letterboxd sur son seul terrain imbattable.
+    Explication en clair : `docs/CONVERGENCE-RAPPORTS.md` §1.
+- **Trois choses fermées avec un chiffre**, à ne pas rouvrir sans fait nouveau :
+  - **Kafka / Redis** : le mécanisme d'effondrement décrit (contention de lignes chaudes) **ne
+    peut pas se produire** — `user_id uuid primary key`, chaque compte écrit sa propre ligne.
+    Structurel, pas « pas encore assez d'utilisateurs ». Et **le projet a déjà le motif
+    write-behind, en mieux et pour 0 €** : le tampon est `localStorage`, chez l'utilisateur.
+    Le vrai axe est **Q8 / tâche 4.5** (octets par écriture), pas le débit.
+  - **Scrobbling par webhooks** : exigerait la **première route serveur** du projet (zéro
+    aujourd'hui), un jeton par utilisateur, la `service_role`.
+  - **D15 — Trakt** : 🔴 j'avais recommandé de le lire comme source de position ;
+    **l'enquête dit non.** Un compte gratuit ne connecte qu'**une seule** application externe,
+    donc quelqu'un ayant déjà branché son scrobbler Plex — la population visée — **ne peut pas
+    brancher VOLTFACE**. VIP à 60 $/an, usage commercial soumis à approbation.
+- **🔴 `episode_groups` — la vraie trouvaille des rapports, tâche 4.4 (libre).** Zéro occurrence
+  dans le dépôt. Chez un tracker un mauvais ordre d'épisodes = une case mal cochée, **visible**.
+  Ici l'ordre est **l'entrée de tous les calculs** (`trajectory`, `entry-point`, point d'arrêt,
+  `remaining`, `tally`) : le produit rendrait un conseil **faux avec assurance** et **rien ne le
+  montrerait**. Réponse = règle 8, **signaler d'abord** ; le sélecteur d'ordre seulement si
+  l'avertissement se révèle fréquent.
+  - ⚠️ **D18 : `TMDB_ACCESS_TOKEN` est vide dans `.env`** — `episode_groups` n'a été vérifié
+    qu'**en documentation**, jamais contre une réponse réelle. C'est le prérequis de 4.4 (D10).
+- ⚠️ **La dérive D14 s'était reformée** : `CLAUDE.md` annonçait 562 tests, il y en avait 602
+  avant cette session. Remis à 610.
+- ⚠️ **Sept commits non poussés** (4 antérieurs + 3 de cette session). Un push est un
+  déploiement public — décision de Tristan.
+
+## État précédent (2026-08-03, soir — la navigation par faces)
 
 - **💰 A6 tranché : freemium cosmétique** (référence Riot Games). Le seul modèle qui ne
   contredise **aucune** promesse déjà faite — pas de paywall sur les statistiques, pas de
