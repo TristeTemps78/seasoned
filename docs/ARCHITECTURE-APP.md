@@ -567,6 +567,74 @@ noté ici parce que la question se reposera à chaque nouvelle table.
 
 ---
 
+## 7quater. A6 — la monétisation : freemium cosmétique
+
+**Tranché par Tristan le 2026-08-03.** Modèle Riot Games : le produit reste entièrement
+gratuit, on vend de la **personnalisation**.
+
+### Pourquoi c'est le bon choix pour *ce* produit
+
+Ce n'est pas un choix neutre parmi d'autres — il est le seul qui **ne contredise aucune
+promesse déjà faite** :
+
+| Modèle | Ce qu'il coûterait |
+|---|---|
+| Paywall sur les statistiques | Détruit le positionnement entier : le bilan personnel a été construit **contre** le paywall de Letterboxd |
+| Publicité | Traçage, donc contradiction frontale avec « vos données restent chez vous » |
+| Affiliation streaming | Le classement des offres devient suspect — « où regarder » cesse d'être factuel |
+| **Cosmétique** | **Rien.** Aucune donnée, aucune fonctionnalité, aucun jugement n'est mis derrière un mur |
+
+Et un avantage inattendu : **les cosmétiques sont produits par nous**, donc ils n'ajoutent
+**aucune charge de modération** — contrairement à tout contenu vendu ou téléversé par des
+utilisateurs.
+
+### 🔄 À contre-sens : ce qui doit être vrai pour que ça marche
+
+**« Chez Riot, le cosmétique a de la valeur parce qu'il est vu par d'autres joueurs. »**
+C'est l'objection sérieuse, et elle est structurelle :
+
+> **Un cosmétique ne vaut rien sur un profil que personne ne regarde.** Or Q1 fixe
+> `followers` par défaut, et le fil sera vide longtemps (§4.4).
+
+Conséquences, à accepter plutôt qu'à contourner :
+
+1. **Le revenu ne peut pas venir avant le social.** A6 est tranché, mais il n'est pas
+   *exploitable* avant le lot 4. Compter dessus plus tôt serait une erreur de plan.
+2. **Le meilleur véhicule n'est pas le profil, c'est `ShareCard`.** Elle sort du produit et
+   se voit par des **non-utilisateurs** — c'est le seul objet du produit qui ait déjà une
+   audience. Elle existe, elle dessine sur un canvas côté client, et elle ne coûte rien par
+   partage.
+3. **Le second véhicule est le cube.** Des faces personnalisables sont cohérentes avec le
+   logo, la DA et le nom. C'est la marque qui devient l'objet vendu.
+4. **Le taux de conversion d'un free-to-play tourne autour de quelques pour cent.** À
+   petite échelle, le revenu est négligeable. Ce modèle finance un produit installé, il ne
+   l'amorce pas.
+
+### ⛔ Ce qu'on ne vendra jamais, et qu'il faut écrire maintenant
+
+- **Aucune donnée, aucun calcul, aucun agrégat.** Le bilan, la trajectoire, le point
+  d'arrêt, le temps passé restent gratuits pour tout le monde. C'est la ligne qui sépare ce
+  produit de celui qu'il critique.
+- **Aucun avantage social** — pas de mise en avant payante dans le fil.
+- **Aucune limite artificielle** dégradée pour vendre sa levée.
+
+> **La règle en une phrase** : *on vend l'apparence, jamais la réponse.*
+
+### ⚠️ Ce que A6 débloque de bloquant
+
+| # | Conséquence | Statut |
+|---|---|---|
+| **D6** | **L'usage commercial de TMDB exige un accord écrit.** Établi dès `RESEARCH.md` §300 et `ROADMAP.md` §242 : le freemium *est* un usage commercial. La dette passe de dormante à **active** | ⛔ **Action de Tristan, avant la première vente** |
+| Hébergement | Vercel Hobby **interdit** l'usage commercial → plan payant | À prévoir |
+| ⚖️ Paiement | Prestataire (Stripe), TVA sur les services numériques dans l'UE, CGV, facturation | Avant le lot de vente |
+| ⚖️ Rétractation | Le contenu numérique a un régime particulier ; à vérifier pour un achat cosmétique immédiat | Avant le lot de vente |
+
+> Si l'accord TMDB n'était pas obtenu, le repli existe et il est documenté : changer de
+> fournisseur reste **un module à réécrire** (`CatalogProvider`, règle 3), jamais une base à
+> migrer. C'est précisément pour ce jour-là que la règle a été posée.
+
+---
+
 ## 7ter. Ce qui reste vraiment ouvert
 
 Après ce passage, il ne reste que ce qui demande une décision humaine ou une mesure :
@@ -574,8 +642,8 @@ Après ce passage, il ne reste que ce qui demande une décision humaine ou une m
 | # | Question | Quand |
 |---|---|---|
 | Q6 | Le seuil de durcissement du rappel | Après le lot 2b — **à mesurer** |
-| Q11 | ⚖️ L'âge retenu, à faire confirmer | Avant le lot 2a |
-| A6 | La monétisation, toujours non tranchée | Avant Vercel payant et l'accord TMDB (D6) |
+| **D6** | ⛔ **L'accord écrit TMDB** — activé par A6 | **Avant la première vente.** Action de Tristan |
+| ⚖️ | Le régime de rétractation d'un achat cosmétique | Avant le lot de vente |
 
 ---
 

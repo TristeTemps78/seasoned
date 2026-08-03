@@ -5,6 +5,7 @@ import { PRODUCT_NAME, siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
 import { DataSafety } from '@/app/components/DataSafety';
 import { LanguagePicker } from '@/app/components/LanguagePicker';
+import { Faces } from '@/app/components/Faces';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import { localeTag, t, type Locale } from '@/lib/i18n';
 import { pathIn } from '@/lib/routes';
@@ -59,19 +60,16 @@ export function SiteChrome({ locale, children }: {
             <span className="hidden text-sm text-(--color-muted) sm:inline">
               {t(locale, 'nav.tagline')}
             </span>
-            {/* Le seul lien permanent vers ce que le produit retient de vous. Sans
-                lui, la bibliotheque n'existe que pour qui connait son adresse.
-                ⚠️ Dans la langue courante : ce lien pointait `/moi` en dur, donc un
-                lecteur francais quittait le francais en cliquant sur sa propre
-                bibliotheque — exactement ce que le commentaire du logo interdit. */}
-            <Link
-              href={pathIn('/moi', locale)}
-              className="ml-auto text-sm text-(--color-muted) hover:text-(--color-text)"
-            >
-              {t(locale, 'nav.library')}
-            </Link>
+            {/* ⚠️ Le lien « Ma bibliotheque » a ete retire d'ici : la barre de faces le
+                porte desormais, et deux chemins vers le meme ecran dans le meme en-tete
+                font douter qu'ils menent au meme endroit. */}
+            <span className="ml-auto" />
             <LanguagePicker />
           </div>
+          {/* Les faces du cube. Dans l'en-tete et non en bas d'ecran : le site est
+              d'abord visite depuis un moteur de recherche, ou une barre flottante
+              masquerait du contenu indexe sans rien apporter. */}
+          <Faces locale={locale} />
         </header>
 
         <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-8">
@@ -154,6 +152,9 @@ export function siteMetadata(locale: Locale): Metadata {
  * Android, ce qui la fait immediatement lire comme un site ouvert dans un navigateur.
  */
 export const siteViewport: Viewport = {
-  themeColor: '#0f1115',
+  // ⚠️ Doit suivre `--color-ink` de `globals.css`. Restee sur l'ancienne teinte lors
+  // du passage a la DA cyberpunk : l'application installee encadrait un fond qui
+  // n'existait plus nulle part ailleurs.
+  themeColor: '#08090e',
   colorScheme: 'dark',
 };

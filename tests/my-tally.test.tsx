@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Library } from '@/app/(site)/moi/Library';
+import { MyStats } from '@/app/components/MyStats';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import {
   EMPTY_JOURNAL,
@@ -46,10 +46,15 @@ function store(journal: Journal): void {
   window.localStorage.setItem(STORAGE_KEY, serializeJournal(journal));
 }
 
+/**
+ * ⚠️ Rend `MyStats` et non `Library` : le bilan a quitte la bibliotheque pour la face
+ * « Mon bilan » (2026-08-03). Ces tests sont tombes au demenagement, ce qui est
+ * exactement leur role — ils surveillent un branchement, pas une mise en page.
+ */
 function renderLibrary(locale: 'fr' | 'en' = 'fr') {
   render(
     <LocaleProvider locale={locale}>
-      <Library />
+      <MyStats />
     </LocaleProvider>,
   );
 }
@@ -112,10 +117,11 @@ describe('le bilan personnel, branche sur le journal', () => {
     store(j);
     renderLibrary();
 
-    // ⚠️ Attendre que la bibliotheque soit **chargee** avant de conclure a une absence :
-    // sans cela le test passerait sur le rendu vide, quel que soit le code du bilan.
+    // ⚠️ Attendre que l'ecran soit **charge** avant de conclure a une absence : sans
+    // cela le test passerait sur le rendu vide, quel que soit le code du bilan. Le titre
+    // de la face est present des que le journal est lu.
     await waitFor(() => {
-      expect(screen.getByText('Breaking Bad')).toBeDefined();
+      expect(screen.getByRole('heading', { name: 'Mon bilan' })).toBeDefined();
     });
     expect(screen.queryByRole('region', { name: 'Mon temps passé' })).toBeNull();
   });
@@ -126,7 +132,7 @@ describe('le bilan personnel, branche sur le journal', () => {
     renderLibrary();
 
     await waitFor(() => {
-      expect(screen.getByText('Breaking Bad')).toBeDefined();
+      expect(screen.getByRole('heading', { name: 'Mon bilan' })).toBeDefined();
     });
     // Quarante minutes : sous le seuil d'une heure.
     expect(screen.queryByRole('region', { name: 'Mon temps passé' })).toBeNull();

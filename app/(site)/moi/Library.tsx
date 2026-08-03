@@ -5,15 +5,10 @@ import { useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
-import { CalendarExport } from '@/app/components/CalendarExport';
 import { JournalTransfer } from '@/app/components/JournalTransfer';
 import { LibraryCard } from '@/app/components/LibraryCard';
 import { MyPlatforms } from '@/app/components/MyPlatforms';
-import { MyTally } from '@/app/components/MyTally';
-import { TasteCard } from '@/app/components/TasteCard';
 import { buildLibrary, type LibraryItem } from '@/src/domain/library';
-import { buildTally } from '@/src/domain/tally';
-import { buildTasteProfile } from '@/src/domain/taste';
 
 /**
  * La bibliotheque, entierement construite dans le navigateur.
@@ -44,8 +39,6 @@ export function Library() {
   // Recalcule seulement quand le journal change : le rangement traverse toutes les
   // entrees, et il n'a aucune raison de recommencer a chaque rendu.
   const library = useMemo(() => buildLibrary(journal), [journal]);
-  const taste = useMemo(() => buildTasteProfile(journal), [journal]);
-  const tally = useMemo(() => buildTally(journal), [journal]);
 
   if (!ready) {
     // Ne rien affirmer avant d'avoir lu : annoncer « votre bibliotheque est vide » a
@@ -78,21 +71,15 @@ export function Library() {
         items={library.finished}
       />
 
-      {/* Le chiffre global avant le trait de gout : « combien » se lit avant « comment ». */}
-      <MyTally tally={tally} />
+      {/* ⚠️ Le bilan et le profil de gout ont quitte cet ecran pour la face « Mon
+          bilan ». Ils repondaient a une autre question, posee a un autre moment : la
+          bibliotheque dit **ou j'en suis**, le bilan dit **qui je suis** — et on ne fait
+          plus defiler toute sa collection pour lire son total. */}
 
-      <TasteCard
-        profile={taste}
-        journalTitles={Object.fromEntries(
-          Object.entries(journal.entries)
-            .map(([key, entry]) => [key, entry.snapshot?.title])
-            .filter((pair): pair is [string, string] => pair[1] !== undefined),
-        )}
-      />
-
-      {/* Le rappel que le produit ne peut pas se payer, delegue au calendrier que tout
-          le monde a deja. Ne s'affiche que si au moins une date est connue. */}
-      <CalendarExport />
+      {/* ⚠️ L'export `.ics` a suivi le calendrier sur sa face. Le laisser ici aussi
+          donnait **deux** endroits pour la meme action, ce qui fait douter qu'elles
+          mènent au meme resultat — la faute reprochee au lien « Ma bibliotheque »
+          duplique dans l'en-tete. */}
 
       <MyPlatforms />
 

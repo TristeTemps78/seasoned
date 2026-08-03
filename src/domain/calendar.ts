@@ -33,6 +33,8 @@
  * Module pur : ni reseau, ni horloge implicite. L'instant de generation est injecte.
  */
 
+import { freshSnapshot, type Journal } from './journal';
+
 /** Un episode a venir, tel que la bibliotheque le connait. */
 export interface UpcomingEpisode {
   /** Cle de journal, qui rend l'`UID` stable d'une generation a l'autre. */
@@ -190,4 +192,39 @@ export function buildCalendar(
   lines.push('END:VCALENDAR');
   // Le `CRLF` final n'est pas decoratif : la RFC veut que chaque ligne soit terminee.
   return `${lines.map(fold).join('\r\n')}\r\n`;
+}
+
+/**
+ * Les episodes a venir que le journal connait, tries du plus proche au plus lointain.
+ *
+ * ## Pourquoi cette fonction vit ici et pas dans un composant
+ *
+ * Elle y a d'abord vecu — dans `CalendarExport`, un `useMemo` de quinze lignes. Le jour ou
+ * une **face du cube** a eu besoin de la meme liste, la choisir entre « dupliquer » et
+ * « exporter depuis un composant client » etait un faux choix : les deux ecrans doivent
+ * lire **exactement** la meme chose, sans quoi le calendrier affiche et le calendrier
+ * exporte finissent par diverger sans que personne ne le voie.
+ *
+ * Module pur : l'instant est injecte, `freshSnapshot` applique le plafond contractuel de
+ * six mois — une metadonnee perimee ne ressort pas plus par cette porte que par une autre.
+ *
+ * @returns une liste eventuellement vide. Jamais `undefined` : « aucune date connue » est
+ *   un etat normal, pas une absence de reponse.
+ */
+export function upcomingFrom(journal: Journal, now: Date): readonly UpcomingEpisode[] {
+  const found: UpcomingEpisode[] = [];
+
+  for (const [key, entry] of Object.entries(journal.entries)) {
+    const snapshot = freshSnapshot(entry, now);
+    const airsAt = snapshot?.nextEpisodeAt;
+    if (snapshot === undefined || airsAt === undefined) continue;
+
+    const airsOn = new Date(airsAt);
+    // Une date passee ne rappellera rien, et donne l'impression d'un produit perime.
+    if (Number.isNaN(airsOn.getTime()) || airsOn.getTime() < now.getTime()) continue;
+
+    found.push({ key, title: snapshot.title, airsOn });
+  }
+
+  return found.sort((a, b) => a.airsOn.getTime() - b.airsOn.getTime());
 }

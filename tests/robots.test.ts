@@ -17,7 +17,9 @@ describe('robots.txt', () => {
   const disallow = Array.isArray(rules) ? [] : ((rules.disallow ?? []) as string[]);
 
   it.each(SUPPORTED_LOCALES)('exclut les pages vides en %s', (locale) => {
-    for (const path of ['/recherche', '/moi', '/hors-ligne']) {
+    // Les faces personnelles comprises : vues d'un robot elles sont vides par
+    // construction, et le budget de crawl doit aller sur `/serie/*`.
+    for (const path of ['/recherche', '/moi', '/calendrier', '/bilan', '/hors-ligne']) {
       expect(disallow).toContain(pathIn(path, locale));
     }
   });

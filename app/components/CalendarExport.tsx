@@ -3,8 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { buildCalendar, type UpcomingEpisode } from '@/src/domain/calendar';
-import { freshSnapshot } from '@/src/domain/journal';
+import { buildCalendar, upcomingFrom, type UpcomingEpisode } from '@/src/domain/calendar';
 
 /**
  * Les dates de retour, deposees dans le calendrier qu'on a deja.
@@ -35,25 +34,12 @@ export function CalendarExport() {
   const { t, tn } = useT();
   const [saved, setSaved] = useState(false);
 
-  const upcoming = useMemo<readonly UpcomingEpisode[]>(() => {
-    const now = new Date();
-    const found: UpcomingEpisode[] = [];
-    for (const [key, entry] of Object.entries(journal.entries)) {
-      // `freshSnapshot` applique le plafond contractuel de six mois : une metadonnee
-      // perimee ne doit pas ressortir par cette porte non plus (`AGENTS.md` regle 1).
-      const snapshot = freshSnapshot(entry, now);
-      const airsAt = snapshot?.nextEpisodeAt;
-      if (snapshot === undefined || airsAt === undefined) continue;
-
-      const airsOn = new Date(airsAt);
-      // Une date passee n'a rien a faire dans un calendrier : elle ne rappellera rien
-      // et donnera l'impression que le fichier est perime.
-      if (Number.isNaN(airsOn.getTime()) || airsOn.getTime() < now.getTime()) continue;
-
-      found.push({ key, title: snapshot.title, airsOn });
-    }
-    return found;
-  }, [journal]);
+  // La meme fonction que la face « Calendrier » : les deux ecrans doivent lire
+  // exactement la meme liste, sinon l'affiche et l'exporte divergent en silence.
+  const upcoming = useMemo<readonly UpcomingEpisode[]>(
+    () => upcomingFrom(journal, new Date()),
+    [journal],
+  );
 
   const download = () => {
     const ics = buildCalendar(upcoming, new Date());
