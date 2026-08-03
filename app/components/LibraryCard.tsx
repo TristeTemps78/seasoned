@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { posterDimensions, posterUrl } from '@/lib/catalog';
+import { Poster } from '@/app/components/Poster';
 import { statusLabel } from '@/lib/format';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn, seriesPath } from '@/lib/routes';
@@ -25,7 +25,6 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
   const parsed = parseJournalKey(item.key);
   const href =
     parsed !== undefined ? seriesPath(parsed.providerId, locale) : pathIn('/', locale);
-  const poster = posterUrl(item.snapshot?.posterPath, 'w342');
   const position = item.entry.position;
 
   // 🔴 Le statut brut d'abord, traduit dans la langue de CETTE page ; le libelle fige en
@@ -53,24 +52,11 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-live)"
     >
       <div className="aspect-2/3 overflow-hidden rounded-lg border border-(--color-edge) bg-(--color-surface)">
-        {poster !== undefined ? (
-          // eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous.
-          <img
-            src={poster}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            width={posterDimensions('w342').width}
-            height={posterDimensions('w342').height}
-            className="h-full w-full object-cover transition-opacity group-hover:opacity-85"
-          />
-        ) : (
-          // Meme repli que `SeriesCard` : ne pas repeter le titre, qui est juste
-          // en dessous.
-          <div className="flex h-full items-center justify-center p-3 text-center text-xs text-(--color-muted)">
-            {t('card.noPoster')}
-          </div>
-        )}
+        <Poster
+          path={item.snapshot?.posterPath}
+          title={item.snapshot?.title ?? t('library.card.tracked')}
+          className="transition-opacity group-hover:opacity-85"
+        />
       </div>
 
       <p className="mt-2 line-clamp-2 text-sm font-medium leading-snug">

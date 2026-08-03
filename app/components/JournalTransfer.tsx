@@ -79,7 +79,7 @@ export function JournalTransfer({ onExport, onImport, count }: {
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+          className="btn"
         >
           {t('backup.import')}
         </button>

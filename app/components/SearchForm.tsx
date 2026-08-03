@@ -18,7 +18,14 @@ export function SearchForm({ defaultValue = '', autoFocus = false, locale = DEFA
   readonly locale?: Locale;
 }) {
   return (
-    <form action={pathIn('/recherche', locale)} method="GET" className="flex gap-2">
+    // Le champ et son bouton forment **un seul objet** : deux rectangles separes par un
+    // interstice se lisent comme deux controles sans rapport, et c'est le geste le plus
+    // frequent du produit.
+    <form
+      action={pathIn('/recherche', locale)}
+      method="GET"
+      className="flex items-stretch gap-0 overflow-hidden rounded-lg border border-(--color-edge) bg-(--color-surface)/70 focus-within:border-(--color-volt)/60"
+    >
       <input
         type="search"
         name="q"
@@ -26,11 +33,11 @@ export function SearchForm({ defaultValue = '', autoFocus = false, locale = DEFA
         autoFocus={autoFocus}
         placeholder={t(locale, 'search.placeholder')}
         aria-label={t(locale, 'search.submit')}
-        className="flex-1 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-2.5 placeholder:text-(--color-muted) focus:outline-none focus:ring-2 focus:ring-(--color-live)/50"
+        className="min-w-0 flex-1 bg-transparent px-4 py-3 placeholder:text-(--color-muted) focus:outline-none"
       />
       <button
         type="submit"
-        className="rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-2.5 text-sm font-medium hover:border-(--color-muted) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-live)"
+        className="border-l border-(--color-edge) px-5 text-sm font-medium text-(--color-volt) transition-colors hover:bg-(--color-volt)/10"
       >
         {t(locale, 'search.submit')}
       </button>

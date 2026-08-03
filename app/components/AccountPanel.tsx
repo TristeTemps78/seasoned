@@ -51,7 +51,7 @@ export function AccountPanel() {
         <button
           type="button"
           onClick={() => void leave()}
-          className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+          className="btn"
         >
           {t('account.signOut')}
         </button>
@@ -68,7 +68,7 @@ export function AccountPanel() {
           <button
             type="button"
             onClick={() => void erase().then((ok) => setDeleteFailed(!ok))}
-            className="rounded-md border border-(--color-warn) px-3 py-1.5 text-sm text-(--color-warn)"
+            className="btn btn-danger"
           >
             {t('account.delete.confirm')}
           </button>
@@ -76,7 +76,7 @@ export function AccountPanel() {
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+            className="btn"
           >
             {t('account.delete.title')}
           </button>

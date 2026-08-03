@@ -76,7 +76,7 @@ export function CalendarExport() {
         <button
           type="button"
           onClick={download}
-          className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+          className="btn"
         >
           {t('calendar.download')}
         </button>

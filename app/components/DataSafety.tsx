@@ -194,7 +194,7 @@ export function DataSafety() {
           <button
             type="button"
             onClick={install}
-            className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+            className="btn"
           >
             {t('safety.install')}
           </button>
@@ -203,7 +203,7 @@ export function DataSafety() {
         <button
           type="button"
           onClick={download}
-          className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+          className="btn"
         >
           {t('safety.export')}
         </button>

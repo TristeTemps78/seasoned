@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import type { SeriesSummary } from '@/src/catalog/provider';
 import type { StatusResult } from '@/src/domain/status';
-import { posterDimensions, posterUrl } from '@/lib/catalog';
+import { Poster } from '@/app/components/Poster';
 import { STATUS_TONE, shortStatus, year } from '@/lib/format';
-import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
+import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 import { seriesPath } from '@/lib/routes';
 
 /**
@@ -45,7 +45,6 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE }: {
   readonly status?: StatusResult;
   readonly locale?: Locale;
 }) {
-  const poster = posterUrl(series.posterPath, 'w342');
   const firstYear = year(series.firstAirDate);
   const badge = status !== undefined ? shortStatus(status, locale) : undefined;
 
@@ -57,27 +56,11 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE }: {
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-volt)"
     >
       <div className="relative aspect-2/3 overflow-hidden rounded-lg border border-(--color-edge) bg-(--color-surface) transition-colors group-hover:border-(--color-volt)/50">
-        {poster !== undefined ? (
-          // eslint-disable-next-line @next/next/no-img-element -- servi par le CDN TMDB,
-          // jamais par nous : c'est une ligne du budget (`ROADMAP.md` §1.4).
-          // `width`/`height` declares : sans eux le navigateur ne reserve pas la
-          // place et la page saute a l'arrivee des affiches (decalage de mise en
-          // page, mesure par Google). Le ratio d'une affiche TMDB est constant, on
-          // peut donc les donner sans rien charger.
-          <img
-            src={poster}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            width={posterDimensions('w342').width}
-            height={posterDimensions('w342').height}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center p-3 text-center text-xs text-(--color-muted)">
-            {t(locale, 'card.noPoster')}
-          </div>
-        )}
+        <Poster
+          path={series.posterPath}
+          title={series.title}
+          className="transition-transform duration-300 group-hover:scale-[1.03]"
+        />
 
         {/* Le degrade n'est pas un ornement : il garantit que la pastille reste lisible
             sur une affiche claire. Sans lui, un fond blanc rend le texte invisible. */}
@@ -98,7 +81,10 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE }: {
         ) : null}
       </div>
 
-      <p className="mt-2 text-sm leading-snug font-semibold group-hover:text-(--color-volt) transition-colors">
+      {/* Deux lignes puis des points : « The Rookie : Le Flic de » coupe net ne designe
+          plus aucune serie. Une hauteur fixe garde l'alignement des lignes de la grille
+          quand un titre tient sur une ligne et le suivant sur deux. */}
+      <p className="clamp-2 mt-2 min-h-[2.5rem] text-sm leading-snug font-semibold transition-colors group-hover:text-(--color-volt)">
         {series.title}
       </p>
       {firstYear !== undefined ? (

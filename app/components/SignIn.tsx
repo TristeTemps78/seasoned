@@ -78,7 +78,7 @@ export function SignIn() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={t('account.email.placeholder')}
-            className="w-full rounded-md border border-(--color-edge) bg-(--color-surface) px-3 py-2 text-sm"
+            className="field text-sm"
           />
         </div>
 
@@ -107,7 +107,7 @@ export function SignIn() {
         <button
           type="submit"
           disabled={!ready || state === 'sending'}
-          className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted) disabled:opacity-50"
+          className="btn btn-primary"
         >
           {state === 'sending' ? t('account.sending') : t('account.send')}
         </button>
@@ -137,11 +137,11 @@ export function SignIn() {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder={t('account.code.placeholder')}
-              className="numeric w-32 rounded-md border border-(--color-edge) bg-(--color-surface) px-3 py-2 text-sm"
+              className="field numeric w-32 text-sm"
             />
             <button
               type="submit"
-              className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+              className="btn"
             >
               {t('account.code.submit')}
             </button>
@@ -160,7 +160,7 @@ export function SignIn() {
           type="button"
           disabled={!oldEnough}
           onClick={() => void withGoogle(redirectTo())}
-          className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted) disabled:opacity-50"
+          className="btn"
         >
           {t('account.google')}
         </button>

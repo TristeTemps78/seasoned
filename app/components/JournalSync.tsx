@@ -92,14 +92,14 @@ export function JournalSync() {
           <button
             type="button"
             onClick={() => answer(false)}
-            className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+            className="btn"
           >
             {t('sync.adopt.no')}
           </button>
           <button
             type="button"
             onClick={() => answer(true)}
-            className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+            className="btn"
           >
             {t('sync.adopt.yes')}
           </button>

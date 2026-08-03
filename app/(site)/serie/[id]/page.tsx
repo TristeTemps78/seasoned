@@ -488,24 +488,16 @@ function Stat({ label, value, emphasis = false }: {
 }) {
   return (
     <div
-      className={`rounded-lg border px-4 py-3 ${
+      className={`tile ${
         emphasis
           ? 'border-(--color-volt)/40 bg-(--color-volt)/[0.06] shadow-[0_0_24px_-12px_var(--color-volt)]'
-          : 'border-(--color-edge) bg-(--color-surface)'
+          : ''
       }`}
     >
-      <dt
-        className={`text-xs uppercase tracking-wide ${
-          emphasis ? 'text-(--color-volt)/80' : 'text-(--color-muted)'
-        }`}
-      >
-        {label}
-      </dt>
+      <dt className={`tile-label ${emphasis ? 'text-(--color-volt)/80' : ''}`}>{label}</dt>
       <dd
-        className={`numeric mt-1 ${
-          emphasis
-            ? 'text-lg font-semibold text-(--color-volt) text-balance'
-            : 'text-sm'
+        className={`tile-value ${
+          emphasis ? 'font-semibold text-(--color-volt)' : 'text-base text-(--color-text)'
         }`}
       >
         {value}

@@ -127,11 +127,11 @@ export function Friends() {
             value={handle}
             onChange={(event) => setHandle(event.target.value)}
             placeholder={t('friends.claim.placeholder')}
-            className="w-48 rounded-md border border-(--color-edge) bg-(--color-surface) px-3 py-2 text-sm"
+            className="field w-48 text-sm"
           />
           <button
             type="submit"
-            className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+            className="btn btn-primary"
           >
             {t('friends.claim.submit')}
           </button>
@@ -159,11 +159,11 @@ export function Friends() {
             value={lookup}
             onChange={(event) => setLookup(event.target.value)}
             placeholder={t('friends.follow.placeholder')}
-            className="w-48 rounded-md border border-(--color-edge) bg-(--color-surface) px-3 py-2 text-sm"
+            className="field w-48 text-sm"
           />
           <button
             type="submit"
-            className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+            className="btn btn-primary"
           >
             {t('friends.follow.submit')}
           </button>
