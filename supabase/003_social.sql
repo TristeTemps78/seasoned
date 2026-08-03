@@ -67,9 +67,9 @@ create table if not exists public.profiles (
   visibility text not null default 'followers'
     check (visibility in ('private', 'followers', 'public')),
   created_at timestamptz not null default now(),
-  -- Q7 : 3 a 20 caracteres, minuscules, chiffres, tirets et soulignes. Le meme motif que
-  -- `src/domain/handles.ts` — s'il diverge, c'est la base qui tranche.
-  constraint profiles_handle_shape check (handle ~ '^[a-z0-9_-]{3,20}$')
+  -- Q7 : 3 a 20 caracteres, minuscules, chiffres et soulignes — **pas de tiret**. Le motif
+  -- vient de `src/domain/handles.ts` : le domaine tranche, la base execute. Il avait diverge.
+  constraint profiles_handle_shape check (handle ~ '^[a-z0-9_]{3,20}$')
 );
 
 -- ⚠️ Le refus d'un handle reserve est un **declencheur** et non un `check` : Postgres
@@ -160,9 +160,35 @@ drop policy if exists follows_select_mine on public.follows;
 create policy follows_select_mine on public.follows
   for select using (auth.uid() = follower_id or auth.uid() = followee_id);
 
+-- 🔴 **L'impasse que cette politique a d'abord contenue.** Elle exigeait
+-- `can_see(followee_id)` — ce qui parait prudent et ne l'est pas : un profil `followers`
+-- n'est visible **qu'une fois suivi**. Donc personne n'aurait jamais pu suivre personne, et
+-- `followers` etant la visibilite par defaut (Q1), le social entier etait mort au demarrage.
+--
+-- La bonne lecture : **suivre est un acte, voir est un droit.** Ce qui se protege est la
+-- lecture, et `can_see` la protege deja. Reste le seul cas ou suivre n'a aucun sens — un
+-- profil `private` —, refuse ici pour ne pas laisser croire a un acces qu'on n'aura pas.
+--
+-- ⚠️ Et le correctif evident ne suffisait pas : ecrire la condition comme une sous-requete
+-- sur `profiles` la soumet **elle aussi** a RLS. B ne voit pas le profil de A tant qu'il ne
+-- le suit pas, donc `exists (…)` etait faux et le suivi restait refuse — la meme impasse,
+-- deplacee d'un cran. Verifie contre la base, pas relu : le premier correctif etait vert a
+-- la lecture et rouge a l'execution.
+create or replace function public.is_followable(target uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.profiles p where p.user_id = target and p.visibility <> 'private'
+  );
+$$;
+
 drop policy if exists follows_insert_own on public.follows;
 create policy follows_insert_own on public.follows
-  for insert with check (auth.uid() = follower_id and public.can_see(followee_id));
+  for insert with check (auth.uid() = follower_id and public.is_followable(followee_id));
 
 drop policy if exists follows_delete_own on public.follows;
 create policy follows_delete_own on public.follows

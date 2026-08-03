@@ -118,14 +118,18 @@ export function projectActivity(
  * le numero ni les etoiles. Supprimer la ligne dirait, par son absence, qu'il s'est passe
  * quelque chose plus loin — un fil a trous est lui-meme un indice.
  */
-export function redactActivity(
-  items: readonly ActivityItem[],
+export function redactActivity<T extends ActivityItem>(
+  items: readonly T[],
   viewerSeasonOf: (subject: JournalKey) => number | undefined,
-): readonly ActivityItem[] {
+): readonly T[] {
   return items.map((item) => {
     if (item.kind !== 'rated_season' || item.season === undefined) return item;
     const reached = viewerSeasonOf(item.subject);
     if (reached === undefined || item.season <= reached) return item;
-    return { kind: item.kind, subject: item.subject, happenedOn: item.happenedOn };
+    // ⚠️ Generique, et ce n'est pas de la coquetterie : le fil qui arrive du serveur porte
+    // aussi l'auteur du fait. Un retour fige a `ActivityItem` l'aurait efface, donc le
+    // caviardage aurait supprime le nom de la personne en meme temps que le spoiler.
+    const { season: _season, stars: _stars, ...rest } = item;
+    return rest as T;
   });
 }

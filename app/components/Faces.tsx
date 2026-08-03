@@ -31,7 +31,12 @@ import type { Locale } from '@/lib/i18n';
  */
 interface Face {
   readonly path: string;
-  readonly labelKey: 'face.discover' | 'face.library' | 'face.calendar' | 'face.tally';
+  readonly labelKey:
+    | 'face.discover'
+    | 'face.library'
+    | 'face.calendar'
+    | 'face.tally'
+    | 'face.friends';
 }
 
 const FACES: readonly Face[] = [
@@ -39,6 +44,11 @@ const FACES: readonly Face[] = [
   { path: '/moi', labelKey: 'face.library' },
   { path: '/calendrier', labelKey: 'face.calendar' },
   { path: '/bilan', labelKey: 'face.tally' },
+  // ⚠️ La cinquieme face n'apparait qu'ici, et **pas avant aujourd'hui** : elle avait ete
+  // ecartee le 2026-08-03 parce qu'une barre dont un tiers mene a « bientot » apprend a ne
+  // plus cliquer dessus. Elle mene desormais quelque part — un ecran qui dit quoi faire
+  // quand on n'a encore suivi personne, ce qui n'est pas la meme chose que « bientot ».
+  { path: '/amis', labelKey: 'face.friends' },
 ];
 
 export function Faces({ locale }: { readonly locale: Locale }) {

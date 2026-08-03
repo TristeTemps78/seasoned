@@ -27,6 +27,9 @@ const PRIVATE_PATHS = [
   // une page de connexion indexee n'a aucun interet pour un moteur.
   '/compte',
   '/compte/retour',
+  // Le fil montre ce qu'ecrivent des personnes, jamais le catalogue : rien a indexer, et
+  // le laisser ouvert reviendrait a offrir aux moteurs ce que Q1 ferme aux inconnus.
+  '/amis',
 ];
 
 export default function robots(): MetadataRoute.Robots {

@@ -322,6 +322,35 @@ const FR = {
   // La question de l'appareil partagé. Le défaut est **non**, et le texte doit rendre ce
   // « non » confortable : garder un journal hors d'un compte se répare, l'y avoir versé
   // par erreur ne se répare pas.
+  'face.friends': 'Mes amis',
+  'friendsPage.title': 'Mes amis',
+  'friendsPage.lede':
+    'Ce que vos proches regardent, sans que rien ne vous dévoile la suite de ce que vous n’avez pas vu.',
+  'friends.signedOut':
+    'Créez un compte pour suivre vos proches. Tout le reste du site fonctionne sans.',
+  'friends.claim.title': 'Choisissez votre nom',
+  'friends.claim.body':
+    'C’est ainsi que vos proches vous trouveront. Trois à vingt caractères, lettres minuscules, chiffres et tirets bas. Il ne se change pas : un nom rendu ne peut pas être repris par quelqu’un d’autre sans casser les liens qui pointaient vers vous.',
+  'friends.claim.placeholder': 'votrenom',
+  'friends.claim.submit': 'Prendre ce nom',
+  'friends.claim.taken': 'Ce nom n’est pas disponible.',
+  'friends.claim.shape':
+    'Trois à vingt caractères : lettres minuscules, chiffres et tirets bas uniquement.',
+  'friends.claim.failed': 'Impossible pour l’instant. Réessayez.',
+  'friends.you': 'Vous êtes @{handle}. Votre activité n’est visible que par ceux qui vous suivent.',
+  'friends.follow.placeholder': 'sonnom',
+  'friends.follow.submit': 'Suivre',
+  'friends.follow.notFound':
+    'Personne sous ce nom. On ne cherche que par nom exact : il n’y a pas d’annuaire ici, et c’est voulu.',
+  'friends.following': 'Vous suivez {list}',
+  'friends.feed.title': 'Ce qu’ils font',
+  'friends.feed.empty':
+    'Rien pour l’instant. Suivez quelqu’un, ou donnez-lui votre nom — le fil se remplit à mesure.',
+  'friends.item.rated_season': 'a noté',
+  'friends.item.finished': 'a terminé une série',
+  'friends.item.started': 'a commencé une série',
+  'friends.item.wanted': 'veut voir une série',
+  'friends.item.season': 'la saison {season} — {stars} ★',
   'sync.adopt.title': 'Un journal existe déjà sur cet appareil',
   'sync.adopt.body.one':
     'Il contient {n} série. Est-il à vous ? Si cet appareil est partagé, répondez non : ce journal restera où il est.',
@@ -889,6 +918,34 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
     'This installation is not connected to a database. Your notes stay in this browser, and the library works as usual.',
   'account.notSynced':
     'Your notes now follow your account: they stay in this browser and a copy goes to our servers, so you find them on your other devices. If the server is unreachable, nothing stops — everything keeps working here.',
+  'face.friends': 'Friends',
+  'friendsPage.title': 'Friends',
+  'friendsPage.lede':
+    'What the people close to you are watching, without anything revealing what you have not seen yet.',
+  'friends.signedOut': 'Create an account to follow people. Everything else works without one.',
+  'friends.claim.title': 'Choose your name',
+  'friends.claim.body':
+    'This is how people will find you. Three to twenty characters, lowercase letters, digits and underscores. It cannot be changed: a name given back can never be taken by somebody else without breaking the links that pointed to you.',
+  'friends.claim.placeholder': 'yourname',
+  'friends.claim.submit': 'Take this name',
+  'friends.claim.taken': 'That name is not available.',
+  'friends.claim.shape':
+    'Three to twenty characters: lowercase letters, digits and underscores only.',
+  'friends.claim.failed': 'Not possible right now. Try again.',
+  'friends.you': 'You are @{handle}. Your activity is visible only to the people who follow you.',
+  'friends.follow.placeholder': 'theirname',
+  'friends.follow.submit': 'Follow',
+  'friends.follow.notFound':
+    'Nobody under that name. We only search by exact name: there is no directory here, and that is deliberate.',
+  'friends.following': 'You follow {list}',
+  'friends.feed.title': 'What they are up to',
+  'friends.feed.empty':
+    'Nothing yet. Follow somebody, or give them your name — the feed fills up as you go.',
+  'friends.item.rated_season': 'rated',
+  'friends.item.finished': 'finished a series',
+  'friends.item.started': 'started a series',
+  'friends.item.wanted': 'wants to watch a series',
+  'friends.item.season': 'season {season} — {stars} ★',
   'sync.adopt.title': 'A journal already exists on this device',
   'sync.adopt.body.one':
     'It holds {n} series. Is it yours? If this device is shared, answer no: that journal stays where it is.',
