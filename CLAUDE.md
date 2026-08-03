@@ -8,7 +8,39 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, soir — convergence, lot 5 trié, trois décisions de plus)
+## État actuel (2026-08-03, soir — le garde-fou des films est posé)
+
+- **✅ 5.10a livré — le garde-fou de A13. 610 → 624 tests**, typecheck strict vert, build vert.
+  Fait **sans jeton TMDB** : le domaine est pur, donc il ne dépend ni du réseau ni de l'API.
+  - `isSeriesKey` / `isMovieKey` / `movieKey` / `seriesEntries` dans `journal.ts`, et les
+    **quatre** agrégats bordés — `calendar`, `library`, `tally`, `taste`.
+  - **La décision de conception à ne pas défaire** : `isSeriesKey` teste l'**absence de
+    qualificatif** dans l'espace d'identifiants, et non `!isMovieKey`. Le jour où un
+    `tmdb-book:` apparaît (le concurrent Achriom fait déjà du multi-média), il sera **exclu**
+    des agrégats de séries au lieu d'y être compté avec des saisons absentes.
+    > **Le garde-fou doit échouer vers l'exclusion : omettre n'est qu'un oubli, inclure
+    > corrompt.** Et personne n'aura à penser à mettre la fonction à jour.
+  - 🔴 **Il a attrapé un quatrième faux négatif de fixture, dans mes propres tests.**
+    `setSnapshot` ignore une entrée qui n'existe pas encore — un instantané s'*attache* à un
+    geste, il ne le crée pas. Mon fixture appelait `setSnapshot` **avant** le geste : aucun
+    instantané n'était écrit, **ni pour la série ni pour le film**, et les quatre tests
+    d'égalité passaient en comparant deux agrégats **vides**.
+    > **La leçon** : une égalité ne prouve rien tant qu'on n'a pas montré qu'il y avait quelque
+    > chose à fausser. D'où le `describe` d'**ancrage**, qui exige d'abord un agrégat non vide.
+  - **Trois mutations vérifiées** au lieu de faire confiance au vert : filtre retiré → 5 tests
+    tombent ; `isSeriesKey` remplacé par le réflexe `!isMovieKey` → 1 tombe.
+  - ⚠️ **Et le typage a rattrapé ce que l'exécution laissait passer** : `setPosition` prend deux
+    nombres et non un objet, `'watching'` n'est pas un `DecisionKind`. `vitest` ne typecheck
+    pas — c'est `npm run check` qui l'a vu. Raison de plus de ne jamais committer sans.
+- ⚠️ **`TMDB_ACCESS_TOKEN` toujours vide** (D18) : Tristan n'est pas devant son PC. **4.4
+  `episode_groups`** et **5.11 multi-pays** attendent, ce sont les deux seules tâches qui exigent
+  l'API réelle. Le jeton ne doit **pas** passer par la conversation (règle 5).
+- **🟢 Prochaine tâche : 5.10b, les fonctionnalités film** — fiche film, espace `tmdb-movie` dans
+  `CatalogProvider`. ⚠️ Et **une décision de produit non tranchée** : un film doit-il compter
+  dans le bilan d'heures ? Ça ferait passer « heures de séries » à « heures d'écran ».
+  **À ne pas décider en silence.**
+
+## État précédent (2026-08-03, soir — convergence, lot 5 trié, trois décisions)
 
 - **✅ Trois décisions de Tristan sur le lot 5, dont deux qui corrigent mon analyse.**
   - ✅ **5.18 — l'accueil montrera des critiques.** J'objectais que le corpus de textes ne
@@ -61,11 +93,13 @@
     `parseJournalKey` coupe au **premier** `:`. Les séries gardent `tmdb:1396` **inchangé**,
     les films prennent un espace neuf. Le préfixe identifiait déjà l'**espace
     d'identifiants** — et c'est exact, chez TMDB le film 550 et la série 550 sont deux objets.
-  - 🔴 **Le vrai risque n'est pas les types : huit modules parcourent `journal.entries` en
-    supposant des saisons** (`tally`, `remaining`, `trajectory`, `entry-point`, `catch-up`,
-    `current-season`, `nudge`, `calendar`). Un film non filtré ne plante pas — il **empoisonne
+  - 🔴 **Le vrai risque n'est pas les types : quatre modules parcourent `journal.entries` en
+    supposant des saisons** — `calendar`, `library`, `tally`, `taste`. *(⚠️ J'avais écrit
+    « huit » : c'était faux, et vérifié depuis. Les six autres — `remaining`, `trajectory`,
+    `entry-point`, `catch-up`, `current-season`, `nudge` — reçoivent une série en argument et
+    ne parcourent rien.)* Un film non filtré ne plante pas — il **empoisonne
     silencieusement chaque agrégat** — et le typage ne dira rien, puisqu'une clé reste une chaîne.
-    > **Donc l'ordre est : border les huit modules d'abord, écrire la première entrée film
+    > **Donc l'ordre est : border les quatre modules d'abord, écrire la première entrée film
     > ensuite.** L'inverse produit des chiffres faux dont on ne saura pas depuis quand.
   - **Bénéfice inattendu** : un film **a une durée**, donc il compte légitimement dans le bilan
     d'heures. Le seul endroit où les films renforcent un différenciateur au lieu de le diluer.

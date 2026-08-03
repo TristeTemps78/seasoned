@@ -79,6 +79,96 @@ export function parseJournalKey(
   return { provider: key.slice(0, at), providerId: key.slice(at + 1) };
 }
 
+// ---------------------------------------------------------------------------
+// A13 — les films dans le journal, sans migration et sans casser les agregats
+// ---------------------------------------------------------------------------
+//
+// Arbitrage A13 (2026-08-03, Tristan) : le produit suit les films, pas seulement les
+// series.
+//
+// ## Pourquoi aucun journal n'est migre
+//
+// La cle vaut `<espace>:<identifiant>` et {@link parseJournalKey} coupe au **premier**
+// `:`. Les series gardent donc `tmdb:1396` **inchange**, et les films prennent un espace
+// neuf. C'est la regle appliquee au renommage `seasoned` → `Voltface` : **on ne migre pas
+// ce qui marche deja.**
+//
+// Et le prefixe n'identifiait pas seulement le fournisseur, il identifiait l'**espace
+// d'identifiants** — ce qui est exact : chez TMDB, le film 550 et la serie 550 sont deux
+// objets differents. La convention etait prete sans qu'on l'ait prevu.
+//
+// ## 🔴 Le vrai risque, et la raison d'etre de {@link seriesEntries}
+//
+// Quatre modules du domaine parcourent le journal **entier** en supposant que chaque
+// entree a des saisons et des episodes : `calendar` (`upcomingFrom`), `library`, `tally`,
+// `taste`. Une entree film non filtree **ne plante pas** — elle empoisonne *silencieusement*
+// chaque agregat, et le typage ne dira rien puisqu'une cle est une chaine.
+//
+// > **Un module qui compile n'est pas un module qui filtre.** Variante de la lecon
+// > « un champ qui existe n'est pas un champ qui est ecrit » (`CLAUDE.md`).
+//
+// D'ou l'ordre impose : **border les quatre modules d'abord, ecrire la premiere entree film
+// ensuite.** L'inverse fabrique des chiffres faux dont on ne saura pas depuis quand.
+
+/**
+ * Suffixe qui fait d'un espace d'identifiants autre chose qu'une serie.
+ *
+ * Teste par **suffixe** et non par egalite avec {@link MOVIE_PROVIDER} : le jour ou le
+ * fournisseur change (`ROADMAP.md` §4.1), les cles `tmdb-movie:` deja ecrites doivent
+ * continuer a se lire comme des films. Parsing tolerant, `AGENTS.md` regle 4.
+ */
+const MOVIE_NAMESPACE_SUFFIX = '-movie';
+
+/** Espace d'identifiants des films chez le fournisseur courant. */
+export const MOVIE_PROVIDER = `${CURRENT_PROVIDER}${MOVIE_NAMESPACE_SUFFIX}`;
+
+/** Fabrique la cle d'un film. Le pendant de {@link journalKey}. */
+export function movieKey(providerId: string): JournalKey {
+  return journalKey(providerId, MOVIE_PROVIDER);
+}
+
+/** Vrai si la cle designe un film. */
+export function isMovieKey(key: JournalKey): boolean {
+  return parseJournalKey(key)?.provider.endsWith(MOVIE_NAMESPACE_SUFFIX) === true;
+}
+
+/**
+ * Vrai si la cle designe une serie — c'est-a-dire un espace d'identifiants **sans
+ * qualificatif**.
+ *
+ * ## Pourquoi la question est posee dans ce sens
+ *
+ * Le reflexe serait `!isMovieKey(key)`. C'est le mauvais sens, et la difference compte le
+ * jour ou un troisieme type apparait (un livre, un album — le concurrent Achriom en fait
+ * deja). Avec `!isMovieKey`, ce type inconnu serait compte **comme une serie** : ses saisons
+ * absentes fausseraient chaque agregat, en silence, exactement le defaut qu'on repare ici.
+ *
+ * > **Le garde-fou doit echouer vers l'exclusion.** Exclure un type inconnu ne fait
+ * > qu'omettre ; l'inclure corrompt. Un tiret dans l'espace d'identifiants suffit donc a
+ * > sortir des agregats de series, sans que personne ait a penser a mettre a jour cette
+ * > fonction.
+ *
+ * Une cle illisible est traitee comme une serie : elle ne peut venir que d'avant A13,
+ * epoque ou tout etait une serie. Ne rien changer pour elle est le seul choix qui preserve
+ * le comportement existant.
+ */
+export function isSeriesKey(key: JournalKey): boolean {
+  const parsed = parseJournalKey(key);
+  if (parsed === undefined) return true;
+  return !parsed.provider.includes('-');
+}
+
+/**
+ * Les entrees qui sont des series, pour les agregats qui supposent des saisons.
+ *
+ * Un seul point de filtrage plutot qu'un `if` recopie dans quatre modules : c'est ce qui
+ * fait qu'un cinquieme agregat, ecrit plus tard par quelqu'un d'autre, ne peut pas oublier
+ * le filtre sans que ca se voie a la lecture.
+ */
+export function seriesEntries(journal: Journal): readonly [JournalKey, JournalEntry][] {
+  return Object.entries(journal.entries).filter(([key]) => isSeriesKey(key));
+}
+
 /** Ou en est l'utilisateur dans une serie. */
 export interface JournalPosition {
   readonly seasonNumber: number;

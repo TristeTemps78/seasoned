@@ -58,7 +58,7 @@
  * Module pur : ni reseau, ni horloge implicite. L'instant de generation est injecte.
  */
 
-import { freshSnapshot, type Journal } from './journal';
+import { freshSnapshot, seriesEntries, type Journal } from './journal';
 
 /** Un episode a venir, tel que la bibliotheque le connait. */
 export interface UpcomingEpisode {
@@ -291,7 +291,8 @@ export function buildCalendar(
 export function upcomingFrom(journal: Journal, now: Date): readonly UpcomingEpisode[] {
   const found: UpcomingEpisode[] = [];
 
-  for (const [key, entry] of Object.entries(journal.entries)) {
+  // A13 : les films n'ont pas d'episode a venir. `seriesEntries` est le garde-fou.
+  for (const [key, entry] of seriesEntries(journal)) {
     const snapshot = freshSnapshot(entry, now);
     const airsAt = snapshot?.nextEpisodeAt;
     if (snapshot === undefined || airsAt === undefined) continue;

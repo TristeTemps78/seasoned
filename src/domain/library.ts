@@ -25,6 +25,7 @@
 import {
   freshSnapshot,
   hasContent,
+  seriesEntries,
   type Journal,
   type JournalEntry,
   type JournalKey,
@@ -120,7 +121,10 @@ const byRecency = (a: LibraryItem, b: LibraryItem): number => b.touchedAt - a.to
  * questions qu'on se pose, pas celui du modele de donnees.
  */
 export function buildLibrary(journal: Journal, now: Date = new Date()): Library {
-  const items = Object.entries(journal.entries)
+  // A13 : les sections de la bibliotheque sont en forme de serie (« reprendre »,
+  // « revient bientot »). Accueillir les films y demande ses propres sections, pas un
+  // melange — donc on les ecarte ici jusqu'a ce que cette decision soit prise.
+  const items = seriesEntries(journal)
     .filter(([, entry]) => hasContent(entry))
     .map(([key, entry]) => toItem(key, entry, now));
 

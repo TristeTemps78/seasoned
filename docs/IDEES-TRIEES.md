@@ -58,17 +58,22 @@ différents. La convention actuelle était donc déjà prête sans qu'on l'ait p
 
 ### 1.3 🔴 Le vrai risque, et il n'est pas dans les types
 
-**Huit modules parcourent `journal.entries` en supposant que chaque entrée a des saisons et des
-épisodes** : `tally`, `remaining`, `trajectory`, `entry-point`, `catch-up`, `current-season`,
-`nudge`, `calendar`. Une entrée film non filtrée ne fera pas planter : elle **empoisonnera
-silencieusement chaque agrégat**.
+**Quatre modules parcourent `journal.entries` en supposant que chaque entrée a des saisons et
+des épisodes** : `calendar` (`upcomingFrom`), `library`, `tally`, `taste`. Une entrée film non
+filtrée ne fera pas planter : elle **empoisonnera silencieusement chaque agrégat**.
+
+> ⚠️ **J'avais écrit « huit modules », et c'était faux.** Vérifié depuis : les six autres —
+> `remaining`, `trajectory`, `entry-point`, `catch-up`, `current-season`, `nudge` — **reçoivent
+> une série en argument** et ne parcourent rien. Le risque y est d'une autre nature (les appeler
+> pour un film), et il se traite à l'appel, pas dans le module. *Corrigé le 2026-08-03 —
+> surévaluer un risque le rend aussi mal traité que le sous-évaluer.*
 
 > C'est la famille d'échec du projet, dans sa variante la plus coûteuse : *un champ qui existe
 > n'est pas un champ qui est écrit* — ici, **un module qui compile n'est pas un module qui
 > filtre**. Le typage ne dira rien, parce qu'une clé de journal reste une chaîne.
 
-**Donc l'ordre de travail est : border les huit modules d'abord, écrire la première entrée film
-ensuite.** L'inverse produit des chiffres faux dont personne ne saura à quelle date ils ont
+**Donc l'ordre de travail est : border les quatre modules d'abord, écrire la première entrée
+film ensuite.** L'inverse produit des chiffres faux dont personne ne saura à quelle date ils ont
 commencé à l'être.
 
 ### 1.4 Le bénéfice inattendu
@@ -280,7 +285,7 @@ les sites de streaming.)*
 
 ## 8. L'ordre que je recommande
 
-1. **5.10 — border les huit modules, puis A13** (les films). C'est le plus structurant, et le
+1. **5.10 — border les quatre modules, puis A13** (les films). C'est le plus structurant, et le
    seul dont un retard fabrique des données fausses.
 2. **4.4 — `episode_groups`** (lot 4). Toujours le plus rentable : il protège les calculs
    existants d'être faux avec assurance. ⚠️ Exige le jeton TMDB (**D18**).

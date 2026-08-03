@@ -19,7 +19,7 @@
  * Module pur : aucun reseau, aucune horloge implicite.
  */
 
-import { freshSnapshot, type Journal, type JournalEntry } from './journal';
+import { freshSnapshot, seriesEntries, type Journal, type JournalEntry } from './journal';
 
 /**
  * Nombre de series notees en dessous duquel aucun trait n'est enonce.
@@ -93,7 +93,9 @@ function starsOf(entry: JournalEntry): readonly number[] {
 }
 
 export function buildTasteProfile(journal: Journal, now: Date = new Date()): TasteProfile {
-  const entries = Object.values(journal.entries);
+  // A13 : le gout se lit sur des saisons et des abandons — un film n'en a pas.
+  const kept = seriesEntries(journal);
+  const entries = kept.map(([, entry]) => entry);
 
   const allStars: number[] = [];
   const gaps: number[] = [];
@@ -104,7 +106,7 @@ export function buildTasteProfile(journal: Journal, now: Date = new Date()): Tas
   let abandoned = 0;
 
   let comfortSeries: { key: string; times: number } | undefined;
-  for (const [key, entry] of Object.entries(journal.entries)) {
+  for (const [key, entry] of kept) {
     const times = entry.completions?.length ?? 0;
     // Strictement plus d'une fois : « revue une fois » n'est pas un refuge, c'est une
     // serie finie. Et `>` garde la premiere a egalite, ce qui rend le resultat stable

@@ -32,6 +32,7 @@
 import {
   completionCount,
   freshSnapshot,
+  seriesEntries,
   type Journal,
   type JournalEntry,
   type JournalKey,
@@ -183,7 +184,10 @@ export function buildTally(journal: Journal, now: Date = new Date()): Tally {
   let uncounted = 0;
   let heaviest: HeaviestSeries | undefined;
 
-  for (const [key, entry] of Object.entries(journal.entries)) {
+  // A13 : un film n'a ni saison ni `seasonSizes`. Sans ce filtre il serait compte
+  // comme « non comptable » et ferait chuter le taux de couverture, donc silencieusement
+  // taire le bilan sous 50 %. Faire compter les films est une decision separee.
+  for (const [key, entry] of seriesEntries(journal)) {
     if (!wasWatched(entry)) continue;
 
     const snapshot = freshSnapshot(entry, now);
