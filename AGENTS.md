@@ -49,10 +49,39 @@ Ordre de lecture pour reprendre à froid :
 
 ## Contraintes de la machine
 
-- Pas de Mac, pas de Xcode. PC sous **Windows ARM64**.
-- **Aucune application native** : le projet voisin `Limits` est terminé, testé, et n'a
-  jamais tourné sur un téléphone faute de pouvoir s'y installer. Web uniquement.
+- Pas de Mac, pas de Xcode **en local**. PC sous **Windows ARM64**.
+- **Le natif est possible, et se bâtit en nuage** (arbitrage A11, 2026-08-03). Aucun build
+  local n'est tenté : la compilation iOS tourne sur des **runners macOS hébergés**
+  (EAS Build, ou GitHub Actions), et le dépôt sur l'App Store part **depuis Windows**.
 - La preuve d'un travail est la **CI verte**. Ne jamais déclarer une tâche finie sans.
+
+> ### ⚠️ Ce que cette section affirmait, et pourquoi c'était faux
+>
+> Jusqu'au 2026-08-03 elle disait : « **Aucune application native** : le projet voisin
+> `Limits` est terminé, testé, et n'a jamais tourné sur un téléphone faute de pouvoir s'y
+> installer. Web uniquement. »
+>
+> L'observation était juste, **la conclusion ne suivait pas** — et le contre-exemple était
+> dans la phrase elle-même. `Limits` a produit un **IPA en Release**, depuis ce PC, en CI,
+> avec un runner qui choisit dynamiquement un Xcode portant le SDK iOS. Il n'a **jamais**
+> buté sur le build. Il a buté sur le **sideload sans compte développeur** — WSL2,
+> `usbipd-win`, Sideloadly, une chaîne USB qu'un compte Apple à 99 $/an et TestFlight
+> rendent inutile.
+>
+> Donc le mur n'était pas matériel, c'était une **ligne budgétaire** : ~99 $/an (Apple)
+> + 25 $ une fois (Google Play). Une décision de Tristan, prise le 2026-08-03.
+>
+> **La leçon, et c'est la même que celle du SEO en cul-de-sac et du cache inopérant :**
+> *auditer le résultat, jamais l'intention* — y compris celui de sa propre documentation.
+> « Pas de Mac » est un fait vérifiable ; « donc pas de natif » est une **inférence**, et
+> elle est restée écrite comme un fait pendant tout le projet, dans le fichier que tous les
+> agents lisent en premier. Une contrainte fausse dans une source de vérité coûte plus cher
+> qu'une contrainte absente : elle est **crue**, et personne ne la revérifie.
+>
+> ⚠️ Ce que le natif entraîne, et qui n'est pas gratuit : l'**achat intégré Apple** ponctionne
+> le modèle cosmétique (A6 — voir `TASKS.md` D16), et un webview nu se fait refuser
+> (règle 4.2 de l'App Store), donc le natif **rend le push obligatoire** — c'est-à-dire
+> ramène le coût marginal par utilisateur. À budgéter, pas à découvrir.
 
 ## Orchestration
 

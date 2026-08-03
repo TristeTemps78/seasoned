@@ -71,21 +71,46 @@ prérequis que le précédent fournit.**
 
 ## 1. Décisions techniques et leur justification
 
-### 1.1 Web d'abord, et pas d'application native. C'est non négociable.
+### 1.1 Web d'abord — et le natif **en plus**, pas à la place (révisé le 2026-08-03, A11)
 
-Ce n'est pas une préférence esthétique, c'est la leçon directe du projet voisin `Limits` :
-une application iOS native développée sans Mac, sur un PC Windows **ARM64**, est aujourd'hui
-bloquée depuis des semaines — non pas sur le code, qui est fini et testé (300 tests verts),
-mais sur l'**impossibilité matérielle de l'installer sur un téléphone**. Le pilote USB Apple
-est un pilote noyau x64 ; Windows on ARM n'émule que l'espace utilisateur.
+**Ce qui reste vrai, et qui est la vraie raison :** le web est le seul canal d'**acquisition**.
+Une application n'a pas de SEO, et le canal n°1 du produit est la recherche
+(« is X worth watching »). Le natif ne remplace donc rien : c'est un canal de **rétention**
+qui s'ajoute au site. Web d'abord n'est pas un pis-aller, c'est l'ordre correct.
 
-Répéter ce choix ici serait construire sciemment le même mur. Une application web :
+**Ce qui était faux, et qui a été écrit ici comme non négociable pendant tout le projet :**
 
-- se développe et se teste intégralement sur ce PC ;
-- se déploie sans compte développeur, sans signature, sans magasin d'applications ;
-- s'installe quand même sur un téléphone (PWA, écran d'accueil) ;
-- se met à jour sans re-signature — donc **sans le cycle de sept jours** qui rend `Limits`
-  pénible à vivre.
+> *« pas d'application native […] l'**impossibilité matérielle de l'installer sur un
+> téléphone**. Le pilote USB Apple est un pilote noyau x64 ; Windows on ARM n'émule que
+> l'espace utilisateur. »*
+
+Le diagnostic était exact et la conclusion ne suivait pas. Relire la liste d'arguments qui
+suivait — *se déploie sans compte développeur* · *sans signature* · *sans magasin* · *sans le
+cycle de sept jours* : **les quatre décrivent les conséquences de ne pas avoir de compte
+développeur**, pas les conséquences du natif. Avec un compte Apple à 99 $/an :
+
+- le certificat vaut un an, donc **le cycle de sept jours disparaît** — c'était une limite du
+  *free provisioning*, jamais une limite du natif ;
+- TestFlight installe par le réseau, donc **le pilote USB x64 ne sert plus à rien** — et
+  c'était le seul mur réellement matériel ;
+- le build ne se fait pas ici : **runners macOS en nuage** (EAS Build, ou GitHub Actions).
+  `Limits` a produit son **IPA en Release** exactement comme ça, depuis ce PC.
+
+Autrement dit `Limits` n'a jamais démontré que le natif était impossible. Il a démontré que
+**le sideload gratuit sur Windows ARM64 est un cauchemar** — ce qui est vrai, documenté dans
+son `SIDELOAD-ARM64.md`, et sans rapport avec la question posée ici.
+
+**Ce que le natif coûte réellement**, et qui doit être budgété avant d'y aller : ~99 $/an
+(Apple) + 25 $ une fois (Google Play), l'**achat intégré Apple** qui ponctionne le modèle
+cosmétique (A6 — `TASKS.md` D16), et le fait qu'un webview nu se fait refuser (règle 4.2 de
+l'App Store) — donc le natif **rend le push obligatoire**, et le push ramène le coût marginal
+par utilisateur que tout le reste du plan s'emploie à éviter.
+
+> ⚠️ **La leçon de méthode**, qui est la même que celle du SEO en cul-de-sac et du cache
+> inopérant : *auditer le résultat, jamais l'intention* — **y compris celui de sa propre
+> documentation**. « Pas de Mac » est un fait ; « donc pas de natif » est une inférence. Elle
+> est restée écrite comme un fait, marquée « non négociable », dans un document dont la
+> fonction est d'être cru.
 
 ### 1.2 La pile
 
@@ -217,7 +242,7 @@ Décisions par la négative, aussi importantes que les autres :
 
 | Écarté | Motif |
 |---|---|
-| Application native iOS / Android | §1.1. Le mur est connu et documenté. |
+| ~~Application native iOS / Android~~ | ✅ **Plus écarté — A11, 2026-08-03.** Le « mur » de §1.1 était le *sideload gratuit*, pas le natif. Le web reste **premier** parce qu'il est le seul canal d'acquisition ; le natif s'y ajoute pour la rétention. Coût et conséquences en §1.1. |
 | Scrobbling (Plex, Jellyfin, extension navigateur) | Trakt et Simkl le font mieux, depuis dix ans. Terrain perdu d'avance. |
 | Base de métadonnées propre | Interdit par TMDB, et sans intérêt : TVmaze et TVDB existent. |
 | Notifications push généralisées | Coût marginal par utilisateur — exactement ce qui a tué TV Time. |
