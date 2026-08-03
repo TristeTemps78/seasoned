@@ -8,7 +8,47 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, soir — convergence, et le lot 5 trié)
+## État actuel (2026-08-03, soir — convergence, lot 5 trié, trois décisions de plus)
+
+- **✅ Trois décisions de Tristan sur le lot 5, dont deux qui corrigent mon analyse.**
+  - ✅ **5.18 — l'accueil montrera des critiques.** J'objectais que le corpus de textes ne
+    s'amorce pas. **Réponse : les premiers utilisateurs seront sa famille.** L'objection tombe —
+    **mon raisonnement supposait un lancement à des inconnus**, et je n'avais pas demandé qui
+    arrivait en premier. ⚠️ Le risque n'est pas annulé, il est **déplacé** au passage au public.
+    D'où la seule contrainte gardée : **« un accueil qui se remplit »** — les données dérivées
+    portent l'écran, les critiques viennent par-dessus. Le même écran marche à 5 et à 50 000,
+    sans réécriture.
+    > **La leçon, et elle est gênante** : c'est exactement le reproche que je faisais aux deux
+    > rapports Gemini — « aucun ne demande qui arrive, et par où ». **La même erreur, commise en
+    > la dénonçant.**
+  - ✅ **5.11 — la disponibilité multi-pays sera une option dans les paramètres.** Converge avec
+    la recommandation : on ne détecte pas le VPN (traçage + peu fiable), **on laisse choisir ses
+    pays**. ⚠️ La liste de pays est une **préférence**, donc elle vit dans le journal — elle doit
+    suivre d'un appareil à l'autre.
+  - ✅ **5.20 — scrobbling par notre propre extension de navigateur** (non prioritaire, mais à
+    prendre en compte). **Et c'est moins cher que ce que j'avais chiffré** : une extension que
+    nous signons écrit par le **chemin de synchronisation existant** (Supabase + RLS), donc
+    **aucune route serveur nouvelle** — contrairement au webhook Plex que j'avais évalué. Et ce
+    produit n'a besoin que de **la position**, un champ : un ordre de grandeur plus simple que
+    Simkl.
+    > **La leçon** : *le coût d'une mise en œuvre n'est pas le coût du besoin.* J'avais chiffré
+    > le webhook, conclu « trop cher », et pas examiné l'autre voie.
+    - ⚠️ **Le coût réel est ailleurs** : un second produit à distribuer (Chrome Web Store 5 $,
+      Manifest V3) ; **les sites de streaming changent leur DOM en permanence**, donc l'extension
+      casse en silence — charge **récurrente**, pas coût de construction ; et **bureau
+      uniquement**, donc pas là où l'essentiel du streaming se regarde.
+    - ⚠️ **Point de confiance** : la permission dira « lire vos données sur netflix.com ». Sur un
+      produit qui promet l'absence de traçage, c'est **strictement opt-in**, et la donnée ne va
+      **que** dans le journal de la personne.
+    - ✅ Construire notre extension **contourne** D15 (Trakt) au lieu de le heurter.
+  - ⏳ **A4 — le domaine `voltface` sera enregistré en fin de projet** (choix de Tristan, pas sa
+    priorité). Le risque reste connu : c'est ainsi que `seasoned` a été perdu.
+- ⚠️ **`TMDB_ACCESS_TOKEN` (D18) : le jeton ne doit PAS passer par la conversation** —
+  `AGENTS.md` règle 5 interdit un secret dans un journal, et un message en est un. `.env` est
+  ignoré par git et non suivi (vérifié) : Tristan y colle la valeur, l'agent vérifie l'effet
+  sans jamais voir le secret. Débloque 4.4 et 5.11.
+
+## État précédent (2026-08-03, soir — convergence, et le lot 5 trié)
 
 - **✅ Tout est poussé** (`c919a64..4c11706`) — 4 commits, CI déclenchée. `main` propre.
 - **🎬 A13 tranché par Tristan : suivi complet des films.** **Contraire à ma recommandation**

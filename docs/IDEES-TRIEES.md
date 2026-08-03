@@ -103,6 +103,19 @@ C'est la même forme que le `.ics` (le rappel payé par l'agenda de quelqu'un d'
 journée entière du `VALARM` (sonner à 9 h locales sans connaître le fuseau) : **la solution qui
 n'a pas besoin de l'information est meilleure que celle qui va la chercher.**
 
+### ✅ La forme, tranchée par Tristan le 2026-08-03
+
+> *« Je veux juste, et c'est important pour moi car c'est un truc que je cherche sur les
+> applis, que ce soit une option à intégrer dans les paramètres. »*
+
+Ça **converge** exactement : une liste de pays choisie dans les paramètres, et la disponibilité
+affichée pour chacun. Deux conséquences de conception :
+
+- ⚠️ **la liste de pays est une préférence, donc elle vit dans le journal**, pas dans un état de
+  composant : elle doit suivre d'un appareil à l'autre, comme le reste ;
+- l'appel réseau ne change pas — `/watch/providers` renvoie déjà tous les pays. Le coût est
+  donc **de l'interface**, pas du réseau.
+
 ---
 
 ## 3. Ce qui est déjà livré dans la liste
@@ -178,19 +191,28 @@ exigé par le DSA — ⛔ 5.0, et une charge **permanente** pour une personne se
 taire que compter zéro : un compteur n'apparaît qu'au-dessus d'un seuil, comme tout le reste du
 produit.
 
-### 6.1 ⛔ L'écran d'accueil fait de critiques contredit une décision fondatrice
+### 6.1 ✅ L'écran d'accueil avec des critiques — tranché, et mon objection avait un trou
 
-`ROADMAP.md` §0.1, le renversement du plan initial :
+J'objectais avec `ROADMAP.md` §0.1, le renversement du plan initial :
 
 > **Une page série doit valoir le détour avec zéro critique.**
 
-Le corpus de textes **ne s'amorce pas**. Un accueil bâti sur des critiques est donc **vide le
-premier jour**, et vide pour les premiers milliers de visiteurs — ce qui est exactement la
-raison pour laquelle les textes ont été mis en dernier et les données dérivées en premier.
+**Réponse de Tristan : les premiers utilisateurs seront sa famille.** L'objection tombe, et il
+faut le dire clairement — **mon raisonnement supposait un lancement à des inconnus**. À
+l'échelle d'une famille, il y *aura* des critiques dès le premier jour, et un accueil qui les
+montre est le bon écran pour ce moment-là. Le corpus ne s'amorce pas tout seul ; il s'amorce
+très bien avec cinq personnes qui se connaissent.
 
-À reformuler en **« un accueil qui se remplit »** : il montre d'abord ce qui se calcule sans
-personne (trajectoires, statuts, temps), et laisse la place aux critiques quand il y en aura.
-L'inverse est un écran qui apprend au visiteur que le produit est désert.
+⚠️ **Mais le risque n'est pas annulé, il est déplacé** : il réapparaît au passage au public,
+quand le rapport visiteurs/critiques s'effondre. D'où la seule contrainte d'implémentation à
+garder :
+
+> **« Un accueil qui se remplit »** — les données dérivées (trajectoires, statuts, temps
+> écoulé) portent l'écran, les critiques viennent **par-dessus** quand il y en a. Le même
+> écran marche alors à 5 comme à 50 000 utilisateurs, **sans réécriture**.
+
+C'est la même forme que partout ailleurs dans ce produit : la feature se **tait** quand elle
+n'a pas de matière, au lieu d'afficher un vide.
 
 ### 6.2 « Correspondant à l'algo de ton profil » — à reformuler, pas à jeter
 
@@ -204,23 +226,55 @@ qu'elle est la version du besoin qui ne contredit pas le positionnement.
 
 ---
 
-## 7. Le scrobbling, troisième demande : une question d'ordre, pas de principe
+## 7. ✅ Le scrobbling — tranché : notre propre extension de navigateur
 
-Rien n'a changé sur le coût **aujourd'hui** : première route serveur du projet (il y en a
-**zéro**), un jeton par utilisateur à générer/révoquer/afficher, la clé `service_role` côté
-serveur, donc la principale surface d'écriture authentifiée à défendre.
+> *« Pour le scrobbling je veux que ce soit possible, et on va recréer un scrobbling de zéro en
+> créant une extension. C'est pas la priorité mais il faut prendre ça en compte. »*
+> — Tristan, 2026-08-03
 
-Mais deux faits nouveaux méritent d'être posés :
+### 7.1 ✅ C'est moins cher que ce que j'avais chiffré, et il faut le dire
 
-1. **Serializd n'a aucun scrobbling** (§0) — et c'est lui qui occupe la place. Ce n'est pas la
-   feature qui décide de cette niche.
-2. **D17** : le natif (A11) rend le push obligatoire, donc un **planificateur serveur existera
-   de toute façon**. Le coût *marginal* d'un récepteur de webhooks baisse nettement **après**
-   cette infrastructure.
+J'avais chiffré le **webhook** (Plex/Jellyfin) : première route serveur du projet, jeton par
+utilisateur, clé `service_role`, surface d'écriture authentifiée à défendre. **L'extension évite
+tout ça** : une extension que nous signons peut écrire **par le chemin de synchronisation qui
+existe déjà** — Supabase + RLS (`src/journal/remote.ts`). **Aucune route serveur nouvelle.** RLS
+est déjà la couche d'autorisation, et elle protège aussi bien une extension qu'un onglet.
 
-> Donc : **pas maintenant, moins cher plus tard.** À reconsidérer quand le push existe, pas
-> avant. Et **D15 reste fermé** : Trakt limite les comptes gratuits à une seule application
-> externe, ce qui exclut exactement la population visée.
+Et surtout : **ce produit n'a besoin que de la position**, un seul champ. Là où un tracker doit
+scrobbler N booléens par série, l'extension n'a qu'à dire « cette personne est à S3E4 ». C'est
+un ordre de grandeur plus simple que ce que fait Simkl.
+
+### 7.2 Le coût réel est ailleurs — trois points à budgéter
+
+1. **C'est un second produit à distribuer** : Chrome Web Store (5 $ une fois), Firefox AMO,
+   cycles de revue, Manifest V3. Pas un module du dépôt : un artefact avec son propre cycle.
+2. 🔴 **Les sites de streaming changent leur DOM en permanence.** L'extension **casse en
+   silence** — et c'est une charge d'entretien **récurrente**, pas un coût de construction.
+   C'est le vrai prix, et c'est celui qu'on sous-estime toujours.
+3. **Navigateurs de bureau uniquement.** Ni téléviseur, ni application mobile, ni console —
+   c'est-à-dire **pas là où l'essentiel du streaming se regarde**. La couverture est partielle
+   par construction, et ça doit être dit à l'utilisateur au lieu d'être découvert.
+
+### 7.3 ⚠️ Le point de confiance, qui n'est pas technique
+
+Une extension qui observe ce que vous lancez est **la chose la plus intrusive que ce projet
+livrerait jamais**. La permission demandée à l'installation dira, en clair : *« lire vos données
+sur netflix.com »*. Sur un produit dont l'argument est l'absence de traçage, c'est un moment de
+confiance, pas une case à cocher. Donc : **strictement opt-in**, et la donnée ne part **que**
+dans le journal de la personne — jamais un agrégat, jamais un serveur intermédiaire.
+
+*(Correction factuelle, sans effet sur la décision : Trakt repose surtout sur des greffons de
+serveurs médias et sur son API ; les extensions de navigateur de son écosystème sont
+majoritairement **tierces**. C'est **Simkl** dont l'extension officielle fait la détection sur
+les sites de streaming.)*
+
+### 7.4 Ce qui reste vrai de l'analyse précédente
+
+- **Serializd n'a aucun scrobbling** (§0) et c'est pourtant lui qui occupe la place : ce n'est
+  pas la feature qui décide de cette niche. Cohérent avec « pas la priorité ».
+- **D15 reste fermé** : Trakt limite les comptes gratuits à une seule application externe, ce
+  qui exclut exactement la population visée. Construire notre propre extension **contourne** ce
+  mur au lieu de le heurter — c'est le bon mouvement.
 
 ---
 
@@ -237,3 +291,24 @@ Mais deux faits nouveaux méritent d'être posés :
 5. **5.12, 5.14, 5.15** — les cheap : affiches, boutons, cœurs.
 6. **A6 à rechiffrer avec l'IAP Apple (D16)** avant toute dépense native.
 7. Le reste **derrière 5.0**.
+8. **5.20 l'extension de scrobbling — explicitement non prioritaire** (Tristan), mais prise en
+   compte dans l'architecture dès maintenant : elle écrit par le chemin de synchronisation
+   existant, donc **rien à prévoir de spécial** côté serveur. C'est le meilleur argument pour
+   ne pas s'en occuper tout de suite : **retarder ne coûte rien**.
+
+---
+
+## 9. Ce que ce tri a appris
+
+1. **Une objection peut être juste et reposer sur une hypothèse fausse.** Mon « l'accueil sera
+   vide » était correct *pour un lancement à des inconnus*. Tristan lance à sa famille. **Je
+   n'avais pas demandé qui arrivait en premier** — alors que c'est précisément le reproche que
+   je faisais aux deux rapports Gemini (§0 de `CONVERGENCE-RAPPORTS.md` : « aucun ne demande qui
+   arrive, et par où »). La même erreur, commise en la dénonçant.
+2. **Chiffrer une solution ne dispense pas d'en chercher une autre.** J'avais correctement chiffré
+   le scrobbling *par webhooks* et j'en avais conclu « trop cher », sans examiner l'extension —
+   qui évite la route serveur entière. **Le coût d'une mise en œuvre n'est pas le coût du
+   besoin.**
+3. **Un besoin exprimé comme une technique se traduit mieux en question.** « Détecter le VPN »
+   était une technique ; le besoin était « où est-ce disponible ». La technique était coûteuse et
+   contraire aux promesses du produit, le besoin est presque gratuit.
