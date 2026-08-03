@@ -123,3 +123,87 @@ describe('buildCalendar', () => {
     expect(ics).toContain('SUMMARY:Severance\r\n');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Le rappel — le defaut du 2026-08-03
+// ---------------------------------------------------------------------------
+//
+// Pendant deux jours, ce module ecrivait des `VEVENT` sans aucun `VALARM` : les dates
+// arrivaient dans l'agenda et RIEN ne sonnait. Les treize tests au-dessus etaient verts,
+// parce qu'aucun ne demandait la seule chose que la feature promet.
+//
+// La lecon, qui vaut au-dela d'ici : **tous ces tests verifiaient la conformite du
+// fichier, aucun ne verifiait son effet.** Un `.ics` valide qui ne rappelle rien est
+// exactement ce que « auditer le resultat, jamais l'intention » vise.
+describe('buildCalendar — le rappel', () => {
+  it('pose un rappel sur chaque episode', () => {
+    // 🔴 CE TEST AURAIT ATTRAPE LE DEFAUT D'ORIGINE. Il n'existait pas.
+    const ics = buildCalendar(
+      [episode(), episode({ episodeNumber: 15, airsOn: new Date('2026-08-12T00:00:00Z') })],
+      NOW,
+    )!;
+    expect([...ics.matchAll(/BEGIN:VALARM/g)]).toHaveLength(2);
+    expect([...ics.matchAll(/END:VALARM/g)]).toHaveLength(2);
+  });
+
+  it('declenche DANS la journee de diffusion, pas a 23 h la veille', () => {
+    // Le coeur du sujet. `DTSTART` d'un evenement de journee entiere vaut minuit : un
+    // « une heure avant » (`-PT1H`) sonnerait la veille au soir — precisement le rappel
+    // nocturne que le choix de la journee entiere cherchait a eviter.
+    const ics = buildCalendar([episode()], NOW)!;
+    expect(ics).toContain('TRIGGER;RELATED=START:PT9H');
+    expect(ics).not.toContain('TRIGGER;RELATED=START:-');
+    expect(ics).not.toMatch(/TRIGGER[^\r\n]*:-P/);
+  });
+
+  it('porte une DESCRIPTION, que la RFC exige sur une alarme DISPLAY', () => {
+    // Sans elle, des clients rejettent le fichier ENTIER : ajouter un rappel ferait
+    // perdre les dates. L'inverse du but.
+    const ics = buildCalendar([episode()], NOW)!;
+    const alarm = /BEGIN:VALARM\r\n([\s\S]*?)END:VALARM/.exec(ics)?.[1] ?? '';
+    expect(alarm).toContain('ACTION:DISPLAY');
+    expect(alarm).toMatch(/DESCRIPTION:.+/);
+  });
+
+  it('echappe la DESCRIPTION comme le SUMMARY', () => {
+    // Meme piege que le titre : une virgule non echappee coupe la valeur en deux champs.
+    // Le defaut serait ici plus vicieux, parce qu'il ne se voit pas dans le titre affiche.
+    const ics = buildCalendar([episode({ title: 'Truth; lies, and\\backslash' })], NOW)!;
+    expect(ics).toContain('DESCRIPTION:Truth\\; lies\\, and\\\\backslash');
+  });
+
+  it('garde le VALARM DANS le VEVENT', () => {
+    // Un `VALARM` pose entre deux `VEVENT` ferait rejeter le fichier. L'ordre des
+    // `lines.push` est la seule chose qui le garantit, et rien d'autre ne le surveille.
+    const ics = buildCalendar([episode()], NOW)!;
+    const event = /BEGIN:VEVENT\r\n([\s\S]*?)END:VEVENT/.exec(ics)?.[1] ?? '';
+    expect(event).toContain('BEGIN:VALARM');
+    expect(event).toContain('END:VALARM');
+  });
+
+  it('annonce une revision, pour atteindre ceux qui ont deja importe', () => {
+    // Sans `SEQUENCE` superieure, des clients gardent la version connue de l'`UID` — donc
+    // le rappel n'arriverait qu'aux nouveaux, jamais a ceux qui ont deja le fichier muet.
+    const ics = buildCalendar([episode()], NOW)!;
+    expect(ics).toContain('SEQUENCE:1');
+  });
+
+  it('sait se taire quand on le lui demande', () => {
+    // Un agenda partage est un cas legitime : y deposer quarante alarmes concerne des
+    // gens qui n'ont rien demande.
+    const ics = buildCalendar([episode()], NOW, { remind: false })!;
+    expect(ics).not.toContain('VALARM');
+    // Et les dates, elles, restent.
+    expect(ics).toContain('DTSTART;VALUE=DATE:20260805');
+  });
+
+  it('reste plie a 75 octets, alarme comprise', () => {
+    // La `DESCRIPTION` reprend le titre : un titre long depasse la limite par cette
+    // ligne-la aussi, et le pliage doit s'y appliquer.
+    const ics = buildCalendar([episode({ title: 'é'.repeat(70) })], NOW)!;
+    const encoder = new TextEncoder();
+    for (const line of ics.split('\r\n')) {
+      expect(encoder.encode(line).length).toBeLessThanOrEqual(75);
+    }
+  });
+});

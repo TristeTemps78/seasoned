@@ -30,6 +30,31 @@
  * 4. **`UID` stable.** Sans identifiant deterministe, chaque reimport cree des doublons
  *    au lieu de mettre a jour — le calendrier devient inutilisable en trois visites.
  *
+ * ## 🔴 Le defaut du 2026-08-03 : le rappel ne rappelait rien
+ *
+ * Pendant deux jours ce module a ecrit des `VEVENT` sans **aucun** `VALARM`. Les dates
+ * arrivaient bien dans l'agenda, et **rien ne sonnait** — sauf chez ceux dont l'agenda a un
+ * rappel par defaut, c'est-a-dire par accident. La promesse ecrite six lignes plus haut,
+ * « le rappel arrive meme si l'on n'a pas rouvert le site depuis un mois », etait donc
+ * fausse : le fichier deposait un pense-bete muet.
+ *
+ * Trouve en confrontant deux rapports externes au depot, pas par un test — aucun test ne
+ * verifiait une chose que personne n'avait pensee. Meme famille que les trois defauts de
+ * l'apres-midi : *une fonctionnalite ecrite n'est pas une fonctionnalite qui marche.*
+ *
+ * ## Pourquoi le declencheur est **positif** (`PT9H`), ce qui a l'air d'une faute
+ *
+ * Le reflexe est « une heure avant », donc `TRIGGER:-PT1H`. Sur un evenement de **journee
+ * entiere** c'est un piege : `DTSTART` vaut minuit, donc une heure avant, c'est **23 h la
+ * veille** — exactement le rappel nocturne que le choix de la journee entiere (plus bas)
+ * cherchait a eviter.
+ *
+ * Un decalage **positif** depuis minuit sonne donc *dans* la journee de diffusion. Et il a
+ * une propriete qu'aucune heure absolue n'aurait : un `DTSTART;VALUE=DATE` n'a pas de fuseau,
+ * les clients le lisent comme minuit **local**. Le meme fichier sonne donc a 9 h chez tout
+ * le monde, a Paris comme a Tokyo, **sans que nous sachions ou est qui**. C'est le meme
+ * raisonnement que la journee entiere, pousse d'un cran.
+ *
  * Module pur : ni reseau, ni horloge implicite. L'instant de generation est injecte.
  */
 
@@ -63,6 +88,33 @@ const UID_DOMAIN = 'seasoned';
 
 /** RFC 5545 : les lignes se plient a 75 octets, hors le `CRLF` lui-meme. */
 const MAX_OCTETS = 75;
+
+/**
+ * Heure locale du rappel, en heures depuis minuit — voir l'en-tete du module.
+ *
+ * 9 h : assez tard pour ne reveiller personne, assez tot pour que l'information serve a
+ * organiser sa journee. Un episode se regarde le soir ; savoir le matin qu'il sort est
+ * utile, l'apprendre a 23 h ne l'est plus.
+ */
+const REMINDER_HOUR = 9;
+
+/**
+ * Numero de revision des evenements (`SEQUENCE`).
+ *
+ * Un agenda qui possede deja un `UID` doit accepter de le **remplacer**. Plusieurs clients
+ * ne le font que si `SEQUENCE` a augmente ; en son absence la RFC dit de lire 0. Les
+ * evenements deja partis ont donc ete emis en 0 implicite, et passer a 1 est ce qui permet
+ * au rappel d'atteindre **ceux qui ont deja importe** au lieu des seuls nouveaux.
+ *
+ * ⚠️ **A incrementer a chaque changement significatif d'un `VEVENT`** — sinon la prochaine
+ * correction sera invisible chez ceux qui en ont le plus besoin, et le sera en silence.
+ *
+ * ⚠️ Et ca ne garantit rien : le comportement depend du client, nous ne pouvons pas
+ * l'observer, et nous ne pouvons pas reparer un agenda que nous ne controlons pas. C'est
+ * une amelioration des chances, pas une certitude — la meme raison qui fait que
+ * {@link UID_DOMAIN} ne bouge jamais.
+ */
+const SEQUENCE = 1;
 
 /**
  * Echappe une valeur texte.
@@ -153,13 +205,19 @@ function summaryFor(episode: UpcomingEpisode): string {
  *   produire un `DTSTART` illisible qui ferait rejeter le fichier entier — un episode
  *   perdu vaut mieux qu'un calendrier perdu (`AGENTS.md` regle 4).
  * @param now instant de generation, injecte. Il remplit `DTSTAMP`, que la RFC exige.
+ * @param options `remind` a `false` retire les `VALARM`. Le defaut est `true` : sans rappel
+ *   ce fichier est un pense-bete muet, et l'interet annonce du format est justement que le
+ *   rappel arrive sans nous. L'option existe parce qu'un agenda **partage** est un cas
+ *   legitime — y deposer quarante alarmes concerne des gens qui n'ont rien demande.
  * @returns le fichier, ou `undefined` s'il n'y a rien a mettre dedans : proposer le
  *   telechargement d'un calendrier vide serait une promesse non tenue.
  */
 export function buildCalendar(
   episodes: readonly UpcomingEpisode[],
   now: Date,
+  options: { readonly remind?: boolean } = {},
 ): string | undefined {
+  const remind = options.remind ?? true;
   const valid = episodes
     .filter((episode) => !Number.isNaN(episode.airsOn.getTime()))
     .sort((a, b) => a.airsOn.getTime() - b.airsOn.getTime());
@@ -175,18 +233,37 @@ export function buildCalendar(
   ];
 
   for (const episode of valid) {
+    const summary = escapeText(summaryFor(episode));
+
     lines.push(
       'BEGIN:VEVENT',
       `UID:${uidFor(episode)}`,
       `DTSTAMP:${stamp}`,
+      `SEQUENCE:${SEQUENCE}`,
       // Journee entiere : personne ne connait l'heure locale de diffusion, et en
       // inventer une poserait un rappel a 3 h du matin chez la moitie des gens.
       `DTSTART;VALUE=DATE:${toDateStamp(episode.airsOn)}`,
       `DTEND;VALUE=DATE:${toDateStamp(nextDay(episode.airsOn))}`,
-      `SUMMARY:${escapeText(summaryFor(episode))}`,
+      `SUMMARY:${summary}`,
       'TRANSP:TRANSPARENT',
-      'END:VEVENT',
     );
+
+    if (remind) {
+      lines.push(
+        'BEGIN:VALARM',
+        'ACTION:DISPLAY',
+        // `DESCRIPTION` est **exigee** par la RFC sur une alarme `DISPLAY`. Sans elle,
+        // des clients rejettent le fichier entier — donc l'ajout d'un rappel ferait
+        // perdre les dates, l'inverse du but.
+        `DESCRIPTION:${summary}`,
+        // Positif, donc dans la journee de diffusion et non a 23 h la veille. Voir
+        // l'en-tete du module : c'est le piege des evenements de journee entiere.
+        `TRIGGER;RELATED=START:PT${REMINDER_HOUR}H`,
+        'END:VALARM',
+      );
+    }
+
+    lines.push('END:VEVENT');
   }
 
   lines.push('END:VCALENDAR');
