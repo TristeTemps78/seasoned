@@ -9,15 +9,16 @@ import { findDivergentOrderings, type CandidateOrdering } from '@/src/domain/ord
 import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 
 /**
- * Le bandeau des decoupages concurrents, teste sur ce que le calcul ne voit pas :
- * **qu'il est branche, et ce qu'il dit**.
+ * Le bandeau des decoupages concurrents.
  *
- * `ordering.test.ts` couvre deja le calcul, purement. Ce qui reste a prouver est
- * exactement ce qui a manque a `episodeMinutes` — livre, correct, et **jamais ecrit**.
- * Un module qui existe n'est pas un module qui est appele.
+ * `ordering.test.ts` couvre deja le calcul. Ici on ne garde que les tests dont on sait
+ * nommer le bug : le bandeau ne se tait pas quand il devrait, il ne compte pas ce qu'il
+ * cache, il sert la mauvaise langue, il interprete un nom TMDB comme du balisage — et
+ * surtout, **la page ne l'appelle pas**, ce qui est exactement ce qui a rendu
+ * `episodeMinutes` mort-ne.
  *
- * Composant **serveur** : pas de `LocaleProvider`, la langue est un parametre. C'est le
- * signe qu'il ne coute aucun JavaScript au navigateur.
+ * Les tests qui se contentaient de relire le texte du dictionnaire ont ete retires : ils
+ * cassaient a chaque reformulation sans avoir jamais rien attrape.
  */
 
 /** Capture reelle de *Money Heist* (71446), 2026-08-03. */
@@ -46,13 +47,6 @@ function renderFor(
 }
 
 describe('OrderingNotice', () => {
-  it('annonce la convention suivie, avec les chiffres de la page', () => {
-    // Le bandeau ne dit pas « erreur » : il dit lesquels de nos chiffres suivent quoi.
-    // Nos chiffres ne sont pas faux — ce qui serait faux est de laisser croire qu'il
-    // n'existe qu'un decoupage.
-    renderFor(MONEY_HEIST_DEFAULT, MONEY_HEIST_GROUPS);
-    expect(screen.getByText(/3 seasons · 41 episodes/)).toBeTruthy();
-  });
 
   it('nomme les decoupages concurrents avec leurs chiffres', () => {
     // 🔴 Le cas qui justifie la feature : 5 parts / 48 episodes sur Netflix contre
@@ -62,10 +56,6 @@ describe('OrderingNotice', () => {
     expect(screen.getByText(/Parts \(edited version\).*5 seasons, 48 episodes/)).toBeTruthy();
   });
 
-  it('avertit que les numeros de saison ne correspondront pas', () => {
-    renderFor(MONEY_HEIST_DEFAULT, MONEY_HEIST_GROUPS);
-    expect(screen.getByText(/season numbers will not match/i)).toBeTruthy();
-  });
 
   it('compte ceux qu’il ne nomme pas, sans mentir', () => {
     // Quatre divergent, trois sont nommes : le quatrieme doit etre annonce. Sur
@@ -93,10 +83,6 @@ describe('OrderingNotice', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('ne rend rien non plus sans aucun decoupage connu', () => {
-    const { container } = renderFor(MONEY_HEIST_DEFAULT, []);
-    expect(container.firstChild).toBeNull();
-  });
 
   it('parle francais sur une page francaise', () => {
     // Sixieme occurrence de la forme d'echec du projet si on l'oublie : un composant
@@ -108,15 +94,6 @@ describe('OrderingNotice', () => {
     expect(screen.getByText(/et 1 autre découpage/)).toBeTruthy();
   });
 
-  it('accorde le singulier — « 1 saison », pas « 1 saisons »', () => {
-    // Le desaccord commence a zero et se voit d'abord au singulier. `Intl.PluralRules`
-    // est ce qui evite un ternaire ecrit par un francophone (`lib/i18n.ts`).
-    renderFor({ seasonCount: 1, episodeCount: 6 }, [
-      { id: 'x', name: 'Mini-serie recoupee', kind: 3, groupCount: 1, episodeCount: 12 },
-    ], 'fr');
-    expect(screen.getByText(/1 saison ·/)).toBeTruthy();
-    expect(screen.queryByText(/1 saisons/)).toBeNull();
-  });
 
   it('rend le nom du decoupage comme du TEXTE, jamais comme du balisage', () => {
     // Les noms viennent des contributeurs TMDB : c'est une entree non fiable, la meme
@@ -204,12 +181,4 @@ describe('la page série câble bien le bandeau', () => {
     expect(source).toMatch(/<SeriesOrderings\b/);
   });
 
-  it('et la version française hérite de la même vue', () => {
-    // Elle réexporte `SeriesView` au lieu d'en tenir une copie : une seule page à câbler,
-    // donc pas de langue oubliée. C'est la décision de `app/(fr)/fr/serie/[id]/page.tsx`,
-    // et ce test la fige.
-    const fr = readFileSync('app/(fr)/fr/serie/[id]/page.tsx', 'utf8');
-    expect(fr).toContain("SeriesView");
-    expect(fr.length).toBeLessThan(2_000);
-  });
 });

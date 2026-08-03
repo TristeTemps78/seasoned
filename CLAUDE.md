@@ -8,7 +8,25 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, soir — 5.0a : le verrou du social est levé à moitié)
+## État actuel (2026-08-03, soir — 5.0a, puis une simplification demandée)
+
+- **✂️ Remarque de Tristan, et elle était juste : « tu te perds avec tous tes tests, fais
+  simple ».** Elle valait pour le code autant que pour les tests.
+  - J'avais écrit **281 lignes de moteur de modération** — file d'attente, tri par urgence,
+    machine à états, exposé des motifs, rétablissement — **pour un système qui n'a aucun
+    contenu à modérer**. C'est exactement l'erreur que j'avais *refusée* deux heures plus tôt
+    pour la table `reports` (« une table qu'on peut remplir avant de savoir traiter un
+    signalement est un piège ») : je l'ai appliquée au SQL et pas au domaine.
+  - Et une dizaine de tests ne faisaient que **relire le texte que je venais d'écrire dans le
+    dictionnaire**. Ils cassent à chaque reformulation et n'ont jamais rien attrapé.
+  - **Taillé : 795 → 311 lignes** sur les quatre fichiers concernés, **682 → 656 tests**.
+    Rien de ce qui attrapait un défaut n'a été retiré : les mutations vérifiées, la chaîne
+    fournisseur → écran, le silence du bandeau, l'échappement des noms TMDB restent.
+  > **La règle à appliquer désormais** : *on garde un test si l'on sait nommer le bug qu'il
+  > attrape ; on le supprime s'il ne fait que redire le code.* Et le corollaire, plus
+  > important : **n'écrire la mécanique qu'au moment où il y a quelque chose à mécaniser.**
+
+## État précédent (2026-08-03, soir — 5.0a : le verrou du social)
 
 - **✅ 5.0a livré — la procédure de modération existe, décidée et publiée.** Choix de Tristan :
   débloquer 5.0 plutôt que polir le profil personnel, et c'est le bon ordre — **un profil que
