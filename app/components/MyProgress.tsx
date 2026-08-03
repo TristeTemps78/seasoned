@@ -164,8 +164,11 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
         <WhereItLives />
       </div>
 
+      {/* ⚠️ Volt et non vert : un revisionnage est un fait **sur vous**, pas sur la serie.
+          Le vert dit « en diffusion » sur les vignettes et dans le calendrier ; l'employer
+          ici lui donnerait un second sens. */}
       {passes > 0 ? (
-        <p className="text-sm text-(--color-live)">
+        <p className="text-sm text-(--color-volt)">
           {again ? tn('rewatch.again', passes + 1) : tn('rewatch.done', passes)}
         </p>
       ) : null}
@@ -176,11 +179,11 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
           type="button"
           aria-pressed={entry?.wanted !== undefined}
           onClick={() => setWanted(key, entry?.wanted === undefined)}
-          className={`rounded-full border px-3 py-1.5 text-sm ${
-            entry?.wanted !== undefined
-              ? 'border-(--color-live)/40 bg-(--color-live)/15 text-(--color-live)'
-              : 'border-(--color-edge) hover:border-(--color-muted)'
-          }`}
+          // ⚠️ Aucune classe conditionnelle : `.btn[aria-pressed='true']` porte l'etat
+          // choisi. L'apparence derive donc de l'attribut d'accessibilite au lieu de le
+          // doubler — deux sources pour un meme etat finissent toujours par diverger, et
+          // c'est l'attribut, pas la classe, qui dit la verite a un lecteur d'ecran.
+          className="btn rounded-full"
         >
           {entry?.wanted !== undefined ? t('progress.wanted') : t('progress.want')}
         </button>
@@ -189,7 +192,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
           <button
             type="button"
             onClick={() => setPosition(key, seasons[0]?.seasonNumber ?? 1, 1)}
-            className="rounded-full border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
+            className="btn rounded-full"
           >
             {t('progress.start')}
           </button>
@@ -293,7 +296,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
               note de saison etait offerte, jamais demandee. Un seul rappel a la fois —
               en reclamer six n'en ferait satisfaire aucun. */}
           {toRate !== undefined ? (
-            <p className="text-sm text-(--color-live)">
+            <p className="text-sm text-(--color-volt)">
               {t('progress.rateSeason', { n: toRate })}
             </p>
           ) : null}
@@ -350,11 +353,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setDecision(key, active ? undefined : kind)}
-                className={`rounded-full border px-3 py-1 text-xs ${
-                  active
-                    ? 'border-(--color-live)/40 bg-(--color-live)/15 text-(--color-live)'
-                    : 'border-(--color-edge) text-(--color-muted) hover:border-(--color-muted)'
-                }`}
+                className="btn rounded-full px-3 py-1 text-xs"
               >
                 {t(label)}
               </button>

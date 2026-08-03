@@ -42,7 +42,13 @@
   --color-pulse: #e879f9;
 
   /* Trois tons de statut, pas plus : le but reste de faire ressortir l'anomalie
-     (une serie annoncee vivante et morte depuis 18 mois), pas de colorier la page. */
+     (une serie annoncee vivante et morte depuis 18 mois), pas de colorier la page.
+
+     ⚠️ **Une couleur, un sens.** Le vert parle de la SERIE — elle diffuse, la date tombe,
+     le plan tient. Le volt parle de VOUS — votre position, votre revisionnage, le bouton
+     que vous venez de choisir. La confusion s'etait installee sur la fiche serie, ou le
+     vert servait a la fois d'etat « en diffusion » et de bouton actif ; deux sens pour une
+     meme couleur est la facon la plus rapide de rendre une interface illisible. */
   --color-live: #4ade80;
   --color-warn: #fbbf24;
 }
