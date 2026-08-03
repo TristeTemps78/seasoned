@@ -24,6 +24,7 @@
 
 import { parseJournal, serializeJournal, type Journal } from '../domain/journal';
 import { EMPTY_JOURNAL } from '../domain/journal';
+import type { RemoteRead } from './sync';
 import type { JournalStore } from './store';
 
 export interface RemoteJournalOptions {
@@ -44,6 +45,7 @@ export interface RemoteJournalOptions {
   /** Injecte pour les tests. */
   readonly fetchImpl?: typeof fetch;
 }
+
 
 export class RemoteJournalStore implements JournalStore {
   readonly name = 'supabase';
@@ -77,41 +79,67 @@ export class RemoteJournalStore implements JournalStore {
    * Lit le journal du compte.
    *
    * Rend {@link EMPTY_JOURNAL} quand il n'y a rien **ou** quand l'appel echoue : le
-   * contrat du port l'exige, et `syncJournals` sait distinguer les deux par ailleurs.
+   * contrat du port l'exige, et {@link read} distingue les deux pour qui en a besoin.
    */
   async load(): Promise<Journal> {
-    const remote = await this.fetchDocument();
-    return remote ?? EMPTY_JOURNAL;
+    const outcome = await this.read();
+    return outcome.kind === 'found' ? outcome.journal : EMPTY_JOURNAL;
   }
 
   /**
-   * Le journal distant, ou `undefined` s'il n'y en a pas — **ou si l'appel a echoue**.
+   * Le journal distant, ou `undefined` s'il n'y en a pas **ou si l'appel a echoue**.
    *
-   * ⚠️ Cette distinction compte : `syncJournals(local, undefined)` pousse le local. Sur
-   * une panne reseau, on pousserait donc… rien, puisque l'ecriture echouera aussi. Le cas
-   * degrade est sur : on n'ecrase jamais le distant avec le local sans l'avoir lu, parce
-   * qu'une ecriture qui echoue ne detruit rien.
+   * ⚠️ Conserve pour les appelants qui n'ont pas besoin de la distinction. Celui qui
+   * decide d'**ecrire** doit passer par {@link read} — voir le defaut documente la-bas.
    */
   async fetchDocument(): Promise<Journal | undefined> {
+    const outcome = await this.read();
+    return outcome.kind === 'found' ? outcome.journal : undefined;
+  }
+
+  /**
+   * Lit le journal distant en distinguant les **trois** issues.
+   *
+   * ## 🔴 Le defaut que cette distinction repare
+   *
+   * `fetchDocument()` rendait `undefined` pour « le compte n'a rien pousse » **et** pour
+   * « l'appel a echoue ». Or `syncJournals(local, undefined)` **pousse le local**, et le
+   * `POST` remplace la ligne entiere.
+   *
+   * Le commentaire d'origine tenait ce cas pour sur : « une ecriture qui echoue ne detruit
+   * rien ». C'est vrai quand le reseau est **entierement** mort — et faux dans le cas
+   * **mixte**, qui est le plus banal : un `GET` qui echoue (delai depasse, 5xx passager,
+   * jeton expire pile entre les deux appels) suivi d'un `POST` qui passe.
+   *
+   * > Alors on ecrase le journal distant avec un local **qu'on n'a pas fusionne**, parce
+   * > qu'on n'a pas pu le lire. Tout ce qui n'existait que la-haut disparait.
+   *
+   * C'est la seule perte de donnees possible de toute la synchronisation, et elle vient
+   * d'une valeur de retour qui repond « non » a deux questions differentes.
+   */
+  async read(): Promise<RemoteRead> {
     try {
       const url = `${this.#endpoint()}?user_id=eq.${encodeURIComponent(
         this.#options.userId,
       )}&select=document`;
       const response = await this.#fetch(url, { headers: this.#headers() });
-      if (!response.ok) return undefined;
+      // Un statut d'erreur n'est PAS une absence : le compte a peut-etre un journal qu'on
+      // n'a simplement pas pu lire.
+      if (!response.ok) return { kind: 'unavailable' };
 
       const rows = (await response.json()) as readonly { document?: unknown }[];
       const document = rows[0]?.document;
-      if (document === undefined) return undefined;
+      // Zero ligne, c'est une reponse : le compte n'a encore rien pousse.
+      if (document === undefined) return { kind: 'absent' };
 
       // Le parsing tolerant s'applique **aussi** a ce qui vient de notre serveur
       // (`AGENTS.md` regle 4). Un document ecrit par une version plus recente du produit,
       // depuis un autre appareil, ne doit pas casser celui-ci.
-      return parseJournal(JSON.stringify(document));
+      return { kind: 'found', journal: parseJournal(JSON.stringify(document)) };
     } catch {
       // Hors ligne, DNS, CORS, base en pause : aucun de ces cas ne doit interrompre le
       // produit. Le journal local reste la source de verite.
-      return undefined;
+      return { kind: 'unavailable' };
     }
   }
 

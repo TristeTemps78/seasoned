@@ -68,6 +68,10 @@ function isFresh(
   return (
     existing.title === incoming.title &&
     existing.posterPath === incoming.posterPath &&
+    // ⚠️ Troisieme occurrence evitee : `status` a ete ajoute a l'instantane le
+    // 2026-08-03, et l'oublier ici aurait rendu son ecriture invisible 24 h — donc la
+    // bibliotheque aurait continue d'afficher le libelle fige, defaut inchange.
+    existing.status === incoming.status &&
     existing.statusLabel === incoming.statusLabel &&
     existing.nextEpisodeAt === incoming.nextEpisodeAt &&
     existing.publicStars === incoming.publicStars &&

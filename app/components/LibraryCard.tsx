@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { posterDimensions, posterUrl } from '@/lib/catalog';
+import { statusLabel } from '@/lib/format';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn, seriesPath } from '@/lib/routes';
 import { parseJournalKey } from '@/src/domain/journal';
@@ -26,6 +27,15 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
     parsed !== undefined ? seriesPath(parsed.providerId, locale) : pathIn('/', locale);
   const poster = posterUrl(item.snapshot?.posterPath, 'w342');
   const position = item.entry.position;
+
+  // 🔴 Le statut brut d'abord, traduit dans la langue de CETTE page ; le libelle fige en
+  // repli, pour les journaux ecrits avant que `status` existe. Sans cette priorite, une
+  // note posee depuis une page francaise faisait dire « Entre deux saisons » a la
+  // bibliotheque anglaise — constate au navigateur, pas deduit.
+  const snapshotStatus =
+    item.snapshot?.status !== undefined
+      ? statusLabel(item.snapshot.status, locale)
+      : item.snapshot?.statusLabel;
 
   const decision = item.entry.decision?.kind;
   const decisionLabel =
@@ -90,7 +100,7 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
           // « a voir » des que son instantane n'avait pas de libelle de statut — ce qui
           // arrive des qu'il expire. La vignette contredisait alors la section qui la
           // contient, et c'est le genre de detail qui fait douter de tout le reste.
-          decisionLabel ?? item.snapshot?.statusLabel ?? t('library.card.toWatch')
+          decisionLabel ?? snapshotStatus ?? t('library.card.toWatch')
         )}
       </p>
     </Link>

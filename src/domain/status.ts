@@ -54,6 +54,35 @@ export type RealStatus =
   /** Donnees insuffisantes pour trancher. */
   | 'unknown';
 
+/**
+ * Les sept statuts, en table exhaustive.
+ *
+ * `Record<RealStatus, true>` et non un tableau : **ajouter un statut au type sans
+ * l'ajouter ici ne compile plus.** Une liste de lecture incomplete rendrait `undefined`
+ * pour un statut parfaitement valide, et le journal l'oublierait en silence.
+ */
+const REAL_STATUSES: Readonly<Record<RealStatus, true>> = {
+  upcoming: true,
+  airing: true,
+  between_seasons: true,
+  awaiting_renewal: true,
+  ended: true,
+  cancelled: true,
+  unknown: true,
+};
+
+/**
+ * Lit un statut venu d'ailleurs — un journal, un autre appareil, une version future.
+ *
+ * Parsing tolerant (`AGENTS.md` regle 4) : une valeur inconnue rend `undefined` au lieu
+ * de casser. Un journal ecrit par une version plus recente du produit, qui connaitrait un
+ * huitieme statut, doit rester lisible par celle-ci.
+ */
+export function parseRealStatus(raw: unknown): RealStatus | undefined {
+  if (typeof raw !== 'string') return undefined;
+  return Object.hasOwn(REAL_STATUSES, raw) ? (raw as RealStatus) : undefined;
+}
+
 export interface StatusInput {
   readonly production: ProductionStatus;
   /** Diffusion du dernier episode paru, si connue. */

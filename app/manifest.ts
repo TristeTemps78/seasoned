@@ -50,8 +50,12 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#0f1115',
-    theme_color: '#0f1115',
+    // ⚠️ Doivent suivre `--color-ink` de `globals.css`. Restees sur l'ancienne teinte lors
+    // du passage a la DA cyberpunk : la correction avait ete faite sur `siteViewport`
+    // (`SiteChrome.tsx`) et **pas ici**, donc l'ecran de demarrage de l'application
+    // installee et la barre systeme ne s'accordaient plus au fond du site.
+    background_color: '#08090e',
+    theme_color: '#08090e',
     categories: ['entertainment', 'lifestyle'],
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },

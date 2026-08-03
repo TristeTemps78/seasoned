@@ -48,7 +48,13 @@ function readEnv() {
   const values = { ...process.env };
   for (const file of ['.env', '.env.local']) {
     try {
-      for (const line of readFileSync(file, 'utf8').split('\n')) {
+      // ⚠️ `split(/\r?\n/)` et non `split('\n')` : sous Windows le fichier est en CRLF, et
+      // le `\r` restait alors en fin de ligne. Or en JavaScript `.` ne matche **pas** `\r`,
+      // et `$` sans le drapeau `m` exige la fin de chaine — donc le motif ci-dessous
+      // echouait sur **toute ligne renseignee**, tandis que les lignes vides matchaient
+      // (leur `\s*` avalait le `\r`). Le diagnostic annoncait « la variable est absente »
+      // pour des variables parfaitement renseignees. Un outil qui ment est pire qu'aucun.
+      for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
         const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*)$/.exec(line);
         if (match === null) continue;
         const value = match[2].trim().replace(/^["']|["']$/g, '');

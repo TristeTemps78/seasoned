@@ -301,6 +301,12 @@ export async function SeriesView({ id, locale }: {
         series={{
           title: detail.title,
           ...(detail.posterPath !== undefined ? { posterPath: detail.posterPath } : {}),
+          // Le statut **brut** : la bibliotheque le traduira dans SA langue. Memoriser
+          // « Entre deux saisons » figerait ici la langue de cette page-ci.
+          status: status.status,
+          // ⚠️ Le libelle continue d'etre ecrit, et ce n'est pas une redondance : un
+          // autre appareil peut tourner sur une version anterieure et ne lire que lui.
+          // On migre ce qu'on controle ; le reste doit continuer de fonctionner.
           statusLabel: statusLabel(status.status, locale),
           ...(detail.nextEpisode !== undefined
             ? { nextEpisodeAt: detail.nextEpisode.airsOn.toISOString() }

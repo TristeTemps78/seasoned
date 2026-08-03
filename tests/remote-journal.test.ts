@@ -70,15 +70,33 @@ describe('lecture', () => {
     expect(headersOf(1)['Authorization']).toBe('Bearer renouvele');
   });
 
-  it('distingue « rien la-haut » de « appel echoue »', async () => {
-    // La distinction commande la suite : `syncJournals(local, undefined)` pousse le
-    // local. Les deux cas rendent `undefined` ici, et c'est **sur** — une ecriture qui
-    // echoue ne detruit rien.
+  it('🔴 distingue « rien la-haut » de « je n ai pas pu lire »', async () => {
+    // ⚠️ Ce test affirmait l'inverse — que confondre les deux etait **sur**, « parce
+    // qu'une ecriture qui echoue ne detruit rien ». C'est vrai quand le reseau est
+    // entierement mort, et faux dans le cas MIXTE : un GET qui echoue suivi d'un POST qui
+    // passe ecrase le journal distant avec un local qu'on n'a pas fusionne.
+    //
+    // La distinction commande la suite : `syncJournals` pousse sur `absent`, et ne
+    // touche a rien sur `unavailable`.
     const empty = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => reply([]));
     const failed = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => reply(null, false));
 
-    expect(await store(empty as unknown as typeof fetch).fetchDocument()).toBeUndefined();
-    expect(await store(failed as unknown as typeof fetch).fetchDocument()).toBeUndefined();
+    expect(await store(empty as unknown as typeof fetch).read()).toEqual({ kind: 'absent' });
+    expect(await store(failed as unknown as typeof fetch).read()).toEqual({
+      kind: 'unavailable',
+    });
+  });
+
+  it('⚠️ une panne reseau est « je n ai pas pu lire », jamais « il n y a rien »', async () => {
+    // Hors ligne, DNS, CORS, base Supabase en pause : tous tombent dans le `catch`. C'est
+    // le chemin le plus frequent des trois, et celui ou l'ancienne confusion coutait le
+    // plus cher — puisque le POST qui suit peut tres bien passer, lui.
+    const offline = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => {
+      throw new TypeError('Failed to fetch');
+    });
+    expect(await store(offline as unknown as typeof fetch).read()).toEqual({
+      kind: 'unavailable',
+    });
   });
 
   it('⚠️ ne leve jamais, meme hors ligne', async () => {

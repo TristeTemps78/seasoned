@@ -73,6 +73,31 @@ export function decideAdoption(
 }
 
 /**
+ * Les trois issues d'une lecture distante.
+ *
+ * ## 🔴 Pourquoi trois cas et non un `Journal | undefined`
+ *
+ * « Le compte n'a rien pousse » et « je n'ai pas pu lire » **n'autorisent pas la meme
+ * suite** : le premier permet d'ecrire, le second l'interdit. Les confondre est la seule
+ * perte de donnees possible de toute la synchronisation.
+ *
+ * Le scenario, et il est banal — le cas **mixte** : un `GET` echoue (delai depasse, 5xx
+ * passager, jeton expire pile entre les deux appels) puis le `POST` passe. On ecrase alors
+ * le journal distant avec un local **qu'on n'a pas fusionne**, faute d'avoir pu le lire, et
+ * tout ce qui n'existait que la-haut disparait.
+ *
+ * > Le type vit ici, dans la couche qui **decide**, et non dans celle qui transporte : une
+ * > distinction que personne ne consomme ne protege de rien.
+ */
+export type RemoteRead =
+  /** Le compte a un journal, et le voici. */
+  | { readonly kind: 'found'; readonly journal: Journal }
+  /** Le compte n'a encore rien pousse. Reponse **certaine** : on peut ecrire. */
+  | { readonly kind: 'absent' }
+  /** On n'a pas pu savoir. ⚠️ **On n'ecrit rien sur cette issue.** */
+  | { readonly kind: 'unavailable' };
+
+/**
  * Ce qui doit etre ecrit de chaque cote apres une lecture des deux.
  *
  * La fusion est **commutative** (`tests/journal-merge.test.ts`, huit lois) : l'ordre des
@@ -96,20 +121,27 @@ export interface SyncOutcome {
  * declencherait une ecriture des deux cotes, donc une requete reseau et un cycle de rendu,
  * pour un journal identique.
  *
- * @param remote absent quand le compte n'a encore rien pousse — premiere connexion.
+ * @param remote ce que la lecture distante a rendu — voir {@link RemoteRead}.
  */
-export function syncJournals(local: Journal, remote: Journal | undefined): SyncOutcome {
-  if (remote === undefined) {
-    // Rien la-haut : on pousse ce qu'on a, sauf s'il n'y a rien a pousser.
+export function syncJournals(local: Journal, remote: RemoteRead): SyncOutcome {
+  // ⚠️ On n'a pas pu lire : on n'ecrit **nulle part**. Pousser ici ecraserait un journal
+  // distant qu'on n'a pas fusionne, et c'est irrattrapable si l'autre appareil ne revient
+  // pas. Ne rien faire est toujours reparable — la synchro suivante rattrapera.
+  if (remote.kind === 'unavailable') {
+    return { merged: local, writeLocal: false, writeRemote: false };
+  }
+
+  if (remote.kind === 'absent') {
+    // Rien la-haut, et on en est sur : on pousse ce qu'on a, sauf s'il n'y a rien.
     const empty = Object.keys(local.entries).length === 0;
     return { merged: local, writeLocal: false, writeRemote: !empty };
   }
 
-  const merged = mergeJournals(local, remote);
+  const merged = mergeJournals(local, remote.journal);
   return {
     merged,
     writeLocal: !sameJournal(merged, local),
-    writeRemote: !sameJournal(merged, remote),
+    writeRemote: !sameJournal(merged, remote.journal),
   };
 }
 
@@ -151,7 +183,37 @@ function stableStringify(value: unknown): string {
  *
  * Le cout est celui de deux chaines par synchronisation, sur un objet qui tient dans
  * quelques dizaines de kilo-octets : negligeable devant l'aller-retour reseau qu'il evite.
+ *
+ * ## 🔴 Le defaut que `withoutDeviceId` repare, et pourquoi il etait invisible
+ *
+ * `deviceId` identifie l'**appareil**, pas le contenu. Trois faits qui ne se rencontrent
+ * qu'ici :
+ *
+ * 1. `LocalJournalStore.save()` estampille chaque journal d'un identifiant **propre a
+ *    l'appareil** ;
+ * 2. `mergeJournals(a, b)` garde **par contrat** celui de `a` — c'est-a-dire celui de
+ *    l'appareil qui fusionne ;
+ * 3. cette fonction comparait le journal **entier**.
+ *
+ * Donc `merged.deviceId` valait toujours le mien, et le distant portait toujours celui de
+ * l'autre : `writeRemote` etait **vrai a chaque synchronisation**, sur deux journaux
+ * pourtant identiques. Deux appareils se seraient reecrit mutuellement **indefiniment**,
+ * sans qu'aucun fait ne change.
+ *
+ * C'est **exactement** le defaut que {@link stableStringify} avait ete ecrit pour tuer,
+ * reapparu sur un autre champ. Et il etait indetectable a un seul appareil : il faut deux
+ * `deviceId` differents pour le voir, ce qu'aucun test ne produisait — leurs fixtures
+ * partent d'`EMPTY_JOURNAL`, que seul `save()` estampille.
+ *
+ * > La comparaison porte donc sur ce qui **se synchronise**, jamais sur ce qui identifie
+ * > le porteur.
  */
 function sameJournal(a: Journal, b: Journal): boolean {
-  return stableStringify(a) === stableStringify(b);
+  return stableStringify(withoutDeviceId(a)) === stableStringify(withoutDeviceId(b));
+}
+
+/** Le journal prive de ce qui designe l'appareil plutot que son contenu. */
+function withoutDeviceId(journal: Journal): Omit<Journal, 'deviceId'> {
+  const { deviceId: _ignored, ...content } = journal;
+  return content;
 }

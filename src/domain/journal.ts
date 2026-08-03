@@ -46,6 +46,7 @@
 
 import type { DecisionKind, SeriesId, Stars } from './types';
 import type { SeasonSize } from './remaining';
+import { parseRealStatus, type RealStatus } from './status';
 
 /** Version du format. Toute lecture d'une version inconnue repart de zero. */
 export const JOURNAL_VERSION = 3;
@@ -248,7 +249,32 @@ export interface JournalCompletion {
 export interface JournalSnapshot {
   readonly title: string;
   readonly posterPath?: string;
-  /** Statut reel, deja mis en forme — le domaine n'a pas a le recalculer sans donnees. */
+  /**
+   * Statut reel, **brut**. C'est lui qu'on affiche, traduit a la lecture.
+   *
+   * ## 🔴 Le defaut qu'il repare, constate au navigateur
+   *
+   * Ce champ n'existait pas : seul {@link statusLabel} etait memorise, **deja traduit**,
+   * avec la langue de la page **au moment du geste**. La bibliotheque le reaffichait tel
+   * quel — donc `/moi` en anglais annoncait « Entre deux saisons » a qui avait note depuis
+   * une page francaise.
+   *
+   * Le defaut est invisible au typage (c'est une chaine des deux cotes) et invisible aux
+   * tests d'une seule langue. **Et la synchronisation l'aggrave** : un journal partage
+   * entre deux appareils propagerait des libelles figes dans la langue du premier.
+   *
+   * > On memorise un **fait**, pas sa mise en forme. La traduction est une decision de
+   * > lecture, et elle appartient a la page qui lit.
+   */
+  readonly status?: RealStatus;
+  /**
+   * Statut deja mis en forme, dans la langue du geste.
+   *
+   * ⚠️ **Conserve uniquement pour les journaux deja ecrits**, qui n'ont pas {@link status}
+   * et qu'on ne peut pas migrer : ils sont chez les gens. On lit le brut d'abord, celui-ci
+   * en repli — « on migre ce qu'on controle ». A retirer quand plus aucun journal en
+   * circulation n'aura ete ecrit avant le 2026-08-03.
+   */
   readonly statusLabel?: string;
   /** Date du prochain episode annonce, ISO 8601. C'est elle qui fait « Ca revient ». */
   readonly nextEpisodeAt?: string;
@@ -497,6 +523,7 @@ function parseSnapshot(raw: unknown): JournalSnapshot | undefined {
   if (title === undefined) return undefined;
 
   const posterPath = readText(source, 'posterPath');
+  const status = parseRealStatus(source['status']);
   const statusLabel = readText(source, 'statusLabel');
   const nextEpisodeAt = readText(source, 'nextEpisodeAt');
   const rawEpisodeMinutes = source['episodeMinutes'];
@@ -519,6 +546,7 @@ function parseSnapshot(raw: unknown): JournalSnapshot | undefined {
     // seul a la visite suivante.
     cachedAt: readInstant(source, 'cachedAt', UNDATED),
     ...(posterPath !== undefined ? { posterPath } : {}),
+    ...(status !== undefined ? { status } : {}),
     ...(statusLabel !== undefined ? { statusLabel } : {}),
     ...(nextEpisodeAt !== undefined ? { nextEpisodeAt } : {}),
     ...(episodeMinutes !== undefined ? { episodeMinutes } : {}),

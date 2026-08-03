@@ -5,6 +5,7 @@ import {
   journalKey,
   setPosition,
   setSeasonRating,
+  withDeviceId,
   type Journal,
 } from '../src/domain/journal';
 
@@ -52,7 +53,7 @@ describe('⚠️ l appareil partage — le defaut que ce module existe pour empe
 describe('syncJournals — ce qui doit etre reecrit, et rien de plus', () => {
   it('pousse le local quand le compte n a encore rien', () => {
     const local = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
-    expect(syncJournals(local, undefined)).toEqual({
+    expect(syncJournals(local, { kind: 'absent' })).toEqual({
       merged: local,
       writeLocal: false,
       writeRemote: true,
@@ -62,14 +63,14 @@ describe('syncJournals — ce qui doit etre reecrit, et rien de plus', () => {
   it('ne pousse rien quand il n y a rien des deux cotes', () => {
     // Sans ce cas, une premiere visite sans aucun geste declencherait une ecriture
     // distante d'un journal vide.
-    expect(syncJournals(EMPTY_JOURNAL, undefined).writeRemote).toBe(false);
+    expect(syncJournals(EMPTY_JOURNAL, { kind: 'absent' }).writeRemote).toBe(false);
   });
 
   it('n ecrit nulle part quand les deux cotes sont deja d accord', () => {
     // Le cas le plus frequent, et de loin : ouvrir une page. Sans cette comparaison,
     // chaque ouverture couterait une requete et un cycle de rendu pour rien.
     const same = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
-    expect(syncJournals(same, same)).toEqual({
+    expect(syncJournals(same, { kind: 'found', journal: same })).toEqual({
       merged: same,
       writeLocal: false,
       writeRemote: false,
@@ -80,7 +81,7 @@ describe('syncJournals — ce qui doit etre reecrit, et rien de plus', () => {
     const local = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
     const remote = setPosition(EMPTY_JOURNAL, DEXTER, 1, 1, NOW);
 
-    const out = syncJournals(local, remote);
+    const out = syncJournals(local, { kind: 'found', journal: remote });
     expect(Object.keys(out.merged.entries).sort()).toEqual([BB, DEXTER].sort());
     expect(out.writeLocal).toBe(true);
     expect(out.writeRemote).toBe(true);
@@ -90,10 +91,69 @@ describe('syncJournals — ce qui doit etre reecrit, et rien de plus', () => {
     const local = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
     const remote = setSeasonRating(local, BB, 1, 4, NOW);
 
-    const out = syncJournals(local, remote);
+    const out = syncJournals(local, { kind: 'found', journal: remote });
     // Le distant contient deja tout : seul le local doit rattraper.
     expect(out.writeLocal).toBe(true);
     expect(out.writeRemote).toBe(false);
+  });
+
+  it('🔴 un GET rate ne fait pas pousser le local par-dessus le distant', () => {
+    // Le cas MIXTE, et c'est le plus banal : la lecture echoue (delai depasse, 5xx
+    // passager, jeton expire pile entre les deux appels) et l'ecriture, elle, passe.
+    // Avec `undefined` pour les deux issues, on ecrasait alors un journal distant qu'on
+    // n'avait pas pu lire, donc pas fusionne. C'est la seule perte de donnees possible de
+    // toute la synchronisation, et elle est irrattrapable si l'autre appareil ne revient
+    // pas. Ne rien faire, en revanche, se rattrape a la synchro suivante.
+    const local = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
+
+    const out = syncJournals(local, { kind: 'unavailable' });
+    expect(out.writeRemote).toBe(false);
+    expect(out.writeLocal).toBe(false);
+    expect(out.merged).toEqual(local);
+  });
+
+  it('🔴 deux appareils cessent de s ecrire quand rien n a change', () => {
+    // Le defaut : `deviceId` identifie l APPAREIL, pas le contenu. `LocalJournalStore`
+    // en pose un different sur chaque appareil, `mergeJournals` garde par contrat celui
+    // de `a`, et `sameJournal` comparait le journal entier. Donc `writeRemote` etait
+    // vrai a CHAQUE synchronisation sur deux journaux pourtant identiques.
+    const contenu = setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW);
+    const ici = withDeviceId(contenu, 'appareil-a');
+    const ailleurs = withDeviceId(contenu, 'appareil-b');
+
+    const out = syncJournals(ici, { kind: 'found', journal: ailleurs });
+    expect(out.writeLocal).toBe(false);
+    expect(out.writeRemote).toBe(false);
+  });
+
+  it('🔴 deux appareils qui se synchronisent a tour de role finissent par se taire', () => {
+    // La forme observable du meme defaut, et la seule qui montre ce qu il coutait : une
+    // requete reseau par ouverture de page, indefiniment, sur un journal qui ne bouge pas.
+    //
+    // ⚠️ Le modele doit garder TROIS etats distincts — le journal local de chacun et le
+    // document distant. Les confondre fait converger les `deviceId` par accident, et le
+    // test devient creux : il reste vert meme avec le defaut.
+    const locaux = [
+      withDeviceId(setPosition(EMPTY_JOURNAL, BB, 3, 7, NOW), 'appareil-a'),
+      withDeviceId(setSeasonRating(EMPTY_JOURNAL, DEXTER, 1, 5, NOW), 'appareil-b'),
+    ];
+    let distant: Journal | undefined;
+
+    const ecritures: boolean[] = [];
+    for (let tour = 0; tour < 8; tour += 1) {
+      const moi = tour % 2;
+      const out = syncJournals(
+        locaux[moi]!,
+        distant === undefined ? { kind: 'absent' } : { kind: 'found', journal: distant },
+      );
+      // Le local garde son propre `deviceId` : `mergeJournals` conserve celui de `a`.
+      locaux[moi] = out.merged;
+      if (out.writeRemote) distant = out.merged;
+      ecritures.push(out.writeRemote);
+    }
+
+    // Deux echanges suffisent a tout propager. Au-dela, plus rien ne doit partir.
+    expect(ecritures.slice(2)).toEqual([false, false, false, false, false, false]);
   });
 });
 
@@ -130,7 +190,10 @@ describe('les lois de la synchronisation', () => {
         // ⚠️ Sur le CONTENU : l ordre des cles suit l ordre des arguments, et c est
         // precisement ce qui a demasque le defaut de `sameJournal` — voir `sync.ts`.
         expect(
-          sameContent(syncJournals(local, remote).merged, syncJournals(remote, local).merged),
+          sameContent(
+            syncJournals(local, { kind: 'found', journal: remote }).merged,
+            syncJournals(remote, { kind: 'found', journal: local }).merged,
+          ),
         ).toBe(true);
       }
     }
@@ -141,8 +204,8 @@ describe('les lois de la synchronisation', () => {
     // Sans cela, deux appareils s'ecriraient mutuellement en boucle.
     for (const local of fixtures()) {
       for (const remote of fixtures()) {
-        const first = syncJournals(local, remote);
-        const second = syncJournals(first.merged, first.merged);
+        const first = syncJournals(local, { kind: 'found', journal: remote });
+        const second = syncJournals(first.merged, { kind: 'found', journal: first.merged });
         expect(second.writeLocal).toBe(false);
         expect(second.writeRemote).toBe(false);
       }
@@ -152,7 +215,7 @@ describe('les lois de la synchronisation', () => {
   it('une synchronisation ne perd jamais une entree', () => {
     for (const local of fixtures()) {
       for (const remote of fixtures()) {
-        const { merged } = syncJournals(local, remote);
+        const { merged } = syncJournals(local, { kind: 'found', journal: remote });
         for (const key of [...Object.keys(local.entries), ...Object.keys(remote.entries)]) {
           expect(merged.entries[key]).toBeDefined();
         }

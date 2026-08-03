@@ -23,6 +23,30 @@ function read(name: string): string | undefined {
   return value !== undefined && value.trim().length > 0 ? value.trim() : undefined;
 }
 
+/**
+ * L'adresse a-t-elle au moins la forme d'une adresse ?
+ *
+ * ## 🔴 La dette D19, constatee en production le 2026-08-03
+ *
+ * `LEGAL_CONTACT_EMAIL` valait **`voltface@gmail.co;`** — un point-virgule parasite, et
+ * `.co` au lieu de `.com`. Donc l'adresse de signalement DSA publiee par `/regles` ne
+ * recevait rien, **et la page avait l'air complete** : pire que l'avertissement qu'elle
+ * remplacait, puisqu'elle laissait croire a une voie de recours qui n'existait pas.
+ *
+ * Ce module ne faisait qu'un `trim()`. C'etait le seul champ legal qui echappait a la
+ * regle 8 — *on signale, on ne repare jamais en silence* : une adresse qui n'a pas la
+ * forme d'une adresse fait **retomber la page sur son avertissement**, elle ne se corrige
+ * pas toute seule et elle ne se publie pas.
+ *
+ * ⚠️ Ce controle ne dit pas que l'adresse **existe** — rien dans le code ne peut le dire.
+ * Il attrape la faute de frappe, c'est-a-dire le cas qui s'est reellement produit.
+ */
+export function looksLikeEmail(value: string): boolean {
+  // Une seule arobase, quelque chose autour, un point dans le domaine, et aucun des
+  // caracteres qui trahissent un copier-coller (`;` `,` espace, chevrons, guillemets).
+  return /^[^\s@;,<>"']+@[^\s@;,<>"'.]+(\.[^\s@;,<>"'.]+)+$/.test(value);
+}
+
 export interface PublisherIdentity {
   /** Personne ou societe qui edite le site. */
   readonly name?: string;
@@ -32,6 +56,13 @@ export interface PublisherIdentity {
   readonly email?: string;
   /** Directeur de la publication, quand il differe de l'editeur. */
   readonly director?: string;
+}
+
+/** L'adresse de contact, **si elle a la forme d'une adresse**. Voir {@link looksLikeEmail}. */
+function contactEmail(): string | undefined {
+  const raw = read('LEGAL_CONTACT_EMAIL');
+  if (raw === undefined) return undefined;
+  return looksLikeEmail(raw) ? raw : undefined;
 }
 
 /**
@@ -48,9 +79,9 @@ export function publisher(): PublisherIdentity {
     ...(read('LEGAL_PUBLISHER_ADDRESS') !== undefined
       ? { address: read('LEGAL_PUBLISHER_ADDRESS')! }
       : {}),
-    ...(read('LEGAL_CONTACT_EMAIL') !== undefined
-      ? { email: read('LEGAL_CONTACT_EMAIL')! }
-      : {}),
+    // ⚠️ Seule valeur du module qui soit **validee** et pas seulement lue : c'est la seule
+    // dont une faute de frappe produit une page qui a l'air complete. Voir D19.
+    ...(contactEmail() !== undefined ? { email: contactEmail()! } : {}),
     ...(read('LEGAL_PUBLICATION_DIRECTOR') !== undefined
       ? { director: read('LEGAL_PUBLICATION_DIRECTOR')! }
       : {}),

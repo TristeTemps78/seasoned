@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, isLocale, type Locale } from '@/lib/i18n';
+import { useT } from '@/app/i18n/LocaleProvider';
 import { languageLinks } from '@/lib/routes';
 
 /**
@@ -27,6 +28,7 @@ import { languageLinks } from '@/lib/routes';
  * a qu'une langue : un selecteur a un seul choix est un ornement.
  */
 export function LanguagePicker() {
+  const { t } = useT();
   const pathname = usePathname() ?? '/';
 
   if (SUPPORTED_LOCALES.length < 2) return null;
@@ -39,7 +41,10 @@ export function LanguagePicker() {
   const bare = isLocale(first) ? `/${segments.slice(1).join('/')}` : pathname;
 
   return (
-    <nav aria-label="Language" className="flex items-center gap-2 text-xs">
+    // ⚠️ Ce libelle etait ecrit en dur, en anglais, sur les deux langues. Il a survecu a
+    // l'audit i18n parce que `no-hardcoded-strings` ne detecte le francais que **par ses
+    // accents** : une chaine anglaise lui echappe, et le fichier le dit lui-meme.
+    <nav aria-label={t('nav.language.aria')} className="flex items-center gap-2 text-xs">
       {languageLinks(bare === '/' ? '/' : bare, current).map((link) => (
         <Link
           key={link.locale}

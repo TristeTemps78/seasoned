@@ -253,6 +253,7 @@ const FR = {
     'Où en est une série, combien de temps elle demande, et jusqu’où elle reste bonne.',
   'nav.tagline': 'est-ce que ça vaut le coup ?',
   'nav.library': 'Ma bibliothèque',
+  'nav.language.aria': 'Langue',
   // Les faces du cube. Une face existe si elle repond a une question qu'on se pose a un
   // moment different — pas a un contenu different (`docs/ARCHITECTURE-APP.md` §2).
   'face.discover': 'Découvrir',
@@ -766,6 +767,7 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
     'Where a series stands, how much time it asks of you, and how long it stays good.',
   'nav.tagline': 'is it worth watching?',
   'nav.library': 'My library',
+  'nav.language.aria': 'Language',
   'face.discover': 'Discover',
   'face.library': 'My library',
   'face.calendar': 'Calendar',

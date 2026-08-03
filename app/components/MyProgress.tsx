@@ -4,7 +4,13 @@ import { useEffect, useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { StarRating } from '@/app/components/StarRating';
-import { completionCount, isRewatching, journalKey, suggestedSeasonRating } from '@/src/domain/journal';
+import {
+  completionCount,
+  isRewatching,
+  journalKey,
+  suggestedSeasonRating,
+  type JournalSnapshot,
+} from '@/src/domain/journal';
 import { catchUpPlan } from '@/src/domain/catch-up';
 import { seasonToRate } from '@/src/domain/nudge';
 import { remainingAfter } from '@/src/domain/remaining';
@@ -16,16 +22,19 @@ export interface SeasonShape {
   readonly episodeCount: number;
 }
 
-/** Ce que la page sait deja de la serie, et qu'il suffit de memoriser. */
-export interface SeriesShape {
-  readonly title: string;
-  readonly posterPath?: string;
-  readonly statusLabel?: string;
-  readonly nextEpisodeAt?: string;
-  readonly publicStars?: number;
-  /** Duree mediane d'un episode — memorisee pour que `/moi` puisse chiffrer sans appel. */
-  readonly episodeMinutes?: number;
-}
+/**
+ * Ce que la page sait deja de la serie, et qu'il suffit de memoriser.
+ *
+ * ⚠️ **Derive de {@link JournalSnapshot}, jamais recopie.** Ce type en etait une copie
+ * manuelle, donc un champ ajoute a l'instantane n'arrivait pas jusqu'ici : le typage
+ * refusait alors de le transmettre, et la page perdait la valeur. C'est le meme accident
+ * que l'oubli d'un champ dans `isFresh`, mais du cote de l'ecriture — et il s'agissait de
+ * garder **deux** listes d'accord a la main.
+ *
+ * Les deux champs retires sont ceux que cette couche ne connait pas : `cachedAt` est pose
+ * par le journal a l'ecriture, et `seasonSizes` se deduit de la prop `seasons`.
+ */
+export type SeriesShape = Omit<JournalSnapshot, 'cachedAt' | 'seasonSizes'>;
 
 /**
  * Ce que le produit retient de vous, sur une serie.
