@@ -63,7 +63,15 @@ const NOT_CONFIGURED: AuthState = {
   erase: async () => false,
 };
 
-const AuthContext = createContext<AuthState>(NOT_CONFIGURED);
+/**
+ * Exporte **pour les tests**, et pour rien d'autre.
+ *
+ * Un composant dont le comportement change selon qu'on est connecte ne se teste pas sans
+ * pouvoir simuler une session — et monter une vraie session demanderait le SDK, donc le
+ * reseau. Meme raisonnement que `catalogLanguage` : ce qui doit etre verifie doit etre
+ * atteignable.
+ */
+export const AuthContext = createContext<AuthState>(NOT_CONFIGURED);
 
 export function AuthProvider({ children }: { readonly children: React.ReactNode }) {
   // ⚠️ Lu au rendu et non dans l'effet : `process.env.NEXT_PUBLIC_*` est remplace a la

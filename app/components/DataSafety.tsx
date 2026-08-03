@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { hasContent } from '@/src/domain/journal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
+import { useAuth } from '@/app/auth/AuthProvider';
 
 /**
  * Dire la verite sur la fragilite du stockage, au moment ou il y a quelque chose a perdre.
@@ -101,6 +102,7 @@ function isApple(): boolean {
 export function DataSafety() {
   const { journal, ready, exportJournal } = useJournal();
   const { t } = useT();
+  const { account } = useAuth();
   const [dismissedAt, setDismissedAt] = useState(-1);
   const [installed, setInstalled] = useState(true); // suppose installe : on n'affiche rien avant de savoir
   const [prompt, setPrompt] = useState<InstallPromptEvent | undefined>(undefined);
@@ -156,6 +158,15 @@ export function DataSafety() {
   }, [prompt]);
 
   if (!ready || installed) return null;
+  // 🔴 **Ce bandeau MENTAIT a qui est connecte, depuis le lot 6.3.** Son titre dit « ces
+  // notes ne vivent que dans ce navigateur » et tout son propos est le risque que Safari
+  // efface le stockage local apres sept jours. Avec un compte, une copie part sur le
+  // serveur a chaque geste : la phrase est fausse et le risque n'existe plus.
+  //
+  // Se taire est donc la seule reponse juste. Continuer a l'afficher apprendrait a ignorer
+  // nos messages — c'est la regle n°2 de ce composant, appliquee au cas qu'elle n'avait pas
+  // prevu parce que les comptes n'existaient pas encore quand elle a ete ecrite.
+  if (account !== undefined) return null;
   if (gestures === 0) return null;
   if (dismissedAt >= 0 && gestures < dismissedAt + SNOOZE_GESTURES) return null;
 
