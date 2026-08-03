@@ -279,6 +279,7 @@ déjà ce que les comptes changeront, avec la règle qui va avec : **cette page 
 avant que le comportement change, jamais après.** Une politique qui décrit l'état précédent
 est pire qu'une absence — l'absence n'affirme rien.
 
+| 2b | **Auth + journaux + synchronisation** | 🔒 in-progress — @claude-opus — 2026-08-03 | Supabase. SDK pour l auth (import dynamique), fetch pour les données |
 | 1.71 | **Le design cesse de cacher le différenciateur** | ✅ 2026-08-03 | Ton `waiting`, pastille sur l'affiche, engagement en évidence, hero compact, bandeau repliable |
 
 #### 1.71 — le diagnostic tenait en une phrase
