@@ -145,6 +145,17 @@ if (project === undefined) {
   );
 }
 
+// 🔴 Le garde-fou qui manquait, et il a coute une application de schema au mauvais endroit.
+// Ce compte porte plusieurs projets ; `.env` en designait un (« cerveau »), la production en
+// utilisait un autre. Tout etait vert des deux cotes — la table etait simplement creee la ou
+// personne ne la lirait. Comparer le **nom** au produit rend l'erreur impossible a repeter.
+if (!project.name.toLowerCase().includes('voltface')) {
+  fail(
+    `Ce projet s'appelle « ${project.name} » et non « voltface »`,
+    'NEXT_PUBLIC_SUPABASE_URL designe-t-elle le bon projet ? Un compte peut en porter plusieurs, et appliquer le schema au mauvais ne produit aucune erreur : la table existe, simplement la ou rien ne la lit.',
+  );
+}
+
 ok('Projet', `${project.name} ${DIM}(${ref})${RESET}`);
 // Q3 : la region ne se change pas apres coup. On l'affiche en fait plutot que de demander
 // une confirmation de memoire — et on le dit si elle n'est pas dans l'Union.
@@ -187,6 +198,28 @@ for (const name of files) {
 }
 
 // ---------------------------------------------------------------------------
+// 2bis. Les handles reserves, semes depuis le domaine
+// ---------------------------------------------------------------------------
+//
+// Q7 : la reserve doit exister **avant la premiere inscription**. Un handle attribue ne se
+// retire plus sans casser une URL, et `@admin` ou `@compte` entrerait en collision avec une
+// route.
+//
+// La liste vit dans `src/domain/handles.ts` et **n'est pas recopiee ici** : le domaine
+// reste la source de verite, la table n'en est que la forme executable. Le fichier
+// TypeScript est importe directement — Node retire les annotations de type depuis la 22.
+
+const { RESERVED_HANDLES } = await import('../src/domain/handles.ts');
+const handles = [...RESERVED_HANDLES];
+const values = handles.map((handle) => `('${handle.replace(/'/g, "''")}', 'reserved')`).join(',');
+const seeded = await api('POST', `/v1/projects/${ref}/database/query`, {
+  query: `insert into public.reserved_handles (handle, reason) values ${values}
+          on conflict (handle) do nothing;`,
+});
+if (!seeded.ok) fail(`Semis des handles reserves : HTTP ${seeded.status} — ${seeded.message}`);
+ok('Handles reserves', `${handles.length}, semes depuis src/domain/handles.ts`);
+
+// ---------------------------------------------------------------------------
 // 3. Ce que la cle publique ne peut PAS verifier
 // ---------------------------------------------------------------------------
 //
@@ -219,7 +252,12 @@ if (fn === undefined) {
 if (fn.prosecdef !== true) {
   fail('delete_me n est pas `security definer` : elle ne pourra pas supprimer le compte');
 }
-if (!Array.isArray(fn.proconfig) || !fn.proconfig.includes('search_path=')) {
+// ⚠️ Le motif accepte `search_path=` **et** `search_path=""` : Postgres normalise
+// `set search_path = ''` avec des guillemets, et la premiere version de ce test cherchait la
+// forme sans. Il criait donc « fonction detournable » sur une fonction parfaitement reglee —
+// un outil de diagnostic qui ment est pire qu'aucun outil, et c'est la deuxieme fois ici.
+// Ce qui est verifie est bien le seul point qui compte : que le `search_path` soit **fixe**.
+if (!Array.isArray(fn.proconfig) || !fn.proconfig.some((set) => /^search_path=/.test(set))) {
   fail(
     'delete_me n a pas de `search_path` fixe — elle est detournable',
     'Ajouter `set search_path = \'\'` dans supabase/002_account.sql, puis relancer.',
@@ -240,8 +278,15 @@ ok('delete_me : security definer, search_path fixe, reservee aux comptes connect
 // dans la langue de la page, donc `/fr/compte/retour` est une adresse aussi reelle que
 // `/compte/retour`.
 
-const site = (env['NEXT_PUBLIC_SITE_URL'] ?? '').replace(/\/$/, '');
-const origins = ['http://localhost:3000', ...(site.length > 0 ? [site] : [])];
+// ⚠️ `NEXT_PUBLIC_SITE_URL` est vide en local **a dessein** (`lib/site.ts` : Vercel la
+// fournit au deploiement). S'en contenter laissait donc la liste sans l'adresse de
+// production — c'est-a-dire un lien magique qui revient sur une porte fermee **partout sauf
+// sur la machine du developpeur**, le genre de defaut qu'on ne voit qu'en ligne.
+// D'ou `SITE_URLS`, lue seulement par cet outil, qui ne change rien a l'application.
+const declared = [env['NEXT_PUBLIC_SITE_URL'], ...(env['SITE_URLS'] ?? '').split(',')]
+  .map((value) => (value ?? '').trim().replace(/\/$/, ''))
+  .filter((value) => value.length > 0);
+const origins = ['http://localhost:3000', ...declared];
 const allowList = origins.flatMap((origin) => [
   `${origin}/compte/retour`,
   `${origin}/fr/compte/retour`,

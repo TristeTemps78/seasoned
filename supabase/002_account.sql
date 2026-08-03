@@ -83,7 +83,9 @@ grant execute on function public.delete_me() to authenticated;
 --    from pg_proc
 --    where proname = 'delete_me';
 --
---    Attendu : prosecdef = true, proconfig = {"search_path="}
+--    Attendu : prosecdef = true, proconfig = {"search_path=\"\""}
+--    (Postgres normalise `set search_path = ''` avec des guillemets — un test qui cherche
+--     la forme sans guillemets criera au loup sur une fonction correcte.)
 --    ⚠️ Si proconfig est NULL, la fonction est detournable. Ne pas s'en contenter.
 --
 -- 2) Seul `authenticated` peut l'appeler :
