@@ -8,7 +8,33 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, après-midi)
+## État actuel (2026-08-03, soir)
+
+- **💰 A6 tranché : freemium cosmétique** (référence Riot Games). Le seul modèle qui ne
+  contredise **aucune** promesse déjà faite — pas de paywall sur les statistiques, pas de
+  publicité donc pas de traçage, pas d'affiliation donc « où regarder » reste factuel. Et
+  les cosmétiques étant produits par nous, ils n'ajoutent **aucune** charge de modération.
+  > **La règle : on vend l'apparence, jamais la réponse.**
+  - ⛔ **D6 est désormais active** : le freemium **est** un usage commercial de TMDB, qui
+    exige un **accord écrit**. Action de Tristan, **avant la première vente**.
+  - ⚠️ **Le revenu ne peut pas précéder le social.** Chez Riot, le cosmétique vaut parce
+    qu'il est **vu** ; ici les profils sont `followers` par défaut. Le meilleur véhicule est
+    `ShareCard`, qui sort du produit et se voit par des non-utilisateurs.
+- **🧭 La navigation par faces est livrée** — `/`, `/moi`, `/calendrier`, `/bilan`. **562
+  tests**, 19 routes statiques. **Quatre faces et pas six** : *Mes amis* et *Les listes*
+  n'ont aucun contenu sans comptes, et une barre dont un tiers mène à « bientôt » apprend à
+  ne plus cliquer dessus. Le logo garde ses six faces.
+  - **Le calendrier a enfin un écran.** `calendar.ts` existait avec 12 tests et ne servait
+    qu'à fabriquer un `.ics` : il fallait télécharger un fichier et ouvrir une autre
+    application pour lire ce que le produit avait déjà calculé.
+  - **Le bilan quitte `/moi`** : `/moi` dit *où j'en suis*, `/bilan` dit *qui je suis*.
+  - ⚠️ **Trois défauts trouvés en câblant** : `themeColor` resté sur l'ancien fond, le lien
+    « Ma bibliothèque » en double avec la barre, et l'export `.ics` présent sur les deux
+    écrans.
+    > **La leçon** : une navigation neuve ne s'ajoute pas, elle **remplace**. Tout chemin qui
+    > menait déjà quelque part est à re-examiner, sinon on livre deux vérités concurrentes.
+
+## État précédent (2026-08-03, après-midi)
 
 - **🏷️ A4 tranché : le produit s'appelle `VOLTFACE`.** Dernier arbitrage bloquant avant un
   lancement public, ouvert depuis cinq sessions. **Volte-face = un revirement d'opinion** —

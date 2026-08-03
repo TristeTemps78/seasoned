@@ -239,7 +239,49 @@ affichait **« à voir »** dès que son instantané n'avait pas de libellé de 
 arrive dès qu'il expire. La vignette contredisait la section qui la contient. La décision
 passe désormais avant le repli.
 
-### 🏁 Bloc du 2026-08-03 (soir) — Voltface : le nom, la peau, et le plan de l'application
+### 🏁 Bloc du 2026-08-03 (soir) — Voltface : le nom, la peau, le plan, et la navigation
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| **A6** | **Monétisation** | ✅ **tranché** | **Freemium cosmétique**, référence Riot Games. Le produit reste entièrement gratuit ; on vend l'apparence, **jamais la réponse** |
+| 1.70 | **La navigation par faces + l'écran calendrier** | ✅ 2026-08-03 | `Faces.tsx`, `Agenda.tsx`, `MyStats.tsx`. **562 tests**, 19 routes statiques |
+
+#### A6 — ce que le freemium cosmétique débloque, et ce qu'il bloque
+
+C'est le seul modèle qui **ne contredise aucune promesse déjà faite** : pas de paywall sur
+les statistiques (le bilan a été construit *contre* celui de Letterboxd), pas de publicité
+donc pas de traçage, pas d'affiliation donc « où regarder » reste factuel. Et les
+cosmétiques étant **produits par nous**, ils n'ajoutent aucune charge de modération.
+
+⚠️ **Deux conséquences dures :**
+
+| | |
+|---|---|
+| **D6 passe de dormante à active** | Le freemium **est** un usage commercial de TMDB, qui exige un **accord écrit** — établi dès `RESEARCH.md` §300. ⛔ **Action de Tristan, avant la première vente.** Repli documenté : changer de fournisseur reste *un module à réécrire* (règle 3) |
+| Le revenu ne peut pas précéder le social | Chez Riot, le cosmétique vaut parce qu'il est **vu**. Ici les profils sont `followers` par défaut et le fil sera vide longtemps. Le meilleur véhicule est donc `ShareCard`, qui sort du produit et se voit par des **non-utilisateurs** |
+
+#### 1.70 — quatre faces et pas six, et c'est le point
+
+Livrer *Mes amis* et *Les listes* en coquilles vides aurait été ce que l'architecture
+s'interdit — *on ne remplit pas une face de faux contenu*. Une barre dont un tiers des
+entrées mène à « bientôt » apprend surtout à ne plus cliquer dessus.
+
+**Le calendrier existait depuis le matin même, avec 12 tests, et ne servait qu'à fabriquer
+un `.ics`** : il fallait télécharger un fichier et ouvrir une autre application pour lire ce
+que le produit avait déjà calculé. La forme d'échec la mieux documentée du dépôt, refermée.
+
+**Trois défauts trouvés en câblant**, tous invisibles au typage :
+
+1. **`themeColor` était resté sur l'ancien fond** (`#0f1115`) : l'application installée
+   encadrait une teinte qui n'existait plus nulle part depuis la DA.
+2. **Le lien « Ma bibliothèque » de l'en-tête faisait doublon** avec la barre.
+3. **L'export `.ics` apparaissait sur `/moi` *et* sur `/calendrier`** — exactement la faute
+   que je venais de reprocher au point 2.
+
+> **La leçon** : une navigation neuve ne s'ajoute pas, elle **remplace**. Chaque chemin qui
+> menait déjà quelque part doit être re-examiné, sinon on livre deux vérités concurrentes.
+
+### 🏁 Bloc du 2026-08-03 (soir) — Voltface : le nom, la peau, et le plan de l'application (suite)
 
 | # | Tâche | Statut | Note |
 |---|---|---|---|
