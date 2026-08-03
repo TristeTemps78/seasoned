@@ -8,7 +8,52 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, soir — 5.0a, puis une simplification demandée)
+## État actuel (2026-08-03, nuit — les comptes et la synchronisation, lot 6)
+
+- **✅ 6.1, 6.2, 6.3 livrés et poussés.** 695 → **706 tests**, typecheck strict vert, build
+  vert, **27 routes statiques** — l'authentification n'a rendu **aucune** route dynamique.
+- 🔴 **La trouvaille de la session n'est pas du code : le SQL était écrit depuis quatre
+  sessions et n'avait jamais été appliqué.** `check-supabase` répondait « la table journals
+  n'existe pas ». La cause n'était ni un oubli ni une négligence : **appliquer le schéma
+  demandait d'ouvrir une interface, de copier un fichier et de le coller ailleurs.** Une
+  étape manuelle placée entre du code écrit et du code qui marche finit par ne pas être faite.
+  - ⚠️ **Et le malentendu vaut d'être retenu** : Vercel et Supabase *étaient* bien liés.
+    Mais **cette intégration ne synchronise que des variables d'environnement — elle
+    n'exécute jamais de SQL.** La liaison était juste ; elle ne pouvait pas créer une table.
+  - Réponse : **`npm run db:push`** (`scripts/db-push.mjs`, zéro dépendance). Il applique
+    `supabase/*.sql`, **vérifie que `delete_me` est `security definer` AVEC un `search_path`
+    fixe** — sans quoi elle est détournable, ce que la clé publique ne peut pas voir —, pose
+    les URLs de retour dans les deux langues, et enchaîne sur le diagnostic existant.
+  - ⏳ **Une seule action humaine reste, irréductible** : `SUPABASE_ACCESS_TOKEN` dans `.env`
+    (https://supabase.com/dashboard/account/tokens). La clé `anon` ne peut pas créer une
+    table — c'est exactement ce qui la rend publiable.
+- **6.2 — l'authentification** : lien magique + code à six chiffres + Google, pas de mot de
+  passe. `@supabase/ssr` refusé (cookie + middleware = une invocation facturée par visite).
+  Suppression de compte par fonction `security definer`, donc **aucune `service_role`**.
+  - 🔴 **Défaut trouvé en fin de session précédente, et par la mesure seule** : l'import
+    dynamique isole le morceau, il ne décide pas **quand** on le demande. `AuthProvider`
+    monte sur toutes les pages, donc `/serie/*` téléchargeait **24 Ko gzip** pour un visiteur
+    sans compte. Réparé par `hasStoredSession()` — une lecture de `localStorage`.
+  - ⚠️ **`@supabase/auth-js` était importé sans être déclaré** : il ne se résolvait que comme
+    dépendance transitive de `supabase-js`, dont rien n'utilisait le reste. Corrigé.
+- **6.3 — la synchronisation** : `SyncingJournalStore`. `load()` **ne touche jamais au
+  réseau** (Q12 vraie par construction). Chaque poussée est une synchro complète — lire,
+  fusionner, écrire ce qui change — parce que `POST` remplace la ligne entière. Écriture
+  débattue à 2 s, forcée sur `pagehide`. **Mutation vérifiée** : retirer le débat fait tomber
+  deux tests.
+  - **Une clé de stockage par compte**, sans quoi le refus d'adoption ne veut rien dire : le
+    compte se remettrait à lire, écrire et **pousser vers le serveur** le journal de
+    quelqu'un d'autre. Et **le refus est mémorisé** — une question qui revient à chaque page
+    s'apprend à fermer, et la réponse qui fait disparaître une invitation est « oui ».
+  - **La page de confidentialité est réécrite dans le même commit** : elle disait que le
+    journal ne quitte pas l'appareil, ce qui devient faux ici. Une politique en retard d'un
+    lot est exactement ce que D19 a coûté.
+- 🔴 **Ce qui n'est PAS vérifié, et il faut le lire comme un avertissement** : **rien de ces
+  deux lots n'a jamais parlé à une base réelle.** Tests verts, build vert, et la table
+  n'existe pas. Ce dépôt a déjà livré `episodeMinutes` et `ordering.ts` morts-nés en étant
+  verts. **Tâche 6.3bis**, dès que le jeton est là.
+
+## État précédent (2026-08-03, soir — 5.0a, puis une simplification demandée)
 
 - **✂️ Remarque de Tristan, et elle était juste : « tu te perds avec tous tes tests, fais
   simple ».** Elle valait pour le code autant que pour les tests.
