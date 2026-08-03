@@ -153,7 +153,7 @@ ni base. C'est ce qui rend une page utile à zéro critique (`ROADMAP.md` §0.1)
 | 1.13 | Chercher un cas « zombie » | ✅ 2026-08-01 | **Aucun sur 12 séries.** Résultat, pas échec — a produit un recentrage du différenciateur, voir plus bas |
 | 1.14 | **Découvrabilité** — l'accueil et le sitemap ouvrent le chemin vers `/serie/*` | ✅ 2026-08-01 | 0 → 20 liens ; 1 → 147 URLs |
 | 1.15 | Statut réel visible sur les vignettes | ✅ 2026-08-01 | Hydratation réservée aux pages en cache. Home restée `○ Static` / 1d — vérifié au build |
-| 1.16 | Maillage interne entre pages série | 🟢 libre | Une page série ne renvoie vers aucune autre : cul-de-sac pour le crawl comme pour le visiteur |
+| 1.16 | Maillage interne entre pages série | ✅ 2026-08-02 | **Vérifié le 2026-08-04** : `alsoByCreators` dans `lib/catalog.ts`, appelée par la page série — *Breaking Bad* renvoie vers *Better Call Saul*. | Une page série ne renvoie vers aucune autre : cul-de-sac pour le crawl comme pour le visiteur |
 | 1.17 | Fixtures **capturées** depuis de vraies réponses TMDB | 🟢 libre | Dette D10 — les fixtures actuelles sont écrites de mémoire |
 | 1.18 | Filtre de vitrine par nature de programme | ✅ 2026-08-01 | `src/domain/program.ts`. Sitemap 146 → 110 pages série. Ne filtre que la vitrine, jamais le catalogue |
 | 1.19 | **Seuil de « sans nouvelle » relatif au rythme de la série** | ✅ 2026-08-01 | `src/domain/cadence.ts`. Corrige *Les Griffin*, préserve *Majhi Manasa*. Calibrage du facteur ouvert → D12 |
@@ -911,7 +911,7 @@ un marché d'un ordre de grandeur plus grand.
 | 1.58 | **Bandeau de sécurité des données** (A0 + A1 réunis) | ✅ 2026-08-02 | `app/components/DataSafety.tsx`. Voir ci-dessous. |
 | 1.59 | Migrer les chaînes existantes vers le dictionnaire | 🟡 **partiel** | ✅ Faits : `lib/format.ts` (le différenciateur), `layout`, accueil, page série, métadonnées, langue du catalogue. 🟢 Restent : les ~14 composants `'use client'` (`/moi`, `EpisodeGrid`, `MyProgress`, `StarRating`, `ShareCard`, `TasteCard`…). **Volontairement pas fait dans le même lot** : sans test de composant, migrer 14 fichiers d'un coup est un risque sans filet. À faire après 1.61. |
 | 1.60 | **Routage par locale + `hreflang` + sitemap par langue** | ✅ 2026-08-02 | `/` en anglais, `/fr` en français. `lib/routes.ts` (12 tests), deux dispositions racines, sélecteur de langue, `hreflang` réciproques, sitemap avec alternates. Deux décisions contre-intuitives : anglais **sans** préfixe, et **aucune redirection automatique**. Motifs ci-dessous. |
-| 1.61 | Harnais de test de composants (`jsdom`, `include` en `.tsx`) | 🟢 libre | Prérequis de 1.59. `vitest.config.ts` fixe `environment: 'node'` et `include: '**/*.test.ts'` : **aucun test de composant n'est possible aujourd'hui**, pour 15 modules `'use client'`. |
+| 1.61 | Harnais de test de composants (`jsdom`, `include` en `.tsx`) | ✅ 2026-08-03 | Prérequis de 1.59. `vitest.config.ts` fixe `environment: 'node'` et `include: '**/*.test.ts'` : **aucun test de composant n'est possible aujourd'hui**, pour 15 modules `'use client'`. |
 | **A10** | **Quelle langue par défaut ?** | ✅ **`en`**, tranché 2026-08-02 | Sur un site statique, « par défaut » n'est pas une préférence : c'est **la langue de la page que les moteurs indexent**, donc une décision d'acquisition. Le français n'est pas rétrogradé, il cesse d'être implicite — et il est désormais **testé explicitement**, ce qu'il n'était pas : tant qu'il était le défaut, les tests qui ne précisaient rien le vérifiaient par accident. |
 
 ### ⚠️ Ce que la bascule a révélé, et qu'il faut regarder en face
@@ -1279,12 +1279,12 @@ par les liens » — sans que ces liens existent.
 
 | # | Tâche | Statut |
 |---|---|---|
-| 2.1 | Authentification (Supabase) | 🟢 libre |
-| 2.2 | **Schéma de base** — les 5 contraintes de `RATING-MODEL.md` §7 | 🟢 libre |
-| 2.3 | « J'en suis là » — la position en un geste | 🟢 libre |
-| 2.4 | Note de saison — un tap, pas un formulaire | 🟢 libre |
-| 2.5 | Décision : continuer / pause / abandon | 🟢 libre |
-| 2.6 | File d'attente + reprise après interruption | 🟢 libre |
+| 2.1 | Authentification (Supabase) | ✅ 2026-08-03 — lot 6.2 |
+| 2.2 | **Schéma de base** — les 5 contraintes de `RATING-MODEL.md` §7 | ⛔ **caduc** — le journal est local-first et vit dans un `jsonb` (`001_journal.sql`) ; les contraintes relationnelles de §7 décrivent une base que ce produit n'a plus |
+| 2.3 | « J'en suis là » — la position en un geste | ✅ 2026-08-02 — `EpisodeGrid` |
+| 2.4 | Note de saison — un tap, pas un formulaire | ✅ 2026-08-02 — `StarRating` |
+| 2.5 | Décision : continuer / pause / abandon | ✅ 2026-08-02 — `MyProgress` |
+| 2.6 | File d'attente + reprise après interruption | ✅ 2026-08-02 — `ResumeStrip` |
 
 ---
 
@@ -1294,10 +1294,10 @@ par les liens » — sans que ces liens existent.
 
 | # | Tâche | Statut | Note |
 |---|---|---|---|
-| 3.1 | Trajectoire agrégée, point d'arrêt communautaire, carte des abandons | 🟢 libre | `computeTrajectory` existe ; reste l'agrégation multi-utilisateurs |
-| 3.2 | **Filtrage spoiler câblé dans chaque requête** | 🟢 libre | ⚠️ critique ici — `redactTrajectory` existe. Tester les fuites **par agrégat** |
-| 3.3 | Import TV Time / Trakt / Simkl | 🟢 libre | Levier de **rétention**, plus d'acquisition — audit §1.1 |
-| 3.4 | **Export intégral** | 🟢 libre | Non négociable dès qu'il y a une donnée |
+| 3.1 | Trajectoire agrégée, point d'arrêt communautaire, carte des abandons | 🟡 partiel — 2026-08-02 | `computeTrajectory` existe ; reste l'agrégation multi-utilisateurs |
+| 3.2 | **Filtrage spoiler câblé dans chaque requête** | ✅ 2026-08-02 — `TrajectorySection` | ⚠️ critique ici — `redactTrajectory` existe. Tester les fuites **par agrégat** |
+| 3.3 | Import TV Time / Trakt / Simkl | 🟡 partiel — 2026-08-03 (`/convertir`, `src/domain/import.ts`) | Levier de **rétention**, plus d'acquisition — audit §1.1 |
+| 3.4 | **Export intégral** | ✅ 2026-08-02 — `JournalTransfer` | Non négociable dès qu'il y a une donnée |
 
 ---
 
@@ -1310,8 +1310,8 @@ par les liens » — sans que ces liens existent.
 | 4.1 | Critiques de saison | 🟢 libre |
 | 4.2 | Épisodes marquants | 🟢 libre |
 | 4.3 | Verdict de série rédigé + point d'arrêt | 🟢 libre |
-| 4.4 | Profil : la forme d'un goût | 🟢 libre |
-| 4.5 | Trajectoire exportable en image | 🟢 libre |
+| 4.4 | Profil : la forme d'un goût | ✅ 2026-08-02 — `taste.ts` + `TasteCard` |
+| 4.5 | Trajectoire exportable en image | ✅ 2026-08-02 — `ShareCard` |
 
 ---
 
@@ -1320,7 +1320,7 @@ par les liens » — sans que ces liens existent.
 | # | Tâche | Statut | Note |
 |---|---|---|---|
 | 5.0a | **La politique publiée : ce qu'on retire, sous quel délai** | ✅ 2026-08-03 | **`/regles`** + `/fr/regles`, au sitemap et **en pied de page partout** — une voie de signalement introuvable n'en est pas une. `src/domain/moderation.ts` tient en **60 lignes** : la liste fermée des motifs (dont `spoiler`, propre à ce produit) et le délai de 72 h. **La page ne peut pas mentir** — les motifs viennent du domaine, et *ajouter un motif sans le publier ne compile plus*. Les promesses de procédure (on masque sans supprimer, l'auteur est informé, il peut contester) vivent dans le **texte** de `/regles`, où elles engagent. ⚠️ **Première version taillée le jour même sur remarque de Tristan** : j'avais écrit 281 lignes de moteur — file d'attente, tri par urgence, exposé des motifs, rétablissement — **pour un système sans aucun contenu à modérer**. C'est l'erreur que j'avais moi-même refusée pour la table `reports`, appliquée au SQL et pas au domaine. ⚖️ Textes à faire relire |
-| 5.0b | **Le canal de signalement** | 🟢 libre | Dépend de 5.0a. **Pas de table `reports` pour l'instant** — la même raison que `001_journal.sql` refuse les tables sociales « pendant qu'on y est » : une table qu'on peut remplir avant de savoir traiter un signalement est un piège. Le point de contact publié suffit tant qu'il n'existe aucun contenu de tiers ; le formulaire viendra **avec** le contenu |
+| 5.0b | **Le canal de signalement** | ✅ 2026-08-04 — voir 6.5 | Dépend de 5.0a. **Pas de table `reports` pour l'instant** — la même raison que `001_journal.sql` refuse les tables sociales « pendant qu'on y est » : une table qu'on peut remplir avant de savoir traiter un signalement est un piège. Le point de contact publié suffit tant qu'il n'existe aucun contenu de tiers ; le formulaire viendra **avec** le contenu |
 | 5.1 | Suivre, fil d'activité, listes, commentaires | ⛔ | N'ouvre pas sans 5.0a **et** 5.0b |
 
 ---
