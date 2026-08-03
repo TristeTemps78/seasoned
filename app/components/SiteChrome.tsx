@@ -7,6 +7,7 @@ import { DataSafety } from '@/app/components/DataSafety';
 import { LanguagePicker } from '@/app/components/LanguagePicker';
 import { Faces } from '@/app/components/Faces';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
+import { AuthProvider } from '@/app/auth/AuthProvider';
 import { localeTag, t, type Locale } from '@/lib/i18n';
 import { pathIn } from '@/lib/routes';
 
@@ -43,6 +44,10 @@ export function SiteChrome({ locale, children }: {
     <html lang={locale}>
       <body className="min-h-screen flex flex-col">
       <LocaleProvider locale={locale}>
+        {/* Même patron que `LocaleProvider` : composant client qui reçoit `children` en
+            prop, donc l'arbre reste rendu par le serveur et les pages restent statiques.
+            La session est lue dans un `useEffect`, jamais au rendu. */}
+        <AuthProvider>
         {/* Le liseré supérieur est la seule signature permanente de la direction
             artistique : un arc électrique en haut de chaque page, et rien d'autre qui
             brille tant qu'on n'interagit pas. */}
@@ -64,6 +69,15 @@ export function SiteChrome({ locale, children }: {
                 porte desormais, et deux chemins vers le meme ecran dans le meme en-tete
                 font douter qu'ils menent au meme endroit. */}
             <span className="ml-auto" />
+            {/* ⚠️ Ici et **pas** dans la barre de faces : une face repond a une question
+                qu'on se pose a un moment de la journee, et « ou en est mon compte » n'en
+                est pas une. Un reglage se range avec les reglages. */}
+            <Link
+              href={pathIn('/compte', locale)}
+              className="text-xs text-(--color-muted) hover:text-(--color-text)"
+            >
+              {t(locale, 'account.nav')}
+            </Link>
             <LanguagePicker />
           </div>
           {/* Les faces du cube. Dans l'en-tete et non en bas d'ecran : le site est
@@ -119,6 +133,7 @@ export function SiteChrome({ locale, children }: {
         </footer>
 
         <ServiceWorker />
+        </AuthProvider>
       </LocaleProvider>
       </body>
     </html>

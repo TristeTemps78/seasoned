@@ -17,7 +17,17 @@ import { pathIn } from '@/lib/routes';
  * donc **derivees** de la liste des langues, pour qu'ajouter une langue ne puisse pas
  * rouvrir le trou en silence.
  */
-const PRIVATE_PATHS = ['/recherche', '/moi', '/calendrier', '/bilan', '/hors-ligne'];
+const PRIVATE_PATHS = [
+  '/recherche',
+  '/moi',
+  '/calendrier',
+  '/bilan',
+  '/hors-ligne',
+  // ⚠️ `/compte/retour` avant tout : l'URL de retour porte un `code` a usage unique, et
+  // une page de connexion indexee n'a aucun interet pour un moteur.
+  '/compte',
+  '/compte/retour',
+];
 
 export default function robots(): MetadataRoute.Robots {
   return {

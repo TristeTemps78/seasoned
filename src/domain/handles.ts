@@ -65,6 +65,14 @@ export const RESERVED_HANDLES: ReadonlySet<string> = new Set([
   'moi', 'serie', 'series', 'recherche', 'convertir', 'calendrier', 'bilan',
   'listes', 'amis', 'mentions', 'confidentialite',
   'search', 'library', 'calendar', 'tally', 'lists', 'friends', 'legal', 'privacy',
+  // Les routes du compte, ajoutees avec elles (2026-08-03). ⚠️ L'avertissement de ce
+  // module s'applique : **avant** la premiere inscription. Un handle deja attribue ne se
+  // retire pas sans casser une URL, et `/compte` est un chemin reel depuis ce jour.
+  'compte', 'account', 'auth', 'connexion', 'login', 'logout', 'deconnexion',
+  'signaler', 'report', 'profil', 'profile', 'regles', 'rules',
+  // ⚠️ `u` n'est PAS ici : trois caracteres minimum, donc il ne pourrait jamais etre pris.
+  // Le test l'a attrape — meme bruit que `sw` et `hors-ligne`, retires pour la meme
+  // raison. Une reserve inutile laisse croire a une protection qui n'a jamais servi.
   // Les chemins techniques.
   'api', 'www', 'app', 'static', 'assets', 'public', 'icons', 'robots', 'sitemap',
   'manifest', 'null', 'undefined',

@@ -281,11 +281,65 @@ const FR = {
     'L’identité de l’éditeur n’est pas encore renseignée. Elle doit l’être avant l’ouverture des comptes, et en tout état de cause avant toute activité commerciale.',
   'legal.tmdb': 'Les données de séries proviennent de TMDB, qui n’approuve ni ne cautionne ce site.',
 
+  // Le compte. ⚠️ Aucun de ces textes ne promet la synchronisation : elle n'existe pas
+  // encore, et annoncer une fonctionnalite absente est la seule chose qu'on ne rattrape
+  // pas — quelqu'un fermerait son navigateur en croyant ses notes en securite ailleurs.
+  'account.title': 'Mon compte',
+  'account.lede':
+    'Un compte sert à retrouver vos notes ailleurs. Tout le reste du site fonctionne sans.',
+  'account.aria': 'Connexion et compte',
+  'account.nav': 'Compte',
+  'account.email.label': 'Votre adresse e-mail',
+  'account.email.placeholder': 'vous@exemple.fr',
+  // ⚠️ Le seuil est interpole depuis `MINIMUM_AGE`, jamais recopie : meme procede que les
+  // motifs de `/regles`. Changer le domaine sans changer le texte publie serait annoncer
+  // une regle qu'on n'applique pas.
+  'account.age': 'J’ai {age} ans ou plus',
+  'account.ageWhy':
+    'Nous ne demandons pas votre date de naissance : une déclaration suffit, et un âge exact serait une donnée de plus à protéger.',
+  'account.send': 'Recevoir un lien de connexion',
+  'account.sending': 'Envoi…',
+  'account.sent':
+    'Regardez vos e-mails. Le lien est à ouvrir dans ce navigateur-ci — c’est ce qui fait qu’il ne peut servir à personne d’autre.',
+  'account.rateLimited':
+    'Trop d’envois pour le moment. Réessayez dans quelques minutes.',
+  'account.failed': 'L’envoi a échoué. Réessayez dans un instant.',
+  'account.google': 'Continuer avec Google',
+  'account.or': 'ou',
+  'account.code.label': 'Ou saisissez le code reçu par e-mail',
+  'account.code.placeholder': '123456',
+  'account.code.submit': 'Valider le code',
+  'account.code.failed': 'Ce code n’est pas valide, ou il a expiré.',
+  'account.code.why':
+    'Utile si vous lisez vos e-mails sur un autre appareil que celui-ci.',
+  'account.signedInAs': 'Connecté en tant que {email}.',
+  'account.signOut': 'Se déconnecter',
+  'account.unavailable.title': 'Les comptes ne sont pas encore ouverts',
+  'account.unavailable.body':
+    'Cette installation n’est pas reliée à une base de données. Vos notes restent dans ce navigateur, et la bibliothèque fonctionne normalement.',
+  'account.notSynced':
+    'Vos notes restent pour l’instant dans ce navigateur : la synchronisation entre appareils arrive au prochain lot. Gardez une copie exportée.',
+  'account.delete.title': 'Supprimer mon compte',
+  'account.delete.body':
+    'Immédiatement, sans délai de grâce. Exportez d’abord vos notes : elles vivent dans ce navigateur et n’en partiront pas, mais votre compte, lui, ne se rétablit pas.',
+  'account.delete.confirm': 'Supprimer définitivement',
+  'account.delete.failed': 'La suppression a échoué. Réessayez, ou écrivez-nous.',
+  'account.callback.working': 'Connexion en cours…',
+  'account.callback.done': 'C’est bon, vous êtes connecté.',
+  'account.callback.wrongBrowser':
+    'Ce lien a été demandé depuis un autre navigateur. Ouvrez-le là où vous l’avez demandé, ou saisissez le code à six chiffres du même e-mail.',
+  'account.callback.expired':
+    'Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.',
+  'account.callback.nothing': 'Il n’y a rien à valider ici.',
+  'account.callback.back': 'Retour à mon compte',
   'privacy.title': 'Confidentialité',
   'privacy.updated': 'À jour du 3 août 2026.',
-  'privacy.now.title': 'Aujourd’hui, rien ne sort de votre navigateur',
+  'privacy.now.title': 'Vos notes restent dans ce navigateur',
   'privacy.now.body':
-    'Il n’y a ni compte, ni base de données, ni traceur. Vos positions, vos notes et vos décisions sont écrites dans le stockage local de cet appareil, et ne sont envoyées nulle part. Vous pouvez le vérifier : la politique de sécurité du site interdit au navigateur de contacter un autre serveur que le nôtre.',
+    'Il n’y a ni traceur, ni mesure d’audience, ni cookie publicitaire. Vos positions, vos notes et vos décisions sont écrites dans le stockage local de cet appareil. Sans compte, elles ne sont envoyées nulle part — et vous pouvez le vérifier : la politique de sécurité du site n’autorise le navigateur à contacter aucun serveur en dehors du nôtre.',
+  'privacy.account.title': 'Si vous créez un compte',
+  'privacy.account.body':
+    'Le compte est facultatif : tout le site se visite et s’utilise sans. Si vous en créez un, nous traitons votre adresse e-mail — c’est elle qui reçoit le lien de connexion, et il n’y a pas de mot de passe à retenir. Elle est conservée par notre hébergeur de base de données, dans l’Union européenne, et ne sert qu’à vous reconnaître. Supprimer votre compte l’efface immédiatement, sans délai ni condition.',
   'privacy.tmdb.title': 'Ce qui vient d’ailleurs',
   'privacy.tmdb.body':
     'Les fiches de séries et les affiches proviennent de TMDB. Charger une affiche adresse une requête à leur serveur d’images, qui voit donc votre adresse IP — comme pour toute image sur le web. Nous ne leur transmettons rien d’autre.',
@@ -295,9 +349,9 @@ const FR = {
   'privacy.rights.title': 'Vos données, et comment les récupérer',
   'privacy.rights.body':
     'Puisque tout est chez vous, l’export intégral est immédiat et sans condition : il se trouve dans votre bibliothèque. Effacer les données du navigateur suffit à tout supprimer.',
-  'privacy.next.title': 'Ce qui changera avec les comptes',
+  'privacy.next.title': 'Ce qui changera ensuite',
   'privacy.next.body':
-    'L’ouverture des comptes est prévue. Elle impliquera d’envoyer votre journal à notre serveur pour le retrouver sur vos autres appareils. Cette page sera mise à jour avant, pas après — et la phrase « rien ne sort de ce navigateur » cessera d’être vraie le jour où elle cessera de l’être.',
+    'La synchronisation entre vos appareils viendra après : elle impliquera d’envoyer votre journal à notre serveur, et à personne d’autre. Cette page sera mise à jour avant, pas après. C’est ainsi que la phrase « rien ne sort de ce navigateur » a été retirée le jour où les comptes sont arrivés, et non le jour où quelqu’un l’aurait remarqué.',
   'tallyPage.title': 'Mon bilan',
   'tallyPage.lede': 'Ce que vos séries disent de vous. Calculé ici, dans ce navigateur.',
   'tallyPage.empty.title': 'Rien à mesurer pour l’instant',
@@ -792,11 +846,56 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
     'The publisher’s identity has not been filled in yet. It must be before accounts open, and in any case before any commercial activity.',
   'legal.tmdb': 'Show data comes from TMDB, which does not endorse or certify this site.',
 
+  'account.title': 'My account',
+  'account.lede':
+    'An account is for finding your notes elsewhere. Everything else on the site works without one.',
+  'account.aria': 'Sign in and account',
+  'account.nav': 'Account',
+  'account.email.label': 'Your email address',
+  'account.email.placeholder': 'you@example.com',
+  'account.age': 'I am {age} or older',
+  'account.ageWhy':
+    'We do not ask for your date of birth: a declaration is enough, and an exact age would be one more piece of data to protect.',
+  'account.send': 'Send me a sign-in link',
+  'account.sending': 'Sending…',
+  'account.sent':
+    'Check your email. Open the link in this browser — that is what stops it working for anyone else.',
+  'account.rateLimited': 'Too many attempts for now. Try again in a few minutes.',
+  'account.failed': 'Sending failed. Try again in a moment.',
+  'account.google': 'Continue with Google',
+  'account.or': 'or',
+  'account.code.label': 'Or enter the code from the email',
+  'account.code.placeholder': '123456',
+  'account.code.submit': 'Check the code',
+  'account.code.failed': 'That code is not valid, or it has expired.',
+  'account.code.why': 'Useful if you read your email on a different device from this one.',
+  'account.signedInAs': 'Signed in as {email}.',
+  'account.signOut': 'Sign out',
+  'account.unavailable.title': 'Accounts are not open yet',
+  'account.unavailable.body':
+    'This installation is not connected to a database. Your notes stay in this browser, and the library works as usual.',
+  'account.notSynced':
+    'For now your notes stay in this browser: syncing between devices arrives in the next batch. Keep an exported copy.',
+  'account.delete.title': 'Delete my account',
+  'account.delete.body':
+    'Immediately, with no grace period. Export your notes first: they live in this browser and are not going anywhere, but your account does not come back.',
+  'account.delete.confirm': 'Delete permanently',
+  'account.delete.failed': 'Deletion failed. Try again, or write to us.',
+  'account.callback.working': 'Signing you in…',
+  'account.callback.done': 'Done — you are signed in.',
+  'account.callback.wrongBrowser':
+    'This link was requested from a different browser. Open it where you asked for it, or enter the six-digit code from the same email.',
+  'account.callback.expired': 'This link has expired or has already been used. Ask for a new one.',
+  'account.callback.nothing': 'There is nothing to confirm here.',
+  'account.callback.back': 'Back to my account',
   'privacy.title': 'Privacy',
   'privacy.updated': 'Last updated 3 August 2026.',
-  'privacy.now.title': 'Today, nothing leaves your browser',
+  'privacy.now.title': 'Your notes stay in this browser',
+  'privacy.account.title': 'If you create an account',
+  'privacy.account.body':
+    'The account is optional: the whole site works without one. If you create one, we process your email address — it is what receives the sign-in link, and there is no password to remember. It is held by our database host, inside the European Union, and is only used to recognise you. Deleting your account erases it immediately, with no delay and no conditions.',
   'privacy.now.body':
-    'There are no accounts, no database and no trackers. Your positions, ratings and decisions are written to this device’s local storage and sent nowhere. You can check this yourself: the site’s security policy forbids the browser from contacting any server but ours.',
+    'There are no trackers, no analytics and no advertising cookies. Your positions, ratings and decisions are written to this device’s local storage. Without an account they are sent nowhere — and you can check this yourself: the site’s security policy lets the browser contact no server but ours.',
   'privacy.tmdb.title': 'What comes from elsewhere',
   'privacy.tmdb.body':
     'Show details and posters come from TMDB. Loading a poster sends a request to their image server, which therefore sees your IP address — as with any image on the web. We pass them nothing else.',
@@ -806,9 +905,9 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'privacy.rights.title': 'Your data, and how to take it with you',
   'privacy.rights.body':
     'Since everything is yours already, a full export is immediate and unconditional: you will find it in your library. Clearing your browser data deletes everything.',
-  'privacy.next.title': 'What will change with accounts',
+  'privacy.next.title': 'What changes next',
   'privacy.next.body':
-    'Accounts are planned. They will mean sending your journal to our server so you can find it on your other devices. This page will be updated before that happens, not after — and the sentence “nothing leaves this browser” will stop being displayed the day it stops being true.',
+    'Syncing between your devices comes later: it will mean sending your journal to our server, and to nobody else. This page is updated before that happens, not after. That is how the sentence “nothing leaves this browser” was removed the day accounts arrived, rather than the day somebody noticed.',
   'tallyPage.title': 'My tally',
   'tallyPage.lede': 'What your shows say about you. Worked out here, in this browser.',
   'tallyPage.empty.title': 'Nothing to measure yet',
