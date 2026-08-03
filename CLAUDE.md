@@ -8,7 +8,53 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, nuit — les comptes et la synchronisation, lot 6)
+## État actuel (2026-08-03, nuit — le lot 6 entier, et deux impasses trouvées en l'exécutant)
+
+- **✅ 6.1 → 6.6 livrés et poussés.** 656 → **716 tests**, typecheck strict vert, build vert,
+  **29 routes statiques**. La base répond, le schéma est appliqué, les politiques sont vérifiées.
+- ⏳ **La seule chose qui reste, et elle est chez Vercel** : les variables de production
+  pointent encore sur un projet Supabase **supprimé**. À coller dans Vercel → Settings →
+  Environment Variables, puis redéployer (la CSP est calculée au build) :
+  - `NEXT_PUBLIC_SUPABASE_URL=https://eoldfgxgbsczubtfdbza.supabase.co`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_xOvt4LMu9DGXRVTigfWvHA_TvUZ4PSc`
+- 🔴 **Il y avait DEUX projets Supabase, et personne ne le savait.** La production parlait à
+  `voltface` (Sydney), le `.env` local à `cerveau` (us-east-1) — j'ai donc appliqué le schéma
+  là où rien ne le lirait, **sans la moindre erreur** : tout était vert des deux côtés.
+  Trouvé en lisant l'en-tête `connect-src` de la production, pas le code.
+  > **Le garde-fou est désormais exécutable** : `db:push` refuse un projet dont le nom n'est
+  > pas celui du produit. Une erreur qui ne produit aucun message doit être rendue bruyante,
+  > sinon elle se répète.
+- **🇪🇺 Q3 tranché et appliqué** : projet recréé en **eu-west-3 (Paris)**. Sydney a été
+  supprimé après vérification qu'il portait **0 compte et 0 journal** — c'était le dernier
+  moment où déménager était gratuit.
+- 🔴 **Deux impasses dans mon propre SQL, trouvées en le jouant, pas en le relisant** :
+  1. `follows` exigeait `can_see(followee)`. Or un profil `followers` n'est visible
+     **qu'une fois suivi** — donc personne n'aurait jamais pu suivre personne, et c'est la
+     visibilité par défaut. **Le social entier était mort au démarrage.**
+  2. Le correctif évident — une sous-requête sur `profiles` — **subit RLS à son tour**. La
+     même impasse, déplacée d'un cran, et toujours verte à la lecture. Il fallait une
+     fonction `security definer`.
+  > **Neuf scénarios rejoués contre la base** en transaction annulée : fil invisible avant
+  > le suivi, visible après ; suivre au nom d'un autre, publier au nom d'un autre, publier
+  > une date future, prendre un handle réservé, lire le journal d'autrui → tous refusés ;
+  > supprimer un compte laisse son nom réservé.
+- 🔴 **Un défaut de conception du fil, trouvé à contre-sens.** Il était écrit — et je l'avais
+  validé — que « Marie a noté *Breaking Bad* ★★★★ ne révèle rien ». Vrai **au niveau de la
+  série**, faux au niveau de la saison : *« a noté la saison 6 ★☆☆☆☆ »* apprend à quelqu'un
+  qui en est à la saison 2 qu'il **existe** une saison 6 et qu'elle est mauvaise. C'est le
+  spoiler de trajectoire, entré par une autre porte. `redactActivity` **dégrade** le fait au
+  lieu de le supprimer — un fil à trous est lui-même un indice — et le caviardage se fait
+  **dans le navigateur, avec le journal du lecteur** : le serveur ne sait pas où j'en suis,
+  ce qui est précisément ce qui empêche ma position de fuir.
+- **Deux autres divergences réparées** : le SQL acceptait le tiret dans un handle et pas le
+  domaine ; et `db:push` criait « fonction détournable » sur une fonction correcte, parce que
+  Postgres normalise `search_path=''` en `search_path=""`. *Un outil de diagnostic qui ment
+  est pire qu'aucun outil* — deuxième fois dans ce dépôt.
+- **Ce qui reste ouvert** : 6.5 (le canal de signalement, 5.0b), 6.7 (le design system), et le
+  SMTP — le service intégré ne livre qu'aux membres de l'équipe du projet, ce qui suffit pour
+  vérifier mais pas pour un premier utilisateur qui ne serait pas Tristan.
+
+## État précédent (2026-08-03, nuit — les comptes et la synchronisation, lot 6)
 
 - **✅ 6.1, 6.2, 6.3 livrés et poussés.** 695 → **706 tests**, typecheck strict vert, build
   vert, **27 routes statiques** — l'authentification n'a rendu **aucune** route dynamique.
