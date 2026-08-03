@@ -11,20 +11,77 @@
 ## ▶️ Pour reprendre : **lot 7 — UX/UI**, dans `TASKS.md`
 
 Tristan reprend l'UX/UI dans une prochaine session en disant simplement **« continue »**.
-Tout ce qu'il faut est dans **`TASKS.md` → « 🎨 Lot 7 — UX/UI »** : la marche à suivre pour
-démarrer, les **six règles de design posées le 2026-08-03/04 à ne pas défaire**, et neuf
-tâches classées par valeur. Les trois premières sont les seules qui demandent un œil :
+Tout est dans **`TASKS.md` → « 🎨 Lot 7 — UX/UI »** : la marche à suivre, les **huit règles
+de design à ne pas défaire**, et les tâches classées par valeur.
 
-1. **le mobile n'a jamais été vu** — seulement raisonné (7.1) ;
-2. **les cinq faces à froid, journal vide** — l'état que tout le monde voit en premier et
-   que je n'ai jamais regardé, mon navigateur de test ayant déjà des notes (7.2) ;
-3. **`/amis` avec un vrai fil**, ce qui demande deux comptes (7.3).
+**La passe du 2026-08-04 a fermé 7.5, 7.9, 7.10, 7.11** et mesuré 7.1 et 7.2. Ce qui reste
+demande **un œil, pas une mesure** — c'est le partage exact entre ce que je peux faire seul
+et ce qui t'attend :
 
-⚠️ Deux pièges d'outillage, consignés parce qu'ils ont coûté du temps : le **service worker
-sert des pages en cache** (ajouter `?v=N` à l'URL), et le **screenshot ne suit pas le
-redimensionnement** de la fenêtre — le mobile ne peut pas se vérifier ainsi.
+1. **7.12 / 7.13** — deux écarts de taille que je peux justifier mais pas juger : les `h2`
+   à 14 px contre 18 px sur la fiche série, et le grand chiffre du bilan devenu plus petit
+   que le titre de sa page.
+2. **7.1** — la grille d'épisodes a **62 cases de 20 × 20 px**. Les porter à 44 px rendrait
+   la table trois fois plus large que l'écran : **densité contre atteignabilité**, arbitrage.
+3. **7.8** — `--color-pulse` : je ne l'ai **pas** tranché exprès. Lui donner un emploi défait
+   « une couleur, un sens », et je ne vois pas de troisième sens qui ne soit pas inventé.
+4. **7.3** `/amis` avec un vrai fil (deux comptes), **7.6** `/bilan` (contenu, pas style).
 
-## État actuel (2026-08-04, nuit — le signalement, et trois écrans qui mentaient)
+⚠️ **Pièges d'outillage.** Le service worker sert des pages en cache (`?v=N`). Le screenshot
+ne suit pas `resize_window` — **mais la fenêtre, elle, est bien redimensionnée** : les
+mesures à 360 px sont donc justes, et c'est ainsi qu'on a trouvé les boutons à 38 px. En
+revanche **aucune capture n'a pu être prise de toute la session** (pane non affiché) : rien
+de ce qui relève du goût n'a été vu. Et `git checkout <fichier>` pour annuler une mutation
+**efface le travail non committé** du même fichier — sauvegarder par copie.
+
+## État actuel (2026-08-04, matin — l'échelle typographique, et la duplication qui s'était reformée)
+
+- **✅ Passe UX/UI livrée : 7.5, 7.9, 7.10, 7.11.** **734 tests** (+3), typecheck strict vert,
+  build vert, 29 routes statiques. Deux commits, `main` propre.
+- 🔴 **Le lot 6.7 avait extrait les FORMES et laissé la TYPOGRAPHIE en chaînes recopiées.**
+  Le compte : `text-2xl font-semibold tracking-tight` **seize fois**, `text-lg …` huit fois,
+  `text-sm font-semibold` huit fois. C'est le bouton × 11 qui recommence, dans le lot suivant.
+  - **Ce que la duplication avait déjà produit, et que personne n'avait vu** : `Agenda`,
+    `MyStats` et `Friends` écrivaient leur `h2` en **`font-semibold` nu**, c'est-à-dire à la
+    taille exacte du corps de texte. **Sur ces trois pages la hiérarchie n'existait plus**, et
+    seule la graisse distinguait un titre d'un paragraphe. Ni le typage, ni les tests, ni le
+    build ne voient qu'un titre a la taille d'un paragraphe.
+  - Quatre crans : `.page-title` (1.5 / 1.75 rem), `.section-heading` (1.125), `.card-title`
+    (0.875), `.empty-state-title` (1). **`.card-title` n'a pas été inventé** — il a été
+    *trouvé* en cherchant ce que le test allait refuser.
+- 🔴 **Les quatre écrans vides avaient quatre mises en page, et c'est le premier écran de
+  TOUT LE MONDE.** Deux d'entre eux **recopiaient à la main `.card` et `.btn`**, extraits au
+  6.7 quinze heures plus tôt.
+  > **La leçon** : extraire une forme ne protège que les écrans qu'on rouvre **le même jour**.
+  > La duplication s'était reformée dans les fichiers que le lot n'avait pas ouverts — même
+  > mécanique que les deux blocs d'affiche qui avaient divergé sans bruit.
+- 🔴 **Et `.section-title`, extraite au 6.7 D'APRÈS l'accueil, n'était employée NULLE PART.**
+  L'original avait continué sa vie de son côté, en gardant `text-base tracking-tight
+  uppercase` — des **capitales resserrées**, alors que les capitales demandent *plus*
+  d'interlettrage. La classe extraite portait la bonne valeur et **personne ne l'avait jamais
+  vue à l'écran**. *Une forme extraite que personne n'emploie ne protège de rien.*
+- **📏 Le mobile est mesuré pour la première fois (7.1).** Le raisonnement était juste :
+  **aucun débordement horizontal à 360 px**. Ce qu'il n'avait pas prédit : les `.btn`
+  faisaient **38 px**, sous les 44 px d'Apple — corrigé, et seulement sous 640 px.
+  > **Le contournement qui a rendu ça possible** : `resize_window` redimensionne réellement la
+  > fenêtre, **seule la capture ne suit pas**. Une échelle et une hauteur tactile **se
+  > mesurent** — `getBoundingClientRect` ne se trompe pas là où l'œil hésite.
+- 🔴 **L'audit a trouvé dans mon propre travail la règle que je venais d'appliquer.**
+  `.empty-state-actions` n'avait **qu'un seul usage**, alors que `globals.css` impose de
+  n'extraire qu'à partir de trois répétitions — le « rien au cas où » que le 6.7 s'interdisait.
+  Retirée le jour même.
+  - ⚠️ **Et mon premier comptage était FAUX** : il cherchait les classes entre guillemets et
+    ratait donc `.tile`, écrite dans un template literal. J'ai failli déclarer morte une classe
+    vivante. *Une vérification mal ancrée est pire qu'aucune : elle rassure* — troisième fois.
+- **Le test `no-adhoc-typography` refuse une taille de police en dur sur un titre**, avec deux
+  exceptions qui doivent **se justifier** (patron de `no-false-privacy-claim`).
+  > 🔴 **Son ancrage a attrapé un défaut dans le test lui-même** : `RegExp.test` avec le
+  > drapeau `g` retient `lastIndex` d'un appel à l'autre, donc le second fichier examiné
+  > repartait du milieu et répondait faux. **Sans l'ancrage, le test aurait été vert par
+  > accident.** Deux mutations vérifiées ensuite : un `h1` réécrit à la main le fait tomber,
+  > un cran retiré de la feuille de style aussi.
+
+## État précédent (2026-08-04, nuit — le signalement, et trois écrans qui mentaient)
 
 - **✅ 6.5 livré : le canal de signalement existe.** **731 tests**, typecheck strict vert,
   build vert, 29 routes statiques. Tout est poussé, le lot 6 est **entièrement fermé**.

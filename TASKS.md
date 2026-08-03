@@ -128,6 +128,20 @@
 > ⚠️ **Le service worker sert des pages en cache** : ajouter `?v=N` à l'URL pour voir le
 > build courant, sinon on juge une version d'il y a une heure. Et le screenshot de l'outil
 > navigateur **ne suit pas** `resize_window` — le mobile ne peut pas être vérifié ainsi.
+>
+> ✅ **Contournement trouvé le 2026-08-04, et il vaut mieux que la capture pour ce sujet** :
+> `resize_window` **redimensionne réellement la fenêtre**, seule la capture ne suit pas. Donc
+> `getComputedStyle` et `getBoundingClientRect` répondent juste à 360 px. Une échelle
+> typographique et une hauteur tactile **se mesurent** au lieu de se juger — c'est ainsi
+> qu'on a trouvé les boutons à 38 px et les 62 cases à 20 px.
+>
+> ⚠️ **Mais la mesure ne remplace pas le regard**, et cette session n'a pu prendre **aucune**
+> capture : le pane du navigateur n'était pas affiché (« the Browser pane is not displayed »).
+> Tout ce qui relève du goût — l'équilibre, la densité, ce qui est « beau » — reste à voir.
+>
+> 🔴 **Et un piège de manipulation, qui a coûté une modification** : `git checkout <fichier>`
+> pour annuler une mutation de test **ramène au dernier commit**, donc efface aussi le travail
+> non committé du même fichier. Sauvegarder et restaurer par copie, jamais par git.
 
 ### Les règles posées le 2026-08-03/04 — à ne pas défaire
 
@@ -139,22 +153,26 @@
 | **Six formes, pas une de plus** — `.btn` `.card` `.tile` `.field` `.section-title` `.clamp-2` | `app/globals.css` | N'extraire que ce qui est **déjà répété trois fois**. Rien « au cas où » |
 | **Une seule rangée de chrome** | `SiteChrome` + `Faces` | Deux rangées empilées repoussaient le titre de page à 270 px du haut |
 | **Une phrase sur le stockage = un seul endroit** | `WhereItLives` | Trois écrans promettaient « rien n'est envoyé » ; le lot 6.3 les a rendus menteurs. `tests/no-false-privacy-claim.test.ts` interdit d'en écrire une quatrième |
+| **Quatre crans de titre, et aucune taille en dur** *(2026-08-04)* | `app/globals.css` + `tests/no-adhoc-typography.test.ts` | La taille écrite à la main est le geste qui fait diverger l'échelle. Le test le refuse, avec deux exceptions qui doivent **se justifier** — même procédé que `no-false-privacy-claim` |
+| **44 px de hauteur tactile sous 640 px** *(2026-08-04)* | `.btn`, en `@media (width < 40rem)` | Mesuré, pas supposé : les boutons faisaient 38 px. Et **seulement** sur mobile — un bouton de 44 px à la souris est simplement gros |
 
 ### Ce qui reste, par ordre de valeur
 
 | # | Tâche | Statut | Note |
 |---|---|---|---|
-| 7.1 | **Vérifier le mobile pour de vrai** | 🟢 libre | ⚠️ **Jamais vu**, seulement raisonné : le ruban d'onglets est `flex-1 min-w-0 overflow-x-auto` et le reste tient dans ~127 px, donc aucun débordement **par construction**. À confirmer à 360 px : la barre ne déborde pas, la grille d'affiches passe à 2 colonnes, les boutons restent atteignables au pouce. Méthode : DevTools à la main, ou un vrai téléphone sur l'IP locale (`npm run start` écoute sur toutes les interfaces) |
-| 7.2 | **Les cinq faces vues à froid**, journal **vide** | 🟢 libre | C'est la première impression de tout le monde, et c'est le seul état que je n'ai jamais regardé — mon navigateur de test avait déjà des notes. Vider `localStorage` et refaire le tour |
+| 7.1 | **Vérifier le mobile pour de vrai** | 🟡 **mesuré, pas vu** — 2026-08-04 | ✅ **Le raisonnement était juste** : à 360 px, `document.scrollWidth === innerWidth` — aucun débordement horizontal, sur l'accueil comme sur la fiche série. La grille d'épisodes déborde **dans son `overflow-x-auto`** (375 px de table dans 294 px), ce qui est le comportement voulu. ✅ Le `h1` retombe bien à 24 px sous 640 px. ✅ **Corrigé** : les `.btn` faisaient **38 px**, sous les 44 px d'Apple — hauteur minimale posée, et **seulement** sous 640 px. 🔴 **Ce qui reste, et c'est un arbitrage, pas un correctif** : les cases de la grille d'épisodes font **20 × 20 px**, et il y en a **62** sur *Breaking Bad*. Les porter à 44 px rendrait la table trois fois plus large que l'écran — densité contre atteignabilité, **ça demande ton œil** ⚠️ Et la mesure ne remplace pas le regard : le pane du navigateur n'était pas affiché, donc **aucune capture n'a pu être prise de toute la session** |
+| 7.2 | **Les cinq faces vues à froid**, journal **vide** | 🟡 **parcouru à froid** — 2026-08-04 | `localStorage` vidé, service worker désinscrit, 2 caches purgés — donc vraiment à froid. Les cinq faces répondent et sont cohérentes : `/moi`, `/calendrier`, `/bilan` montrent le même écran vide (512 px, centré), `/` montre ses trois rangées, `/amis` affiche **l'avertissement légal** — le verrou exécutable de 6.6 fonctionne. ⚠️ **Reste ton jugement esthétique** : je n'ai mesuré que des valeurs calculées |
 | 7.3 | **`/amis` avec un vrai fil** | 🟢 libre | Demande **deux comptes**. À vérifier : le caviardage des notes de saison au-delà de sa propre position, le bouton « Signaler », et qu'un fil vide dise quoi faire au lieu d'afficher zéro |
 | 7.4 | **Les six écrans jamais revus** | 🟢 libre | `/convertir`, `/regles`, `/mentions`, `/confidentialite`, `/hors-ligne`, `/compte/retour`. Les trois derniers sont ceux qu'on voit **quand quelque chose ne va pas** — donc ceux où la mise en page compte le plus |
-| 7.5 | **Une échelle typographique** | 🔒 in-progress — @claude-opus — 2026-08-04 | Il n'y en a pas : `text-2xl` pour les `h1`, `font-semibold` pour les `h2`, `text-sm` pour le reste. Trois tailles décidées et appliquées suffiraient — c'est ce qui reste de plus visible après l'unification des formes |
+| 7.5 | **Une échelle typographique** | ✅ 2026-08-04 — @claude-opus | Quatre crans nommés : `.page-title` (1.5 / 1.75 rem), `.section-heading` (1.125), `.card-title` (0.875), `.empty-state-title` (1). 🔴 **Le vrai défaut n'était pas l'absence d'échelle, c'était que trois écrans avaient déjà dérivé** — `Agenda`, `MyStats` et `Friends` écrivaient leur `h2` en `font-semibold` **nu**, soit exactement la taille du corps de texte : sur ces pages la hiérarchie n'existait plus, et **rien ne le signalait**. `.card-title` n'a pas été inventé, il a été **trouvé** en cherchant ce que le test allait refuser (8 occurrences de `text-sm font-semibold`) |
 | 7.6 | **`/bilan` est presque vide** | 🟢 libre | Une carte, puis du vide sur 60 % de la hauteur. ⚠️ **Problème de contenu, pas de style** : ne pas le décorer. Le quiz personnel (5.13) est le candidat naturel |
 | 7.7 | **Le bandeau `DataSafety` occupe la première place** | 🟢 libre | Sur **toutes** les pages, pour qui a des notes sans compte. Ses trois règles de silence sont justes et documentées — la question est le **placement**, pas l'existence. Replié par défaut, ou sous le contenu |
-| 7.8 | **`--color-pulse` ne sert nulle part** | 🟢 libre | Le magenta est déclaré, commenté, et utilisé par **un seul halo de fond**. Soit on lui donne un emploi (le second accent « pour ce qui se compte et se compare »), soit on le retire : un token mort ment sur l'intention |
-| 7.9 | **Le champ de recherche fait toute la largeur sur `/recherche`** | 🔒 in-progress — @claude-opus — 2026-08-04 | 1080 px pour taper trois mots. Le contenir comme le formulaire du compte |
-| 7.10 | **Les quatre écrans vides ne se ressemblent pas** | 🔒 in-progress — @claude-opus — 2026-08-04 | Trouvé en ouvrant 7.2, et c'est le **premier écran de tout le monde**. `EmptyLibrary` est centré sur `max-w-md`, `EmptyAgenda` et `MyStats` sont des boîtes alignées à gauche, `Friends` n'est qu'un `<p>` nu. Pire : deux d'entre eux **recopient à la main** `.btn` et `.card`, qui existent depuis le 6.7 |
-| 7.11 | **`.section-title` a été extraite au 6.7 et n'est utilisée nulle part** | 🔒 in-progress — @claude-opus — 2026-08-04 | Zéro occurrence dans `app/`, alors que l'accueil et `/moi` portent chacun leur copie à la main. Un token mort ment sur l'intention — même défaut que `--color-pulse` (7.8) |
+| 7.8 | **`--color-pulse` ne sert nulle part** | 🟢 libre — **et je ne l'ai pas tranché exprès** | Le magenta est déclaré, commenté, et utilisé par **un seul halo de fond**. ⚠️ **Lui donner un emploi défait la règle « une couleur, un sens »** : le vert parle de la série, le volt parle de vous, et tout ce qui « se compte et se compare » dans ce produit **parle de vous** — donc relève du volt. Je ne vois pas de troisième sens qui ne soit pas inventé pour l'occasion. **C'est un choix de direction artistique, pas une correction** : soit tu lui trouves un emploi que je ne vois pas, soit il se retire (en inlinant la teinte dans le halo du `body`, seul endroit qui l'utilise) |
+| 7.9 | **Le champ de recherche fait toute la largeur sur `/recherche`** | ✅ 2026-08-04 — @claude-opus | Mesuré : **1024 → 672 px**, la même borne que sur l'accueil |
+| 7.10 | **Les quatre écrans vides ne se ressemblent pas** | ✅ 2026-08-04 — @claude-opus | Une seule forme `.empty-state` : carte centrée, 512 px, corps borné à 34 caractères. 🔴 Deux d'entre eux **recopiaient à la main** `.card` et `.btn`, extraits au 6.7 — **la duplication s'était reformée dans les fichiers que ce lot n'avait pas ouverts**, ce qui est la leçon à retenir : extraire une forme ne protège que les écrans qu'on rouvre le même jour |
+| 7.11 | **`.section-title` a été extraite au 6.7 et n'est utilisée nulle part** | ✅ 2026-08-04 — @claude-opus | Employée par l'accueil et la bibliothèque, qui rendent le même objet — une grille d'affiches sous un titre — et n'avaient aucune raison de se présenter différemment. 🔴 L'original avait gardé `text-base tracking-tight uppercase`, c'est-à-dire des **capitales resserrées** : les capitales demandent plus d'interlettrage, jamais moins. La classe extraite portait la bonne valeur (`+0.1em`) et **personne ne l'avait jamais vue à l'écran** |
+| 7.12 | **Deux `h2` à 14 px et trois à 18 px sur la fiche série** | 🟢 libre | C'est `.card-title` contre `.section-heading`, donc **voulu** : un panneau vit à l'intérieur d'un écran qui a déjà un titre. Mais l'écart se voit sur un écran qui empile les deux, et **je ne peux pas juger ça à la mesure** — à valider ou à corriger à l'œil |
+| 7.13 | **Le grand chiffre du bilan est plus petit que le titre de la page** | 🟢 libre | `MyTally` porte `text-2xl` (24 px) et `.page-title` monte à 28 px : le **différenciateur du produit** — « au moins 537 heures » — passe visuellement après l'étiquette « Mon bilan ». Volontairement pas touché : ça se décide avec 7.6, qui traite du contenu de cet écran |
 
 ---
 
