@@ -116,7 +116,7 @@ export function Friends() {
 
   if (profile === undefined) {
     return (
-      <section className="space-y-4">
+      <section className="card max-w-md space-y-4">
         <h2 className="font-semibold">{t('friends.claim.title')}</h2>
         <p className="max-w-prose leading-relaxed text-(--color-muted)">
           {t('friends.claim.body')}
@@ -151,7 +151,7 @@ export function Friends() {
 
   return (
     <div className="space-y-8">
-      <section className="space-y-3">
+      <section className="card max-w-md space-y-3">
         <p className="text-(--color-muted)">{t('friends.you', { handle: profile.handle })}</p>
         <form onSubmit={onFollow} className="flex flex-wrap items-center gap-2">
           <span className="text-(--color-muted)">@</span>
@@ -191,7 +191,7 @@ export function Friends() {
             {visible.map((item, index) => (
               <li
                 key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
-                className="rounded-md border border-(--color-edge) px-3 py-2 text-sm"
+                className="rounded-lg border border-(--color-edge) bg-(--color-surface)/50 px-4 py-3 text-sm"
               >
                 <span className="text-(--color-muted)">@{item.handle}</span>{' '}
                 {t(`friends.item.${item.kind}`)}{' '}
