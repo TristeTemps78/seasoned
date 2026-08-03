@@ -112,6 +112,48 @@
 | 6.6 | **Suivre, et le fil `/amis`** | ✅ 2026-08-03 — @claude-opus (D19 levé) | ⚠️ **Le seul lot qui ouvre du contenu de tiers.** Le verrou devient **exécutable** : si `legalIsComplete()` est faux, la page rend l'avertissement et la face ne s'affiche pas — une variable Vercel mal saisie ne peut plus ouvrir un fil sans voie de recours. Le titre d'épisode **n'est jamais dans la projection**, donc la position du lecteur n'a rien à demander au serveur et **ne peut pas fuir** |
 | 6.7 | **Extraire le design system** | ✅ 2026-08-03 — @claude-opus | Après les lots 6.2-6.6, pas avant : on extrait ce que huit écrans neufs ont **réellement** répété. Le « bouton secondaire » est aujourd'hui une chaîne Tailwind recopiée 4 fois, la « carte » 3 fois, et `--color-pulse` / `--color-volt-dim` ne servent **nulle part** |
 
+
+---
+
+## 🎨 Lot 7 — UX/UI (2026-08-04) — **reprendre ici**
+
+> **Comment reprendre à froid**, dans cet ordre :
+>
+> ```bash
+> npm run check          # 731 tests, typecheck strict — doit être vert avant tout
+> npm run db:push        # applique supabase/*.sql et vérifie RLS (jeton dans .env)
+> npm run build && npm run start   # puis regarder, pas déduire
+> ```
+>
+> ⚠️ **Le service worker sert des pages en cache** : ajouter `?v=N` à l'URL pour voir le
+> build courant, sinon on juge une version d'il y a une heure. Et le screenshot de l'outil
+> navigateur **ne suit pas** `resize_window` — le mobile ne peut pas être vérifié ainsi.
+
+### Les règles posées le 2026-08-03/04 — à ne pas défaire
+
+| Règle | Où elle vit | Pourquoi |
+|---|---|---|
+| **Une couleur, un sens** — le vert parle de la **série**, le volt parle de **vous** | `app/globals.css`, à côté des tokens | Le vert servait aux deux sur la fiche série : on cessait de savoir si la couleur décrivait la série ou soi |
+| **`@layer components`** pour tout le vocabulaire | `app/globals.css` | Hors couche, ces classes **gagnent** sur les utilitaires Tailwind : `class="btn px-3 py-1"` n'avait aucun effet |
+| **L'état choisi vient d'`aria-pressed`**, jamais d'une classe conditionnelle | `.btn[aria-pressed='true']` | Deux sources pour un même état divergent ; et c'est l'attribut qui dit la vérité à un lecteur d'écran |
+| **Six formes, pas une de plus** — `.btn` `.card` `.tile` `.field` `.section-title` `.clamp-2` | `app/globals.css` | N'extraire que ce qui est **déjà répété trois fois**. Rien « au cas où » |
+| **Une seule rangée de chrome** | `SiteChrome` + `Faces` | Deux rangées empilées repoussaient le titre de page à 270 px du haut |
+| **Une phrase sur le stockage = un seul endroit** | `WhereItLives` | Trois écrans promettaient « rien n'est envoyé » ; le lot 6.3 les a rendus menteurs. `tests/no-false-privacy-claim.test.ts` interdit d'en écrire une quatrième |
+
+### Ce qui reste, par ordre de valeur
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| 7.1 | **Vérifier le mobile pour de vrai** | 🟢 libre | ⚠️ **Jamais vu**, seulement raisonné : le ruban d'onglets est `flex-1 min-w-0 overflow-x-auto` et le reste tient dans ~127 px, donc aucun débordement **par construction**. À confirmer à 360 px : la barre ne déborde pas, la grille d'affiches passe à 2 colonnes, les boutons restent atteignables au pouce. Méthode : DevTools à la main, ou un vrai téléphone sur l'IP locale (`npm run start` écoute sur toutes les interfaces) |
+| 7.2 | **Les cinq faces vues à froid**, journal **vide** | 🟢 libre | C'est la première impression de tout le monde, et c'est le seul état que je n'ai jamais regardé — mon navigateur de test avait déjà des notes. Vider `localStorage` et refaire le tour |
+| 7.3 | **`/amis` avec un vrai fil** | 🟢 libre | Demande **deux comptes**. À vérifier : le caviardage des notes de saison au-delà de sa propre position, le bouton « Signaler », et qu'un fil vide dise quoi faire au lieu d'afficher zéro |
+| 7.4 | **Les six écrans jamais revus** | 🟢 libre | `/convertir`, `/regles`, `/mentions`, `/confidentialite`, `/hors-ligne`, `/compte/retour`. Les trois derniers sont ceux qu'on voit **quand quelque chose ne va pas** — donc ceux où la mise en page compte le plus |
+| 7.5 | **Une échelle typographique** | 🟢 libre | Il n'y en a pas : `text-2xl` pour les `h1`, `font-semibold` pour les `h2`, `text-sm` pour le reste. Trois tailles décidées et appliquées suffiraient — c'est ce qui reste de plus visible après l'unification des formes |
+| 7.6 | **`/bilan` est presque vide** | 🟢 libre | Une carte, puis du vide sur 60 % de la hauteur. ⚠️ **Problème de contenu, pas de style** : ne pas le décorer. Le quiz personnel (5.13) est le candidat naturel |
+| 7.7 | **Le bandeau `DataSafety` occupe la première place** | 🟢 libre | Sur **toutes** les pages, pour qui a des notes sans compte. Ses trois règles de silence sont justes et documentées — la question est le **placement**, pas l'existence. Replié par défaut, ou sous le contenu |
+| 7.8 | **`--color-pulse` ne sert nulle part** | 🟢 libre | Le magenta est déclaré, commenté, et utilisé par **un seul halo de fond**. Soit on lui donne un emploi (le second accent « pour ce qui se compte et se compare »), soit on le retire : un token mort ment sur l'intention |
+| 7.9 | **Le champ de recherche fait toute la largeur sur `/recherche`** | 🟢 libre | 1080 px pour taper trois mots. Le contenir comme le formulaire du compte |
+
 ---
 
 ## Phase 0 — Socle ✅

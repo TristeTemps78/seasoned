@@ -8,6 +8,22 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
+## ▶️ Pour reprendre : **lot 7 — UX/UI**, dans `TASKS.md`
+
+Tristan reprend l'UX/UI dans une prochaine session en disant simplement **« continue »**.
+Tout ce qu'il faut est dans **`TASKS.md` → « 🎨 Lot 7 — UX/UI »** : la marche à suivre pour
+démarrer, les **six règles de design posées le 2026-08-03/04 à ne pas défaire**, et neuf
+tâches classées par valeur. Les trois premières sont les seules qui demandent un œil :
+
+1. **le mobile n'a jamais été vu** — seulement raisonné (7.1) ;
+2. **les cinq faces à froid, journal vide** — l'état que tout le monde voit en premier et
+   que je n'ai jamais regardé, mon navigateur de test ayant déjà des notes (7.2) ;
+3. **`/amis` avec un vrai fil**, ce qui demande deux comptes (7.3).
+
+⚠️ Deux pièges d'outillage, consignés parce qu'ils ont coûté du temps : le **service worker
+sert des pages en cache** (ajouter `?v=N` à l'URL), et le **screenshot ne suit pas le
+redimensionnement** de la fenêtre — le mobile ne peut pas se vérifier ainsi.
+
 ## État actuel (2026-08-04, nuit — le signalement, et trois écrans qui mentaient)
 
 - **✅ 6.5 livré : le canal de signalement existe.** **731 tests**, typecheck strict vert,
