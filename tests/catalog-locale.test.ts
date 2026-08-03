@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  catalogLanguage,
   discover,
   getSeriesDetail,
   searchSeries,
@@ -123,5 +124,23 @@ describe('la langue fait partie de la cle de cache', () => {
     // Un seul appel : omettre la locale doit viser la meme entree que `en`, sinon le
     // cache se dedouble silencieusement et le budget double avec lui.
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe('le forcage de langue ne se declenche pas sur une variable vide', () => {
+  it('🔴 `TMDB_LANGUAGE=` rend la langue de la page, pas une chaine vide', () => {
+    // Le bug, constate au navigateur : `??` ne retombe que sur `null`/`undefined`, et une
+    // chaine vide EST une valeur. Or `.env.example` porte `TMDB_LANGUAGE=` — donc le `.env`
+    // de quiconque part de l'exemple. Le catalogue etait interroge sans langue, c'est-a-dire
+    // en anglais, et `/fr/serie/1396` servait un synopsis anglais.
+    expect(catalogLanguage('fr', '')).toBe('fr-FR');
+    expect(catalogLanguage('fr', '   ')).toBe('fr-FR');
+    expect(catalogLanguage('en', '')).toBe('en-US');
+  });
+
+  it('un forcage renseigne ecrase bien la langue de la page', () => {
+    // Sans quoi la correction ci-dessus supprimerait le seul usage legitime de la variable :
+    // reproduire un bogue de langue sans changer d'URL.
+    expect(catalogLanguage('en', 'fr-FR')).toBe('fr-FR');
   });
 });

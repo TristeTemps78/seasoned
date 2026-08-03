@@ -64,6 +64,21 @@ let providerInstance: CatalogProvider | undefined;
 const providersByLocale = new Map<Locale, CatalogProvider>();
 
 /**
+ * La langue demandee au catalogue pour une page.
+ *
+ * Extraite pour une seule raison : **elle est testable**, alors qu'une lecture
+ * d'environnement enfouie dans une fabrique ne l'est pas. Voir le defaut documente
+ * a son appel.
+ */
+export function catalogLanguage(
+  locale: Locale,
+  forced: string | undefined = process.env['TMDB_LANGUAGE'],
+): string {
+  const trimmed = forced?.trim();
+  return trimmed !== undefined && trimmed.length > 0 ? trimmed : localeTag(locale);
+}
+
+/**
  * Le fournisseur, cree a la demande.
  *
  * Le jeton n'est lu qu'a l'usage et jamais au chargement du module : sans cela, un
@@ -97,7 +112,17 @@ export function getProvider(locale: Locale = DEFAULT_LOCALE): CatalogProvider {
   //
   // `TMDB_LANGUAGE` reste lu, mais **uniquement** comme forcage de diagnostic : il
   // ecrase toutes les langues, ce qui n'a de sens que pour reproduire un bogue.
-  const language = process.env['TMDB_LANGUAGE'] ?? localeTag(locale);
+  //
+  // 🔴 **Et le forcage se declenchait sur une variable VIDE.** `??` ne retombe que sur
+  // `null` ou `undefined` : `TMDB_LANGUAGE=` — la ligne telle qu'elle figure dans
+  // `.env.example`, donc dans le `.env` de quiconque part de l'exemple — rendait la chaine
+  // vide, qui **est** une valeur. Le catalogue etait alors interroge sans langue, c'est-a-dire
+  // en anglais, et `/fr/serie/1396` servait un synopsis anglais.
+  //
+  // Le defaut ne se voyait qu'en local : la variable n'existe pas chez Vercel, donc la
+  // production etait juste. Constate au navigateur, jamais par un test — d'ou celui qui
+  // accompagne cette ligne.
+  const language = catalogLanguage(locale);
   const provider = new TmdbProvider({
     accessToken,
     language,
