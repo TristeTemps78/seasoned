@@ -83,6 +83,36 @@
 
 ---
 
+## 👥 Lot 6 — les comptes, la synchronisation, le fil (2026-08-03, nuit)
+
+> Périmètre décidé par Tristan : **jusqu'au fil d'activité inclus**. Les listes et l'envoi
+> d'avatars restent dehors. Ordre imposé par `docs/ARCHITECTURE-APP.md` §6.
+> **Règle de cette session : on pousse dès qu'un lot est vert.**
+>
+> ⚠️ **Trois constats vérifiés avant d'écrire une ligne**, et ils changent le plan :
+> 1. **Le projet Supabase existe et répond** (`/auth/v1/health` → 200) mais **la table
+>    `journals` n'a jamais été créée** (`/rest/v1/journals` → 404 `PGRST205`). Le SQL est
+>    écrit depuis le 2026-08-03 et n'a jamais été appliqué.
+> 2. **Le socle de synchro est écrit et n'a jamais été branché** — `remote.ts`, `sync.ts`,
+>    `001_journal.sql`, testés ; **zéro ligne d'authentification** dans tout le dépôt.
+> 3. `npm run check:supabase` **déclarait absentes des variables renseignées** : son regex
+>    `(.*)$` échoue sur un `.env` en CRLF, parce qu'en JavaScript `.` ne matche pas `\r`.
+>    Les lignes **vides** matchaient, les renseignées non. *Un outil de diagnostic qui ment
+>    est pire qu'aucun outil.*
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| 6.0 | **Les trois choses qui mentent aujourd'hui** | 🔒 in-progress — @claude-opus — 2026-08-03 | Aucune dépendance, tout s'appuie dessus. 🔴 `sameJournal` compare le `deviceId`, que `mergeJournals` fixe à celui de `a` et que `local.ts` rend différent par appareil : **deux appareils s'écriraient mutuellement à l'infini** sans qu'aucun fait ne change — exactement le défaut que `stableStringify` avait été écrit pour tuer, réapparu sur un autre champ. 🔴 `JournalSnapshot.statusLabel` stocke le statut **déjà traduit** : constaté au navigateur, `/moi` en anglais affiche « Entre deux saisons ». 🔴 `fetchDocument()` confond « pas de ligne » et « appel raté », donc un GET échoué fait pousser le local par-dessus un distant qu'on n'a pas lu. Plus `looksLikeEmail` (D19, partie code), le CRLF, le `theme_color` du manifeste et l'`aria-label` anglais en dur |
+| 6.1 | **Ce qui revient à Tristan** | ⏳ **action de Tristan** | ⏳ **Confirmer la région UE** (Q3) — **seul point périssable** : la région ne se change pas, et le projet est encore vide. Puis appliquer `001_journal.sql`, poser `NEXT_PUBLIC_SUPABASE_*` chez Vercel **et redéployer** (la CSP est calculée au build), Redirect URLs, **SMTP** (sans lui le lien magique s'arrête au 3ᵉ envoi, en silence) |
+| 6.2 | **L'authentification, seule** | 🟢 libre | Lien magique + OAuth, **pas de mot de passe**. ⛔ **Pas `@supabase/ssr`** : il met la session dans un cookie lu par un middleware, donc **une invocation par visite** — le dépôt a mesuré ce que ça coûte et refusé le nonce CSP pour la même raison. `/compte/retour` reste `force-static` : le composant client finit l'échange PKCE, **le serveur ne voit jamais le jeton**. Suppression de compte par fonction `security definer`, donc **sans jamais introduire de `service_role`** |
+| 6.3 | **La synchronisation** *(fin de 2b)* | 🟢 libre | `SyncingJournalStore`. `load()` **ne touche jamais au réseau** (Q12 tenue par construction). Écriture débattue à 2 s. ⚠️ Un seul store par document — aujourd'hui `useJournal()` en crée un par appel. Et le « non » de `decideAdoption` exige **une clé locale par compte**, sinon le refus est contourné par la porte de derrière |
+| 6.4 | **Les tables sociales, sans surface de lecture** | 🟢 libre | `profiles`, `reserved_handles` **semée depuis le domaine**, `follows`, `activity`. 🔴 La cascade **libérerait le handle**, ce que Q7 règle 3 interdit → trigger `before delete`. 🔴 Le §5 du document ne prévoit **aucune clé naturelle** sur `activity` : sans elle **chaque synchro duplique le fil** |
+| 6.5 | **La projection + le canal de signalement (5.0b)** | 🟢 libre | **Le client dérive, le serveur contraint** — le document dit « dérivée à chaque synchro » et ne dit jamais **par quoi**. Un client ne peut forger que **sa propre** activité, et il peut déjà le faire à la main puisque le journal est déclaratif ; ce qu'aucun geste ne permet, c'est le **volume et les dates**, et ces deux-là se ferment en SQL. Décision **réversible** : la projection est reconstructible |
+| 6.6 | **Suivre, et le fil `/amis`** | ⛔ **bloqué par D19** | ⚠️ **Le seul lot qui ouvre du contenu de tiers.** Le verrou devient **exécutable** : si `legalIsComplete()` est faux, la page rend l'avertissement et la face ne s'affiche pas — une variable Vercel mal saisie ne peut plus ouvrir un fil sans voie de recours. Le titre d'épisode **n'est jamais dans la projection**, donc la position du lecteur n'a rien à demander au serveur et **ne peut pas fuir** |
+| 6.7 | **Extraire le design system** | 🟢 libre | Après les lots 6.2-6.6, pas avant : on extrait ce que huit écrans neufs ont **réellement** répété. Le « bouton secondaire » est aujourd'hui une chaîne Tailwind recopiée 4 fois, la « carte » 3 fois, et `--color-pulse` / `--color-volt-dim` ne servent **nulle part** |
+
+---
+
 ## Phase 0 — Socle ✅
 
 | # | Tâche | Statut | Agent |
@@ -341,7 +371,7 @@ déjà ce que les comptes changeront, avec la règle qui va avec : **cette page 
 avant que le comportement change, jamais après.** Une politique qui décrit l'état précédent
 est pire qu'une absence — l'absence n'affirme rien.
 
-| 2b | **Auth + journaux + synchronisation** | 🔒 in-progress — @claude-opus — 2026-08-03 | Supabase. SDK pour l auth (import dynamique), fetch pour les données |
+| 2b | **Auth + journaux + synchronisation** | 🟡 **partiel — repris au lot 6** (2026-08-03) | Supabase. **Ce qui a été livré** : `src/journal/remote.ts` (transport PostgREST en `fetch` brut), `src/journal/sync.ts` (décisions pures), `supabase/001_journal.sql`, `scripts/check-supabase.mjs`, testés. **Ce qui manquait et que la ligne ne disait pas** : l'authentification, **zéro ligne** — aucune dépendance Supabase dans `package.json`, aucun `signIn` ni `getSession` dans le dépôt, et `useJournal` n'utilise que le store local. ⚠️ **Le verrou est resté `in-progress` pendant deux lots** : la tâche a été réservée, à moitié livrée, puis l'agent est passé à autre chose sans refermer — D14 dans sa forme la plus coûteuse, puisque la ligne annonçait une synchro qui n'existait pas. La suite est **6.2** et **6.3** |
 | 1.71 | **Le design cesse de cacher le différenciateur** | ✅ 2026-08-03 | Ton `waiting`, pastille sur l'affiche, engagement en évidence, hero compact, bandeau repliable |
 
 #### 1.71 — le diagnostic tenait en une phrase
