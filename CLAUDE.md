@@ -8,7 +8,45 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-03, nuit — le lot 6 entier, et deux impasses trouvées en l'exécutant)
+## État actuel (2026-08-03, nuit — l'apparence, et ce qu'elle a fait sortir du bois)
+
+- **✅ 6.7 livré : le vocabulaire visuel existe.** **722 tests**, typecheck strict vert, build
+  vert, 29 routes statiques. Tout est poussé.
+- 🔴 **Le diagnostic n'était pas « c'est laid » mais « aucun écran ne ressemble au suivant ».**
+  Le bouton secondaire était la même chaîne de huit utilitaires écrite **onze fois**, sans
+  qu'aucune copie sache qu'elle en était une — et un écran neuf en inventait une douzième, un
+  peu différente. Six formes sont extraites dans `globals.css` (`.btn`, `.card`, `.tile`,
+  `.field`, `.section-title`, `.clamp-2`), **et seulement pour ce qui était déjà répété trois
+  fois ou plus**.
+- **Ce qui était vraiment moche, et que seule la capture d'écran a montré** :
+  1. **`LibraryCard` et `SeriesCard` portaient chacun leur copie du bloc d'affiche, et les
+     copies avaient divergé** : la bibliothèque — l'écran le plus personnel du produit —
+     affichait **trois rectangles gris « Pas d'affiche »**. Un seul composant `Poster`
+     désormais, avec un monogramme qui appartient à la série.
+     > **La leçon** : la duplication ne fait aucun bruit tant qu'on ne regarde pas les deux
+     > écrans **le même jour**. Le code compilait, les tests passaient, et l'un des deux était
+     > laid depuis le début.
+  2. **Deux rangées de chrome** empilées : avec le bandeau de sauvegarde, le titre d'une page
+     commençait à **270 px du haut**, sur toutes les pages. Une seule ligne désormais.
+  3. L'anneau de focus de la recherche était **vert** — la couleur qui signifie « en
+     diffusion » partout ailleurs. Et le champ et son bouton étaient deux rectangles séparés,
+     donc deux contrôles sans rapport, pour le geste le plus fréquent du produit.
+  4. « The Rookie : Le Flic de » coupé net **ne désigne plus aucune série**.
+- 🔴 **Et un vrai défaut, trouvé parce qu'on regardait ailleurs** : `/fr/serie/1396` servait un
+  synopsis **anglais** en local. `process.env['TMDB_LANGUAGE'] ?? localeTag(locale)` — `??` ne
+  retombe que sur `null`/`undefined`, et **une chaîne vide est une valeur**. Or `.env.example`
+  porte `TMDB_LANGUAGE=`, donc le `.env` de quiconque part de l'exemple. Invisible en
+  production (la variable n'y existe pas), invisible aux tests (la lecture d'environnement
+  était enfouie dans une fabrique). D'où `catalogLanguage()`, extraite **pour la seule raison
+  qu'elle est testable**.
+- ⚠️ **Ce qui reste à regarder à l'œil** : `/amis` et `/moi` en vrai (le navigateur s'est
+  déconnecté en fin de session), et **le mobile** — la barre unique a été raisonnée, pas vue.
+  La marque s'efface sous 640 px parce que le premier onglet mène au même endroit.
+- ⚠️ **Le message du commit `754cc60` est amputé** : des backticks non protégés ont été avalés
+  par le shell. Le contenu vit dans les commentaires de `lib/catalog.ts`. *Un message de commit
+  se passe désormais par `git commit -F -` et un heredoc.*
+
+## État précédent (2026-08-03, nuit — le lot 6 entier, et deux impasses trouvées en l'exécutant)
 
 - **✅ 6.1 → 6.6 livrés et poussés.** 656 → **716 tests**, typecheck strict vert, build vert,
   **29 routes statiques**. La base répond, le schéma est appliqué, les politiques sont vérifiées.
