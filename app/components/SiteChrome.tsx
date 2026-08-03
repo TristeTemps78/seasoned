@@ -53,38 +53,41 @@ export function SiteChrome({ locale, children }: {
             artistique : un arc électrique en haut de chaque page, et rien d'autre qui
             brille tant qu'on n'interagit pas. */}
         <header className="border-b border-(--color-edge) bg-(--color-ink)/70 backdrop-blur-sm sticky top-0 z-20 edge-lit">
-          <div className="mx-auto max-w-5xl px-4 py-4 flex items-baseline gap-4">
+          {/* ⚠️ **Une seule rangee**, depuis le 2026-08-03. La marque et les faces
+              vivaient sur deux lignes empilees : avec le bandeau de sauvegarde, le titre
+              de la page commencait a 270 px du haut, sur toutes les pages. Deux rangees de
+              chrome avant le moindre contenu, c'est ce qui fait qu'un produit ressemble a
+              un site et pas a une application. */}
+          <div className="mx-auto flex max-w-5xl items-center gap-4 px-4">
             {/* Le logo ramene a l'accueil **de la langue courante** : renvoyer un
                 lecteur francais vers l'accueil anglais serait le sortir de sa langue
                 sans qu'il l'ait demande. */}
             <Link
               href={pathIn('/', locale)}
-              className="font-semibold tracking-[0.18em] uppercase text-(--color-text) hover:text-(--color-volt) transition-colors"
+              // ⚠️ Cachee sous 640 px, et ce n'est pas un sacrifice : le premier onglet mene
+              // exactement au meme endroit. Sur un telephone, la garder volait au ruban
+              // d'onglets la moitie de la largeur qu'il lui reste.
+              className="hidden shrink-0 font-semibold tracking-[0.18em] uppercase text-(--color-text) transition-colors hover:text-(--color-volt) sm:block"
             >
               {PRODUCT_NAME}
             </Link>
-            <span className="hidden text-sm text-(--color-muted) sm:inline">
-              {t(locale, 'nav.tagline')}
-            </span>
-            {/* ⚠️ Le lien « Ma bibliotheque » a ete retire d'ici : la barre de faces le
-                porte desormais, et deux chemins vers le meme ecran dans le meme en-tete
-                font douter qu'ils menent au meme endroit. */}
-            <span className="ml-auto" />
+
+            {/* Les faces du cube. Dans l'en-tete et non en bas d'ecran : le site est
+                d'abord visite depuis un moteur de recherche, ou une barre flottante
+                masquerait du contenu indexe sans rien apporter. */}
+            <Faces locale={locale} />
+
             {/* ⚠️ Ici et **pas** dans la barre de faces : une face repond a une question
                 qu'on se pose a un moment de la journee, et « ou en est mon compte » n'en
                 est pas une. Un reglage se range avec les reglages. */}
             <Link
               href={pathIn('/compte', locale)}
-              className="text-xs text-(--color-muted) hover:text-(--color-text)"
+              className="shrink-0 text-xs text-(--color-muted) hover:text-(--color-text)"
             >
               {t(locale, 'account.nav')}
             </Link>
             <LanguagePicker />
           </div>
-          {/* Les faces du cube. Dans l'en-tete et non en bas d'ecran : le site est
-              d'abord visite depuis un moteur de recherche, ou une barre flottante
-              masquerait du contenu indexe sans rien apporter. */}
-          <Faces locale={locale} />
         </header>
 
         <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-8">

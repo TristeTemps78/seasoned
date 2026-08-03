@@ -56,8 +56,11 @@ export function Faces({ locale }: { readonly locale: Locale }) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label={t('faces.aria')} className="border-b border-(--color-edge)">
-      <ul className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4">
+    // ⚠️ Ni bordure ni conteneur propre : cette barre vit **dans** la ligne de l'en-tete
+    // depuis le 2026-08-03. Deux rangees de chrome superposees repoussaient le titre de la
+    // page a 270 px du haut de l'ecran — avant tout contenu, sur toutes les pages.
+    <nav aria-label={t('faces.aria')} className="-mx-1 min-w-0 flex-1">
+      <ul className="flex gap-1 overflow-x-auto">
         {FACES.map((face) => {
           const href = pathIn(face.path, locale);
           // Comparaison exacte : `/moi` ne doit pas s'allumer sur `/moi/quelque-chose`
@@ -69,7 +72,7 @@ export function Faces({ locale }: { readonly locale: Locale }) {
               <Link
                 href={href}
                 {...(active ? { 'aria-current': 'page' as const } : {})}
-                className={`inline-block border-b-2 px-3 py-3 text-sm whitespace-nowrap transition-colors ${
+                className={`inline-block border-b-2 px-3 py-4 text-sm whitespace-nowrap transition-colors ${
                   active
                     ? 'border-(--color-volt) text-(--color-text)'
                     : 'border-transparent text-(--color-muted) hover:text-(--color-text)'
