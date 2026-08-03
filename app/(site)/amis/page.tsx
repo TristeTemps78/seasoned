@@ -32,7 +32,10 @@ export const metadata: Metadata = friendsMetadata(DEFAULT_LOCALE);
 
 export function FriendsView({ locale }: { readonly locale: Locale }) {
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8">
+    // ⚠️ Pas de conteneur ici : `<main>` porte deja la largeur et les marges de toutes
+    // les pages. En ajouter un second decalait cet ecran par rapport aux quatre autres —
+    // un demi-centimetre que personne ne sait nommer et que tout le monde voit.
+    <div className="space-y-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">{t(locale, 'friendsPage.title')}</h1>
         <p className="max-w-prose leading-relaxed text-(--color-muted)">
