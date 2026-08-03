@@ -91,6 +91,20 @@ export function SiteChrome({ locale, children }: {
                 {t(locale, 'nav.convert')}
               </Link>
             </p>
+            {/* Les deux pages que la loi exige d'atteindre. Dans le pied de page et
+                sur **toutes** les pages : une obligation legale qui ne serait accessible
+                que depuis une seule vue n'est pas accessible. */}
+            <p className="flex flex-wrap gap-x-4">
+              <Link href={pathIn('/mentions', locale)} className="hover:text-(--color-text)">
+                {t(locale, 'legal.title')}
+              </Link>
+              <Link
+                href={pathIn('/confidentialite', locale)}
+                className="hover:text-(--color-text)"
+              >
+                {t(locale, 'privacy.title')}
+              </Link>
+            </p>
             {/* Obligation contractuelle TMDB, pas un choix de mise en page :
                 le texte doit accompagner toute donnee TMDB affichee. */}
             <p>{TMDB_ATTRIBUTION}</p>

@@ -246,7 +246,38 @@ passe désormais avant le repli.
 | **A6** | **Monétisation** | ✅ **tranché** | **Freemium cosmétique**, référence Riot Games. Le produit reste entièrement gratuit ; on vend l'apparence, **jamais la réponse** |
 | 1.70 | **La navigation par faces + l'écran calendrier** | ✅ 2026-08-03 | `Faces.tsx`, `Agenda.tsx`, `MyStats.tsx`. **562 tests**, 19 routes statiques |
 
-| 2a | **Le socle légal + les handles réservés** | 🔒 in-progress — @claude-opus — 2026-08-03 | Prérequis de mise en ligne des comptes. Contient les trois choses qui ne se rattrapent pas |
+| 2a | **Le socle légal + les handles réservés** | ✅ 2026-08-03 | `src/domain/handles.ts` (13 tests), `lib/legal.ts`, `/mentions` et `/confidentialite` dans les deux langues. **580 tests**, 23 routes |
+
+#### 2a — trois décisions qui ne se rattrapent pas
+
+**1. L'identité de l'éditeur ne vit pas dans le dépôt.** Il est public (règle 5) : un nom
+ou une adresse postale committés y resteraient **dans l'historique**, où un `revert` ne les
+enlève pas. Elles arrivent de l'environnement Vercel, et se corrigent donc sans
+redéploiement. ⚠️ **Tant qu'elles manquent, `/mentions` le dit** au lieu d'afficher un
+texte à trous qui aurait l'air complet — même règle que partout ici : signaler, jamais
+remplir la case.
+
+**2. Les handles réservés existent avant le premier compte.** Un handle attribué ne se
+retire pas : c'est une URL, donc un lien partagé et un signet. Trois risques traités —
+la **collision de route** (`@calendrier` contre `/calendrier`), l'**usurpation par
+homoglyphe** (`а` cyrillique est indiscernable de `a` latin, d'où un jeu de caractères
+restreint à l'ASCII : l'attaque devient *impossible* plutôt que difficile à détecter), et
+l'**héritage** (un handle libéré ne revient jamais en circulation).
+
+> **Le test a trouvé du bruit dans ma propre liste** : `sw` (2 caractères) et `hors-ligne`
+> (tiret interdit) n'auraient **jamais** pu être pris. Une réserve inutile laisse croire à
+> une protection qui n'a jamais servi. Retirés.
+
+**3. L'âge est fixé à 16 ans** — le seuil de référence du RGPD, et non les 15 ans français.
+Pour un produit international, le plus élevé est le seul qui ne demande pas de logique par
+pays. Déclaratif, **aucune date de naissance collectée** : un âge exact serait une donnée
+de plus à protéger pour un gain nul.
+
+**La politique de confidentialité décrit ce qui est vrai aujourd'hui** — rien ne sort du
+navigateur, et c'est *vérifiable* par `connect-src 'self'`. Sa dernière section annonce
+déjà ce que les comptes changeront, avec la règle qui va avec : **cette page se met à jour
+avant que le comportement change, jamais après.** Une politique qui décrit l'état précédent
+est pire qu'une absence — l'absence n'affirme rien.
 
 #### A6 — ce que le freemium cosmétique débloque, et ce qu'il bloque
 

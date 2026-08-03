@@ -102,6 +102,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
       alternates: languagesOf('/convertir'),
     },
+    // Les pages legales : peu visitees, mais elles doivent etre **trouvables**, y
+    // compris par quelqu'un qui cherche a qui s'adresser. Priorite basse, elles ne
+    // disputent pas le budget de crawl aux pages serie.
+    ...['/mentions', '/confidentialite'].map((path) => ({
+      url: `${base}${path}`,
+      lastModified: now,
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
+      alternates: languagesOf(path),
+    })),
     ...seriesEntries,
   ];
 }

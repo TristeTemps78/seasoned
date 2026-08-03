@@ -270,6 +270,33 @@ const FR = {
   'agenda.tomorrow': 'demain',
   'agenda.inDays.one': 'dans {n} jour',
   'agenda.inDays.other': 'dans {n} jours',
+  'legal.title': 'Mentions légales',
+  'legal.publisher': 'Éditeur',
+  'legal.director': 'Directeur de la publication',
+  'legal.host': 'Hébergeur',
+  'legal.contact': 'Contact',
+  'legal.incomplete.title': 'Ces mentions sont incomplètes',
+  'legal.incomplete.body':
+    'L’identité de l’éditeur n’est pas encore renseignée. Elle doit l’être avant l’ouverture des comptes, et en tout état de cause avant toute activité commerciale.',
+  'legal.tmdb': 'Les données de séries proviennent de TMDB, qui n’approuve ni ne cautionne ce site.',
+
+  'privacy.title': 'Confidentialité',
+  'privacy.updated': 'À jour du 3 août 2026.',
+  'privacy.now.title': 'Aujourd’hui, rien ne sort de votre navigateur',
+  'privacy.now.body':
+    'Il n’y a ni compte, ni base de données, ni traceur. Vos positions, vos notes et vos décisions sont écrites dans le stockage local de cet appareil, et ne sont envoyées nulle part. Vous pouvez le vérifier : la politique de sécurité du site interdit au navigateur de contacter un autre serveur que le nôtre.',
+  'privacy.tmdb.title': 'Ce qui vient d’ailleurs',
+  'privacy.tmdb.body':
+    'Les fiches de séries et les affiches proviennent de TMDB. Charger une affiche adresse une requête à leur serveur d’images, qui voit donc votre adresse IP — comme pour toute image sur le web. Nous ne leur transmettons rien d’autre.',
+  'privacy.hosting.title': 'Hébergement',
+  'privacy.hosting.body':
+    'Le site est hébergé par Vercel, qui conserve des journaux techniques de connexion. Nous n’y ajoutons aucune mesure d’audience et n’installons aucun cookie.',
+  'privacy.rights.title': 'Vos données, et comment les récupérer',
+  'privacy.rights.body':
+    'Puisque tout est chez vous, l’export intégral est immédiat et sans condition : il se trouve dans votre bibliothèque. Effacer les données du navigateur suffit à tout supprimer.',
+  'privacy.next.title': 'Ce qui changera avec les comptes',
+  'privacy.next.body':
+    'L’ouverture des comptes est prévue. Elle impliquera d’envoyer votre journal à notre serveur pour le retrouver sur vos autres appareils. Cette page sera mise à jour avant, pas après — et la phrase « rien ne sort de ce navigateur » cessera d’être vraie le jour où elle cessera de l’être.',
   'tallyPage.title': 'Mon bilan',
   'tallyPage.lede': 'Ce que vos séries disent de vous. Calculé ici, dans ce navigateur.',
   'tallyPage.empty.title': 'Rien à mesurer pour l’instant',
@@ -696,6 +723,33 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'agenda.tomorrow': 'tomorrow',
   'agenda.inDays.one': 'in {n} day',
   'agenda.inDays.other': 'in {n} days',
+  'legal.title': 'Legal notice',
+  'legal.publisher': 'Publisher',
+  'legal.director': 'Publication director',
+  'legal.host': 'Host',
+  'legal.contact': 'Contact',
+  'legal.incomplete.title': 'This notice is incomplete',
+  'legal.incomplete.body':
+    'The publisher’s identity has not been filled in yet. It must be before accounts open, and in any case before any commercial activity.',
+  'legal.tmdb': 'Show data comes from TMDB, which does not endorse or certify this site.',
+
+  'privacy.title': 'Privacy',
+  'privacy.updated': 'Last updated 3 August 2026.',
+  'privacy.now.title': 'Today, nothing leaves your browser',
+  'privacy.now.body':
+    'There are no accounts, no database and no trackers. Your positions, ratings and decisions are written to this device’s local storage and sent nowhere. You can check this yourself: the site’s security policy forbids the browser from contacting any server but ours.',
+  'privacy.tmdb.title': 'What comes from elsewhere',
+  'privacy.tmdb.body':
+    'Show details and posters come from TMDB. Loading a poster sends a request to their image server, which therefore sees your IP address — as with any image on the web. We pass them nothing else.',
+  'privacy.hosting.title': 'Hosting',
+  'privacy.hosting.body':
+    'The site is hosted by Vercel, which keeps technical connection logs. We add no analytics and set no cookies.',
+  'privacy.rights.title': 'Your data, and how to take it with you',
+  'privacy.rights.body':
+    'Since everything is yours already, a full export is immediate and unconditional: you will find it in your library. Clearing your browser data deletes everything.',
+  'privacy.next.title': 'What will change with accounts',
+  'privacy.next.body':
+    'Accounts are planned. They will mean sending your journal to our server so you can find it on your other devices. This page will be updated before that happens, not after — and the sentence “nothing leaves this browser” will stop being displayed the day it stops being true.',
   'tallyPage.title': 'My tally',
   'tallyPage.lede': 'What your shows say about you. Worked out here, in this browser.',
   'tallyPage.empty.title': 'Nothing to measure yet',
