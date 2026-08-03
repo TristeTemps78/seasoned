@@ -117,17 +117,21 @@ const headers = { apikey: key, Authorization: `Bearer ${key}` };
 // 2. Le projet repond-il ?
 // ---------------------------------------------------------------------------
 
+// ⚠️ **Ne pas interroger `/rest/v1/` pour cela.** Cet endpoint d'introspection exige
+// desormais une cle *secrete* et repond 401 a une cle publique parfaitement valide —
+// « Only secret API keys can be used for this endpoint ». La premiere version de ce
+// script en concluait « la cle ne correspond pas a ce projet », ce qui est faux et
+// envoie chercher un probleme de cles la ou il n'y en a pas.
+//
+// `/auth/v1/health` repond sans authentification : il dit si le projet est **joignable
+// et eveille**, ce qui est la seule question posee ici. La validite de la cle, elle, se
+// lit sur la requete a la table — voir plus bas.
 try {
-  const response = await fetch(`${url}/rest/v1/`, { headers });
-  if (response.ok || response.status === 404) {
-    ok('Le projet repond');
-  } else if (response.status === 401) {
-    bad(
-      'Le projet repond mais refuse la cle (401)',
-      'La cle ne correspond pas a ce projet. Reprendre les deux valeurs sur le meme ecran.',
-    );
+  const response = await fetch(`${url}/auth/v1/health`, { headers });
+  if (response.ok) {
+    ok('Le projet repond et il est eveille');
   } else {
-    bad(`Reponse inattendue du projet : HTTP ${response.status}`);
+    bad(`Le projet repond mal : HTTP ${response.status}`);
   }
 } catch (error) {
   bad(
@@ -144,11 +148,18 @@ let tableExists = false;
 try {
   const response = await fetch(`${url}/rest/v1/journals?select=user_id&limit=1`, { headers });
 
+  const payload = await response.clone().json().catch(() => undefined);
+
   if (response.status === 404) {
+    // PostgREST distingue les deux cas par son code : `PGRST205` dit « table inconnue »,
+    // ce qui prouve **au passage que la cle a ete acceptee** — une cle refusee ne serait
+    // jamais allee jusqu'au cache de schema.
+    const known = typeof payload?.code === 'string' && payload.code.startsWith('PGRST');
     bad(
       'La table « journals » n existe pas',
       'Ouvrir supabase/001_journal.sql, tout copier, et le coller dans SQL Editor → New query → Run.',
     );
+    if (known) info('La cle, elle, est acceptee : il ne manque que la table.');
   } else if (response.status === 401 || response.status === 403) {
     // Refuse, donc elle existe **et** elle est protegee : c'est exactement ce qu'on veut.
     tableExists = true;
