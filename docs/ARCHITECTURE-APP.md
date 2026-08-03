@@ -342,9 +342,10 @@ toujours sans réseau. C'est le hors-ligne d'aujourd'hui, inchangé.
 
 | Table | Colonnes | Décisions |
 |---|---|---|
-| `profiles` | `id`, `handle`, `display_name`, `visibility`, `created_at` | Le `handle` est une **URL**. Changeable, mais l'ancien reste **réservé** pour ne pas casser les liens partagés — un handle libéré serait repris et usurperait quelqu'un |
+| `profiles` | `id`, `handle`, `display_name`, `visibility`, `created_at` | Le `handle` est une **URL** : jeu de caractères restreint, mots réservés, ancien handle conservé (Q7). `visibility` a **trois** états — `private`, `followers` (défaut), `public` (Q1) |
+| `reserved_handles` | `handle`, `reason` | Les noms de routes et les marques. Doit exister **avant** la première inscription : un handle attribué ne se retire pas sans casser une URL |
 | `journals` | `user_id`, `document` (jsonb), `updated_at` | Le journal entier. **Fusionné, jamais écrasé** |
-| `activity` | `id`, `user_id`, `kind`, `provider_id`, `season`, `episode`, `stars`, `happened_at` | **Projection.** Reconstructible. Aucun client n'y écrit |
+| `activity` | `id`, `user_id`, `kind`, `provider_id`, `season`, `episode`, `stars`, `happened_at` | **Projection.** Reconstructible, aucun client n'y écrit, **purgée à 90 jours** (Q9) — même horizon que les traces de suppression du journal |
 | `follows` | `follower_id`, `followee_id`, `created_at` | Suivi **asymétrique** comme Letterboxd : pas de négociation à deux, donc pas de file d'invitations, pas de trois états |
 | `lists` | `id`, `owner_id`, `title`, `visibility`, `created_at` | `visibility` **dès la création** : la basculer après coup exposerait rétroactivement ce qui a été écrit en privé |
 | `list_items` | `list_id`, `provider_id`, `position`, `note` | `provider_id` **préfixé** (`tmdb:1396`), jamais nu — même règle que le journal |
@@ -378,7 +379,7 @@ Trois policies suffisent au départ :
 |---|---|---|---|
 | **1** | **Les six onglets, sans compte** | Le calendrier et le bilan existent déjà : leur donner un écran est immédiat, et valide la navigation **avant** d'y accrocher un serveur. C'est aussi **la balade** que §4bis rend libre | — |
 | **1bis** | **L'invitation au compte** | Réécriture du bandeau `DataSafety`. Sans serveur : elle décrit ce qui viendra | 1 |
-| **2a** | **Mentions légales, confidentialité, effacement** | ⚠️ **Prérequis de mise en ligne**, pas une finition : le premier compte crée une donnée personnelle | — |
+| **2a** | **Mentions légales, confidentialité, effacement, handles réservés, âge** | ⚠️ **Prérequis de mise en ligne**, pas une finition. Contient les trois choses qui ne se rattrapent pas : le texte légal, la table `reserved_handles` (Q7) et l'âge déclaré (Q11) | — |
 | **2b** | **Auth + `journals` + synchronisation** | La fusion est écrite et prouvée. Le plus de valeur pour le moins de risque, **aucune** surface sociale ouverte. Inclut le garde-fou de l'appareil partagé | 1bis, 2a |
 | **3** | **Modération (5.0)** | ⛔ Prérequis légal, avant toute écriture visible par un tiers | — |
 | **4** | **`profiles` + `follows` + `activity` + le fil** | Le cœur social. Débloqué par la correction du §0 | 2b, 3 |
@@ -387,16 +388,194 @@ Trois policies suffisent au départ :
 
 ---
 
-## 7. Les questions ouvertes
+## 7. Les questions, tranchées
 
-| # | Question | Bloque | Recommandation |
-|---|---|---|---|
-| **Q1** | Un profil est-il public par défaut ? | `profiles` | **Non.** Un produit qui vend « vos données restent chez vous » ne peut pas rendre public par défaut ce qu'il vient de rapatrier |
-| **Q2** | Le journal synchronisé est-il chiffré côté client ? | Lot 2 | **Non** — il ne serait plus projetable, donc plus de fil. À dire, pas à cacher |
-| **Q3** | Quelle région Supabase ? | Lot 2 | **UE.** Le RGPD s'en trouve simplifié, et la latence est bonne pour le public de départ |
-| ~~Q4~~ | ~~Que devient l'utilisateur sans compte ?~~ | — | ✅ **Tranché** (2026-08-03) : on circule librement, **le compte est demandé au premier geste**, et le geste s'applique avant l'invitation. Voir §4bis |
-| **Q5** | Que se passe-t-il à la suppression d'un compte ? | Lot 4 | Journal et activité supprimés ; les **listes publiques** deviennent anonymes plutôt que de disparaître de chez ceux qui les ont enregistrées. À trancher, c'est un choix RGPD réel |
-| **Q6** | Le rappel se durcit-il après N gestes sans compte ? | après le lot 2b | **À mesurer, pas à régler au jugé.** C'est le levier de conversion si elle est trop basse — et le projet a déjà payé trois passes pour avoir réglé un seuil sans données (`trajectory.ts`) |
+> ⚖️ **Avertissement.** Plusieurs réponses ci-dessous s'appuient sur le RGPD et le DSA. Je
+> ne suis pas juriste et ce projet s'interdit d'inventer des faits : ce qui suit est un
+> **état de connaissance à orienter la conception**, pas un avis juridique. Les points
+> marqués ⚖️ doivent être confirmés **avant** la mise en ligne du premier compte, pas après.
+
+### Q1 — Un profil est-il public par défaut ? **Non, et ce n'est pas qu'un choix de goût**
+
+⚖️ Le RGPD pose la **protection des données par défaut** (art. 25) : sans intervention de la
+personne, ses données ne doivent pas devenir accessibles à un nombre indéterminé de gens. Un
+profil public par défaut va frontalement contre.
+
+**Mais « privé » ne veut pas dire « invisible »**, et c'est ce qui débloque le social. Trois
+états, pas deux :
+
+| État | Qui voit | Par défaut ? |
+|---|---|---|
+| `private` | personne | — |
+| `followers` | ceux qu'on a acceptés de laisser suivre | ✅ **oui** |
+| `public` | tout le monde, **et les moteurs** | opt-in explicite |
+
+🔄 **À contre-sens** — *« Un réseau social qui démarre en privé ne démarre pas. »* Objection
+sérieuse. Elle tombe parce que le défaut n'est pas `private` mais `followers` : le fil
+d'amis fonctionne dès le premier suivi. Ce qui est fermé par défaut, c'est **l'indexation et
+l'inconnu**, pas l'ami.
+
+*« Et le partage de bilan, alors ? »* Il fonctionne déjà **sans profil** — c'est une image
+générée côté client (`ShareCard`). Rien à ouvrir.
+
+### Q2 — Chiffrer le journal côté client ? **Non, et il faut le dire au lieu de le cacher**
+
+Un journal chiffré ne serait pas projetable, donc **pas de fil, pas d'amis, pas d'agrégats**.
+Le chiffrement de bout en bout et le social sont incompatibles ici ; choisir le social, c'est
+renoncer au premier.
+
+**Ce qu'on fait à la place**, et qui est honnête :
+
+- La CSP dira ce qu'elle peut encore prouver — `connect-src` limité au **seul** hôte
+  Supabase, ce qui reste vérifiable dans l'inspecteur.
+- Le texte de l'interface change. « Rien n'est envoyé nulle part » devient « envoyé à notre
+  serveur, à personne d'autre ». **Conserver l'ancienne phrase serait un mensonge.**
+- L'export intégral reste non négociable (`AGENTS.md` règle 9).
+
+🔄 **À contre-sens** — *« Chiffrer juste le journal, pas l'activité ? »* Alors le journal ne
+peut plus **produire** l'activité, puisque la projection le lit. On aurait le coût du
+chiffrement sans sa garantie. Écarté.
+
+### Q3 — Région Supabase : **UE (Francfort ou Paris)**
+
+⚖️ Héberger dans l'UE évite d'avoir à documenter un transfert hors UE. La latence est bonne
+pour le public de départ, et pour l'anglophone la donnée personnelle est rare et non
+critique (le journal se lit en local d'abord).
+
+🔄 **À contre-sens** — *« Le produit vise l'international, donc les États-Unis. »* Non : le
+local-first rend la latence de la base **presque invisible**, puisque la lecture ne l'attend
+pas. On paie une latence qu'on ne ressent pas, contre une simplification juridique réelle.
+
+### ~~Q4~~ — ✅ Tranché : on circule librement, on agit avec un compte (§4bis)
+
+### Q5 — Suppression de compte : **on demande, on ne devine pas**
+
+⚖️ Le droit à l'effacement (art. 17) porte sur les **données personnelles**. Une liste
+publique enregistrée par d'autres pose un conflit réel : la supprimer casse ce que des tiers
+ont gardé ; la garder telle quelle maintient une donnée liée à une personne.
+
+**La réponse est de ne pas choisir à la place de l'utilisateur** — trois lignes dans l'écran
+de suppression :
+
+| Donnée | Sort |
+|---|---|
+| Journal, activité, follows, profil | **Supprimés.** Sans condition, sans délai de grâce déguisé |
+| Listes **privées** | Supprimées |
+| Listes **publiques** | **Au choix** : anonymisées (elles survivent sans auteur) ou supprimées |
+
+Le titre d'une liste peut être personnel — *« Ce que je regardais pendant ma dépression »* —
+donc l'anonymisation ne peut pas être imposée. Et proposer les deux coûte une case à cocher.
+
+🔄 **À contre-sens** — *« Anonymiser suffit toujours, c'est plus simple. »* Non : le contenu
+peut rester identifiant. Une case à cocher est moins chère qu'un litige.
+
+*« Et les lignes d'activité déjà lues par des amis ? »* Elles sont dans une **projection**,
+donc supprimées avec la source. C'est un bénéfice direct de §3 qu'on n'avait pas anticipé.
+
+### Q6 — Durcir le rappel après N gestes ? **À mesurer, pas à régler au jugé**
+
+C'est le levier si la conversion est trop basse. Il ne se règle pas sans données : ce projet
+a payé **trois passes** sur `trajectory.ts` pour avoir choisi des seuils au jugé, et l'a
+réappris sur `MAX_ENTRY_FRACTION`.
+
+**Ce qui se décide maintenant, en revanche** : la mesure elle-même. Un compteur local de
+gestes sans compte, jamais envoyé — il suffit à afficher un rappel plus insistant, sans
+qu'aucune donnée sorte.
+
+---
+
+## 7bis. Les questions que personne n'avait posées
+
+Trouvées en cherchant à faire tomber ce qui précède. Aucune n'était dans la liste initiale.
+
+### Q7 — Un handle peut-il être n'importe quoi ? **Non, et c'est un vrai risque**
+
+`@netflix`, `@admin`, `@support`, ou une insulte : un handle est une **URL publique** et une
+usurpation possible. Trois règles, toutes triviales à écrire :
+
+1. Une **liste de mots réservés** (`admin`, `support`, `api`, `moi`, `serie`, `listes`… et
+   les six noms de faces) — sinon un handle entre en collision avec une route.
+2. Un **jeu de caractères restreint** : `[a-z0-9_]`, 3 à 20. Les caractères Unicode
+   ressemblants (`а` cyrillique contre `a` latin) rendent l'usurpation invisible.
+3. Un handle libéré **reste réservé** — sans quoi quelqu'un le reprend et hérite des liens
+   partagés de son prédécesseur.
+
+⚠️ La règle 1 doit être écrite **avant** la première inscription : un handle déjà attribué ne
+se retire pas sans casser une URL.
+
+### Q8 — Quelle taille peut atteindre un journal ? **Mesurer avant de croire que ça tient**
+
+`localStorage` plafonne autour de 5 Mo par origine, et **échoue silencieusement** au-delà.
+Un journal de plusieurs milliers de séries — un import Trakt massif — peut s'en approcher.
+
+**Ce qui existe déjà et qui sauve** : le port `JournalStore` (`src/journal/store.ts`) rend le
+stockage remplaçable **sans toucher au reste**. Passer à IndexedDB sera une implémentation à
+écrire, pas une couche à reprendre.
+
+**Ce qu'on fait maintenant** : rien, sauf mesurer la taille réelle à l'export et le dire si
+elle dérive. Écrire IndexedDB aujourd'hui pour un problème que personne n'a serait
+exactement le compliqué-avant-l'heure qu'on s'interdit.
+
+### Q9 — La table `activity` grossit indéfiniment. **Rétention : 90 jours**
+
+Un fil append-only sans purge est une facture qui monte toute seule. Personne ne remonte un
+fil d'activité à six mois.
+
+**90 jours**, le même horizon que les traces de suppression du journal — un chiffre de plus
+qui doit s'accorder avec un existant plutôt que d'être inventé. Et comme `activity` est une
+**projection**, la purge ne perd rien : la source reste le document.
+
+### Q10 — Un profil public est-il indexable ? **Oui, et c'est le seul social qui serve le SEO**
+
+Un profil `public` est une page indexable de plus, avec du contenu que personne d'autre n'a.
+C'est cohérent avec le canal d'acquisition n°1 — à condition que ce soit **un choix explicite**
+(Q1) et que `robots.txt` exclue les profils `followers` et `private`.
+
+⚠️ Piège symétrique : un profil qui **redevient** privé doit sortir de l'index. Une balise
+`noindex` ne suffit pas à retirer une page déjà indexée rapidement — il faut aussi qu'elle
+réponde 404 ou 410 aux moteurs.
+
+### Q11 — L'âge minimum ⚖️
+
+Un service qui traite des données de mineurs a des obligations renforcées. ⚖️ Le RGPD fixe le
+consentement numérique autonome à 16 ans, avec possibilité pour les États de descendre —
+**la France a retenu 15 ans**, à confirmer avant mise en ligne.
+
+**Le plus simple qui tienne** : une case déclarative à l'inscription, et pas de collecte de
+date de naissance — collecter un âge exact créerait une donnée sensible de plus à protéger,
+pour un gain nul.
+
+### Q12 — Que se passe-t-il si Supabase tombe ? **Le produit continue, et c'est un argument**
+
+C'est le bénéfice inattendu du local-first : **panne de base = le produit fonctionne
+toujours** en lecture et en écriture locales ; seule la synchronisation attend. Aucun autre
+tracker ne peut le dire.
+
+À traiter comme une **fonctionnalité annoncée**, pas comme un détail d'exploitation.
+
+### Q13 — Que contient l'export après les comptes ?
+
+`AGENTS.md` règle 9 : export intégral, **non négociable**. Avec des comptes, « intégral »
+grandit — journal, listes, follows, profil. Un export qui ne rendrait que le journal serait
+une régression silencieuse de la promesse.
+
+### Q14 — Et si TMDB change ou disparaît ?
+
+Les `provider_id` sont **préfixés** (`tmdb:1396`) dans le journal comme dans `list_items` :
+un changement de catalogue reste un remappage, jamais une perte (règle 3). ✅ Déjà résolu,
+noté ici parce que la question se reposera à chaque nouvelle table.
+
+---
+
+## 7ter. Ce qui reste vraiment ouvert
+
+Après ce passage, il ne reste que ce qui demande une décision humaine ou une mesure :
+
+| # | Question | Quand |
+|---|---|---|
+| Q6 | Le seuil de durcissement du rappel | Après le lot 2b — **à mesurer** |
+| Q11 | ⚖️ L'âge retenu, à faire confirmer | Avant le lot 2a |
+| A6 | La monétisation, toujours non tranchée | Avant Vercel payant et l'accord TMDB (D6) |
 
 ---
 
@@ -416,3 +595,10 @@ Trace des simplifications, pour qu'on ne les repropose pas :
   s'applique d'abord en local, donc il n'y a rien à mettre en attente ni à rejouer.
 - **Un composant d'invitation au compte** — le bandeau `DataSafety` existe et dit déjà
   presque cela. C'est un texte à réécrire, pas un composant à ajouter.
+- **IndexedDB pour le journal** (Q8) — le port `JournalStore` rend le stockage remplaçable
+  plus tard. L'écrire aujourd'hui, pour un plafond que personne n'a atteint, serait le
+  compliqué-avant-l'heure qu'on s'interdit.
+- **La collecte d'une date de naissance** (Q11) — une case déclarative suffit. Un âge exact
+  serait une donnée sensible de plus à protéger, pour un gain nul.
+- **Un délai de grâce à la suppression de compte** — c'est de la rétention déguisée. La
+  suppression est immédiate (Q5).

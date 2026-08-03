@@ -48,6 +48,19 @@
     - ⚠️ **Jamais de fusion silencieuse à la connexion.** Sur un appareil partagé, elle
       verserait le journal du propriétaire dans le compte du visiteur. On demande, et le
       défaut est **non**.
+  - **Toutes les questions d'architecture sont tranchées** (`ARCHITECTURE-APP.md` §7),
+    et huit nouvelles ont été trouvées en cherchant les failles des premières. Les plus
+    coûteuses si ratées :
+    - **Q1 — trois états de visibilité, pas deux.** `followers` par défaut : le fil marche
+      dès le premier suivi, mais l'indexation et l'inconnu restent fermés. Un profil public
+      par défaut irait contre la protection par défaut du RGPD (⚖️ à confirmer).
+    - **Q7 — les handles réservés doivent exister *avant* la première inscription.** Un
+      handle attribué ne se retire pas sans casser une URL, et `@admin` ou `@moi` entrerait
+      en collision avec une route.
+    - **Q9 — `activity` purgée à 90 jours**, le même horizon que les traces de suppression :
+      un chiffre qui s'accorde à un existant plutôt qu'un seuil inventé.
+    - **Q12 — si la base tombe, le produit continue.** Bénéfice inattendu du local-first, à
+      annoncer comme une fonctionnalité.
   - **Correction actée : le fil d'activité des amis ne spoile pas.** J'avais affirmé le
     contraire ; c'était surdimensionné. « Marie a noté *Breaking Bad* ★★★★ » ne révèle rien,
     et le nombre de saisons est public. Ce qui spoile est plus étroit : **les titres
