@@ -58,8 +58,30 @@ export const STORAGE_KEY = 'voltface.journal.v1';
  */
 export const LEGACY_STORAGE_KEYS = ['seasoned.journal.v1'] as const;
 
+/**
+ * Le journal d'un compte, range a part de celui de l'appareil.
+ *
+ * ## 🔴 Pourquoi une cle par compte, et pas une seule
+ *
+ * `decideAdoption` permet de **refuser** que le journal trouve sur cet appareil rejoigne le
+ * compte qui se connecte — le cas de l'ordinateur familial. Ce refus n'a de valeur que s'il
+ * y a **deux endroits** : une seule cle, et le compte se met a lire, ecrire et **pousser
+ * vers le serveur** le journal de quelqu'un d'autre, exactement ce que le refus venait
+ * d'interdire. La porte de derriere serait plus large que la porte.
+ */
+export function accountStorageKey(userId: string): string {
+  return `${STORAGE_KEY}:${userId}`;
+}
+
 export interface LocalJournalStoreOptions {
   readonly storage: StorageLike;
+  /**
+   * Ou ranger ce journal. Defaut : {@link STORAGE_KEY}, celui de l'appareil.
+   *
+   * ⚠️ Le repli sur les anciens noms ne vaut **que** pour la cle par defaut : un journal de
+   * compte n'a pas d'ancetre, et y replier l'anonyme reviendrait a l'adopter en silence.
+   */
+  readonly key?: string;
   /** Identifiant d'appareil, cree a la premiere ecriture. */
   readonly makeDeviceId?: () => string;
   /**
@@ -83,12 +105,16 @@ export class LocalJournalStore implements JournalStore {
   readonly name = 'local';
 
   readonly #storage: StorageLike;
+  readonly #key: string;
+  readonly #legacyKeys: readonly string[];
   readonly #makeDeviceId: () => string;
   readonly #listeners = new Set<(journal: Journal) => void>();
   readonly #onExternalChange: ((listener: () => void) => () => void) | undefined;
 
   constructor(options: LocalJournalStoreOptions) {
     this.#storage = options.storage;
+    this.#key = options.key ?? STORAGE_KEY;
+    this.#legacyKeys = this.#key === STORAGE_KEY ? LEGACY_STORAGE_KEYS : [];
     this.#makeDeviceId = options.makeDeviceId ?? randomId;
     this.#onExternalChange = options.onExternalChange;
   }
@@ -100,7 +126,7 @@ export class LocalJournalStore implements JournalStore {
   async save(journal: Journal): Promise<void> {
     const stamped = withDeviceId(journal, this.#makeDeviceId());
     try {
-      this.#storage.setItem(STORAGE_KEY, serializeJournal(stamped));
+      this.#storage.setItem(this.#key, serializeJournal(stamped));
     } catch {
       // Stockage refuse : navigation privee, quota plein, parametres restrictifs.
       // On notifie quand meme : l'etat vit en memoire pour la session en cours,
@@ -128,10 +154,10 @@ export class LocalJournalStore implements JournalStore {
    */
   #read(): Journal {
     try {
-      const current = this.#storage.getItem(STORAGE_KEY);
+      const current = this.#storage.getItem(this.#key);
       if (current !== null) return parseJournal(current);
 
-      for (const legacy of LEGACY_STORAGE_KEYS) {
+      for (const legacy of this.#legacyKeys) {
         const raw = this.#storage.getItem(legacy);
         if (raw !== null) return parseJournal(raw);
       }
@@ -151,10 +177,11 @@ export class LocalJournalStore implements JournalStore {
  * celui de quelqu'un a quelqu'un d'autre. Ce `undefined` est la forme executable de
  * cette regle, pas une precaution de typage.
  */
-export function browserJournalStore(): LocalJournalStore | undefined {
+export function browserJournalStore(key?: string): LocalJournalStore | undefined {
   if (typeof window === 'undefined') return undefined;
   return new LocalJournalStore({
     storage: window.localStorage,
+    ...(key === undefined ? {} : { key }),
     onExternalChange: (listener) => {
       window.addEventListener('storage', listener);
       return () => window.removeEventListener('storage', listener);

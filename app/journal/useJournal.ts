@@ -20,7 +20,7 @@ import {
   type JournalSnapshot,
 } from '@/src/domain/journal';
 import type { SeasonSize } from '@/src/domain/remaining';
-import { browserJournalStore } from '@/src/journal/local';
+import { activeJournalStore, watchJournalStore } from '@/app/journal/journalStore';
 import type { JournalStore } from '@/src/journal/store';
 
 /** Delai en deca duquel un instantane identique n'est pas reecrit. */
@@ -105,26 +105,38 @@ export function useJournal() {
   const latest = useRef<Journal>(EMPTY_JOURNAL);
 
   useEffect(() => {
-    const store = browserJournalStore();
-    storeRef.current = store;
-    if (store === undefined) return;
-
     let alive = true;
+    let stop: (() => void) | undefined;
+
     const apply = (next: Journal) => {
       if (!alive) return;
       latest.current = next;
       setJournal(next);
     };
 
-    void store.load().then((loaded) => {
-      apply(loaded);
-      if (alive) setReady(true);
-    });
+    // ⚠️ Rejoue a chaque changement de store, c'est-a-dire a la connexion et a la
+    // deconnexion : le journal du compte n'est pas celui de l'appareil, et un ecran qui
+    // continuerait de lire l'ancien afficherait le journal de la session precedente.
+    const attach = () => {
+      stop?.();
+      const store = activeJournalStore();
+      storeRef.current = store;
+      if (store === undefined) return;
 
-    const stop = store.subscribe(apply);
+      void store.load().then((loaded) => {
+        apply(loaded);
+        if (alive) setReady(true);
+      });
+      stop = store.subscribe(apply);
+    };
+
+    attach();
+    const unwatch = watchJournalStore(attach);
+
     return () => {
       alive = false;
-      stop();
+      unwatch();
+      stop?.();
     };
   }, []);
 

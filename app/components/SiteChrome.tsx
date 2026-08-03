@@ -8,6 +8,7 @@ import { LanguagePicker } from '@/app/components/LanguagePicker';
 import { Faces } from '@/app/components/Faces';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import { AuthProvider } from '@/app/auth/AuthProvider';
+import { JournalSync } from '@/app/components/JournalSync';
 import { localeTag, t, type Locale } from '@/lib/i18n';
 import { pathIn } from '@/lib/routes';
 
@@ -133,6 +134,9 @@ export function SiteChrome({ locale, children }: {
         </footer>
 
         <ServiceWorker />
+        {/* Relie le compte a son journal, et pose la question de l'appareil partage. Rend
+            `null` tant qu'il n'y a rien a arbitrer. */}
+        <JournalSync />
         </AuthProvider>
       </LocaleProvider>
       </body>

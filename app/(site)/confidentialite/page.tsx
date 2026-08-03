@@ -46,6 +46,7 @@ export function PrivacyView({ locale }: { readonly locale: Locale }) {
         title={t(locale, 'privacy.account.title')}
         body={t(locale, 'privacy.account.body')}
       />
+      <Section title={t(locale, 'privacy.sync.title')} body={t(locale, 'privacy.sync.body')} />
       <Section title={t(locale, 'privacy.tmdb.title')} body={t(locale, 'privacy.tmdb.body')} />
       <Section
         title={t(locale, 'privacy.hosting.title')}

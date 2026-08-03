@@ -318,7 +318,17 @@ const FR = {
   'account.unavailable.body':
     'Cette installation n’est pas reliée à une base de données. Vos notes restent dans ce navigateur, et la bibliothèque fonctionne normalement.',
   'account.notSynced':
-    'Vos notes restent pour l’instant dans ce navigateur : la synchronisation entre appareils arrive au prochain lot. Gardez une copie exportée.',
+    'Vos notes suivent désormais votre compte : elles restent dans ce navigateur et une copie part sur nos serveurs, pour les retrouver sur vos autres appareils. Si le serveur est injoignable, rien ne s’arrête — tout continue ici.',
+  // La question de l'appareil partagé. Le défaut est **non**, et le texte doit rendre ce
+  // « non » confortable : garder un journal hors d'un compte se répare, l'y avoir versé
+  // par erreur ne se répare pas.
+  'sync.adopt.title': 'Un journal existe déjà sur cet appareil',
+  'sync.adopt.body.one':
+    'Il contient {n} série. Est-il à vous ? Si cet appareil est partagé, répondez non : ce journal restera où il est.',
+  'sync.adopt.body.other':
+    'Il contient {n} séries. Est-il à vous ? Si cet appareil est partagé, répondez non : ce journal restera où il est.',
+  'sync.adopt.yes': 'Oui, c’est le mien',
+  'sync.adopt.no': 'Non, le laisser ici',
   'account.delete.title': 'Supprimer mon compte',
   'account.delete.body':
     'Immédiatement, sans délai de grâce. Exportez d’abord vos notes : elles vivent dans ce navigateur et n’en partiront pas, mais votre compte, lui, ne se rétablit pas.',
@@ -334,12 +344,15 @@ const FR = {
   'account.callback.back': 'Retour à mon compte',
   'privacy.title': 'Confidentialité',
   'privacy.updated': 'À jour du 3 août 2026.',
-  'privacy.now.title': 'Vos notes restent dans ce navigateur',
+  'privacy.now.title': 'Sans compte, vos notes ne quittent pas ce navigateur',
   'privacy.now.body':
     'Il n’y a ni traceur, ni mesure d’audience, ni cookie publicitaire. Vos positions, vos notes et vos décisions sont écrites dans le stockage local de cet appareil. Sans compte, elles ne sont envoyées nulle part — et vous pouvez le vérifier : la politique de sécurité du site n’autorise le navigateur à contacter aucun serveur en dehors du nôtre.',
   'privacy.account.title': 'Si vous créez un compte',
   'privacy.account.body':
     'Le compte est facultatif : tout le site se visite et s’utilise sans. Si vous en créez un, nous traitons votre adresse e-mail — c’est elle qui reçoit le lien de connexion, et il n’y a pas de mot de passe à retenir. Elle est conservée par notre hébergeur de base de données, dans l’Union européenne, et ne sert qu’à vous reconnaître. Supprimer votre compte l’efface immédiatement, sans délai ni condition.',
+  'privacy.sync.title': 'Ce que la synchronisation envoie',
+  'privacy.sync.body':
+    'Avec un compte, une copie de votre journal — positions, notes, décisions — est envoyée à cette même base, pour que vous le retrouviez sur vos autres appareils. Elle reste lisible par vous seul : la base refuse toute lecture qui ne vient pas de votre compte. L’original, lui, reste dans ce navigateur, et c’est lui qui fait foi : si nos serveurs tombent, le site continue de fonctionner.',
   'privacy.tmdb.title': 'Ce qui vient d’ailleurs',
   'privacy.tmdb.body':
     'Les fiches de séries et les affiches proviennent de TMDB. Charger une affiche adresse une requête à leur serveur d’images, qui voit donc votre adresse IP — comme pour toute image sur le web. Nous ne leur transmettons rien d’autre.',
@@ -348,10 +361,10 @@ const FR = {
     'Le site est hébergé par Vercel, qui conserve des journaux techniques de connexion. Nous n’y ajoutons aucune mesure d’audience et n’installons aucun cookie.',
   'privacy.rights.title': 'Vos données, et comment les récupérer',
   'privacy.rights.body':
-    'Puisque tout est chez vous, l’export intégral est immédiat et sans condition : il se trouve dans votre bibliothèque. Effacer les données du navigateur suffit à tout supprimer.',
+    'L’export intégral est immédiat et sans condition : il se trouve dans votre bibliothèque, et il est calculé ici, sans rien demander à personne. Sans compte, effacer les données du navigateur suffit à tout supprimer. Avec un compte, il faut aussi supprimer le compte — c’est ce qui efface la copie conservée sur nos serveurs, et cela se fait en un clic depuis la page Compte.',
   'privacy.next.title': 'Ce qui changera ensuite',
   'privacy.next.body':
-    'La synchronisation entre vos appareils viendra après : elle impliquera d’envoyer votre journal à notre serveur, et à personne d’autre. Cette page sera mise à jour avant, pas après. C’est ainsi que la phrase « rien ne sort de ce navigateur » a été retirée le jour où les comptes sont arrivés, et non le jour où quelqu’un l’aurait remarqué.',
+    'Viendront ensuite les profils et le fil d’activité : ce que vous choisirez de rendre visible à d’autres personnes. Rien de ce que vous écrivez aujourd’hui ne le deviendra sans que vous le décidiez, et cette page sera mise à jour avant, pas après. C’est ainsi que la phrase « rien ne sort de ce navigateur » a été retirée le jour où les comptes sont arrivés, et non le jour où quelqu’un l’aurait remarqué.',
   'tallyPage.title': 'Mon bilan',
   'tallyPage.lede': 'Ce que vos séries disent de vous. Calculé ici, dans ce navigateur.',
   'tallyPage.empty.title': 'Rien à mesurer pour l’instant',
@@ -875,7 +888,14 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'account.unavailable.body':
     'This installation is not connected to a database. Your notes stay in this browser, and the library works as usual.',
   'account.notSynced':
-    'For now your notes stay in this browser: syncing between devices arrives in the next batch. Keep an exported copy.',
+    'Your notes now follow your account: they stay in this browser and a copy goes to our servers, so you find them on your other devices. If the server is unreachable, nothing stops — everything keeps working here.',
+  'sync.adopt.title': 'A journal already exists on this device',
+  'sync.adopt.body.one':
+    'It holds {n} series. Is it yours? If this device is shared, answer no: that journal stays where it is.',
+  'sync.adopt.body.other':
+    'It holds {n} series. Is it yours? If this device is shared, answer no: that journal stays where it is.',
+  'sync.adopt.yes': 'Yes, it is mine',
+  'sync.adopt.no': 'No, leave it here',
   'account.delete.title': 'Delete my account',
   'account.delete.body':
     'Immediately, with no grace period. Export your notes first: they live in this browser and are not going anywhere, but your account does not come back.',
@@ -890,10 +910,13 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'account.callback.back': 'Back to my account',
   'privacy.title': 'Privacy',
   'privacy.updated': 'Last updated 3 August 2026.',
-  'privacy.now.title': 'Your notes stay in this browser',
+  'privacy.now.title': 'Without an account, your notes never leave this browser',
   'privacy.account.title': 'If you create an account',
   'privacy.account.body':
     'The account is optional: the whole site works without one. If you create one, we process your email address — it is what receives the sign-in link, and there is no password to remember. It is held by our database host, inside the European Union, and is only used to recognise you. Deleting your account erases it immediately, with no delay and no conditions.',
+  'privacy.sync.title': 'What syncing sends',
+  'privacy.sync.body':
+    'With an account, a copy of your journal — positions, ratings, decisions — is sent to that same database, so you find it on your other devices. It stays readable by you alone: the database refuses any read that does not come from your account. The original stays in this browser and remains the source of truth: if our servers go down, the site keeps working.',
   'privacy.now.body':
     'There are no trackers, no analytics and no advertising cookies. Your positions, ratings and decisions are written to this device’s local storage. Without an account they are sent nowhere — and you can check this yourself: the site’s security policy lets the browser contact no server but ours.',
   'privacy.tmdb.title': 'What comes from elsewhere',
@@ -904,10 +927,10 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
     'The site is hosted by Vercel, which keeps technical connection logs. We add no analytics and set no cookies.',
   'privacy.rights.title': 'Your data, and how to take it with you',
   'privacy.rights.body':
-    'Since everything is yours already, a full export is immediate and unconditional: you will find it in your library. Clearing your browser data deletes everything.',
+    'A full export is immediate and unconditional: you will find it in your library, and it is computed here, without asking anyone. Without an account, clearing your browser data deletes everything. With an account, you also need to delete the account — that is what erases the copy kept on our servers, and it takes one click on the Account page.',
   'privacy.next.title': 'What changes next',
   'privacy.next.body':
-    'Syncing between your devices comes later: it will mean sending your journal to our server, and to nobody else. This page is updated before that happens, not after. That is how the sentence “nothing leaves this browser” was removed the day accounts arrived, rather than the day somebody noticed.',
+    'Profiles and the activity feed come next: what you choose to make visible to other people. Nothing you write today becomes visible without you deciding it, and this page is updated before that happens, not after. That is how the sentence “nothing leaves this browser” was removed the day accounts arrived, rather than the day somebody noticed.',
   'tallyPage.title': 'My tally',
   'tallyPage.lede': 'What your shows say about you. Worked out here, in this browser.',
   'tallyPage.empty.title': 'Nothing to measure yet',
