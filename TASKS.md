@@ -246,6 +246,8 @@ passe désormais avant le repli.
 | **A6** | **Monétisation** | ✅ **tranché** | **Freemium cosmétique**, référence Riot Games. Le produit reste entièrement gratuit ; on vend l'apparence, **jamais la réponse** |
 | 1.70 | **La navigation par faces + l'écran calendrier** | ✅ 2026-08-03 | `Faces.tsx`, `Agenda.tsx`, `MyStats.tsx`. **562 tests**, 19 routes statiques |
 
+| 2a | **Le socle légal + les handles réservés** | 🔒 in-progress — @claude-opus — 2026-08-03 | Prérequis de mise en ligne des comptes. Contient les trois choses qui ne se rattrapent pas |
+
 #### A6 — ce que le freemium cosmétique débloque, et ce qu'il bloque
 
 C'est le seul modèle qui **ne contredise aucune promesse déjà faite** : pas de paywall sur
