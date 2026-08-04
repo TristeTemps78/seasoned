@@ -8,33 +8,100 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
+## État actuel (2026-08-05 — la garde ne voyait pas le défaut pour lequel elle existait)
+
+- **✅ La relecture du lot 7 est traitée.** **735 tests** (+1), typecheck strict vert, build vert.
+  Quatre commits, `main` propre, **rien n'est poussé** (décision de Tristan).
+- 🔴 **Le 7.5 annonçait avoir réparé les titres sans cran. Recensement : il en a réparé TROIS
+  et laissé SEPT.** `OrderingNotice`, `JournalSync`, `Friends`, `AccountPanel` (deux fois),
+  `/regles`, `/mentions`, `/confidentialite` écrivaient encore leur `h2` en `font-semibold`
+  **nu**, c'est-à-dire à la taille exacte du corps de texte — plus deux `h3` que son motif
+  `<h[12]` ne regardait même pas. **734 tests verts pendant tout ce temps.**
+  - **La cause est la question posée.** Le test demandait « ce titre écrit-il une taille en
+    trop ? ». Un titre en `font-semibold` nu n'en écrit **aucune**, donc il passait — or c'était
+    exactement le défaut à attraper. Il demande maintenant **« ce titre porte-t-il un cran ? »**,
+    ce qui refuse d'un seul coup la taille absente et la taille en dur.
+  - > **C'est la troisième fois, et cette fois c'est le lot qui écrivait la leçon qui la répète.**
+    > Le 6.7 avait extrait les FORMES en laissant la typographie ; le 7.5 a extrait la
+    > TYPOGRAPHIE en laissant sept titres sans cran, dans les fichiers qu'il n'avait pas ouverts.
+  - **Quatre autres faux négatifs fermés** : `h3` ignoré ; `className` en template literal
+    **invisible** — le faux négatif de `.tile`, refait quinze heures plus tard ; `text-[28px]`
+    et `style={{fontSize}}` non vus ; et `ALLOWED` qui exemptait un **fichier** entier, donc
+    aussi les titres qu'on n'avait pas examinés. La clé contient désormais la classe, donc
+    l'exemption **s'invalide d'elle-même** quand on réécrit le titre.
+  - **Et `.section-title > :first-child` était POSITIONNEL** : un élément inséré avant le `h2`
+    lui retirait taille, graisse, capitales et interlettrage, sans erreur ni test. D'où
+    `.row-title`, cinquième cran — **il existait déjà**, caché dans le sélecteur, ce qui rendait
+    « quatre crans » inexact.
+- 🔴 **J'ai corrigé un chiffre faux par un autre chiffre faux, et c'est le résultat le plus
+  instructif de la session.** Mon commentaire d'`EpisodeGrid` disait que 44 px rendrait la table
+  « trois fois plus large que l'écran ». La relecture a eu raison de le contester et j'ai refait
+  l'arithmétique : **8,7×**. Les deux sont faux. Les deux prenaient **62** pour le nombre de
+  colonnes — c'est le nombre **total d'épisodes** de *Breaking Bad*. Le nombre de colonnes est la
+  taille de la **saison la plus longue** : mesuré au navigateur, **16**. Vrais rapports : 1,1× à
+  20 px, 1,7× à 32 px, 2,3× à 44 px.
+  > **La leçon** : *une relecture qui accepte la prémisse de ce qu'elle relit ne relit rien.*
+  > J'ai refait le calcul **sur la prémisse du commentaire** au lieu d'ouvrir la page.
+- 🔴 **Et un constat de la relecture était faux, vérifié avant de le suivre** : elle affirmait
+  que le `min-height` mobile de `.btn` « ne peut être corrigé par aucun utilitaire ». Tailwind 4
+  fournit `min-h-*`, ce dépôt l'emploie déjà (`SeriesCard.tsx:87`), et la règle vit bien dans
+  `@layer components` — vérifié dans la CSSOM de la feuille servie. *Un rapport d'agent ne se
+  prend pas au mot.*
+- ⚠️ **L'outillage : le « contournement » du 2026-08-04 était une conclusion fausse, et elle
+  était écrite comme une méthode pour les sessions suivantes.** `resize_window` répond
+  « Successfully resized » **sans rien redimensionner** : `outerWidth` reste à 0, `innerWidth`
+  plafonne à 784 px, et l'effet réel est un zoom différé. Donc `matchMedia('(width < 40rem)')`
+  reste `false` et **la branche mobile n'a jamais pu être exercée**. Le détail qui alerte : à
+  784 px je remesure **exactement** les valeurs consignées comme « mesurées à 360 px » — `.btn`
+  à 38 px, cases à 20 px, les valeurs de la branche **bureau**. La correction des 44 px reste
+  juste, mais **par accident**.
+  - ✅ **En échange, la capture d'écran fonctionne** — les deux sessions précédentes butaient sur
+    « the Browser pane is not displayed ». Elle a rapporté en une seconde ce que 735 tests, le
+    typage et le build ne voient pas : **deux textes français privés de leurs accents**
+    (« Installee sur l'ecran d'accueil »), dans le bandeau que lit en premier un visiteur qui a
+    des notes sans compte.
+  - ✅ **Vérifié au navigateur** : les 10 titres de la fiche série portent tous un cran
+    (28/18/14 px), `.row-title` rend 13 px / +1,3 px / capitales, et le sélecteur positionnel a
+    **disparu** de la feuille servie.
+  - ⚠️ **Une fausse alerte de ma part, écartée par la mesure** : cinq `<li>` sans image sur
+    l'accueil — ce sont les **onglets de navigation**, et les 29 affiches se chargent toutes.
+- **Quatre arbitrages tranchés par Tristan (2026-08-05)** : grille à 32 px sous 640 px (7.1),
+  bilan à 30 px (7.13), `--color-pulse` gardé pour le seul halo du `body` (7.8), `/hors-ligne`
+  en `.empty-state` (7.4). Et **titre de rangée à 13 px** — ce qui coûte −19 % sur l'accueil et
+  −28 % sur la bibliothèque, deux baisses que le commit précédent n'avait pas annoncées et qui
+  sont maintenant écrites avec le cran.
+
 ## ▶️ Pour reprendre : **lot 7 — UX/UI**, dans `TASKS.md`
 
 Tristan reprend l'UX/UI dans une prochaine session en disant simplement **« continue »**.
 Tout est dans **`TASKS.md` → « 🎨 Lot 7 — UX/UI »** : la marche à suivre, les **huit règles
 de design à ne pas défaire**, et les tâches classées par valeur.
 
-**La passe du 2026-08-04 a fermé 7.5, 7.9, 7.10, 7.11** et mesuré 7.1 et 7.2. Ce qui reste
-demande **un œil, pas une mesure** — c'est le partage exact entre ce que je peux faire seul
-et ce qui t'attend :
+**Fermés : 7.5, 7.8, 7.9, 7.10, 7.11, 7.13, 7.14.** Partiels : 7.1, 7.2, 7.4, 7.12. Ce qui
+reste demande **un téléphone ou un œil**, pas une mesure :
 
-1. **7.12 / 7.13** — deux écarts de taille que je peux justifier mais pas juger : les `h2`
-   à 14 px contre 18 px sur la fiche série, et le grand chiffre du bilan devenu plus petit
-   que le titre de sa page.
-2. **7.1** — la grille d'épisodes a **62 cases de 20 × 20 px**. Les porter à 44 px rendrait
-   la table trois fois plus large que l'écran : **densité contre atteignabilité**, arbitrage.
-3. **7.8** — `--color-pulse` : je ne l'ai **pas** tranché exprès. Lui donner un emploi défait
-   « une couleur, un sens », et je ne vois pas de troisième sens qui ne soit pas inventé.
-4. **7.3** `/amis` avec un vrai fil (deux comptes), **7.6** `/bilan` (contenu, pas style).
+1. **7.1 / 7.15** — le mobile n'a **toujours pas** été vu, et il ne l'a jamais été : la
+   méthode consignée le 2026-08-04 ne redimensionnait rien (voir ci-dessus). La question
+   concrète est **7.15** : les quatre pastilles de décision passent de 26 à 44 px sous
+   640 px, dans un `flex-wrap`. Bonne cible tactile, encombrement inconnu.
+2. **7.13 bis** — le bilan à 30 px dépasse `.page-title` de 25 % **sur mobile**, dans une
+   carte de 360 px. Tranché, pas regardé.
+3. **7.4** — restent `/convertir`, `/regles`, `/mentions`, `/confidentialite`,
+   `/compte/retour`. Les captures marchent désormais, donc c'est faisable seul.
+4. **7.3** `/amis` avec un vrai fil (deux comptes), **7.6** `/bilan` (contenu, pas style),
+   **7.7** le placement du bandeau `DataSafety`.
 
-⚠️ **Pièges d'outillage.** Le service worker sert des pages en cache (`?v=N`). Le screenshot
-ne suit pas `resize_window` — **mais la fenêtre, elle, est bien redimensionnée** : les
-mesures à 360 px sont donc justes, et c'est ainsi qu'on a trouvé les boutons à 38 px. En
-revanche **aucune capture n'a pu être prise de toute la session** (pane non affiché) : rien
-de ce qui relève du goût n'a été vu. Et `git checkout <fichier>` pour annuler une mutation
-**efface le travail non committé** du même fichier — sauvegarder par copie.
+⚠️ **Pièges d'outillage, corrigés le 2026-08-05.** Le service worker sert des pages en cache
+(`?v=N`). 🔴 **`resize_window` ne redimensionne pas** : il répond « Successfully » et le
+viewport plafonne à 784 px (`outerWidth` reste 0, l'effet réel est un zoom différé) — donc
+**la branche mobile n'est pas atteignable**, et les « mesures à 360 px » du 2026-08-04 étaient
+des mesures de bureau. La CSP interdit l'iframe du site par lui-même, donc ce contournement-là
+non plus. Ce qui marche : la CSSOM (`document.styleSheets`) pour prouver qu'une règle `@media`
+a survécu au build et vit dans la bonne couche, et **la capture d'écran**, qui fonctionne
+maintenant. Enfin, `git checkout <fichier>` pour annuler une mutation **efface le travail non
+committé** du même fichier — sauvegarder par copie.
 
-## État actuel (2026-08-04, matin — l'échelle typographique, et la duplication qui s'était reformée)
+## État précédent (2026-08-04, matin — l'échelle typographique, et la duplication qui s'était reformée)
 
 - **✅ Passe UX/UI livrée : 7.5, 7.9, 7.10, 7.11.** **734 tests** (+3), typecheck strict vert,
   build vert, 29 routes statiques. Deux commits, `main` propre.
