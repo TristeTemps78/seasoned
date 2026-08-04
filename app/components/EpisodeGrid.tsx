@@ -98,33 +98,46 @@ export function EpisodeGrid({ seriesId, seasons }: {
       {/*
        * ⚠️ **Les cases sont plus grandes sur mobile, et c'est un arbitrage, pas un reglage.**
        *
-       * Mesurees le 2026-08-04 a 360 px : **20 x 20 px**, et **62** d'entre elles sur
-       * *Breaking Bad*. C'est tres en dessous des 44 px recommandes, sur ce qui est le geste
-       * le plus fin du produit — noter un episode.
+       * Les cases font **20 x 20 px**, tres en dessous des 44 px recommandes, sur ce qui est
+       * le geste le plus fin du produit — noter un episode.
        *
-       * ## L'arithmetique, refaite le 2026-08-05
+       * ## 🔴 « 62 colonnes » etait faux, et je l'ai corrige une premiere fois en le croyant
        *
-       * 🔴 **La premiere version de ce commentaire etait fausse dans les deux sens**, et la
-       * relecture l'a montre. Avec `border-spacing-0.5` (2 px) et 62 colonnes, contre ~328 px
-       * utiles a 360 px (`px-4` de chaque cote) :
+       * Ce commentaire a dit successivement que 44 px rendrait la table « trois fois plus
+       * large que l'ecran », puis — apres une relecture qui avait raison de le contester —
+       * **8,7 fois**. Les deux sont faux, et pour la meme raison : ils prenaient **62** pour
+       * le nombre de colonnes. C'est le nombre **total d'episodes** de *Breaking Bad*.
        *
-       * | Cote | Largeur de table | Rapport a l'ecran |
+       * Le nombre de colonnes est la taille de la **saison la plus longue** (`widest`).
+       * Mesure dans le navigateur le 2026-08-05 sur `/fr/serie/1396` : **16 colonnes**, 5
+       * lignes, 62 cases, table a **375 px**. Le modele se verifie donc :
+       *
+       * | Cote | Largeur de table | Rapport a ~328 px utiles |
        * |---|---|---|
-       * | 20 px | ~1 366 px | **4,2x** — deja quatre ecrans |
-       * | 32 px | ~2 110 px | 6,4x |
-       * | 44 px | ~2 854 px | **8,7x**, et non « trois fois » |
+       * | 20 px | 373 calcules · **375 mesures** | 1,1x |
+       * | 32 px | 565 | 1,7x |
+       * | 44 px | 757 | 2,3x |
        *
-       * Et « +60 % de surface tactile » etait le gain **lineaire** : la surface passe de 400
-       * a 1 024 px², soit **+156 %**. Les deux chiffres etaient faux, et aucun n'etait
-       * verifiable a la lecture — c'est le genre d'erreur qu'un commentaire rend permanente.
+       * > **La lecon, et c'est la enieme fois dans ce depot** : *auditer le resultat, jamais
+       * > l'intention.* J'ai corrige un chiffre faux par un autre chiffre faux en refaisant
+       * > l'arithmetique **sur la premisse du commentaire** au lieu d'ouvrir la page. Une
+       * > relecture qui accepte la premisse de ce qu'elle relit ne relit rien.
+       *
+       * Ce qui reste vrai de la correction : « +60 % de surface tactile » etait le gain
+       * **lineaire**. La surface passe de 400 a 1 024 px², soit **+156 %**.
        *
        * ## Le choix, tranche par Tristan le 2026-08-05
        *
-       * 32 px. Le raisonnement tient malgre les chiffres corriges, mais **pas pour la raison
-       * ecrite d'abord** : ce n'est pas que 44 px deborderait et que 32 px non — les trois
-       * debordent. C'est que la table **defile deja horizontalement**, donc le debordement
-       * n'est pas le cout ; le cout est le nombre de gestes pour traverser une saison. Passer
-       * de 4,2 a 6,4 ecrans est un prix qu'on paie pour +156 % de cible ; 8,7 ne l'est pas.
+       * 32 px. Avec les vrais chiffres l'arbitrage est **plus favorable** qu'annonce : sur
+       * une serie ordinaire la table passe de 1,1 a 1,7 ecran, pour +156 % de cible. Et le
+       * conteneur defile deja horizontalement, donc le debordement n'est pas un defaut de
+       * mise en page — le cout est le nombre de gestes pour traverser une saison.
+       *
+       * ⚠️ **Le cas qui fait mal n'est pas *Breaking Bad*, c'est la saison longue.** Un
+       * anime a saison unique de ~200 episodes fait ~200 colonnes, donc ~6 800 px a 32 px
+       * contre ~4 300 a 20 px. Non mesure : `/fr/serie/37854` (*One Piece*) n'affiche pas de
+       * grille faute de donnees par episode. **Si un jour la densite doit ceder, c'est la**,
+       * et par un seuil sur `widest` — pas en revenant a 20 px partout.
        *
        * Le cout est nul sur le bureau, ou la souris vise juste et ou la densite est la valeur
        * de cette grille — d'ou le retour a 20 px des 640 px.

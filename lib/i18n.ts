@@ -430,8 +430,14 @@ const FR = {
   'safety.body':
     'Rien n’est envoye ailleurs — c’est voulu. Mais un navigateur oublie : effacer les donnees de navigation, ou simplement ne pas revenir pendant quelques jours sur iPhone, suffit a tout perdre.',
   'safety.install': 'Installer l’application',
-  'safety.installWhy': 'Installee sur l’ecran d’accueil, elle garde vos notes.',
-  'safety.iosHint': 'Sur iPhone : bouton Partager, puis « Sur l’ecran d’accueil ».',
+  // ⚠️ Ces deux lignes etaient sans accents — « Installee sur l'ecran » —, et c'est la
+  // premiere chose que lit quelqu'un qui a des notes sans compte. Trouve **sur une capture
+  // d'ecran**, le 2026-08-05 : ni le typage, ni les 735 tests, ni le build ne voient qu'un
+  // texte francais a perdu ses accents. C'est exactement ce que la passe « a l'oeil » du
+  // lot 7 existe pour trouver, et les deux sessions precedentes n'avaient pu prendre
+  // aucune capture.
+  'safety.installWhy': 'Installée sur l’écran d’accueil, elle garde vos notes.',
+  'safety.iosHint': 'Sur iPhone : bouton Partager, puis « Sur l’écran d’accueil ».',
   'safety.export': 'Enregistrer une copie',
   'safety.later': 'Plus tard',
   'safety.done': 'C’est fait — vos notes sont a l’abri.',
