@@ -118,9 +118,14 @@ function Row({ title, subtitle, series, locale }: {
           avait ete extraite au 6.7 **d'apres cet ecran** et n'etait utilisee nulle part —
           l'original avait continue sa vie de son cote. Il en avait garde `text-base
           tracking-tight uppercase`, c'est-a-dire des capitales **resserrees** : les
-          capitales demandent plus d'interlettrage, jamais moins. */}
+          capitales demandent plus d'interlettrage, jamais moins.
+
+          ⚠️ **Et la bascule change aussi la TAILLE, ce que ce commentaire ne disait pas** :
+          `1rem` → `0.8125rem`, soit −19 %, decide par Tristan le 2026-08-05. La raison est
+          ecrite avec le cran, dans `globals.css` sous `.row-title` — pas ici, pour qu'elle
+          soit au meme endroit que la valeur. */}
       <div className="section-title">
-        <h2>{title}</h2>
+        <h2 className="row-title">{title}</h2>
         <p className="text-sm text-(--color-muted)">{subtitle}</p>
       </div>
       <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">

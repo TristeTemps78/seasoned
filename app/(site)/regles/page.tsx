@@ -63,7 +63,10 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
 
       {/* On ne laisse pas croire a un espace social qui n'est pas ouvert. */}
       <section className="rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4">
-        <h2 className="font-semibold">{t(locale, 'rules.nothingYet.title')}</h2>
+        {/* `.card-title` et non `.section-heading` : c'est un encart d'avertissement, pas un
+            chapitre. Il doit rester **sous** les six sections de cette page, sinon la
+            premiere chose qu'on lit est ce qui n'existe pas encore. */}
+        <h2 className="card-title">{t(locale, 'rules.nothingYet.title')}</h2>
         <p className="mt-1 text-sm text-(--color-muted)">
           {t(locale, 'rules.nothingYet.body')}
         </p>

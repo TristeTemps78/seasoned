@@ -41,7 +41,7 @@ export function LegalView({ locale }: { readonly locale: Locale }) {
 
       {!complete ? (
         <div className="rounded-lg border border-(--color-warn)/40 bg-(--color-warn)/10 px-4 py-4">
-          <h2 className="font-semibold text-(--color-warn)">
+          <h2 className="card-title text-(--color-warn)">
             {t(locale, 'legal.incomplete.title')}
           </h2>
           <p className="mt-2 leading-relaxed">{t(locale, 'legal.incomplete.body')}</p>

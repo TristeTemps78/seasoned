@@ -67,7 +67,11 @@ export function OrderingNotice({
       aria-label={t(locale, 'ordering.title')}
       className="space-y-2 rounded-md border border-(--color-edge) bg-(--color-surface) px-3 py-2.5 text-sm"
     >
-      <h2 className="font-semibold tracking-tight">{t(locale, 'ordering.title')}</h2>
+      {/* ⚠️ Ce titre rendait deja `0.875rem`, mais **par heritage** du `text-sm` de la
+          section : sa taille dependait d'un parent, donc d'une decision prise ailleurs. Le
+          cran la rend explicite — zero changement a l'ecran, et un titre qui ne change plus
+          de taille quand on touche a l'encart qui le contient. */}
+      <h2 className="card-title">{t(locale, 'ordering.title')}</h2>
 
       <p className="text-(--color-muted)">
         {t(locale, 'ordering.explain', shape(seasonCount, episodeCount))}

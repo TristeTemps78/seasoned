@@ -103,9 +103,14 @@ function Row({ title, subtitle, items }: {
     <section className="space-y-4" aria-label={title}>
       {/* La meme forme que les rangees de l'accueil : ce sont les memes objets — une
           grille d'affiches sous un titre — et ils n'avaient aucune raison de se presenter
-          differemment selon la page. */}
+          differemment selon la page.
+
+          ⚠️ **C'est la rangee qui bouge le plus, et il faut le dire** : `1.125rem` en casse
+          normale → `0.8125rem` en capitales, soit −28 %. La forme commune a ete alignee en
+          faisant descendre les deux, pas en gardant celle-ci. Decision de Tristan du
+          2026-08-05, motivee avec le cran dans `globals.css`. */}
       <div className="section-title">
-        <h2>{title}</h2>
+        <h2 className="row-title">{title}</h2>
         <p className="text-sm text-(--color-muted)">{subtitle}</p>
       </div>
       <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">

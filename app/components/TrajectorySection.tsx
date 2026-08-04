@@ -133,7 +133,7 @@ export function TrajectorySection({
 
       {showsMine && redacted !== undefined ? (
         <div className="mb-4 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4">
-          <h3 className="mb-3 text-sm font-medium">
+          <h3 className="card-title mb-3">
             {t('traj.yours')}
             <span className="ml-2 font-normal text-(--color-muted)">
               {t('traj.seasonsTo', { n: position?.seasonNumber ?? 1 })}
@@ -182,7 +182,7 @@ export function TrajectorySection({
 
           {grid.length > 0 ? (
             <div className="mt-6 border-t border-(--color-edge) pt-5">
-              <h3 className="mb-3 text-sm font-medium">{t('traj.episodeByEpisode')}</h3>
+              <h3 className="card-title mb-3">{t('traj.episodeByEpisode')}</h3>
               <p className="mb-3 text-xs text-(--color-muted)">{t('traj.clickHint')}</p>
               <EpisodeGrid seriesId={seriesId} seasons={grid} />
             </div>

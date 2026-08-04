@@ -74,7 +74,9 @@ function Section({ title, body, highlight = false }: {
           : ''
       }
     >
-      <h2 className="font-semibold">{title}</h2>
+      {/* `.section-heading` et non `.card-title` : ce composant rend les **sections de
+          contenu** de la page, pas des encarts dans une section. */}
+      <h2 className="section-heading">{title}</h2>
       <p className="mt-2 leading-relaxed text-(--color-muted)">{body}</p>
     </section>
   );

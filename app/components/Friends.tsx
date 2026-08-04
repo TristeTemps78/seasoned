@@ -118,7 +118,7 @@ export function Friends() {
   if (profile === undefined) {
     return (
       <section className="card max-w-md space-y-4">
-        <h2 className="font-semibold">{t('friends.claim.title')}</h2>
+        <h2 className="card-title">{t('friends.claim.title')}</h2>
         <p className="max-w-prose leading-relaxed text-(--color-muted)">
           {t('friends.claim.body')}
         </p>
