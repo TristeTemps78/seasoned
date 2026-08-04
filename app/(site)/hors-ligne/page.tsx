@@ -22,15 +22,22 @@ export const metadata: Metadata = offlineMetadata(DEFAULT_LOCALE);
 
 export function OfflineView({ locale }: { readonly locale: Locale }) {
   return (
-    <div className="mx-auto max-w-md space-y-4 py-12">
+    // ⚠️ Ce lien portait **la quatorzieme copie a la main** du bouton secondaire, dans un
+    // fichier que ni le 6.7 ni la passe du 2026-08-04 n'avaient ouvert. C'est la meme forme
+    // d'echec a chaque fois : extraire une forme ne protege que les ecrans qu'on rouvre.
+    <div className="empty-state my-12">
       <h1 className="page-title">{t(locale, 'offline.heading')}</h1>
-      <p className="leading-relaxed text-(--color-muted)">{t(locale, 'offline.body')}</p>
-      <Link
-        href={pathIn('/moi', locale)}
-        className="inline-block rounded-md border border-(--color-edge) bg-(--color-surface) px-4 py-2 text-sm hover:border-(--color-muted)"
-      >
-        {t(locale, 'offline.open')}
-      </Link>
+      <p className="empty-state-body">{t(locale, 'offline.body')}</p>
+      {/* ⚠️ **Les memes utilitaires que `EmptyLibrary`, au caractere pres.** Il n'y a pas de
+          `.empty-state-actions` — deux ecrans, ce n'est pas les trois qu'exige ce depot pour
+          extraire —, donc la seule chose qui empeche les deux de diverger est cette identite.
+          Un `<div>` nu ne recevait que les 0,75 rem de `.empty-state > * + *`, la ou la
+          bibliotheque en pose 1,25 : la meme forme, espacee differemment. */}
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
+        <Link href={pathIn('/moi', locale)} className="btn btn-primary">
+          {t(locale, 'offline.open')}
+        </Link>
+      </div>
     </div>
   );
 }

@@ -95,6 +95,40 @@ export function EpisodeGrid({ seriesId, seasons }: {
         </div>
       ) : null}
 
+      {/*
+       * ⚠️ **Les cases sont plus grandes sur mobile, et c'est un arbitrage, pas un reglage.**
+       *
+       * Mesurees le 2026-08-04 a 360 px : **20 x 20 px**, et **62** d'entre elles sur
+       * *Breaking Bad*. C'est tres en dessous des 44 px recommandes, sur ce qui est le geste
+       * le plus fin du produit — noter un episode.
+       *
+       * ## L'arithmetique, refaite le 2026-08-05
+       *
+       * 🔴 **La premiere version de ce commentaire etait fausse dans les deux sens**, et la
+       * relecture l'a montre. Avec `border-spacing-0.5` (2 px) et 62 colonnes, contre ~328 px
+       * utiles a 360 px (`px-4` de chaque cote) :
+       *
+       * | Cote | Largeur de table | Rapport a l'ecran |
+       * |---|---|---|
+       * | 20 px | ~1 366 px | **4,2x** — deja quatre ecrans |
+       * | 32 px | ~2 110 px | 6,4x |
+       * | 44 px | ~2 854 px | **8,7x**, et non « trois fois » |
+       *
+       * Et « +60 % de surface tactile » etait le gain **lineaire** : la surface passe de 400
+       * a 1 024 px², soit **+156 %**. Les deux chiffres etaient faux, et aucun n'etait
+       * verifiable a la lecture — c'est le genre d'erreur qu'un commentaire rend permanente.
+       *
+       * ## Le choix, tranche par Tristan le 2026-08-05
+       *
+       * 32 px. Le raisonnement tient malgre les chiffres corriges, mais **pas pour la raison
+       * ecrite d'abord** : ce n'est pas que 44 px deborderait et que 32 px non — les trois
+       * debordent. C'est que la table **defile deja horizontalement**, donc le debordement
+       * n'est pas le cout ; le cout est le nombre de gestes pour traverser une saison. Passer
+       * de 4,2 a 6,4 ecrans est un prix qu'on paie pour +156 % de cible ; 8,7 ne l'est pas.
+       *
+       * Le cout est nul sur le bureau, ou la souris vise juste et ou la densite est la valeur
+       * de cette grille — d'ou le retour a 20 px des 640 px.
+       */}
       <div className="overflow-x-auto">
         <table className="border-separate border-spacing-0.5 text-[10px]">
           <caption className="sr-only">
@@ -112,7 +146,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
                 {Array.from({ length: widest }, (_, i) => {
                   const episode = season.episodes[i];
                   if (episode === undefined) {
-                    return <td key={i} className="h-5 w-5" />;
+                    return <td key={i} className="h-8 w-8 sm:h-5 sm:w-5" />;
                   }
 
                   const stars = myStars(episode);
@@ -129,7 +163,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
                       : ratingHue(episode.voteAverage);
 
                   return (
-                    <td key={i} className="h-5 w-5 p-0">
+                    <td key={i} className="h-8 w-8 p-0 sm:h-5 sm:w-5">
                       <button
                         type="button"
                         disabled={!ready}
@@ -141,7 +175,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
                               : episode,
                           )
                         }
-                        className={`flex h-5 w-5 items-center justify-center rounded-[2px] ${
+                        className={`flex h-8 w-8 items-center justify-center sm:h-5 sm:w-5 rounded-[2px] ${
                           isCurrent ? 'ring-1 ring-(--color-text)' : ''
                         } ${beyond ? 'opacity-35' : ''} enabled:hover:ring-1 enabled:hover:ring-(--color-muted)`}
                         style={{

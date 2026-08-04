@@ -40,8 +40,23 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
       <h2 className="card-title">{t('tally.title')}</h2>
 
       {/* Le seul chiffre du produit qui mérite de briller : il résume tout le reste.
-          `glow` posé ailleurs perdrait son sens par saturation. */}
-      <p className="numeric glow text-2xl font-semibold tracking-tight text-balance">
+          `glow` posé ailleurs perdrait son sens par saturation.
+
+          ⚠️ **Plus grand que le titre de la page, et c'est le point.** Il était à 24 px
+          quand `.page-title` est monté à 28 px : le différenciateur du produit — « au moins
+          537 heures » — passait visuellement **après l'étiquette « Mon bilan »**. Une page
+          dont le titre domine son contenu annonce quelque chose qu'elle ne montre pas.
+
+          🔴 **Mais cette prémisse ne vaut qu'au-dessus de 640 px, et la première version de
+          ce commentaire ne le disait pas.** `.page-title` fait 1,5 rem (24 px) sous ce seuil
+          et 1,75 rem (28 px) au-dessus. Donc sur mobile l'ancien `text-2xl` **égalait** déjà
+          le titre — il ne passait pas après lui —, et le nouveau `text-3xl` (30 px) le
+          dépasse de 25 %, dans une carte de 360 px où cette phrase monospace revient à la
+          ligne quatre ou cinq fois.
+          ⚠️ **Non vu** : aucune capture n'a pu être prise des sessions du 04 et du 05. Le
+          choix est tranché (Tristan, 2026-08-05), le résultat sur téléphone reste à
+          regarder — c'est noté en 7.13. */}
+      <p className="numeric glow text-3xl font-semibold tracking-tight text-balance">
         {t('tally.atLeast', { commitment: formatCommitment(tally.minutes, locale) })}
       </p>
 
