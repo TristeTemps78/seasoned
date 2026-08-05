@@ -8,7 +8,70 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-05 — la garde ne voyait pas le défaut pour lequel elle existait)
+## État actuel (2026-08-06 — le lot 8 s'ouvre, et sa première tâche répare une perte de données)
+
+- **✅ Sous-tâche 8.0 livrée.** **747 tests** (+12), typecheck strict vert, build vert,
+  **29 routes statiques** (inchangé). Trois commits, `main` propre, **rien n'est poussé**.
+- **Le lot 8 est ouvert et réservé** — décidé avec Tristan le 2026-08-06 après un état des
+  lieux « TvTime × Letterboxd ». **Le manque le plus structurant est que ce produit ne sait
+  écrire nulle part** : aucun champ de texte libre dans tout le dépôt, sauf la note d'un
+  signalement. Trois décisions : critiques **publiques, par série ET par saison** ; **cœur**
+  distinct de la note ; progression **« pointeur + exceptions »** (marquer un épisode sauté
+  ou vu en avance, sans passer aux cases à cocher).
+- 🔴 **8.0 ne livre aucune fonctionnalité : elle répare un défaut de perte de données présent
+  aujourd'hui.** `remote.ts:135` portait le commentaire « un document écrit par une version
+  plus récente ne doit pas casser celui-ci » et appelait `parseJournal`, qui **jette
+  exactement ce cas** et retournait `kind: 'found'` avec **zéro entrée**. La suite se déroule
+  seule : l'écran affiche « rien », **un seul geste** écrase le local, la synchro lit
+  « le compte n'a rien », et le `POST merge-duplicates` remplace la ligne entière.
+  **Local et distant détruits par un clic.**
+  - **Le type `RemoteRead` distinguait DÉJÀ `absent` de `unavailable`**, et son docblock
+    décrit précisément ce raisonnement — pour le cas « zéro ligne », réparé au 6.0. Le
+    **troisième** cas, document présent mais illisible, était passé au travers.
+    *Le commentaire décrivait l'intention, le code faisait le contraire* — quatrième fois.
+  - **L'autre moitié du piège** : `parseEntry` reconstruit un objet neuf, donc un ancien
+    client relisant un journal plus récent le **réécrit dépouillé**. D'où le pass-through des
+    champs inconnus — et son prix, écrit dans l'en-tête de `journal.ts` et non dans
+    `TASKS.md`, parce que c'est là qu'on le lit au moment de le payer : **le format est
+    désormais additif par contrat**, une version future peut ajouter un champ, jamais changer
+    le sens d'un existant.
+- 🔴 **L'ancrage a trouvé que le reste aurait été creux.** Le générateur des huit lois de
+  fusion apprend à poser des champs inconnus, et il en produit en quantité — mais le cas où
+  les **deux** appareils en portent un sur la **même série** n'arrive qu'**une fois sur 120**.
+  Les lois ne couvraient donc quasiment pas le seul cas où `mergeUnknown` doit départager.
+  D'où une loi dédiée qui **construit** ce conflit au lieu de l'espérer.
+  > **La règle, encore une fois** : *un test qui compare deux journaux sans la donnée qu'il
+  > prétend éprouver compare deux fois rien.* C'est le cinquième faux négatif de fixture que
+  > ce dépôt aurait pu commettre.
+- **Quatre mutations vérifiées** : illisible remis en `found`+vide → 2 tests tombent, dont le
+  bout-en-bout ; `mergeUnknown` en « b gagne » → 3 lois ; `'wanted'` retiré de la liste des
+  champs connus → **`tsc` refuse, en nommant le champ** ; version future re-jetée → 2 tests.
+- **Deux tests disaient l'inverse et ont été retournés, pas supprimés.** Le plus parlant est
+  celui du rewatch : *un visionnage est un fait qui a eu lieu*, et le perdre sur un numéro de
+  version est la trahison même contre laquelle le rewatch a été conçu.
+- ⚠️ **Le refactor trouvé non committé en début de session a été relu avant d'être repris**
+  (`RowHeader`, `.hero-title`, `.label` — celle-ci écrite **dix fois** à la main avant d'être
+  nommée). Il **renforçait** la garde typographique (`h1`→`h6`, exceptions supprimées) mais
+  perdait deux choses, rendues : l'ancrage comptait les **fichiers** au lieu des **titres**
+  — mutation vérifiée, il restait vert quand le motif de titre était cassé — et la détection
+  de deux crans contradictoires sur un même titre.
+
+### ▶️ Pour reprendre le lot 8
+
+⚠️ **8.0 doit être POUSSÉE et vérifiée sur le site servi AVANT d'écrire le moindre champ
+neuf** (8.2 cœur, 8.3 marques, 8.4 critiques). La vérification tient en une ligne de console :
+`parseJournal('{"version":99,"entries":{"tmdb:1":{"x":1}}}')` doit rendre une entrée. Sans ce
+déploiement, un appareil resté sur l'ancien build dépouille silencieusement les champs neufs.
+*Ce dépôt a livré `ordering.ts` et `episodeMinutes` morts-nés en étant verts.*
+
+**Ce qui ne dépend PAS du déploiement, et peut se faire tout de suite** : **8.1** (mesurer le
+journal, ferme la tâche 4.5) et **8.5** (réveiller `unfollow()` et `setVisibility()`, qui
+n'ont aucun appelant — donc *aucune critique ne serait lisible par personne*).
+
+⏳ **Action de Tristan** : `LEGAL_CONTACT_EMAIL` dans le `.env`. Sans lui, `legalIsComplete()`
+est faux, `/amis` est fermée, et publier une critique le sera aussi.
+
+## État précédent (2026-08-05 — la garde ne voyait pas le défaut pour lequel elle existait)
 
 - **✅ La relecture du lot 7 est traitée.** **735 tests** (+1), typecheck strict vert, build vert.
   Quatre commits, `main` propre, **rien n'est poussé** (décision de Tristan).
