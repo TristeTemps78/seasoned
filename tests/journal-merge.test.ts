@@ -36,6 +36,8 @@ import {
   type Journal,
   type JournalKey,
   mergeJournals,
+  parseJournal,
+  serializeJournal,
   setDecision,
   setEpisodeRating,
   setPosition,
@@ -89,6 +91,32 @@ const DATES: readonly Date[] = [
   new Date('2026-08-02T09:30:00.000Z'),
 ];
 
+/**
+ * Ce qu'une version plus recente du produit aurait ecrit et que nous ne savons pas lire.
+ *
+ * ⚠️ Il n'existe **aucun** mutateur pour ce champ, et c'est voulu : ce code n'ecrit jamais
+ * `unknownFields`, il ne fait que le traverser. On passe donc par le seul chemin reel —
+ * serialiser, injecter, relire — ce qui a l'avantage d'exercer aussi le pass-through de
+ * `parseEntry` et de `serializeJournal` a chaque graine.
+ *
+ * Sans ce cas, les huit lois ne prouveraient la convergence que sur les champs **connus**,
+ * en laissant hors de leur portee le seul champ dont la fusion n'a pas de date pour
+ * departager — c'est-a-dire precisement celui qui risquait de la casser.
+ */
+function withUnknown(journal: Journal, key: JournalKey, value: unknown): Journal {
+  const document = JSON.parse(serializeJournal(journal)) as {
+    entries: Record<string, Record<string, unknown>>;
+  };
+  document.entries[key] = { ...(document.entries[key] ?? {}), futureField: value };
+  return parseJournal(JSON.stringify(document));
+}
+
+const FUTURE_VALUES: readonly unknown[] = [
+  'un texte',
+  { text: 'une critique', through: 3 },
+  [1, 2, 3],
+];
+
 function journalOf(seed: number): Journal {
   const next = random(seed);
   const pick = <T>(xs: readonly T[]): T => xs[Math.floor(next() * xs.length)] as T;
@@ -99,7 +127,10 @@ function journalOf(seed: number): Journal {
   for (let i = 0; i < gestures; i += 1) {
     const key = pick(KEYS);
     const at = pick(DATES);
-    switch (Math.floor(next() * 5)) {
+    switch (Math.floor(next() * 6)) {
+      case 5:
+        journal = withUnknown(journal, key, pick(FUTURE_VALUES));
+        break;
       case 0:
         journal = setPosition(journal, key, 1 + Math.floor(next() * 5), 1 + Math.floor(next() * 9), at);
         break;
@@ -127,6 +158,74 @@ const CASES = 120;
 // ---------------------------------------------------------------------------
 
 describe('mergeJournals — les lois qui rendent la synchronisation possible', () => {
+  it('le generateur produit bien des champs inconnus, et des conflits sur eux', () => {
+    // ⚠️ Ancrage, et il n'est pas decoratif. Les huit lois ci-dessous passeraient tout
+    // aussi bien si `withUnknown` n'ecrivait jamais rien : elles compareraient alors deux
+    // journaux sans champ inconnu et ne prouveraient rien de la fusion de ces champs.
+    //
+    // C'est le **quatrieme faux negatif de fixture** que ce depot aurait pu commettre :
+    // `setSnapshot` appele avant le geste n'ecrivait aucun instantane, et quatre egalites
+    // passaient en comparant deux agregats vides.
+    let withField = 0;
+    let conflicting = 0;
+    for (let seed = 1; seed <= CASES; seed += 1) {
+      const a = journalOf(seed);
+      const b = journalOf(seed + 10_000);
+      const fieldsOf = (j: Journal): Set<string> =>
+        new Set(
+          Object.entries(j.entries)
+            .filter(([, entry]) => entry.unknownFields?.['futureField'] !== undefined)
+            .map(([key]) => key),
+        );
+      const left = fieldsOf(a);
+      const right = fieldsOf(b);
+      if (left.size > 0) withField += 1;
+      // Le cas qui compte vraiment : la MEME serie porte un champ inconnu des deux cotes,
+      // donc `mergeUnknown` doit departager sans date.
+      if ([...left].some((key) => right.has(key))) conflicting += 1;
+    }
+
+    expect(withField).toBeGreaterThan(20);
+    // ⚠️ Le tirage produit des champs inconnus en quantite, mais le cas ou les DEUX
+    // appareils en portent un sur la **meme** serie est rare — mesure : 1 fois sur 120.
+    // Les huit lois ne le couvrent donc quasiment pas, et c'est pourtant le seul cas ou
+    // `mergeUnknown` doit reellement departager. D'ou la loi dediee ci-dessous, qui le
+    // construit au lieu de l'esperer. On garde tout de meme la mesure ici : si elle tombait
+    // a zero, le generateur aurait cesse de produire ce qu'il croit produire.
+    expect(conflicting).toBeGreaterThan(0);
+  });
+
+  it('departage deux champs inconnus concurrents sans dependre de l ordre', () => {
+    // Le defaut vise : `mergeUnknown` qui prendrait « b gagne » (ou « a gagne »). Ni l'un
+    // ni l'autre n'a de date qu'on sache lire, donc rien ne les departage — sauf une forme
+    // canonique, qui a le seul merite qui compte ici : elle rend le **meme** verdict sur
+    // les deux appareils. Sans elle, chacun garde sa version, se la renvoie, et le
+    // battement ne s'arrete jamais. C'est exactement le defaut que `laterOf` a deja porte.
+    const KEY = KEYS[0] as JournalKey;
+
+    for (let seed = 1; seed <= CASES; seed += 1) {
+      const a = withUnknown(journalOf(seed), KEY, { text: 'ecrit sur le telephone' });
+      const b = withUnknown(journalOf(seed + 10_000), KEY, { text: 'ecrit sur le portable' });
+
+      // Les deux le portent vraiment — sinon la loi ne comparerait rien.
+      expect(a.entries[KEY]?.unknownFields?.['futureField'], `graine ${seed}`).toBeDefined();
+      expect(b.entries[KEY]?.unknownFields?.['futureField'], `graine ${seed}`).toBeDefined();
+
+      const ab = mergeJournals(a, b);
+      expect(shape(ab), `graine ${seed}`).toBe(shape(mergeJournals(b, a)));
+      // Et le vainqueur est l'un des deux, jamais une fusion des deux textes.
+      expect(
+        ['ecrit sur le telephone', 'ecrit sur le portable'],
+        `graine ${seed}`,
+      ).toContainEqual(
+        (ab.entries[KEY]?.unknownFields?.['futureField'] as { text: string }).text,
+      );
+      // Idempotence sur ce cas precis : une seconde rencontre ne rebascule pas le choix.
+      expect(shape(mergeJournals(ab, b)), `graine ${seed}`).toBe(shape(ab));
+      expect(shape(mergeJournals(ab, a)), `graine ${seed}`).toBe(shape(ab));
+    }
+  });
+
   it('est idempotente : fusionner un journal avec lui-meme ne le change pas', () => {
     for (let seed = 1; seed <= CASES; seed += 1) {
       const a = journalOf(seed);

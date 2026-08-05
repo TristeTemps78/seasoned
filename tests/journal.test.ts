@@ -12,6 +12,7 @@ import {
   mergeJournals,
   parseJournal,
   parseJournalKey,
+  tryParseJournal,
   seasonScoresOf,
   serializeJournal,
   setDecision,
@@ -131,9 +132,82 @@ describe('parseJournal — ne perd jamais tout', () => {
     }
   });
 
-  it('refuse une version future plutot que de deviner', () => {
-    const raw = JSON.stringify({ version: 99, entries: { [BB]: { position: {} } } });
-    expect(parseJournal(raw, NOW)).toEqual(EMPTY_JOURNAL);
+  it('lit une version future au lieu de tout jeter, et retient son numero', () => {
+    // 🔴 Ce test disait l'inverse jusqu'au 2026-08-06 : « refuse une version future plutot
+    // que de deviner ». Le raisonnement semblait prudent et il etait destructeur — rendre
+    // EMPTY_JOURNAL fait lire « ce compte n'a rien » a la synchronisation, qui pousse alors
+    // le local par-dessus le distant. Voir la decision n°4 en tete de `journal.ts`.
+    const raw = JSON.stringify({
+      version: 99,
+      entries: { [BB]: { position: { seasonNumber: 3, episodeNumber: 7, declaredAt: NOW.toISOString() } } },
+    });
+    const journal = parseJournal(raw, NOW);
+
+    expect(journal.entries[BB]?.position?.seasonNumber).toBe(3);
+    // Le numero est conserve : le document porte des champs d'une v99, meme si nous ne
+    // savons pas les lire. Annoncer 3 dirait qu'il n'en porte plus.
+    expect(journal.version).toBe(99);
+  });
+
+  it('rend `unreadable` ce qui n est pas un journal, et le distingue du vide', () => {
+    // La distinction que `parseJournal` ne peut pas rendre : elle repond EMPTY_JOURNAL dans
+    // les deux cas, ce qui est sur en local et destructeur a distance.
+    for (const raw of ['{pas du json', '"une chaine"', '[]', '{}', '{"version":"trois"}']) {
+      expect(tryParseJournal(raw, NOW).kind).toBe('unreadable');
+    }
+    for (const raw of [undefined, null, '', '   ']) {
+      expect(tryParseJournal(raw, NOW)).toEqual({ kind: 'ok', journal: EMPTY_JOURNAL });
+    }
+  });
+
+  it('preserve un champ inconnu, d une entree comme du document', () => {
+    // Le defaut que ce test attrape : un ancien client relit un journal ecrit par un client
+    // plus recent, n'en garde que ce qu'il comprend, et le **reecrit dépouille** a la
+    // synchronisation suivante. La perte est silencieuse et definitive.
+    const raw = JSON.stringify({
+      version: JOURNAL_VERSION,
+      futureRoot: { hello: 'world' },
+      entries: {
+        [BB]: {
+          wanted: { at: NOW.toISOString() },
+          reviews: { series: { text: 'ecrit par une version future' } },
+        },
+      },
+    });
+
+    const reread = parseJournal(serializeJournal(parseJournal(raw, NOW)), NOW);
+    expect(reread.entries[BB]?.unknownFields?.['reviews']).toEqual({
+      series: { text: 'ecrit par une version future' },
+    });
+    expect(reread.unknownFields?.['futureRoot']).toEqual({ hello: 'world' });
+    // Et le champ connu qui voisinait n'a pas bouge.
+    expect(reread.entries[BB]?.wanted?.at).toBe(NOW.toISOString());
+
+    // Reetale a PLAT, pas range dans un seau : sinon chaque aller-retour emboiterait un
+    // seau de plus, et le document grossirait a chaque synchronisation.
+    const written = JSON.parse(serializeJournal(reread)) as Record<string, unknown>;
+    expect(written['futureRoot']).toEqual({ hello: 'world' });
+    expect(written['unknownFields']).toBeUndefined();
+    const entry = (written['entries'] as Record<string, Record<string, unknown>>)[BB];
+    expect(entry?.['reviews']).toEqual({ series: { text: 'ecrit par une version future' } });
+    expect(entry?.['unknownFields']).toBeUndefined();
+  });
+
+  it('une entree reduite a un champ inconnu survit, sans etre du contenu', () => {
+    // Les deux predicats divergent, et c'est le point : `worthKeeping` doit la garder —
+    // sinon le pass-through est detruit par la premiere ecriture — mais `hasContent` doit
+    // la refuser, sinon une serie que l'utilisateur n'a jamais touchee apparait dans /moi.
+    const raw = JSON.stringify({
+      version: JOURNAL_VERSION,
+      entries: { [BB]: { reviews: { series: { text: 'x' } } } },
+    });
+    const journal = parseJournal(raw, NOW);
+
+    expect(journal.entries[BB]).toBeDefined();
+    expect(hasContent(journal.entries[BB])).toBe(false);
+    // Et elle survit a une ecriture portant sur une AUTRE serie.
+    const after = setWanted(journal, journalKey('999'), true, NOW);
+    expect(after.entries[BB]?.unknownFields?.['reviews']).toBeDefined();
   });
 
   it('migre un journal v1 : les cles nues prennent leur prefixe', () => {

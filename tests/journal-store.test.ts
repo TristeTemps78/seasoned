@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { LocalJournalStore, STORAGE_KEY, type StorageLike } from '../src/journal/local';
+import {
+  LocalJournalStore,
+  RESCUE_SUFFIX,
+  STORAGE_KEY,
+  type StorageLike,
+} from '../src/journal/local';
 import {
   EMPTY_JOURNAL,
   journalKey,
@@ -189,5 +194,46 @@ describe('le renommage du produit ne coute pas le journal de l utilisateur', () 
   it('la cle courante porte le nom du produit, et pas l ancien', () => {
     expect(STORAGE_KEY).toContain('voltface');
     expect(STORAGE_KEY).not.toContain('seasoned');
+  });
+});
+
+describe('un journal illisible est mis de cote avant d etre ecrase', () => {
+  it('copie le brut sous une cle de sauvetage, et repart a vide', async () => {
+    // Le defaut vise : repartir d'un journal vide est le seul comportement possible ici —
+    // c'est notre propre stockage, il n'y a pas d'autre source. Mais la premiere ecriture
+    // qui suit ecrase l'illisible, et avec lui la seule chance de recuperer a la main un
+    // journal de plusieurs annees. La copie doit donc etre posee AVANT cette ecriture.
+    const storage = new FakeStorage();
+    storage.setItem(STORAGE_KEY, '{ceci n est pas du json');
+    const store = new LocalJournalStore({ storage, makeDeviceId: () => 'ici' });
+
+    expect((await store.load()).entries).toEqual({});
+    expect(storage.getItem(`${STORAGE_KEY}${RESCUE_SUFFIX}`)).toBe('{ceci n est pas du json');
+
+    // Et le sauvetage survit a l'ecriture qui suit — c'est tout son objet.
+    await store.save(setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW));
+    expect(storage.getItem(`${STORAGE_KEY}${RESCUE_SUFFIX}`)).toBe('{ceci n est pas du json');
+  });
+
+  it('n ecrase jamais un sauvetage deja pose', async () => {
+    // Le premier est celui qui a precede le degat. Le second serait, au mieux, une copie
+    // du vide qu'on vient d'ecrire par-dessus.
+    const storage = new FakeStorage();
+    storage.setItem(`${STORAGE_KEY}${RESCUE_SUFFIX}`, 'le premier degat');
+    storage.setItem(STORAGE_KEY, 'encore casse');
+
+    await new LocalJournalStore({ storage, makeDeviceId: () => 'ici' }).load();
+    expect(storage.getItem(`${STORAGE_KEY}${RESCUE_SUFFIX}`)).toBe('le premier degat');
+  });
+
+  it('ancrage : un journal LISIBLE ne declenche aucun sauvetage', async () => {
+    // Sans cet ancrage, les deux tests ci-dessus passeraient aussi si le sauvetage etait
+    // pose a chaque lecture — ce qui doublerait le stockage de tout le monde.
+    const storage = new FakeStorage();
+    storage.setItem(STORAGE_KEY, serializeJournal(setPosition(EMPTY_JOURNAL, BB, 2, 4, NOW)));
+
+    const loaded = await new LocalJournalStore({ storage, makeDeviceId: () => 'ici' }).load();
+    expect(loaded.entries[BB]?.position?.seasonNumber).toBe(2);
+    expect(storage.getItem(`${STORAGE_KEY}${RESCUE_SUFFIX}`)).toBeNull();
   });
 });

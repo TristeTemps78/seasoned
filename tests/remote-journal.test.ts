@@ -119,6 +119,36 @@ describe('lecture', () => {
     const out = await store(fetchImpl as unknown as typeof fetch).fetchDocument();
     expect(out?.entries).toEqual({});
   });
+
+  it('🔴 un document ILLISIBLE est « je n ai pas pu lire », jamais un journal vide', async () => {
+    // La difference entre les deux cas est toute la difference entre une synchronisation
+    // qui ne fait rien et une synchronisation qui detruit.
+    //
+    // Un document abime **mais reconnaissable** (test precedent) se lit en tolerant : on
+    // garde ce qu'on peut. Un document qui n'est pas un journal du tout — ou qui porte une
+    // forme qu'on ne sait pas identifier — ne se lit pas, et repondre `found` avec zero
+    // entree ferait croire a la synchronisation que le compte n'a rien pousse.
+    for (const document of ['une chaine', 42, [], { pasDeVersion: true }, { version: 'trois' }]) {
+      const fetchImpl = vi.fn(async () => reply([{ document }]));
+      const outcome = await store(fetchImpl as unknown as typeof fetch).read();
+      expect(outcome, JSON.stringify(document)).toEqual({ kind: 'unavailable' });
+    }
+  });
+
+  it('une version future se lit, et n est donc PAS « indisponible »', async () => {
+    // Le pendant du test precedent : la tolerance de format (decision n°4 de `journal.ts`)
+    // ne doit pas etre confondue avec l'illisibilite. Un document d'une v99 est parfaitement
+    // lisible — c'est meme tout l'interet — donc la synchronisation doit s'en servir.
+    const fetchImpl = vi.fn(async () =>
+      reply([{ document: { version: 99, entries: { [BB]: { wanted: { at: NOW.toISOString() } } } } }]),
+    );
+    const outcome = await store(fetchImpl as unknown as typeof fetch).read();
+
+    expect(outcome.kind).toBe('found');
+    expect(outcome.kind === 'found' && outcome.journal.entries[BB]?.wanted?.at).toBe(
+      NOW.toISOString(),
+    );
+  });
 });
 
 describe('ecriture', () => {

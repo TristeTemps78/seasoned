@@ -22,7 +22,7 @@
  * continue » (`docs/ARCHITECTURE-APP.md` Q12).
  */
 
-import { parseJournal, serializeJournal, type Journal } from '../domain/journal';
+import { serializeJournal, tryParseJournal, type Journal } from '../domain/journal';
 import { EMPTY_JOURNAL } from '../domain/journal';
 import type { RemoteRead } from './sync';
 import type { JournalStore } from './store';
@@ -135,7 +135,19 @@ export class RemoteJournalStore implements JournalStore {
       // Le parsing tolerant s'applique **aussi** a ce qui vient de notre serveur
       // (`AGENTS.md` regle 4). Un document ecrit par une version plus recente du produit,
       // depuis un autre appareil, ne doit pas casser celui-ci.
-      return { kind: 'found', journal: parseJournal(JSON.stringify(document)) };
+      //
+      // 🔴 Et jusqu'au 2026-08-06, ce commentaire promettait le contraire de ce que la
+      // ligne faisait. `parseJournal` rend EMPTY_JOURNAL pour tout ce qu'elle ne sait pas
+      // lire — une version future en faisait partie — donc on repondait `found` avec
+      // **zero entree**. C'est le troisieme cas, celui que la reparation d'`undefined`
+      // decrite plus haut n'avait pas vu : le document existe, il est illisible, et on
+      // annonce l'avoir lu. La synchronisation en conclut « le compte n'a rien », pousse le
+      // local, et le `POST merge-duplicates` remplace la ligne entiere.
+      //
+      // Un seul geste suffisait. `tryParseJournal` rend la distinction disponible ici.
+      const read = tryParseJournal(JSON.stringify(document));
+      if (read.kind === 'unreadable') return { kind: 'unavailable' };
+      return { kind: 'found', journal: read.journal };
     } catch {
       // Hors ligne, DNS, CORS, base en pause : aucun de ces cas ne doit interrompre le
       // produit. Le journal local reste la source de verite.

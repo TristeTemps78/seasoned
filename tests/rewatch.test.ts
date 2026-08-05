@@ -139,9 +139,28 @@ describe('compatibilite avec les journaux deja ecrits', () => {
     expect(completionCount(read.entries[KEY])).toBe(0);
   });
 
-  it('refuse toujours une version future', () => {
-    const future = JSON.stringify({ version: JOURNAL_VERSION + 1, entries: { [KEY]: {} } });
-    expect(parseJournal(future)).toEqual(EMPTY_JOURNAL);
+  it('lit une version future sans perdre les passages qu elle porte', () => {
+    // 🔴 Ce test exigeait l'inverse jusqu'au 2026-08-06 (« refuse toujours une version
+    // future »). Le renversement est motive en tete de `journal.ts`, decision n°4 : jeter
+    // un document qu'on n'a pas su lire est sur en local et destructeur a la synchro.
+    //
+    // Le cas est ici le plus parlant du depot : un visionnage est un fait qui a EU LIEU.
+    // Le perdre parce que le document porte un numero de version qu'on ne connait pas
+    // serait exactement la trahison contre laquelle le rewatch a ete concu.
+    const future = JSON.stringify({
+      version: JOURNAL_VERSION + 1,
+      entries: {
+        [KEY]: {
+          completions: [{ at: '2026-02-01T00:00:00.000Z' }],
+          futureField: 'garde tel quel',
+        },
+      },
+    });
+
+    const read = parseJournal(future);
+    expect(completionCount(read.entries[KEY])).toBe(1);
+    expect(read.entries[KEY]?.unknownFields?.['futureField']).toBe('garde tel quel');
+    expect(read.version).toBe(JOURNAL_VERSION + 1);
   });
 
   it('ecarte une liste de visionnages illisible sans perdre le reste', () => {

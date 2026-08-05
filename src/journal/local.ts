@@ -19,7 +19,7 @@
 
 import {
   EMPTY_JOURNAL,
-  parseJournal,
+  tryParseJournal,
   serializeJournal,
   withDeviceId,
   type Journal,
@@ -57,6 +57,14 @@ export const STORAGE_KEY = 'voltface.journal.v1';
  * promet de ne jamais faire (`AGENTS.md` regle 9).
  */
 export const LEGACY_STORAGE_KEYS = ['seasoned.journal.v1'] as const;
+
+/**
+ * Suffixe de la copie de sauvegarde d'un journal illisible.
+ *
+ * Voir `LocalJournalStore.#parse`. Exporte pour que les tests nomment la meme cle que le
+ * code — un test qui reecrit la chaine a la main verifierait sa propre constante.
+ */
+export const RESCUE_SUFFIX = '.rescue';
 
 /**
  * Le journal d'un compte, range a part de celui de l'appareil.
@@ -155,16 +163,42 @@ export class LocalJournalStore implements JournalStore {
   #read(): Journal {
     try {
       const current = this.#storage.getItem(this.#key);
-      if (current !== null) return parseJournal(current);
+      if (current !== null) return this.#parse(current, this.#key);
 
       for (const legacy of this.#legacyKeys) {
         const raw = this.#storage.getItem(legacy);
-        if (raw !== null) return parseJournal(raw);
+        if (raw !== null) return this.#parse(raw, legacy);
       }
       return EMPTY_JOURNAL;
     } catch {
       return EMPTY_JOURNAL;
     }
+  }
+
+  /**
+   * Lit une valeur stockee, et **met de cote ce qu'on n'a pas su lire**.
+   *
+   * Ici, contrairement au distant, repartir d'un journal vide est le seul comportement
+   * possible : c'est notre propre stockage, il n'y a pas d'autre source. Mais la premiere
+   * ecriture qui suivra ecrasera l'illisible, et avec lui la seule chance de comprendre ce
+   * qui s'est passe — ou de recuperer a la main un journal de plusieurs annees.
+   *
+   * D'ou la copie de sauvetage, posee **avant** toute ecriture et jamais effacee. Meme
+   * doctrine que {@link LEGACY_STORAGE_KEYS} : quelques kilo-octets abandonnes ne coutent
+   * rien a personne, une perte definitive coute tout. On n'ecrase jamais un sauvetage
+   * existant — le premier est celui qui a precede le degat.
+   */
+  #parse(raw: string, from: string): Journal {
+    const read = tryParseJournal(raw);
+    if (read.kind === 'ok') return read.journal;
+
+    try {
+      const rescue = `${from}${RESCUE_SUFFIX}`;
+      if (this.#storage.getItem(rescue) === null) this.#storage.setItem(rescue, raw);
+    } catch {
+      // Quota plein, mode prive : ne pas empecher le produit de demarrer pour autant.
+    }
+    return EMPTY_JOURNAL;
   }
 }
 

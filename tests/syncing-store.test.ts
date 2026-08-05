@@ -1,5 +1,6 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { LocalJournalStore, type StorageLike } from '../src/journal/local';
+import { RemoteJournalStore } from '../src/journal/remote';
 import { SyncingJournalStore, type RemoteJournal } from '../src/journal/syncing';
 import type { RemoteRead } from '../src/journal/sync';
 import {
@@ -158,4 +159,91 @@ it('stop() annule la poussee qui attendait', async () => {
   await clock.fire();
 
   expect(remote.writes).toHaveLength(0);
+});
+
+/**
+ * 🔴 La chaine de destruction, rejouee de bout en bout.
+ *
+ * Les tests ci-dessus injectent un `RemoteRead` deja decide, donc ils ne peuvent pas voir
+ * le defaut : il naissait **dans la traduction** d'une reponse HTTP en `RemoteRead`. Celui-ci
+ * part donc d'un vrai `RemoteJournalStore` branche sur un `fetch` factice, et traverse
+ * reponse HTTP → read() → syncJournals() → save().
+ *
+ * Le scenario est celui qui detruisait les deux cotes en un clic : le compte a un journal
+ * la-haut, ce journal est illisible pour ce client, et l'utilisateur pose un geste.
+ */
+it('🔴 un document distant illisible n entraine AUCUNE ecriture', async () => {
+  const responses: unknown[] = [];
+  const fetchImpl = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+    if (init?.method === 'POST') {
+      responses.push(JSON.parse(String(init.body)));
+      return { ok: true, json: async () => [] } as unknown as Response;
+    }
+    // Ce que le compte a la-haut : un document qu'on ne sait pas lire.
+    return {
+      ok: true,
+      json: async () => [{ document: { pasUnJournal: true } }],
+    } as unknown as Response;
+  });
+
+  const remote = new RemoteJournalStore({
+    url: 'https://projet.supabase.co',
+    anonKey: 'cle-publique',
+    accessToken: () => 'jeton',
+    userId: '11111111-1111-1111-1111-111111111111',
+    fetchImpl: fetchImpl as unknown as typeof fetch,
+  });
+
+  const clock = manualClock();
+  const storage = new FakeStorage();
+  const local = new LocalJournalStore({ storage, makeDeviceId: () => 'ici' });
+  const store = new SyncingJournalStore({ local, remote, schedule: clock.schedule });
+
+  await store.save(setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW));
+  await clock.fire();
+  await store.flush();
+
+  // Le POST qui remplacait la ligne entiere n'est jamais parti.
+  expect(responses).toEqual([]);
+  // Et le local n'a rien perdu : il reste la source de verite.
+  const kept = await local.load();
+  expect(kept.entries[BB]?.position).toMatchObject({ seasonNumber: 1, episodeNumber: 1 });
+});
+
+/**
+ * L'ancrage du test precedent — sans lui, il verifierait un silence.
+ *
+ * Un `expect(responses).toEqual([])` passe aussi bien si la synchronisation n'ecrit
+ * **jamais**, si le montage est casse, ou si `flush()` ne fait rien. Ce depot a deja
+ * ecrit un test creux exactement ainsi (le bandeau `DataSafety`) : on prouve d'abord que
+ * le meme montage ECRIT quand le distant est lisible.
+ */
+it('ancrage : le meme montage ecrit bien quand le document distant est lisible', async () => {
+  const posts: unknown[] = [];
+  const fetchImpl = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+    if (init?.method === 'POST') {
+      posts.push(JSON.parse(String(init.body)));
+      return { ok: true, json: async () => [] } as unknown as Response;
+    }
+    return { ok: true, json: async () => [] } as unknown as Response;
+  });
+
+  const remote = new RemoteJournalStore({
+    url: 'https://projet.supabase.co',
+    anonKey: 'cle-publique',
+    accessToken: () => 'jeton',
+    userId: '11111111-1111-1111-1111-111111111111',
+    fetchImpl: fetchImpl as unknown as typeof fetch,
+  });
+
+  const clock = manualClock();
+  const storage = new FakeStorage();
+  const local = new LocalJournalStore({ storage, makeDeviceId: () => 'ici' });
+  const store = new SyncingJournalStore({ local, remote, schedule: clock.schedule });
+
+  await store.save(setPosition(EMPTY_JOURNAL, BB, 1, 1, NOW));
+  await clock.fire();
+  await store.flush();
+
+  expect(posts).toHaveLength(1);
 });

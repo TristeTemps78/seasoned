@@ -42,13 +42,56 @@
  *    a efface une note la voit revenir a la premiere synchronisation, ressuscitee par
  *    l'appareil qui l'ignorait. C'est le defaut classique des fusions naives, et il
  *    est indetectable sans jeu de donnees a deux appareils.
+ *
+ * ---
+ *
+ * ## Le format est ADDITIF PAR CONTRAT (2026-08-06) — decision n°4
+ *
+ * ### Ce qui l'a rendue necessaire
+ *
+ * Jusqu'ici, deux comportements se combinaient en perte de donnees, et les deux etaient
+ * ecrits comme des protections :
+ *
+ * - `parseJournal` **jetait integralement** un document dont la version depassait la
+ *   sienne (« on ne devine pas la forme d'un format qu'on ne connait pas ») ;
+ * - `parseEntry` reconstruit un objet neuf a partir des seuls champs qu'il connait, donc
+ *   `serializeJournal` **reecrit dépouille** de tout le reste.
+ *
+ * Le produit est deploye et le journal se synchronise. Donc au moment ou un client neuf
+ * ecrit un champ que l'ancien ignore, l'ancien le **supprime en silence** a la premiere
+ * synchronisation — et si la version avait ete incrementee, il aurait fait pire : lire
+ * vide, puis pousser ce vide par-dessus le distant (voir la garde de
+ * `src/journal/remote.ts`).
+ *
+ * ### La regle, et son prix
+ *
+ * Un champ inconnu — d'une entree comme du document — est **conserve tel quel et
+ * reecrit**. Une version future n'est plus jetee : elle est memorisee et reemise.
+ *
+ * Le prix est reel et doit etre paye en connaissance de cause : **une version future ne
+ * peut plus changer le SENS d'un champ existant, seulement en ajouter.** Un ancien client
+ * continue en effet d'ecrire dans les champs qu'il croit comprendre. Les trois versions
+ * passees etaient deja additives, donc la contrainte ne coute rien aujourd'hui — mais
+ * c'est elle qui rend le pass-through sur.
+ *
+ * ⚠️ **Corollaire operationnel** : ne jamais incrementer {@link JOURNAL_VERSION} sans
+ * avoir d'abord **deploye** un lecteur qui sait faire ce pass-through, et l'avoir verifie
+ * sur le site servi. C'est ecrit ici, et pas dans `TASKS.md`, parce que c'est ici qu'on
+ * le lit au moment ou l'on s'apprete a le faire.
  */
 
 import type { DecisionKind, SeriesId, Stars } from './types';
 import type { SeasonSize } from './remaining';
 import { parseRealStatus, type RealStatus } from './status';
 
-/** Version du format. Toute lecture d'une version inconnue repart de zero. */
+/**
+ * Version du format que ce code **sait ecrire**.
+ *
+ * ⚠️ Ce n'est plus un plafond de lecture : une version superieure est lue, ses champs
+ * inconnus sont preserves, et `Journal.version` retient alors le maximum vu. Voir la
+ * decision n°4 en tete de module — et son corollaire, qui interdit d'incrementer cette
+ * constante avant d'avoir deploye le lecteur tolerant.
+ */
 export const JOURNAL_VERSION = 3;
 
 /**
@@ -398,9 +441,24 @@ export interface JournalEntry {
   readonly completions?: readonly JournalCompletion[];
   readonly snapshot?: JournalSnapshot;
   readonly removed?: JournalTombstones;
+  /**
+   * Ce que cette version du code ne sait pas lire, garde intact.
+   *
+   * Decision n°4 en tete de module. Ce champ n'est **jamais** ecrit par ce code : il ne
+   * contient que ce qu'une autre version a mis la, et son seul role est de traverser une
+   * lecture et une reecriture sans etre perdu.
+   */
+  readonly unknownFields?: Readonly<Record<string, unknown>>;
 }
 
 export interface Journal {
+  /**
+   * Le maximum entre {@link JOURNAL_VERSION} et la version du document lu.
+   *
+   * Reemis tel quel : un document qui a traverse un client plus recent **contient** des
+   * champs de cette version-la, meme si le client courant ne les comprend pas. Reecrire
+   * un numero plus petit dirait le contraire.
+   */
   readonly version: number;
   /**
    * Identifiant local de l'appareil, anonyme et jamais envoye nulle part aujourd'hui.
@@ -413,6 +471,8 @@ export interface Journal {
   /** Services auxquels l'utilisateur est abonne, pour « dispo chez vous ». */
   readonly platforms?: readonly string[];
   readonly entries: Readonly<Record<JournalKey, JournalEntry>>;
+  /** Champs de document inconnus, preserves. Voir {@link JournalEntry.unknownFields}. */
+  readonly unknownFields?: Readonly<Record<string, unknown>>;
 }
 
 export const EMPTY_JOURNAL: Journal = { version: JOURNAL_VERSION, entries: {} };
@@ -656,6 +716,72 @@ function dedupeByDay(
   return [...byDay.values()].sort((a, b) => a.at.localeCompare(b.at));
 }
 
+/**
+ * Ce que {@link parseEntry} sait lire. Toute autre cle part dans `unknownFields`.
+ *
+ * ⚠️ Ajouter un champ a {@link JournalEntry} **sans l'ajouter ici** le ferait recopier
+ * dans le seau des inconnus en plus d'etre lu comme champ propre — donc reecrit deux fois,
+ * et fusionne selon deux regles differentes.
+ *
+ * La coherence des deux listes est verifiee **a la compilation**, plus bas
+ * ({@link ExhaustiveEntryFields}) : c'est preferable a un test, parce qu'un test se lance
+ * alors que le typage, lui, barre la route au moment ou l'on ecrit le champ.
+ */
+export const KNOWN_ENTRY_FIELDS = [
+  'position',
+  'decision',
+  'wanted',
+  'completions',
+  'snapshot',
+  'seasonRatings',
+  'episodeRatings',
+  'removed',
+] as const;
+
+/** Idem au niveau du document. */
+export const KNOWN_JOURNAL_FIELDS = ['version', 'deviceId', 'platforms', 'entries'] as const;
+
+/**
+ * Le filet qui empeche les deux listes ci-dessus de deriver de leurs interfaces.
+ *
+ * `Exclude<…>` rend `never` quand la liste couvre tous les champs. Sinon il rend l'union
+ * des champs **oublies**, et l'affectation echoue en nommant precisement lesquels — donc
+ * `npm run typecheck` refuse le commit au lieu de laisser le champ voyager dans les deux
+ * seaux a la fois.
+ *
+ * `unknownFields` est exclu des deux cotes : c'est le seau lui-meme, pas un champ du
+ * format serialise.
+ */
+type ExhaustiveEntryFields = Exclude<
+  Exclude<keyof JournalEntry, 'unknownFields'>,
+  (typeof KNOWN_ENTRY_FIELDS)[number]
+>;
+type ExhaustiveJournalFields = Exclude<
+  Exclude<keyof Journal, 'unknownFields'>,
+  (typeof KNOWN_JOURNAL_FIELDS)[number]
+>;
+
+function assertAllFieldsListed<_Forgotten extends never>(): void {}
+assertAllFieldsListed<ExhaustiveEntryFields>();
+assertAllFieldsListed<ExhaustiveJournalFields>();
+
+/**
+ * Les clefs d'un objet brut que la liste des connues ne couvre pas.
+ *
+ * `undefined` plutot qu'un objet vide : un seau vide ferait exister `unknownFields` sur
+ * toutes les entrees du monde, donc grossirait chaque export d'une accolade par serie.
+ */
+function unknownFieldsOf(
+  source: Readonly<Record<string, unknown>>,
+  known: readonly string[],
+): Readonly<Record<string, unknown>> | undefined {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (!known.includes(key) && value !== undefined) out[key] = value;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
   const source = asRecord(raw);
 
@@ -674,6 +800,7 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
       : undefined;
 
   const completions = parseCompletions(source['completions']);
+  const unknownFields = unknownFieldsOf(source, KNOWN_ENTRY_FIELDS);
 
   const entry: JournalEntry = {
     ...(position !== undefined ? { position } : {}),
@@ -684,6 +811,7 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
     ...(Object.keys(episodeRatings).length > 0 ? { episodeRatings } : {}),
     ...(Object.keys(removed).length > 0 ? { removed } : {}),
+    ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
 
   return worthKeeping(entry) ? entry : undefined;
@@ -723,7 +851,15 @@ export function hasContent(entry: JournalEntry | undefined): boolean {
  * disparait alors d'elle-meme a la lecture suivante.
  */
 function worthKeeping(entry: JournalEntry): boolean {
-  return hasContent(entry) || Object.keys(entry.removed ?? {}).length > 0;
+  return (
+    hasContent(entry) ||
+    Object.keys(entry.removed ?? {}).length > 0 ||
+    // Meme raisonnement que pour la trace de suppression, applique au pass-through : une
+    // entree qu'une version plus recente a remplie de champs que nous ne comprenons pas
+    // n'a, pour nous, « aucun contenu ». La jeter ici la supprimerait du document reecrit,
+    // ce qui est exactement la perte silencieuse que la decision n°4 existe pour empecher.
+    Object.keys(entry.unknownFields ?? {}).length > 0
+  );
 }
 
 /**
@@ -747,23 +883,62 @@ function migrateKey(key: string): JournalKey {
  *   {@link UNDATED}, et la raison pour laquelle ce fut un defaut.
  */
 export function parseJournal(raw: string | null | undefined, now = new Date()): Journal {
-  if (raw === null || raw === undefined || raw.trim().length === 0) return EMPTY_JOURNAL;
+  const read = tryParseJournal(raw, now);
+  return read.kind === 'ok' ? read.journal : EMPTY_JOURNAL;
+}
+
+/**
+ * Lit un journal serialise, **en distinguant « vide » de « illisible »**.
+ *
+ * ## Pourquoi cette fonction existe, et pas seulement {@link parseJournal}
+ *
+ * 🔴 Rendre un journal vide pour un document qu'on n'a pas su lire est sur **en local** —
+ * on relit son propre stockage — et destructeur **a distance**. `src/journal/remote.ts`
+ * en faisait un `kind: 'found'` avec zero entree, ce que la synchronisation lit comme
+ * « le compte n'a rien », donc comme une invitation a pousser le local par-dessus. Le
+ * document distant etait alors remplace en entier, par un `POST merge-duplicates`, apres
+ * **un seul geste**.
+ *
+ * Le type `RemoteRead` distinguait deja `absent` de `unavailable` pour cette raison
+ * exacte. Ce qui manquait n'etait pas le concept, c'etait le moyen de le decider ici.
+ *
+ * `unreadable` couvre ce qui n'est pas un journal du tout : JSON invalide, racine qui
+ * n'est pas un objet, `version` absente ou non numerique. Une version **future**, elle,
+ * n'est pas illisible — voir la decision n°4.
+ */
+export function tryParseJournal(
+  raw: string | null | undefined,
+  now = new Date(),
+): { readonly kind: 'ok'; readonly journal: Journal } | { readonly kind: 'unreadable' } {
+  if (raw === null || raw === undefined || raw.trim().length === 0) {
+    return { kind: 'ok', journal: EMPTY_JOURNAL };
+  }
 
   let decoded: unknown;
   try {
     decoded = JSON.parse(raw);
   } catch {
-    return EMPTY_JOURNAL;
+    return { kind: 'unreadable' };
+  }
+
+  if (decoded === null || typeof decoded !== 'object' || Array.isArray(decoded)) {
+    return { kind: 'unreadable' };
   }
 
   const source = asRecord(decoded);
   const version = source['version'];
-  // Une version future est plus dangereuse qu'un journal vide : on ne devine pas la
-  // forme d'un format qu'on ne connait pas. Une version passee, en revanche, se migre.
-  if (typeof version !== 'number' || version < 1 || version > JOURNAL_VERSION) {
-    return EMPTY_JOURNAL;
+  if (typeof version !== 'number' || !Number.isFinite(version) || version < 1) {
+    return { kind: 'unreadable' };
   }
 
+  return { kind: 'ok', journal: readJournal(source, version, now) };
+}
+
+function readJournal(
+  source: Readonly<Record<string, unknown>>,
+  version: number,
+  now: Date,
+): Journal {
   const entries: Record<JournalKey, JournalEntry> = {};
   for (const [key, value] of Object.entries(asRecord(source['entries']))) {
     if (key.length === 0) continue;
@@ -777,24 +952,56 @@ export function parseJournal(raw: string | null | undefined, now = new Date()): 
     ? rawPlatforms.filter((p): p is string => typeof p === 'string' && p.length > 0)
     : [];
 
+  const unknownFields = unknownFieldsOf(source, KNOWN_JOURNAL_FIELDS);
+
   return {
-    version: JOURNAL_VERSION,
+    // Le maximum, jamais le notre : voir la decision n°4.
+    version: Math.max(version, JOURNAL_VERSION),
     entries,
     ...(deviceId !== undefined ? { deviceId } : {}),
     ...(platforms.length > 0 ? { platforms } : {}),
+    ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
+}
+
+/**
+ * Reetale un seau de champs inconnus au niveau ou il a ete trouve.
+ *
+ * ⚠️ L'ordre compte : le seau vient **en premier**, pour qu'une valeur que nous savons
+ * lire ne puisse jamais etre ecrasee par une homonyme mal rangee. Le seul cas ou les deux
+ * coexisteraient est un bogue de {@link KNOWN_ENTRY_FIELDS} — et dans ce cas c'est la
+ * valeur parsee qui fait foi.
+ */
+function spread(
+  unknownFields: Readonly<Record<string, unknown>> | undefined,
+  known: Readonly<Record<string, unknown>>,
+): Readonly<Record<string, unknown>> {
+  return unknownFields === undefined ? known : { ...unknownFields, ...known };
 }
 
 /** Serialise un journal. Format stable — c'est aussi le format d'export. */
 export function serializeJournal(journal: Journal): string {
-  return JSON.stringify({
-    version: JOURNAL_VERSION,
-    ...(journal.deviceId !== undefined ? { deviceId: journal.deviceId } : {}),
-    ...(journal.platforms !== undefined && journal.platforms.length > 0
-      ? { platforms: journal.platforms }
-      : {}),
-    entries: journal.entries,
-  });
+  // ⚠️ Les entrees sont reserialisees une par une, et non recopiees en bloc : `entries`
+  // porte desormais des seaux `unknownFields` qu'il faut **reetaler** a plat. Les recopier
+  // tels quels ecrirait un champ litteralement nomme `unknownFields` dans le document, que
+  // le client d'a cote relirait comme un champ inconnu de plus — un seau dans un seau, a
+  // chaque aller-retour.
+  const entries: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(journal.entries)) {
+    const { unknownFields, ...known } = entry;
+    entries[key] = spread(unknownFields, known);
+  }
+
+  return JSON.stringify(
+    spread(journal.unknownFields, {
+      version: journal.version,
+      ...(journal.deviceId !== undefined ? { deviceId: journal.deviceId } : {}),
+      ...(journal.platforms !== undefined && journal.platforms.length > 0
+        ? { platforms: journal.platforms }
+        : {}),
+      entries,
+    }),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -809,7 +1016,10 @@ function withEntry(journal: Journal, key: JournalKey, entry: JournalEntry): Jour
     // Une entree vide n'a pas a encombrer le journal ni son export.
     delete entries[key];
   }
-  return { ...journal, version: JOURNAL_VERSION, entries };
+  // ⚠️ La version n'est PAS ramenee a `JOURNAL_VERSION` ici. Ecrire dans un document
+  // qu'une version plus recente a touche ne le ramene pas a la notre : ses champs
+  // inconnus sont toujours la, preserves. Voir la decision n°4.
+  return { ...journal, entries };
 }
 
 /** Marque un champ comme supprime a une date donnee. Voir la decision n°3. */
@@ -1057,7 +1267,7 @@ export function setPlatforms(
   journal: Journal,
   platforms: readonly string[],
 ): Journal {
-  return { ...journal, version: JOURNAL_VERSION, platforms: [...platforms] };
+  return { ...journal, platforms: [...platforms] };
 }
 
 /** Attache un identifiant d'appareil s'il n'y en a pas encore. */
@@ -1245,6 +1455,36 @@ function mergeRatings(
   return out;
 }
 
+/**
+ * Union de deux seaux de champs inconnus.
+ *
+ * On ne peut pas departager par date : un champ dont on ignore la forme n'a pas de date
+ * qu'on sache lire. Le conflit se tranche donc par {@link canonical}, exactement comme
+ * `laterOf` tranche deux faits ex aequo — et pour la meme raison. Ce qu'on exige ici n'est
+ * pas d'avoir raison sur le vainqueur, c'est d'etre **total, deterministe et identique sur
+ * tous les appareils**, sans quoi deux telephones fusionnant la meme paire divergeraient
+ * et se renverraient indefiniment des journaux differents.
+ *
+ * Ces trois proprietes suffisent a preserver les huit lois de `journal-merge.test.ts`.
+ */
+function mergeUnknown(
+  a: Readonly<Record<string, unknown>> | undefined,
+  b: Readonly<Record<string, unknown>> | undefined,
+): Readonly<Record<string, unknown>> | undefined {
+  if (a === undefined) return b;
+  if (b === undefined) return a;
+
+  const out: Record<string, unknown> = {};
+  for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const left = a[key];
+    const right = b[key];
+    if (!(key in a)) out[key] = right;
+    else if (!(key in b)) out[key] = left;
+    else out[key] = canonical(right) > canonical(left) ? right : left;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 function mergeTombstones(a: JournalTombstones, b: JournalTombstones): JournalTombstones {
   const out: Record<string, string> = { ...a };
   for (const [field, at] of Object.entries(b)) {
@@ -1285,6 +1525,7 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
     removed,
     (k) => `episode:${k}`,
   );
+  const unknownFields = mergeUnknown(a.unknownFields, b.unknownFields);
 
   return {
     ...(position !== undefined ? { position } : {}),
@@ -1295,6 +1536,7 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
     ...(Object.keys(episodeRatings).length > 0 ? { episodeRatings } : {}),
     ...(Object.keys(removed).length > 0 ? { removed } : {}),
+    ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
 }
 
@@ -1328,11 +1570,16 @@ export function mergeJournals(a: Journal, b: Journal): Journal {
     ...new Set([...(a.platforms ?? []), ...(b.platforms ?? [])]),
   ];
 
+  const unknownFields = mergeUnknown(a.unknownFields, b.unknownFields);
+
   return {
-    version: JOURNAL_VERSION,
+    // Le maximum des deux, pour la meme raison qu'a la lecture : le resultat porte les
+    // champs des deux versions, donc annoncer la plus basse serait faux.
+    version: Math.max(a.version, b.version),
     entries,
     // L'appareil local garde son identite : c'est *son* journal qui accueille l'autre.
     ...(a.deviceId !== undefined ? { deviceId: a.deviceId } : {}),
     ...(platforms.length > 0 ? { platforms } : {}),
+    ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
 }
