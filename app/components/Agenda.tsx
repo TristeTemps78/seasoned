@@ -60,7 +60,7 @@ export function Agenda() {
       {groups.map(({ labelKey, episodes }) =>
         episodes.length === 0 ? null : (
           <section key={labelKey} className="space-y-3" aria-label={t(labelKey)}>
-            <h2 className="text-sm font-semibold tracking-wide text-(--color-muted) uppercase">
+            <h2 className="label font-semibold">
               {t(labelKey)}
             </h2>
             <ul className="divide-y divide-(--color-edge) rounded-lg border border-(--color-edge) bg-(--color-surface)">

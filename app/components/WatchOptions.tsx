@@ -77,7 +77,7 @@ export function WatchOptions({ options, region }: {
       <dl className="space-y-2">
         {groups.map(({ kind, items }) => (
           <div key={kind} className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <dt className="text-xs uppercase tracking-wide text-(--color-muted)">
+            <dt className="label">
               {t(KIND_KEY[kind])}
             </dt>
             <dd className="flex flex-wrap items-center gap-2">

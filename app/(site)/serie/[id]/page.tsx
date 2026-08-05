@@ -494,7 +494,7 @@ function Stat({ label, value, emphasis = false }: {
           : ''
       }`}
     >
-      <dt className={`tile-label ${emphasis ? 'text-(--color-volt)/80' : ''}`}>{label}</dt>
+      <dt className={`label ${emphasis ? 'text-(--color-volt)/80' : ''}`}>{label}</dt>
       <dd
         className={`tile-value ${
           emphasis ? 'font-semibold text-(--color-volt)' : 'text-base text-(--color-text)'

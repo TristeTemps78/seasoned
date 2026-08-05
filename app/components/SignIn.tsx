@@ -157,7 +157,7 @@ export function SignIn() {
       ) : null}
 
       <div className="border-t border-(--color-edge) pt-4">
-        <p className="mb-2 text-xs uppercase tracking-wider text-(--color-muted)">
+        <p className="mb-2 label">
           {t('account.or')}
         </p>
         <button

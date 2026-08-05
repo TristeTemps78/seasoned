@@ -36,22 +36,11 @@
   --color-volt: #22d3ee;
   --color-volt-dim: #0e7490;
 
-  /* Le magenta ne sert qu'au **halo de fond**, et il faut le dire ainsi.
-     =========================================================================
-     Ce commentaire annoncait « le second accent, pour ce qui se compte et se compare ».
-     C'etait faux : aucun chiffre ne l'a jamais porte, et l'examen du 2026-08-04 conclut
-     qu'aucun ne le portera. **Tout ce qui se compte dans ce produit parle de VOUS** — vos
-     heures, votre position, votre revisionnage — et « ce qui parle de vous » est deja la
-     definition du volt. Lui inventer un troisieme sens defait « une couleur, un sens », la
-     regle qui a justement ete posee pour reparer la confusion vert/volt.
-
-     Il reste donc, et pour un seul emploi assume : le second halo du `body`, qui donne au
-     noir une profondeur que le cyan seul rendrait monochrome. Employe seul, jamais en
-     degrade avec le cyan — le duo cyan/magenta sature est le cliche fatigue du genre.
-
-     ⚠️ **Un token qui promet un emploi qu'il n'a pas est pire qu'un token absent** : le
-     prochain ecran s'en servira en croyant appliquer une intention, et deux ecrans diront
-     alors deux choses avec la meme couleur. */
+  /* Le magenta ne sert qu'au **second halo du `body`** : il donne au noir une profondeur que
+     le cyan seul rendrait monochrome. Aucun autre emploi, et c'est un choix du 2026-08-05 —
+     « ce qui se compte » parle de vous, donc releve du volt, et un second sens defairait
+     « une couleur, un sens ». Employe seul, jamais en degrade avec le cyan : le duo
+     cyan/magenta sature est le cliche fatigue du genre. */
   --color-pulse: #e879f9;
 
   /* Trois tons de statut, pas plus : le but reste de faire ressortir l'anomalie
@@ -223,48 +212,66 @@ body::before {
    */
 
   /* =============================================================================
-   * L'echelle typographique — cinq crans, et TOUT titre en porte un
+   * L'echelle typographique — et TOUT titre porte un cran
    * =============================================================================
    *
-   * ## Le defaut repare : il n'y avait pas d'echelle, il y avait des habitudes
+   * Il n'y avait pas d'echelle, il y avait des habitudes : `text-2xl font-semibold
+   * tracking-tight` recopie seize fois, `text-lg …` huit fois. Aucune copie ne savait
+   * qu'elle en etait une, donc chaque ecran neuf en inventait une variante — et plusieurs
+   * avaient fini par ecrire leur `h2` en `font-semibold` **nu**, c'est-a-dire a la taille
+   * exacte du corps de texte. Sur ces pages la hierarchie n'existait plus.
    *
-   * `text-2xl font-semibold tracking-tight` etait recopie **seize fois** pour un titre de
-   * page, `text-lg font-semibold tracking-tight` **huit fois** pour un titre de section.
-   * Meme forme d'echec que le bouton secondaire du 6.7 : aucune des copies ne savait
-   * qu'elle en etait une, donc chaque ecran neuf en inventait une variante.
+   * `2.25rem` (accroche) · `1.5/1.75rem` · `1.125rem` · `1rem` · `0.875rem` · `0.8125rem` ·
+   * `0.75rem` (etiquette) — un rapport d'environ 1.25 en haut, qui se resserre en bas.
+   * Assez pour que la hierarchie se voie d'un coup d'oeil, assez peu pour que l'interface
+   * reste dense : ce produit affiche des grilles d'affiches, pas des articles.
    *
-   * ⚠️ **Et trois ecrans etaient deja partis** : `Agenda`, `MyStats` et `Friends`
-   * ecrivaient leur `h2` en `font-semibold` **nu**, c'est-a-dire a `1rem` — exactement la
-   * taille du corps de texte. Sur ces trois pages la hierarchie n'existait pas : seule la
-   * graisse distinguait un titre d'un paragraphe. C'est le vrai defaut, bien plus que le
-   * choix d'une valeur.
-   *
-   * 🔴 **Et la premiere version de ce bloc n'en a repare que trois sur dix.** La relecture
-   * du 2026-08-05 a recense les titres de `app/` : **sept autres** `h2` etaient restes en
-   * `font-semibold` nu — `OrderingNotice`, `JournalSync`, `Friends` (la revendication),
-   * `AccountPanel` deux fois, `/regles`, `/mentions`, `/confidentialite` — plus deux `h3`
-   * a taille en dur dans `TrajectorySection`. Exactement le defaut que ce commentaire
-   * annoncait avoir corrige, dans les fichiers que ce lot-la n'avait pas ouverts.
-   *
-   * > **C'est la troisieme fois, et cette fois c'est le lot qui ecrivait la lecon qui la
-   * > repete** : le 6.7 avait extrait les FORMES en laissant la typographie, le 7.5 a
-   * > extrait la TYPOGRAPHIE en laissant sept titres sans cran. *Extraire une forme ne
-   * > protege que les ecrans qu'on rouvre le meme jour.* La seule reponse qui tienne n'est
-   * > pas un commentaire, c'est une garde qui refuse un titre **sans** cran autant qu'un
-   * > titre a taille en dur — voir `tests/no-adhoc-typography.test.ts`.
-   *
-   * ## Les cinq crans
-   *
-   * `1.75rem` · `1.125rem` · `1rem` · `0.875rem` · `0.8125rem` — un rapport d'environ 1.25
-   * entre les crans hauts, qui se resserre en bas. Assez pour que la hierarchie se voie d'un
-   * coup d'oeil, assez peu pour que l'interface reste dense : ce produit affiche des grilles
-   * d'affiches, pas des articles.
-   *
-   * Deux d'entre eux vivent ailleurs dans ce fichier, avec la forme qu'ils habillent :
-   * `.empty-state-title` (`1rem`) sous `.empty-state`, et `.row-title` (`0.8125rem`) sous
-   * `.section-title`. Les separer serait plus propre a lire et plus facile a defaire — un
-   * cran range loin de sa forme est un cran qu'on oublie de mettre a jour avec elle.
+   * Chaque cran est range **avec la forme qu'il habille** plutot qu'ici : une valeur et sa
+   * raison qui vivent au meme endroit ne divergent pas. `tests/no-adhoc-typography.test.ts`
+   * tient la liste et refuse un titre **sans** cran autant qu'un titre a taille en dur —
+   * sans quoi rien ne voit qu'un titre a la taille d'un paragraphe.
    */
+
+  /**
+   * L'accroche de l'accueil — au-dessus de l'echelle, et seule de son espece.
+   *
+   * C'est le seul `h1` du site qui soit une **phrase** et non l'etiquette d'un ecran. Il
+   * portait sa taille a la main et valait une exception dans la garde ; un cran nomme est
+   * plus simple qu'une exception justifiee, et rend la regle absolue.
+   */
+  .hero-title {
+    font-size: 1.875rem;
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  @media (width >= 40rem) {
+    .hero-title {
+      font-size: 2.25rem;
+    }
+  }
+
+  /**
+   * L'etiquette — un libelle en capitales qui ouvre un contenu sans lui disputer l'attention.
+   *
+   * 🔴 **Ecrite a la main DIX fois avant d'etre nommee**, et c'est le vrai defaut que la
+   * passe sur l'echelle n'avait pas vu : `text-xs uppercase tracking-wide
+   * text-(--color-muted)` dans neuf fichiers, plus une variante en `tracking-wider`. Le
+   * dépôt avait donc **quatre** tailles concurrentes pour un meme objet visuel, pendant
+   * qu'un cran etait cree pour une forme employee deux fois.
+   *
+   * ⚠️ Les capitales demandent un interlettrage **positif** — jamais `tracking-tight`, qui
+   * etait l'erreur de l'ancien titre de rangee. C'est la seule regle universelle ici ; la
+   * valeur exacte, elle, depend de la taille.
+   */
+  .label {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
 
   /** Le titre d'une page — un seul par page, c'est le `h1`. */
   .page-title {
@@ -462,24 +469,11 @@ body::before {
   }
 
   /*
-   * ⚠️ Il n'y a **pas** de `.empty-state-actions`, et c'est deliberе.
-   *
-   * Elle avait ete ecrite ici le 2026-08-04, puis retiree le jour meme, parce que la regle
-   * de ce fichier est de n'extraire qu'a partir de **trois** repetitions. Une classe posee
-   * « pour la prochaine fois » est exactement ce que le 6.7 s'etait interdit, et l'audit de
-   * la passe l'a trouvee dans son propre travail.
-   *
-   * 🔴 **Le decompte qui justifiait ce paragraphe etait faux le lendemain.** Il disait
-   * « **un seul** des **quatre** ecrans vides porte des actions … puisqu'elle est **seule**
-   * a le faire » — et `/hors-ligne` est devenu le cinquieme le jour suivant, avec un bouton.
-   * On est donc a **deux sur cinq**. La conclusion ne change pas — deux, ce n'est pas
-   * trois —, mais elle ne repose plus sur un chiffre perime.
-   *
-   * > *Un garde-fou adosse a un decompte est un garde-fou qu'on defera au prochain ecran*,
-   * > parce que le decompte vieillit et que la regle, non. La regle est « trois » ; les deux
-   * > ecrans qui portent des actions alignent donc les **memes** utilitaires
-   * > (`mt-5 flex flex-wrap justify-center gap-2`), et c'est cette identite-la qu'il faut
-   * > verifier, pas le total.
+   * Pas de `.empty-state-actions` : la regle de ce fichier est de n'extraire qu'a partir de
+   * trois repetitions, et deux ecrans seulement portent des actions. Les deux alignent les
+   * **memes** utilitaires (`mt-5 flex flex-wrap justify-center gap-2`) — c'est cette
+   * identite, et non un decompte, qui les empeche de diverger. *Un garde-fou adosse a un
+   * decompte est un garde-fou qu'on defera au prochain ecran* : celui-ci l'a ete en un jour.
    */
 
   /**
@@ -495,12 +489,9 @@ body::before {
     padding: 0.875rem 1rem;
   }
 
-  .tile-label {
-    font-size: 0.6875rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-muted);
-  }
+  /* ⚠️ Il n'y a plus de `.tile-label` : elle etait `.label` a `0.0625rem` pres, avec **un
+     seul** usage — le meme defaut que `.section-title` extraite et employee nulle part. La
+     tuile emploie donc `.label`, ce qui fait grossir son libelle de 11 px a 12 px. */
 
   .tile-value {
     margin-top: 0.375rem;
@@ -551,36 +542,69 @@ body::before {
   }
 
   /**
-   * Le cinquieme cran — le libelle qui ouvre une grille d'affiches.
+   * Le libelle qui ouvre une grille d'affiches.
    *
-   * ## Pourquoi une classe nommee et non `.section-title > :first-child`
+   * Une classe nommee, et non `.section-title > :first-child` : un selecteur positionnel se
+   * defait en inserant n'importe quoi avant le titre, sans erreur et sans test.
    *
-   * 🔴 C'est ainsi que ce cran a vecu jusqu'au 2026-08-05, et le selecteur etait
-   * **positionnel** : inserer n'importe quoi avant le `h2` — un compteur, un chevron, un
-   * commentaire JSX rendu — lui retirait d'un coup sa taille, sa graisse, ses capitales et
-   * son interlettrage. **Sans erreur de typage, sans test, et sans que rien ne le signale.**
-   * La forme et le cran sont maintenant deux choses distinctes, ce qui permet en plus a la
-   * garde d'exiger un cran sur *tout* titre : un `h2` nu n'est plus une forme legitime.
-   *
-   * ## Pourquoi `0.8125rem`, alors que l'accueil portait `1rem`
-   *
-   * ⚠️ **C'est une decision de Tristan du 2026-08-05, et elle coute deux baisses de taille
-   * qu'il faut assumer par ecrit** : l'accueil passe de `1rem` a `0.8125rem` (−19 %) et la
-   * bibliotheque de `1.125rem` (−28 %, plus le passage en capitales). Aucune des deux
-   * valeurs n'avait jamais ete vue a l'ecran — la classe extraite au 6.7 n'etait employee
-   * nulle part.
-   *
-   * La raison est la convention de l'etiquette : un libelle en capitales espacees **ouvre**
-   * une grille sans lui disputer l'attention. Sur un ecran ou « l'affiche est l'interface »,
-   * un titre de rangee qui pese autant qu'une affiche prend une place qui n'est pas la
-   * sienne. Les capitales demandent `+0.1em`, jamais moins : c'etait le vrai defaut de
-   * l'original, qui les resserrait a `tracking-tight`.
+   * `0.8125rem` en capitales, decide le 2026-08-05 : sur un ecran ou « l'affiche est
+   * l'interface », un titre de rangee qui pese autant qu'une affiche prend une place qui
+   * n'est pas la sienne. Une etiquette **ouvre** la grille au lieu de la concurrencer.
    */
   .row-title {
     font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
+  }
+
+  /**
+   * La case de la grille d'episodes — 32 px au doigt, 20 px a la souris.
+   *
+   * 20 px est tres en dessous des 44 px recommandes, sur le geste le plus fin du produit :
+   * noter un episode. Mesure au navigateur le 2026-08-05 sur `/fr/serie/1396` (**16
+   * colonnes**, pas 62 — 62 est le nombre total d'episodes) : la table fait **375 px** a
+   * 20 px, 565 a 32, 757 a 44, contre ~328 px utiles a 360 px. On prend **32** : +156 % de
+   * surface tactile pour 1,7 ecran de defilement au lieu de 1,1, dans un conteneur qui
+   * defile deja. 44 px ne vaut pas ses 2,3 ecrans.
+   *
+   * ⚠️ Le cas qui ferait ceder la densite n'est pas *Breaking Bad* mais la **saison unique
+   * de ~200 episodes** (~6 800 px a 32 px). Ce serait alors un seuil sur `widest`, pas un
+   * retour a 20 px partout.
+   *
+   * Meme patron que `.btn` : base bureau, surcharge sous 640 px. Une seule declaration pour
+   * les trois nœuds concernes (case vide, case pleine, bouton), qui **doivent** s'accorder —
+   * sans quoi la boite et son bouton ont deux tailles, silencieusement.
+   */
+  .grid-cell {
+    height: 1.25rem;
+    width: 1.25rem;
+  }
+
+  @media (width < 40rem) {
+    .grid-cell {
+      height: 2rem;
+      width: 2rem;
+    }
+  }
+
+  /**
+   * Le total du bilan — le seul chiffre du produit qui domine le titre de sa page.
+   *
+   * Deliberement au-dessus de `.page-title` : une page dont l'etiquette (« Mon bilan ») pese
+   * plus que son contenu (« au moins 537 heures ») annonce quelque chose qu'elle ne montre
+   * pas. C'est un cran nomme et non `text-3xl` en dur, parce que c'est le plus grand texte
+   * du produit hors accroche et qu'il n'a aucune raison d'echapper a l'echelle.
+   *
+   * ⚠️ La premisse ne vaut qu'**au-dessus de 640 px** : `.page-title` y monte a `1.75rem`,
+   * mais retombe a `1.5rem` en dessous, ou ce chiffre le depasse donc de 25 % dans une carte
+   * de 360 px. Jamais vu sur telephone — `TASKS.md` 7.13.
+   */
+  .tally-figure {
+    font-size: 1.875rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
   }
 
   /**

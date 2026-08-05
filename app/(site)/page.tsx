@@ -1,5 +1,6 @@
 import { discover, waitingSeries, withStatus, type SeriesWithStatus } from '@/lib/catalog';
 import { SearchForm } from '@/app/components/SearchForm';
+import { RowHeader } from '@/app/components/RowHeader';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { ResumeStrip } from '@/app/components/ResumeStrip';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
@@ -47,7 +48,7 @@ export async function Home({ locale }: { readonly locale: Locale }) {
           qu'il annonce dans la meme vue que l'annonce. */}
       <section className="max-w-2xl space-y-5 pt-2">
         <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-[-0.02em] text-balance sm:text-4xl">
+          <h1 className="hero-title">
             {t(locale, 'home.h1')}
           </h1>
           {/* Formulation revue le 2026-08-01 : la verification en reel a montre que la
@@ -110,24 +111,7 @@ function Row({ title, subtitle, series, locale }: {
 
   return (
     <section className="space-y-4" aria-label={title}>
-      {/* Le titre de rangee porte un filet lumineux a gauche : sur une page qui empile
-          trois grilles identiques, c'est ce qui donne un debut a chacune. Un seul trait
-          suffit — repete sur chaque element, l'effet se dissout.
-
-          ⚠️ C'est `.section-title`, et non plus la copie a la main qui vivait ici. Elle
-          avait ete extraite au 6.7 **d'apres cet ecran** et n'etait utilisee nulle part —
-          l'original avait continue sa vie de son cote. Il en avait garde `text-base
-          tracking-tight uppercase`, c'est-a-dire des capitales **resserrees** : les
-          capitales demandent plus d'interlettrage, jamais moins.
-
-          ⚠️ **Et la bascule change aussi la TAILLE, ce que ce commentaire ne disait pas** :
-          `1rem` → `0.8125rem`, soit −19 %, decide par Tristan le 2026-08-05. La raison est
-          ecrite avec le cran, dans `globals.css` sous `.row-title` — pas ici, pour qu'elle
-          soit au meme endroit que la valeur. */}
-      <div className="section-title">
-        <h2 className="row-title">{title}</h2>
-        <p className="text-sm text-(--color-muted)">{subtitle}</p>
-      </div>
+      <RowHeader title={title} subtitle={subtitle} />
       <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
         {series.map(({ summary, status }) => (
           <li key={summary.providerId}>

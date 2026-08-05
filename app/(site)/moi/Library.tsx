@@ -9,6 +9,7 @@ import { JournalTransfer } from '@/app/components/JournalTransfer';
 import { LibraryCard } from '@/app/components/LibraryCard';
 import { MyPlatforms } from '@/app/components/MyPlatforms';
 import { buildLibrary, type LibraryItem } from '@/src/domain/library';
+import { RowHeader } from '@/app/components/RowHeader';
 
 /**
  * La bibliotheque, entierement construite dans le navigateur.
@@ -101,18 +102,7 @@ function Row({ title, subtitle, items }: {
 
   return (
     <section className="space-y-4" aria-label={title}>
-      {/* La meme forme que les rangees de l'accueil : ce sont les memes objets — une
-          grille d'affiches sous un titre — et ils n'avaient aucune raison de se presenter
-          differemment selon la page.
-
-          ⚠️ **C'est la rangee qui bouge le plus, et il faut le dire** : `1.125rem` en casse
-          normale → `0.8125rem` en capitales, soit −28 %. La forme commune a ete alignee en
-          faisant descendre les deux, pas en gardant celle-ci. Decision de Tristan du
-          2026-08-05, motivee avec le cran dans `globals.css`. */}
-      <div className="section-title">
-        <h2 className="row-title">{title}</h2>
-        <p className="text-sm text-(--color-muted)">{subtitle}</p>
-      </div>
+      <RowHeader title={title} subtitle={subtitle} />
       <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
         {items.map((item) => (
           <li key={item.key}>
@@ -133,9 +123,6 @@ function Row({ title, subtitle, items }: {
 function EmptyLibrary() {
   const { t, locale } = useT();
   return (
-    // ⚠️ Les deux liens portaient chacun **leur copie a la main** du bouton secondaire —
-    // la douzieme et la treizieme, ecrites dans un fichier que le 6.7 n'avait pas ouvert.
-    // C'est la meme divergence qui avait fait diverger les deux blocs d'affiche.
     <div className="empty-state">
       <h2 className="empty-state-title">{t('library.empty.title')}</h2>
       <p className="empty-state-body">

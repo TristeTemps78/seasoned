@@ -287,7 +287,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
           existe. */}
       {position !== undefined ? (
         <div className="space-y-2 border-t border-(--color-edge) pt-3">
-          <p className="text-xs uppercase tracking-wide text-(--color-muted)">
+          <p className="label">
             {t('progress.seasonRatings')}
           </p>
 

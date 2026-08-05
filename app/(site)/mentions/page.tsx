@@ -90,7 +90,7 @@ function Entry({ label, children }: {
 }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wide text-(--color-muted)">{label}</dt>
+      <dt className="label">{label}</dt>
       <dd className="mt-0.5 leading-relaxed">{children}</dd>
     </div>
   );

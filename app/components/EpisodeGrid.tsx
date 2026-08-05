@@ -95,53 +95,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
         </div>
       ) : null}
 
-      {/*
-       * ⚠️ **Les cases sont plus grandes sur mobile, et c'est un arbitrage, pas un reglage.**
-       *
-       * Les cases font **20 x 20 px**, tres en dessous des 44 px recommandes, sur ce qui est
-       * le geste le plus fin du produit — noter un episode.
-       *
-       * ## 🔴 « 62 colonnes » etait faux, et je l'ai corrige une premiere fois en le croyant
-       *
-       * Ce commentaire a dit successivement que 44 px rendrait la table « trois fois plus
-       * large que l'ecran », puis — apres une relecture qui avait raison de le contester —
-       * **8,7 fois**. Les deux sont faux, et pour la meme raison : ils prenaient **62** pour
-       * le nombre de colonnes. C'est le nombre **total d'episodes** de *Breaking Bad*.
-       *
-       * Le nombre de colonnes est la taille de la **saison la plus longue** (`widest`).
-       * Mesure dans le navigateur le 2026-08-05 sur `/fr/serie/1396` : **16 colonnes**, 5
-       * lignes, 62 cases, table a **375 px**. Le modele se verifie donc :
-       *
-       * | Cote | Largeur de table | Rapport a ~328 px utiles |
-       * |---|---|---|
-       * | 20 px | 373 calcules · **375 mesures** | 1,1x |
-       * | 32 px | 565 | 1,7x |
-       * | 44 px | 757 | 2,3x |
-       *
-       * > **La lecon, et c'est la enieme fois dans ce depot** : *auditer le resultat, jamais
-       * > l'intention.* J'ai corrige un chiffre faux par un autre chiffre faux en refaisant
-       * > l'arithmetique **sur la premisse du commentaire** au lieu d'ouvrir la page. Une
-       * > relecture qui accepte la premisse de ce qu'elle relit ne relit rien.
-       *
-       * Ce qui reste vrai de la correction : « +60 % de surface tactile » etait le gain
-       * **lineaire**. La surface passe de 400 a 1 024 px², soit **+156 %**.
-       *
-       * ## Le choix, tranche par Tristan le 2026-08-05
-       *
-       * 32 px. Avec les vrais chiffres l'arbitrage est **plus favorable** qu'annonce : sur
-       * une serie ordinaire la table passe de 1,1 a 1,7 ecran, pour +156 % de cible. Et le
-       * conteneur defile deja horizontalement, donc le debordement n'est pas un defaut de
-       * mise en page — le cout est le nombre de gestes pour traverser une saison.
-       *
-       * ⚠️ **Le cas qui fait mal n'est pas *Breaking Bad*, c'est la saison longue.** Un
-       * anime a saison unique de ~200 episodes fait ~200 colonnes, donc ~6 800 px a 32 px
-       * contre ~4 300 a 20 px. Non mesure : `/fr/serie/37854` (*One Piece*) n'affiche pas de
-       * grille faute de donnees par episode. **Si un jour la densite doit ceder, c'est la**,
-       * et par un seuil sur `widest` — pas en revenant a 20 px partout.
-       *
-       * Le cout est nul sur le bureau, ou la souris vise juste et ou la densite est la valeur
-       * de cette grille — d'ou le retour a 20 px des 640 px.
-       */}
+      {/* La taille de case et son arbitrage vivent avec `.grid-cell`, dans `globals.css`. */}
       <div className="overflow-x-auto">
         <table className="border-separate border-spacing-0.5 text-[10px]">
           <caption className="sr-only">
@@ -159,7 +113,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
                 {Array.from({ length: widest }, (_, i) => {
                   const episode = season.episodes[i];
                   if (episode === undefined) {
-                    return <td key={i} className="h-8 w-8 sm:h-5 sm:w-5" />;
+                    return <td key={i} className="grid-cell" />;
                   }
 
                   const stars = myStars(episode);
@@ -176,7 +130,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
                       : ratingHue(episode.voteAverage);
 
                   return (
-                    <td key={i} className="h-8 w-8 p-0 sm:h-5 sm:w-5">
+                    <td key={i} className="grid-cell p-0">
                       <button
                         type="button"
                         disabled={!ready}
@@ -188,7 +142,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
                               : episode,
                           )
                         }
-                        className={`flex h-8 w-8 items-center justify-center sm:h-5 sm:w-5 rounded-[2px] ${
+                        className={`grid-cell flex items-center justify-center rounded-[2px] ${
                           isCurrent ? 'ring-1 ring-(--color-text)' : ''
                         } ${beyond ? 'opacity-35' : ''} enabled:hover:ring-1 enabled:hover:ring-(--color-muted)`}
                         style={{

@@ -110,7 +110,7 @@ function Figure({ label, value, hint }: {
 }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wide text-(--color-muted)">{label}</dt>
+      <dt className="label">{label}</dt>
       <dd className="mt-0.5 text-lg font-semibold">{value}</dd>
       {hint !== undefined ? (
         <dd className="text-xs text-(--color-muted)">{hint}</dd>

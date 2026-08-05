@@ -241,7 +241,7 @@ function Comparison({ scores, mine }: {
 
   return (
     <div className="mt-5 border-t border-(--color-edge) pt-4">
-      <p className="mb-2 text-xs uppercase tracking-wide text-(--color-muted)">
+      <p className="mb-2 label">
         {t('traj.youAndPublic')}
       </p>
       <ul className="space-y-1 text-sm">

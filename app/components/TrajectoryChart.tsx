@@ -101,7 +101,7 @@ export function TrajectoryChart({ trajectory, interpret = true, locale = DEFAULT
       <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
         {interpret ? (
           <div>
-            <dt className="text-xs uppercase tracking-wide text-(--color-muted)">
+            <dt className="label">
               {t(locale, 'chart.shape')}
             </dt>
             <dd>{t(locale, SHAPE_KEY[shape])}</dd>
@@ -109,7 +109,7 @@ export function TrajectoryChart({ trajectory, interpret = true, locale = DEFAULT
         ) : null}
         {peak !== undefined ? (
           <div>
-            <dt className="text-xs uppercase tracking-wide text-(--color-muted)">
+            <dt className="label">
               {t(locale, 'chart.peak')}
             </dt>
             <dd>
@@ -122,7 +122,7 @@ export function TrajectoryChart({ trajectory, interpret = true, locale = DEFAULT
             Et jamais sur des notes de foule, ou sa normalisation n'a pas de sens. */}
         {interpret && consistency !== undefined ? (
           <div>
-            <dt className="text-xs uppercase tracking-wide text-(--color-muted)">
+            <dt className="label">
               {t(locale, 'chart.consistency')}
             </dt>
             <dd>{Math.round(consistency * 100)} %</dd>
