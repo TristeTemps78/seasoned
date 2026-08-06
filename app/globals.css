@@ -321,13 +321,28 @@ body::before {
   .mark-arcs {
     fill: none;
     stroke: var(--color-volt);
-    stroke-width: 1.4;
+    stroke-width: 0.9;
     stroke-linecap: round;
-    stroke-linejoin: round;
-    opacity: 0.55;
+    opacity: 0.5;
     transition:
       opacity 220ms ease,
       filter 220ms ease;
+  }
+
+  /* Trois filaments d'intensites inegales : une decharge uniforme se lit comme un cadre.
+     Le pointille du premier n'est pas decoratif — c'est ce qui fait qu'une boucle fermee
+     cesse de ressembler a un cercle dessine autour du logo. */
+  .mark-arc-1 {
+    stroke-dasharray: 5 2.5 2 3.5 7 2;
+    opacity: 0.75;
+  }
+  .mark-arc-2 {
+    stroke-dasharray: 4 2 6 3;
+    opacity: 0.55;
+  }
+  .mark-arc-3 {
+    stroke-dasharray: 6 2.5 3 2;
+    opacity: 0.45;
   }
 
   /* Le cube pivote de quelques degres : assez pour qu'on sente un volume, pas assez pour

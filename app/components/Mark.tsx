@@ -29,12 +29,17 @@
  * contraire. Et surtout, ils sont dans le NOM : **volt**-face. Les retirer revenait a
  * garder la moitie de la marque.
  *
- * Deux arcs suffisent, et c'est une contrainte de taille avant d'etre un gout : a 26 px,
- * un eclair detaille se lit comme une salissure. Trois segments par arc, de part et
- * d'autre du cube — assez pour qu'on lise « electrique », pas assez pour encombrer.
+ * 🔴 Deuxieme version, et le mot juste est de Tristan : ce n'est pas un ECLAIR, c'est un
+ * **champ**. Le logo montre des filaments qui *enveloppent* le cube — une cage, une sphere
+ * de decharges. Deux zigzags angulaires poses de part et d'autre faisaient bande dessinee ;
+ * la difference n'est pas l'epaisseur du trait, c'est que l'electricite doit **tourner
+ * autour** au lieu d'etre plaquee a cote.
  *
- * Ils sont **toujours visibles**, en trait fin : c'est l'identite du produit, pas un effet
- * de survol. Ce qui change au survol, c'est leur intensite.
+ * D'ou des courbes fermees et non des segments brises, d'opacites inegales — une decharge
+ * n'est jamais uniforme. Trois filaments : a 26 px, davantage se prend en masse.
+ *
+ * Ils sont **toujours visibles** : c'est l'identite du produit, pas un effet de survol.
+ * Ce qui change au survol, c'est leur intensite.
  */
 export function Mark({ className = '' }: { readonly className?: string }) {
   return (
@@ -51,10 +56,21 @@ export function Mark({ className = '' }: { readonly className?: string }) {
       <polygon className="mark-left" points="6,10.5 16,16 16,27 6,21.5" />
       <polygon className="mark-right" points="26,10.5 26,21.5 16,27 16,16" />
 
-      {/* Les arcs. `fill: none`, tout est dans le trait. */}
+      {/* Le champ : trois boucles qui contournent le cube, chacune avec ses accidents.
+          `fill: none` — tout est dans le trait. */}
       <g className="mark-arcs">
-        <path d="M 6 4 L 2.5 10.5 L 5 13.5 L 2 20.5" />
-        <path d="M 26 4 L 29.5 10.5 L 27 13.5 L 30 20.5" />
+        <path
+          className="mark-arc-1"
+          d="M 16 1.5 C 25 2 31 8 30.5 16 C 30 24 24 30.5 16 30.5 C 8 30.5 2 24 1.5 16 C 1 8 7 2 16 1.5"
+        />
+        <path
+          className="mark-arc-2"
+          d="M 8 3.5 C 2.5 8 1 13 3 18 C 4.5 22 3 25 5.5 28.5"
+        />
+        <path
+          className="mark-arc-3"
+          d="M 24.5 3.5 C 29 7 30 12 28 16.5 C 26.5 20 28.5 24 26 28"
+        />
       </g>
     </svg>
   );
