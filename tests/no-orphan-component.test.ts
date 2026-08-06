@@ -25,9 +25,26 @@
 import { expect, it } from 'vitest';
 import { codeOf, filesUnder, pathOf } from './sources';
 
-/** Le nom exporte par un fichier de composant. */
+/**
+ * Le nom exporte par un fichier de composant.
+ *
+ * ⚠️ **Les deux formes de declaration**, et il a fallu le corriger : le motif ne voyait que
+ * `export function Foo`. Un composant ecrit `export const Foo = () => …` — la forme React la
+ * plus repandue — lui etait **invisible**, donc pouvait etre livre orphelin sans que rien ne
+ * le signale. Aucun cas dans le depot au 2026-08-07, ce qui est exactement le moment ou l'on
+ * ferme un trou : quand il ne coute rien.
+ *
+ * ⚠️ **La seconde forme exige la parenthese ouvrante d'une fonction.** Sans elle, la garde
+ * accusait `export const AuthContext = createContext(…)` — qui n'est pas un composant, et
+ * qu'un test utilise pour injecter une session. Elargir la garde jusqu'a compter les tests
+ * comme des lecteurs serait pire : un composant que **seul un test** monte est exactement
+ * l'orphelin que ce fichier existe pour attraper (`ordering.ts`, `episodeMinutes`).
+ */
 function exportedNames(code: string): string[] {
-  return [...code.matchAll(/^export (?:default )?function ([A-Z][\w]*)/gm)].map((m) => m[1] ?? '');
+  return [
+    ...code.matchAll(/^export (?:default )?function ([A-Z]\w*)/gm),
+    ...code.matchAll(/^export const ([A-Z]\w*)(?:: \w+)? = (?:function )?\(/gm),
+  ].map((m) => m[1] ?? '');
 }
 
 const FILES = filesUnder('app').map((file) => ({ path: pathOf(file), code: codeOf(file) }));
@@ -62,8 +79,18 @@ it('la garde voit bien ce qu elle vise', () => {
     10,
   );
 
-  // Et elle sait reconnaitre un nom exporte, sinon elle n'examinerait rien.
-  expect(exportedNames("export function Reviews() {}\nexport function helper() {}")).toEqual([
-    'Reviews',
-  ]);
+  // Et elle sait reconnaitre un nom exporte, sinon elle n'examinerait rien. Les deux formes
+  // de declaration sont ancrees : la seconde etait le faux negatif du 2026-08-07.
+  expect(
+    exportedNames(
+      'export function Reviews() {}\n' +
+        'export function helper() {}\n' +
+        // Le faux negatif ferme le 2026-08-07.
+        'export const Poster = ({ path }: Props) => null;\n' +
+        // Et ce qui n'est PAS un composant doit rester invisible, sinon la garde accuse
+        // un contexte ou une constante — c'est ce qui est arrive a `AuthContext`.
+        'export const AuthContext = createContext<AuthState>(NOT_CONFIGURED);\n' +
+        'export const MAX_STARS = 5;\n',
+    ),
+  ).toEqual(['Reviews', 'Poster']);
 });
