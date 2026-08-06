@@ -40,15 +40,25 @@ export function pathOf(file: string): string {
 }
 
 /**
- * Le code d'un fichier, **commentaires retires**.
+ * Une source **commentaires retires**.
  *
  * Sans cela, un exemple cite en prose compte comme un usage — et ce depot commente
  * abondamment. `no-ssr-auth` documente avoir accuse un fichier « dont le seul tort est
  * d'expliquer l'interdiction ».
+ *
+ * ⚠️ Separee de {@link codeOf} pour une raison precise : une garde doit pouvoir
+ * **prouver** qu'elle ne se fait pas piéger par un commentaire, et elle ne peut pas le
+ * prouver sur un fichier — il faudrait en ecrire un. Avec une fonction qui prend une
+ * chaine, le cas s'ancre en une ligne.
  */
-export function codeOf(file: string): string {
-  return readFileSync(file, 'utf8')
+export function codeIn(source: string): string {
+  return source
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^[ \t]*\/\/.*$/gm, '');
+}
+
+/** Le code d'un fichier du depot, commentaires retires. */
+export function codeOf(file: string): string {
+  return codeIn(readFileSync(file, 'utf8'));
 }
