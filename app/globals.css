@@ -43,6 +43,14 @@
      cyan/magenta sature est le cliche fatigue du genre. */
   --color-pulse: #e879f9;
 
+  /* Les trois faces du cube, prises sur le logo.
+     ⚠️ Elles n'habillent QUE la marque (`app/components/Mark.tsx`) et ne portent aucun
+     sens applicatif — sinon « une couleur, un sens » tomberait : on ne saurait plus si le
+     rouge parle de la serie, de vous, ou de l'identite du produit. */
+  --color-face-red: #e0332c;
+  --color-face-blue: #1a72c4;
+  --color-face-yellow: #f5c518;
+
   /* Trois tons de statut, pas plus : le but reste de faire ressortir l'anomalie
      (une serie annoncee vivante et morte depuis 18 mois), pas de colorier la page.
 
@@ -271,6 +279,54 @@ body::before {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-muted);
+  }
+
+  /**
+   * La marque.
+   *
+   * Trois faces vives dans une barre par ailleurs sobre : c'est le seul point de couleur
+   * franche du chassis, et c'est ce qui permet a l'oeil d'y revenir.
+   *
+   * L'arc electrique du logo est rendu par un `drop-shadow` cyan qui **n'apparait qu'au
+   * survol** — presente en permanence, une lueur cesse d'etre un evenement. Elle est portee
+   * par le lien parent, donc elle repond aussi au focus clavier.
+   */
+  .mark {
+    width: 1.625rem;
+    height: 1.625rem;
+    flex-shrink: 0;
+    transition:
+      transform 220ms cubic-bezier(0.2, 0.8, 0.3, 1),
+      filter 220ms ease;
+  }
+
+  .mark-top {
+    fill: var(--color-face-red);
+  }
+  .mark-left {
+    fill: var(--color-face-blue);
+  }
+  .mark-right {
+    fill: var(--color-face-yellow);
+  }
+
+  /* Le cube pivote de quelques degres : assez pour qu'on sente un volume, pas assez pour
+     que la barre bouge. Un logo qui tourne sur lui-meme serait un jouet. */
+  a:hover > .mark,
+  a:focus-visible > .mark {
+    transform: rotate(-8deg) scale(1.06);
+    filter: drop-shadow(0 0 5px color-mix(in oklab, var(--color-volt) 70%, transparent));
+  }
+
+  /* ⚠️ Le mouvement est retire pour qui le refuse — la couleur, elle, reste : c'est
+     l'identite, pas une animation. */
+  @media (prefers-reduced-motion: reduce) {
+    .mark,
+    a:hover > .mark,
+    a:focus-visible > .mark {
+      transition: none;
+      transform: none;
+    }
   }
 
   /** Le titre d'une page — un seul par page, c'est le `h1`. */

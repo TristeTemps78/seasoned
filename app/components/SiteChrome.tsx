@@ -5,6 +5,7 @@ import { PRODUCT_NAME, siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
 import { DataSafety } from '@/app/components/DataSafety';
 import { LanguagePicker } from '@/app/components/LanguagePicker';
+import { Mark } from '@/app/components/Mark';
 import { Faces } from '@/app/components/Faces';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import { AuthProvider } from '@/app/auth/AuthProvider';
@@ -67,9 +68,14 @@ export function SiteChrome({ locale, children }: {
               // ⚠️ Cachee sous 640 px, et ce n'est pas un sacrifice : le premier onglet mene
               // exactement au meme endroit. Sur un telephone, la garder volait au ruban
               // d'onglets la moitie de la largeur qu'il lui reste.
-              className="hidden shrink-0 font-semibold tracking-[0.18em] uppercase text-(--color-text) transition-colors hover:text-(--color-volt) sm:block"
+              // ⚠️ Le cube reste visible sous 640 px, le mot non. Le nom en toutes lettres
+              // volait au ruban d'onglets la moitie de sa largeur ; un carre de 26 px ne
+              // coute rien, et c'est justement sur un telephone qu'on a besoin de savoir
+              // d'un coup d'oeil ou l'on est.
+              className="flex shrink-0 items-center gap-2 font-semibold tracking-[0.18em] uppercase text-(--color-text) transition-colors hover:text-(--color-volt)"
             >
-              {PRODUCT_NAME}
+              <Mark />
+              <span className="hidden sm:inline">{PRODUCT_NAME}</span>
             </Link>
 
             {/* Les faces du cube. Dans l'en-tete et non en bas d'ecran : le site est
