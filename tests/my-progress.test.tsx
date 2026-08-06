@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MyProgress } from '@/app/components/MyProgress';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import type { Locale } from '@/lib/i18n';
@@ -51,16 +51,30 @@ function renderAt(locale: Locale = 'fr', episodeMinutes?: number) {
 }
 
 describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
-  beforeEach(() => {
-    window.localStorage.clear();
-  });
+  /**
+   * 🔴 **Ce test etait CREUX.** Il faisait `expect(queryByText(/Il vous reste/)).toBeNull()`
+   * sans rien attendre — or tant que le stockage n'est pas lu, `MyProgress` ne rend qu'un
+   * `div` vide. L'absence etait donc l'etat par defaut, mesure **avant** toute lecture :
+   * supprimer entierement la fonctionnalite « il vous reste » laissait ce test vert.
+   *
+   * L'invariante reelle n'est pas une absence, c'est une **presence** : le bloc qui attend
+   * doit reserver la hauteur du bloc replie. Sans lui, la page saute quand le journal
+   * arrive — le decalage de mise en page que la tache 1.24 avait supprime sur cette page
+   * meme. C'est ce qu'on affirme maintenant, et c'est verifiable des le premier rendu.
+   */
+  it('reserve la place du bloc tant que le stockage n’est pas lu', () => {
+    const { container } = render(
+      <LocaleProvider locale="fr">
+        <MyProgress seriesId="1396" seasons={SEASONS} series={SERIES} />
+      </LocaleProvider>,
+    );
 
-  it('ne promet rien avant d’avoir lu le stockage', () => {
-    // Afficher « vous n'avez rien vu » a quelqu'un qui a tout note serait la pire
-    // premiere impression possible — et le serveur et le client rendraient deux
-    // choses differentes.
-    renderAt();
-    expect(screen.queryByText(/Il vous reste/)).toBeNull();
+    const attente = container.firstElementChild;
+    expect(attente?.getAttribute('aria-hidden')).toBe('true');
+    // La hauteur est celle du bloc replie : une valeur ronde ferait sauter la page.
+    expect(attente?.className).toContain('h-[4.5rem]');
+    // Et il ne promet rien — c'etait le propos du test d'origine, garde ici ou il a un sens.
+    expect(attente?.textContent).toBe('');
   });
 
   it('chiffre ce qu’il reste une fois la position posee', async () => {
@@ -161,8 +175,6 @@ describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
 });
 
 describe('l’instantane memorise la forme de la serie, et une seule fois', () => {
-  beforeEach(() => window.localStorage.clear());
-
   it('range les tailles de saisons, sans quoi /moi ne peut rien chiffrer', async () => {
     // `/moi` ne fait aucun appel : une position « S2E5 » y est incomptable sans savoir
     // combien d'episodes fait la saison 1. Ce que la page ne memorise pas ici manque

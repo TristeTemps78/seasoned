@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { TrajectorySection } from '@/app/components/TrajectorySection';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import { computeTrajectory } from '@/src/domain/trajectory';
@@ -89,8 +89,6 @@ async function waitForPlacement(text: RegExp, expected: 'inside' | 'outside'): P
 }
 
 describe('TrajectorySection — le point d’entree', () => {
-  beforeEach(() => window.localStorage.clear());
-
   it('s’affiche hors du geste explicite', () => {
     // Il ne revele rien de l'intrigue et s'adresse a qui n'a pas commence : le cacher
     // derriere un depliant reviendrait a le refuser a son seul public.
@@ -107,8 +105,6 @@ describe('TrajectorySection — le point d’entree', () => {
 });
 
 describe('TrajectorySection — la saison en cours suit la regle de spoiler', () => {
-  beforeEach(() => window.localStorage.clear());
-
   it('reste dans le depliant pour qui n’y est pas encore', async () => {
     // Position en saison 2, verdict sur la saison 5 : c'est un jugement sur son avenir.
     window.localStorage.setItem(

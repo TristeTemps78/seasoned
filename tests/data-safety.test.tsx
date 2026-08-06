@@ -36,12 +36,37 @@ describe('DataSafety', () => {
     window.localStorage.setItem(STORAGE_KEY, withOneGesture());
   });
 
+  /**
+   * 🔴 **Ce test etait CREUX, et il l'etait sur la regle meme qu'il illustre.**
+   *
+   * Il ecrivait `await waitFor(() => expect(container.textContent).toBe(''))`, avec un
+   * commentaire affirmant qu'on attendait volontairement la lecture du stockage. C'est
+   * l'inverse : `waitFor` s'arrete au **premier** passage reussi, et le rendu initial est
+   * deja vide. Le test concluait donc avant toute lecture, et restait vert quel que soit
+   * le code de `DataSafety`.
+   *
+   * `CLAUDE.md` le nomme mot pour mot — « `waitFor(textContent === '')` reussit au premier
+   * tick, avant toute lecture » — et la parade, la sonde {@link Probe}, etait deja ecrite
+   * quarante lignes plus bas dans ce fichier. Elle n'avait pas ete remontee ici.
+   *
+   * > **La regle, troisieme fois dans ce depot** : sur un etat asynchrone, on attend **la
+   * > condition finale elle-meme**, jamais l'absence.
+   */
   it('se tait quand il n’y a rien a perdre', async () => {
     window.localStorage.clear();
-    const { container } = renderIn('fr');
-    // On attend volontairement : le composant ne decide qu'apres avoir lu le stockage,
-    // et un test qui conclut avant la lecture verifierait l'ecran de chargement.
-    await waitFor(() => expect(container.textContent).toBe(''));
+    const { getByTestId } = render(
+      <LocaleProvider locale="fr">
+        <Probe />
+        <div data-testid="bandeau">
+          <DataSafety />
+        </div>
+      </LocaleProvider>,
+    );
+
+    // On attend que le journal soit **lu**, pas qu'un vide apparaisse : c'est la seule
+    // facon de distinguer « il a decide de se taire » de « il n'a pas encore parle ».
+    await screen.findByText('journal-lu');
+    expect(getByTestId('bandeau').textContent).toBe('');
   });
 
   it('parle des qu’il y a quelque chose a perdre', async () => {
