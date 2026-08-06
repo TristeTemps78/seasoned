@@ -238,6 +238,46 @@
 | 8.8 | **Lire** (UI caviardée) | ✅ 2026-08-06 — @claude-opus | `Reviews`, chargement paresseux, **aucune route serveur** — la page reste `force-static` et le coût Vercel est nul. Le caviardage se fait dans le navigateur avec le journal du lecteur : le serveur ne sait pas où en est celui qui lit. Le texte masqué est **déplacé** dans `hiddenText`, pas caché en CSS — mutation vérifiée |
 | 8.9 | **Boucler** | 🟡 partiel | ✅ L'export/import porte les trois champs neufs sans rien changer : ils traversent `parseEntry`/`serializeJournal`, testés. 🟢 **Restent** : la phrase de `/regles` sur le retrait d'une critique, et `ARCHITECTURE-APP.md` §5 dont la ligne « pas de texte libre avant 5.0 » est désormais levée |
 
+## 🎨 Lot 9 — la direction visuelle (2026-08-06) — **le vrai sujet ouvert**
+
+> **Verdict de Tristan : « le site est hyper moche », et il faut une vraie direction** — pas
+> des retouches. C'est le trou de tout le projet : le lot 7 a posé un design *system*
+> (formes, crans, tokens) et **personne n'a jamais jugé le résultat**. Les trois notes de
+> `CLAUDE.md` le disaient déjà : *« reste ton jugement esthétique — je n'ai mesuré que des
+> valeurs calculées »*.
+>
+> 🔴 **La leçon, et c'est la même que le SEO en cul-de-sac et le cache inopérant** : un
+> système cohérent, mesuré, testé, **peut produire un rendu laid sans qu'aucune mesure ne le
+> signale**. `no-adhoc-typography` prouve qu'un titre porte un cran ; il ne dit rien de la
+> beauté de l'échelle. *Auditer le résultat, jamais l'intention* — y compris celui de son
+> propre design system.
+
+### Ce que le code trahit, à confirmer **en regardant** (hypothèses, pas constats)
+
+| Piste | Ce que dit le code | Pourquoi c'est un candidat sérieux |
+|---|---|---|
+| **Aucune police n'est chargée** | `font-src 'self'`, et `CLAUDE.md` assume : « le caractère vient de la grille monospace appliquée aux chiffres » | Le site s'affiche donc en **Segoe UI système**. C'est le premier signal de « pas designé », et il survit à n'importe quelle qualité de mise en page. ✅ Corrigeable **sans toucher la CSP** : une police variable auto-hébergée est servie par `'self'` |
+| **Noir bleuté + cyan** | `--color-ink: #08090e`, `--color-volt: #22d3ee` | Cohérent, documenté… et c'est l'exact cliché du tableau de bord technique. Froid pour un produit dont le sujet est ce qu'on aime regarder. ⚠️ La règle « une couleur, un sens » est bonne et doit survivre à tout changement de palette |
+| **L'affiche est l'interface** | Règle posée dès le départ | Si le châssis lutte contre les affiches au lieu de les porter, aucune palette ne sauvera l'écran |
+
+### La méthode, et elle n'est pas négociable
+
+1. ⛔ **Ne rien changer avant d'avoir vu.** Ce dépôt a déjà payé le design à l'aveugle. Il
+   faut une capture de l'accueil, de la fiche série et de `/moi`, **avant**.
+2. **Une référence choisie par Tristan** — un site dont il aime le rendu. « Faire plus beau »
+   n'est pas une consigne exécutable ; « ressembler à ça » l'est.
+3. **Une seule chose à la fois, revue à l'œil** : typo, puis palette, puis densité. Trois
+   changements simultanés rendent impossible de savoir lequel a aidé.
+4. **Le design system reste** — il n'est pas la cause du problème, il est le moyen de
+   corriger partout d'un coup. Changer `.page-title` change vingt écrans.
+
+⚠️ **Bloqué le 2026-08-06** : l'extension Chrome refuse de se connecter (« the OAuth token
+belongs to a different claude.ai account »). Sans elle, aucune capture, donc aucun jugement.
+Remède : `/logout` puis `/login` dans Claude Code, en vérifiant que l'extension est signée
+sur **le même compte** claude.ai.
+
+---
+
 ### ▶️ Les trois features qui restent face à la cible « TvTime × Letterboxd »
 
 | # | Tâche | Statut | Note |
