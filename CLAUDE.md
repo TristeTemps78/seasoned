@@ -11,7 +11,8 @@
 ## État actuel (2026-08-06 — le lot 8 s'ouvre, et sa première tâche répare une perte de données)
 
 - **✅ Sous-tâche 8.0 livrée.** **747 tests** (+12), typecheck strict vert, build vert,
-  **29 routes statiques** (inchangé). Trois commits, `main` propre, **rien n'est poussé**.
+  **29 routes statiques** (inchangé). **8 commits poussés, CI verte** (`check` + `secrets`),
+  `main` propre — `fa77b21..8a0ed93`, poussés sur décision de Tristan en fin de session.
 - **Le lot 8 est ouvert et réservé** — décidé avec Tristan le 2026-08-06 après un état des
   lieux « TvTime × Letterboxd ». **Le manque le plus structurant est que ce produit ne sait
   écrire nulle part** : aucun champ de texte libre dans tout le dépôt, sauf la note d'un
@@ -56,17 +57,24 @@
   — mutation vérifiée, il restait vert quand le motif de titre était cassé — et la détection
   de deux crans contradictoires sur un même titre.
 
-### ▶️ Pour reprendre le lot 8
+### ▶️ Pour reprendre le lot 8 — **le verrou de déploiement est levé**
 
-⚠️ **8.0 doit être POUSSÉE et vérifiée sur le site servi AVANT d'écrire le moindre champ
-neuf** (8.2 cœur, 8.3 marques, 8.4 critiques). La vérification tient en une ligne de console :
-`parseJournal('{"version":99,"entries":{"tmdb:1":{"x":1}}}')` doit rendre une entrée. Sans ce
-déploiement, un appareil resté sur l'ancien build dépouille silencieusement les champs neufs.
-*Ce dépôt a livré `ordering.ts` et `episodeMinutes` morts-nés en étant verts.*
+✅ **8.0 est poussée, la CI est verte, et le lecteur tolérant est SERVI en production** —
+vérifié sur le résultat, pas sur le commit : les chunks référencés par l'accueil de
+`seasoned-two.vercel.app` contiennent `unknownFields` **et** `.rescue`
+(`/_next/static/chunks/05yb8119inc66.js`, relevé le 2026-08-06).
+- ⚠️ **Ce que cette preuve vaut, exactement** : elle montre que le build déployé **contient**
+  le pass-through, pas qu'il se comporte bien à l'exécution — ça, ce sont les 747 tests sur
+  la même source. La vérification en console
+  (`parseJournal('{"version":99,"entries":{"tmdb:1":{"x":1}}}')` doit rendre une entrée) reste
+  la plus directe si un doute apparaît. *Ne pas écrire « vérifié en production » plus fort que
+  ce qui a été regardé.*
 
-**Ce qui ne dépend PAS du déploiement, et peut se faire tout de suite** : **8.1** (mesurer le
-journal, ferme la tâche 4.5) et **8.5** (réveiller `unfollow()` et `setVisibility()`, qui
-n'ont aucun appelant — donc *aucune critique ne serait lisible par personne*).
+**Donc les trois sous-tâches qui écrivent dans le journal sont débloquées** : 8.2 (cœur),
+8.3 (marques d'épisode), 8.4 (critiques). Ordre conseillé, du moins risqué au plus :
+**8.5** (réveiller `unfollow()` / `setVisibility()` — sans elles *aucune critique ne serait
+lisible par personne*, la visibilité étant codée en dur à `followers`), puis **8.1** (mesurer
+le journal, ferme la tâche 4.5), puis **8.2**, **8.3**, et enfin **8.4 → 8.9**.
 
 ✅ **Le verrou légal est levé en local (2026-08-06)** : `LEGAL_CONTACT_EMAIL` et
 `LEGAL_PUBLISHER_NAME` sont renseignés dans le `.env`, l'adresse passe `looksLikeEmail` (le
@@ -106,7 +114,8 @@ trois règles structurelles tiennent, vérifiées fichier par fichier. Détail d
 ## État précédent (2026-08-05 — la garde ne voyait pas le défaut pour lequel elle existait)
 
 - **✅ La relecture du lot 7 est traitée.** **735 tests** (+1), typecheck strict vert, build vert.
-  Quatre commits, `main` propre, **rien n'est poussé** (décision de Tristan).
+  Quatre commits, `main` propre, rien n'était poussé ce jour-là *(ils l'ont été le
+  2026-08-06, dans le lot de 8 commits — voir l'état actuel)*.
 - 🔴 **Le 7.5 annonçait avoir réparé les titres sans cran. Recensement : il en a réparé TROIS
   et laissé SEPT.** `OrderingNotice`, `JournalSync`, `Friends`, `AccountPanel` (deux fois),
   `/regles`, `/mentions`, `/confidentialite` écrivaient encore leur `h2` en `font-semibold`
