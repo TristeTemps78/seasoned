@@ -8,7 +8,103 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-06 — le lot 8 est livré : on peut écrire, aimer, et sauter un épisode)
+## État actuel (2026-08-07 — l'audit : six failles, et cinq décrivaient le dépôt d'avant)
+
+- **✅ Lot 10 livré.** **787 → 708 tests**, typecheck strict vert, build vert, **29 routes
+  prérendues** (inchangé). Neuf commits, `main` propre, **rien n'est poussé** — un push est un
+  déploiement public, décision de Tristan.
+- **Demande de Tristan** : « audite le tout, simplifie ce qui doit l'être, simplifie également
+  les tests, essaye de réfléchir à contre-sens pour trouver les failles. » C'est la **deuxième
+  fois** qu'il demande de simplifier les tests. Trois décisions : les **failles d'abord,
+  seules** ; sur les secrets, **distinguer publiable et secret** ; sur les tests, aller jusqu'aux
+  **doublons et au dictionnaire**.
+
+### 🔴 Ce que les six failles avaient en commun : elles décrivaient le dépôt d'avant
+
+1. **La garde CI des secrets était aveugle deux fois.** Elle excluait `':!*.md'` — le seul type
+   de fichier qui contienne effectivement une clé — et ne connaissait que le JWT hérité.
+   **`sb_secret_` (la clé `service_role`, qui contourne RLS) et `sbp_` (le jeton personnel que
+   `db-push.mjs` demande de poser) passaient en vert.** *Elle protégeait d'un cas qui n'arrive
+   plus pendant que le cas réel était nu.*
+2. **`no-journal-on-server` couvrait 3 modules sur 9.** `app/journal/journalStore` n'était pas
+   listé, alors qu'il importe `local`, `remote` et `syncing` à sa première ligne. La garde barre
+   désormais les **répertoires** : une liste de fichiers se périme à chaque ajout.
+3. 🔴 **Écrire une critique ne faisait pas remonter la série dans « Reprendre ».** `lastTouch`
+   énumérait les champs à la main et il en manquait **deux** — `reviews` et `completions`,
+   c'est-à-dire tout le lot 8. L'oubli s'était **déjà produit** : `liked` avait été ajouté après
+   coup, avec un commentaire posé au-dessus de la mauvaise ligne. Réparé par un **type indexé**
+   sur `JournalEntry` : ajouter un champ oblige à fournir son extracteur, ou à le ranger dans
+   `NOT_A_GESTURE` avec sa raison. *Mutation : `tsc` refuse **en nommant** `reviews, completions`.*
+4. **`src/social/client.ts` promettait de ne jamais lever, et levait.** Le `try/catch` couvrait
+   le réseau, pas le post-traitement. *Mutation : le test tombe sur `TypeError: rows.map is not a
+   function` — ce n'était pas théorique.* Et `SocialClient` n'avait **aucun test** (399 lignes).
+5. 🔴 **`/regles` annonçait au public qu'il n'existe « aucun profil public, aucun commentaire ».**
+   Sur la page **indexable**, liée depuis tous les pieds de page, et dont le rôle entier est de
+   dire la vérité sur ce que le produit héberge. Le lot 8 a livré critiques, profils et fil.
+   Section retirée — son propos était d'expliquer pourquoi des règles arrivent *avant* le
+   contenu, et ce propos n'a plus d'objet.
+6. **`no-orphan-component` ne voyait que `export function X`** — `export const Foo = () => …`
+   lui était invisible. Trou latent, fermé pendant qu'il ne coûtait rien.
+
+⚠️ **Trois autres affirmations périmées corrigées**, dont « `deviceId` anonyme et **jamais
+envoyé nulle part** » alors que `remote.ts` le PUT à chaque sauvegarde. **Ce que ça vaut
+exactement, mesuré** : `journals` est RLS « own only », donc l'identifiant part dans la ligne de
+la personne et personne d'autre ne le lit. **Affirmation périmée, pas fuite** — ne pas l'écrire
+plus fort que ça.
+
+### 🔴 La leçon de méthode, et elle vaut plus que les six correctifs
+
+- **Mon propre outil de détection de code mort a menti** — `parseJournal` et `t` annoncés morts.
+  *Un outil de diagnostic qui ment est pire qu'aucun outil* : **quatrième fois**, **deuxième fois
+  que c'est l'agent qui l'écrit**. Il n'a été cru qu'une fois **ancré**, et l'ancrage a refusé de
+  publier ses résultats.
+- ⚠️ **J'ai failli écrire « mutation vérifiée » sur une mutation qui n'avait pas eu lieu** : un
+  script de substitution n'avait rien substitué, et les tests restaient verts « sous mutation ».
+  **Toute mutation passe désormais par une édition qui échoue bruyamment si elle ne s'applique
+  pas.**
+- 🔴 **Quatre conclusions d'agents écartées après vérification** — le contre-sens appliqué à
+  l'audit lui-même. La plus grave : la « fuite de spoiler » d'`activity.ts` **n'existe pas**, le
+  `@param` dit exactement ce que le code fait. ⚠️ Ce qui restait vrai a été écrit dans
+  `AGENTS.md` règle 7 : **« sans position » n'a pas le même sens dans `spoiler.ts` et dans
+  `activity.ts`, et les deux sont voulus** — l'un décrit l'intérieur d'une œuvre, l'autre ce que
+  font les autres.
+- ⚠️ **Une garde automatique mesurée puis refusée.** Détecter les affirmations périmées par leurs
+  marqueurs de temps : « jamais » sort **177 fois**, « aujourd'hui / pour l'instant » **18 fois**.
+  18, ça se relit ; ça ne se mécanise pas. Relues à la main : **5 fausses, pas 3** — la relecture
+  en a trouvé deux de plus que l'agent, dont celle de `/regles`. *Un garde-fou adossé à quinze
+  exemptions est un garde-fou qu'on désactive.*
+
+### Les tests : 787 → 708, sans perdre un bug attrapé
+
+- 🔴 **Deux tests creux**, dont un qui reproduisait l'anti-patron que ce fichier nomme mot pour
+  mot. **Prouvé, pas affirmé** : composant muté pour parler en toutes circonstances → l'ancienne
+  version restait **verte (7/7)**, la nouvelle tombe. La parade — la sonde `Probe` — était déjà
+  écrite **quarante lignes plus bas dans le même fichier**.
+- **87 tests pour une propriété** : `no-hardcoded-strings` faisait un `it.each` par fichier, soit
+  11 % du total du dépôt. Les « 787 tests » mesuraient en partie la taille de `app/`. Un seul
+  `it()` désormais, avec la liste complète des fautes et le chemin **dans** la ligne.
+- **22 égalités sur du texte littéral** dans `format.test.ts`, pour des bugs qui sont des
+  **chiffres**. **Double mutation** : calcul faussé → 4 tests tombent ; dictionnaire reformulé →
+  **24 verts**. ⚠️ Et la mutation a trouvé un **25ᵉ** couplage que la relecture avait raté.
+- ⚠️ **Contrainte trouvée en corrigeant les chemins relatifs** : `import.meta.url` n'est pas une
+  URL `file:` sous jsdom, donc `tests/sources.ts` n'est utilisable que dans le projet `domain`.
+  Les chemins relatifs des tests `.tsx` ne sont **plus un oubli, mais une contrainte**.
+
+### ▶️ Pour reprendre
+
+**Deux lots sont ouverts, et ils ne se mélangent pas :**
+
+- **Lot 9.6 — la typographie**, réservé et **en attente de Tristan**. Un banc d'essai autonome
+  a été construit (`banc-typo.html` dans le scratchpad, polices et vraies affiches embarquées) :
+  quatre fois le même écran, seule la police change. ⛔ **Rien ne bouge tant qu'il n'a pas
+  choisi**, et tant qu'il n'a pas collé les trois captures (`/`, `/serie/1396`, `/moi`) — la
+  méthode du lot 9 l'exige, et l'agent n'a **aucun outil de navigateur**.
+- **Lot 11 — la simplification du code**, mesurée et **non exécutée** (décision : les failles
+  d'abord). Tout est dans `TASKS.md`. Le point le plus visible est **11.1** : `.card` promet
+  « un seul rayon dans toute l'application » alors qu'elle est employée **8 fois** contre **19**
+  copies à la main, avec un rayon et un fond **différents** — donc à traiter **avec le lot 9**.
+
+## État précédent (2026-08-06 — le lot 8 est livré : on peut écrire, aimer, et sauter un épisode)
 
 - **✅ Lot 8 livré et poussé.** **787 tests** (+52), typecheck strict vert, build vert,
   **29 routes statiques** (inchangé), CI verte. `005` et `006` **appliqués à la vraie base**.
