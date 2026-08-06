@@ -105,22 +105,42 @@ export class SocialClient {
     return `${this.#options.url.replace(/\/$/, '')}/rest/v1/${path}`;
   }
 
-  async #json<T>(path: string): Promise<T | undefined> {
+  /**
+   * Les lignes d'une lecture PostgREST — **toujours un tableau**.
+   *
+   * 🔴 **Ce que la version precedente laissait passer.** Elle rendait `T | undefined` et
+   * transtypait le corps sans le regarder (`as T`). Le `try/catch` couvrait le reseau et
+   * le decodage, mais **pas le post-traitement**, qui vit chez l'appelant : un corps JSON
+   * valide de la mauvaise forme — un objet la ou l'on attend un tableau — passait le garde
+   * `rows === undefined`, puis `rows.map(...)` levait. Et `??  []` ne rattrape que
+   * `null`/`undefined`, jamais un objet : c'est le piege du `??` que ce depot documente
+   * deja pour `TMDB_LANGUAGE`.
+   *
+   * Le module promet en tete de fichier qu'il **ne leve jamais**. La promesse tenait pour
+   * la panne et pas pour la reponse inattendue — or `Reviews.tsx` l'a crue et n'a pose
+   * aucun `.catch`, donc une reponse mal formee y devenait un rejet non gere.
+   *
+   * Rendre `[]` plutot que `undefined` n'efface aucune information : les six appelants
+   * lisaient tous une liste, et « erreur » comme « aucune ligne » y menaient deja au meme
+   * ecran. Le type dit maintenant ce que le module fait.
+   */
+  async #rows<T>(path: string): Promise<readonly T[]> {
     try {
       const response = await this.#fetch(this.#url(path), { headers: this.#headers() });
-      if (!response.ok) return undefined;
-      return (await response.json()) as T;
+      if (!response.ok) return [];
+      const body: unknown = await response.json();
+      return Array.isArray(body) ? (body as T[]) : [];
     } catch {
-      return undefined;
+      return [];
     }
   }
 
   /** Mon profil, ou `undefined` si je n'en ai pas encore reclame un. */
   async myProfile(userId: string): Promise<Profile | undefined> {
-    const rows = await this.#json<Record<string, unknown>[]>(
+    const rows = await this.#rows<Record<string, unknown>>(
       `profiles?user_id=eq.${encodeURIComponent(userId)}&select=*`,
     );
-    const row = rows?.[0];
+    const row = rows[0];
     return row === undefined ? undefined : rowToProfile(row);
   }
 
@@ -175,10 +195,10 @@ export class SocialClient {
    * que quelqu'un dont on connait deja le nom.
    */
   async findByHandle(handle: string): Promise<Profile | undefined> {
-    const rows = await this.#json<Record<string, unknown>[]>(
+    const rows = await this.#rows<Record<string, unknown>>(
       `profiles?handle=eq.${encodeURIComponent(handle)}&select=*`,
     );
-    const row = rows?.[0];
+    const row = rows[0];
     return row === undefined ? undefined : rowToProfile(row);
   }
 
@@ -211,15 +231,15 @@ export class SocialClient {
 
   /** Les profils que je suis. */
   async following(followerId: string): Promise<readonly Profile[]> {
-    const rows = await this.#json<{ followee_id: string }[]>(
+    const rows = await this.#rows<{ followee_id: string }>(
       `follows?follower_id=eq.${encodeURIComponent(followerId)}&select=followee_id`,
     );
-    if (rows === undefined || rows.length === 0) return [];
+    if (rows.length === 0) return [];
     const ids = rows.map((row) => row.followee_id);
-    const profiles = await this.#json<Record<string, unknown>[]>(
+    const profiles = await this.#rows<Record<string, unknown>>(
       `profiles?user_id=in.(${ids.map(encodeURIComponent).join(',')})&select=*`,
     );
-    return (profiles ?? []).map(rowToProfile);
+    return profiles.map(rowToProfile);
   }
 
   /**
@@ -232,10 +252,10 @@ export class SocialClient {
    * RLS fait le filtrage : on demande tout, la base ne rend que le visible.
    */
   async feed(limit = 50): Promise<readonly FeedItem[]> {
-    const rows = await this.#json<Record<string, unknown>[]>(
+    const rows = await this.#rows<Record<string, unknown>>(
       `activity?select=kind,subject,season,stars,happened_on,profiles!inner(handle,user_id)&order=happened_on.desc&limit=${limit}`,
     );
-    return (rows ?? []).flatMap((row) => {
+    return rows.flatMap((row) => {
       const author = row['profiles'] as { handle?: unknown; user_id?: unknown } | undefined;
       if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
       // ⚠️ Le genre est **valide**, pas simplement transtype. Il vient du serveur, mais
@@ -376,10 +396,10 @@ export class SocialClient {
    * est le lecteur, et c'est precisement ce qui empeche sa position de fuir.
    */
   async reviewsFor(subject: string, limit = 30): Promise<readonly PublishedReview[]> {
-    const rows = await this.#json<Record<string, unknown>[]>(
+    const rows = await this.#rows<Record<string, unknown>>(
       `reviews?subject=eq.${encodeURIComponent(subject)}&select=target,body,through_season,lang,published_at,profiles!inner(handle,user_id)&order=published_at.desc&limit=${limit}`,
     );
-    return (rows ?? []).flatMap((row) => {
+    return rows.flatMap((row) => {
       const author = row['profiles'] as { handle?: unknown; user_id?: unknown } | undefined;
       if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
       const through = row['through_season'];
