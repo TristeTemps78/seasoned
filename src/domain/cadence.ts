@@ -27,7 +27,7 @@ const MS_PER_DAY = 86_400_000;
  * Deux fois l'intervalle habituel : une saison qui aurait deja du sortir, et dont on
  * attend encore autant. En deca, on decrit l'attente sans la qualifier d'anormale.
  */
-export const CADENCE_ANOMALY_FACTOR = 2;
+const CADENCE_ANOMALY_FACTOR = 2;
 
 /**
  * Bornes du seuil derive, en jours.
@@ -51,7 +51,7 @@ export const MAX_DERIVED_LIMBO_DAYS = 1_460;
  * Plus prudent que {@link CADENCE_ANOMALY_FACTOR}, et jamais en dessous du seuil fixe :
  * une mesure fragile peut allonger le delai, jamais le raccourcir.
  */
-export const SINGLE_SAMPLE_FACTOR = 1.5;
+const SINGLE_SAMPLE_FACTOR = 1.5;
 
 export interface Cadence {
   /** Intervalle median entre deux saisons consecutives, en jours. */

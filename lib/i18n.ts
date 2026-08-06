@@ -219,8 +219,6 @@ const FR = {
   'chip.cancelled': 'annulée',
   'chip.upcoming': 'à venir',
 
-  'shape.miniseries': 'Mini-série',
-  'shape.series': 'Série',
 
   'commit.underHour': 'moins d’une heure',
   'commit.hours.one': '{n} heure',
@@ -495,7 +493,6 @@ const FR = {
   'search.none': 'Aucun résultat pour « {q} ».',
   'search.count.one': '{n} résultat pour « {q} »',
   'search.count.other': '{n} résultats pour « {q} »',
-  'card.noPoster': 'Pas d’affiche',
 
   // --- Noter ---------------------------------------------------------------
   'rating.of': 'Note de {what}',
@@ -844,8 +841,6 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'chip.cancelled': 'cancelled',
   'chip.upcoming': 'upcoming',
 
-  'shape.miniseries': 'Mini-series',
-  'shape.series': 'Series',
 
   'commit.underHour': 'under an hour',
   'commit.hours.one': '{n} hour',
@@ -1086,7 +1081,6 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'search.none': 'No results for “{q}”.',
   'search.count.one': '{n} result for “{q}”',
   'search.count.other': '{n} results for “{q}”',
-  'card.noPoster': 'No poster',
 
   'rating.of': 'Rating for {what}',
   'rating.stars': '{n} out of 5',

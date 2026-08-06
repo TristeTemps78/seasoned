@@ -30,7 +30,7 @@ import { freshSnapshot, seriesEntries, type Journal, type JournalEntry } from '.
 export const MIN_SERIES_FOR_TASTE = 5;
 
 /** Ecart moyen au public en deca duquel on ne conclut rien. */
-export const NEUTRAL_GAP = 0.25;
+const NEUTRAL_GAP = 0.25;
 
 export interface TasteProfile {
   /** Series portant au moins une note. */

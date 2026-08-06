@@ -139,22 +139,6 @@ export interface Rating {
   readonly at: Date;
 }
 
-/**
- * Polarite d'un episode marquant.
- *
- * `docs/RATING-MODEL.md` §3 couche 2 : on ne note pas les episodes, on les
- * *distingue*. Zero a cinq par saison, en bien ou en mal.
- */
-export type HighlightPolarity = 'high' | 'low';
-
-/** Un episode signale comme marquant. */
-export interface Highlight {
-  readonly ref: EpisodeRef;
-  readonly polarity: HighlightPolarity;
-  readonly note?: string;
-  readonly at: Date;
-}
-
 // ---------------------------------------------------------------------------
 // Progression et decisions
 // ---------------------------------------------------------------------------
@@ -188,58 +172,35 @@ export type DecisionKind =
   /** J'ai fini ce qui existe. */
   | 'completed';
 
-export interface Decision {
-  readonly seriesId: SeriesId;
-  readonly kind: DecisionKind;
-  /** Le point exact ou la decision a ete prise. C'est lui qui a de la valeur. */
-  readonly point?: EpisodeRef;
-  readonly reason?: string;
-  readonly at: Date;
-}
-
 // ---------------------------------------------------------------------------
-// Verdict
+// Ce qui a ete retire d'ici le 2026-08-06, et ou vit l'intention
 // ---------------------------------------------------------------------------
 
-/**
- * Reponse a « je me lance ? » — la question qu'on pose reellement a propos d'une
- * serie, et qui n'est pas « c'est bien ? ».
+/*
+ * Ce fichier portait quatre formes de plus — `Highlight`, `Decision`, `SeriesVerdict`
+ * (avec `Verdict`) et `LogEntry` — ecrites a la phase 0.2, **avant** le journal, et que
+ * rien n'a jamais construites : zero reference dans tout le depot, tests compris.
  *
- * `docs/RATING-MODEL.md` §3 couche 3. `stopAfter` est le coeur de la proposition :
- * « regarde Dexter mais arrete-toi a la saison 4 » est la phrase archetypale de
- * toute conversation sur les series, et personne ne la capture.
- */
-export type Verdict =
-  | { readonly kind: 'go' }
-  | { readonly kind: 'stop_after'; readonly seasonNumber: number }
-  | { readonly kind: 'conditional'; readonly condition: string }
-  | { readonly kind: 'no' };
-
-/** Verdict rendu par un utilisateur sur une serie. */
-export interface SeriesVerdict {
-  readonly seriesId: SeriesId;
-  readonly verdict: Verdict;
-  readonly at: Date;
-}
-
-// ---------------------------------------------------------------------------
-// Journal
-// ---------------------------------------------------------------------------
-
-/**
- * Une entree de journal : un evenement date.
+ * Ce n'etait pas du bruit inoffensif. `types.ts` est le **deuxieme fichier** de l'ordre
+ * de lecture d'`AGENTS.md` : il decrivait donc a tout arrivant un modele qui n'est pas
+ * celui du code. Le journal (`journal.ts`) a construit le sien, et les deux ont vecu cote
+ * a cote sans que rien ne signale lequel etait reel.
  *
- * **Distincte de la note** (`docs/RATING-MODEL.md` §7.2). Une entree date ce qui
- * est arrive ; une note exprime un jugement. On peut avoir l'une sans l'autre, et
- * une saison revisionnee produit plusieurs entrees pour une seule note courante.
- * Fusionner les deux rend le revisionnage impossible a modeliser ensuite.
+ * Ou chaque intention vit reellement :
+ *
+ * - `Decision`      → `JournalDecision`, qui porte en plus `atSeason` / `atEpisode` ;
+ * - `LogEntry`      → `JournalEntry` + `JournalCompletion` (le revisionnage est une liste
+ *                     de dates, pas une entree par visionnage) ;
+ * - `Highlight`     → **caduque par decision** : l'arbitrage A7 (2026-08-02) a tranche la
+ *                     note d'episode complete, la ou la couche 2 de `RATING-MODEL.md`
+ *                     disait « on ne note pas les episodes, on les distingue » ;
+ * - `Verdict`       → l'idee est vivante et le type ne l'etait pas. « Arrete-toi a la
+ *                     saison 4 » est **calcule**, pas saisi : `trajectory.ts` (point de
+ *                     rupture), `entry-point.ts`, `current-season.ts`. C'est mieux que ce
+ *                     que le type prevoyait — il attendait une saisie que personne
+ *                     n'aurait faite avant d'avoir fini la serie.
+ *
+ * ⚠️ `LogEntry` portait `text` et `liked`, c'est-a-dire exactement les deux champs du
+ * lot 8. Ils arrivent sur `JournalEntry`, pas ici : garder la forme morte aurait donne
+ * deux endroits ou les chercher.
  */
-export interface LogEntry {
-  readonly target: RatingTarget;
-  /** Quand le visionnage s'est termine. */
-  readonly watchedOn: Date;
-  readonly stars?: Stars;
-  readonly text?: string;
-  readonly liked?: boolean;
-  readonly rewatch?: boolean;
-}

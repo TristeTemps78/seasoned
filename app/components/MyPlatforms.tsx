@@ -11,7 +11,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
  * silence et « dispo chez vous » ne s'affiche jamais — un defaut invisible, le pire
  * genre. Les noms ci-dessous sont ceux de TMDB/JustWatch, pas les noms commerciaux.
  */
-export const KNOWN_PLATFORMS: readonly string[] = [
+const KNOWN_PLATFORMS: readonly string[] = [
   'Netflix',
   'Amazon Prime Video',
   'Disney Plus',

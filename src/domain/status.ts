@@ -18,13 +18,13 @@ import { limboThresholdDays, type Cadence } from './cadence';
  * dernier episode. Couvre confortablement un rythme hebdomadaire et ses pauses
  * courtes (jours feries, evenements sportifs).
  */
-export const AIRING_RECENCY_DAYS = 21;
+const AIRING_RECENCY_DAYS = 21;
 
 /**
  * Horizon, en jours, en deca duquel un prochain episode date suffit a considerer
  * la serie comme active. Un trimestre : la saison est annoncee et programmee.
  */
-export const UPCOMING_HORIZON_DAYS = 90;
+const UPCOMING_HORIZON_DAYS = 90;
 
 /**
  * Delai par defaut, en jours, au-dela duquel une serie declaree `returning` sans

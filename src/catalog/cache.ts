@@ -19,7 +19,7 @@
 export const CONTRACTUAL_MAX_TTL_MS = 180 * 86_400_000;
 
 /** Duree de vie par defaut : sept jours. Compromis fraicheur / nombre d'appels. */
-export const DEFAULT_TTL_MS = 7 * 86_400_000;
+const DEFAULT_TTL_MS = 7 * 86_400_000;
 
 export interface CacheEntry<T> {
   readonly value: T;

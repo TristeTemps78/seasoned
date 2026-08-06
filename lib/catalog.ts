@@ -84,7 +84,7 @@ export function catalogLanguage(
  * Le jeton n'est lu qu'a l'usage et jamais au chargement du module : sans cela, un
  * simple import ferait echouer les tests et le build en l'absence d'environnement.
  */
-export function getProvider(locale: Locale = DEFAULT_LOCALE): CatalogProvider {
+function getProvider(locale: Locale = DEFAULT_LOCALE): CatalogProvider {
   // Un fournisseur force par un test l'emporte sur tout : c'est le point d'injection.
   if (providerInstance !== undefined) return providerInstance;
 
@@ -563,7 +563,7 @@ export function stopPointAdvice(
  * preference, ce repli sert a ne pas afficher une page vide — il ne sert pas a etre
  * juste. La preference explicite (`MyPlatforms`, puis le compte) est ce qui le remplace.
  */
-export const DEFAULT_WATCH_REGION = watchRegion(DEFAULT_LOCALE);
+const DEFAULT_WATCH_REGION = watchRegion(DEFAULT_LOCALE);
 
 /**
  * Ou regarder une serie.
@@ -741,7 +741,7 @@ export async function alsoByCreators(
 }
 
 /** Tailles d'affiche proposees par le CDN de TMDB, avec leur largeur en pixels. */
-export const POSTER_SIZES = { w185: 185, w342: 342, w500: 500 } as const;
+const POSTER_SIZES = { w185: 185, w342: 342, w500: 500 } as const;
 export type PosterSize = keyof typeof POSTER_SIZES;
 
 /**
@@ -752,7 +752,7 @@ export type PosterSize = keyof typeof POSTER_SIZES;
  * les affiches arrivent — un decalage de mise en page, l'un des trois indicateurs
  * que Google mesure, et donc une perte seche sur le canal d'acquisition n°1.
  */
-export const POSTER_ASPECT = 3 / 2;
+const POSTER_ASPECT = 3 / 2;
 
 /** URL d'une affiche sur le CDN de TMDB. Jamais servie par nous — `next.config.ts`. */
 export function posterUrl(

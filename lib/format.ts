@@ -23,7 +23,6 @@
  */
 
 import type { RealStatus, StatusResult } from '../src/domain/status';
-import type { SeriesShape } from '../src/domain/seasons';
 import { DEFAULT_LOCALE, localeTag, t, tn, type Locale } from './i18n';
 
 /** Libelle court, pour une pastille. */
@@ -181,10 +180,6 @@ export function formatCommitment(
 /** Année d'une date, ou `undefined`. Sert aux titres et aux URL. */
 export function year(date: Date | undefined): number | undefined {
   return date?.getUTCFullYear();
-}
-
-export function shapeLabel(shape: SeriesShape, locale: Locale = DEFAULT_LOCALE): string {
-  return t(locale, shape === 'miniseries' ? 'shape.miniseries' : 'shape.series');
 }
 
 /** Date longue, dans la langue demandee, en UTC pour rester stable d'un serveur a l'autre. */

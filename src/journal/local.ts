@@ -56,7 +56,7 @@ export const STORAGE_KEY = 'voltface.journal.v1';
  * effacerait le journal de qui n'est pas revenu d'ici la — exactement ce que le produit
  * promet de ne jamais faire (`AGENTS.md` regle 9).
  */
-export const LEGACY_STORAGE_KEYS = ['seasoned.journal.v1'] as const;
+const LEGACY_STORAGE_KEYS = ['seasoned.journal.v1'] as const;
 
 /**
  * Suffixe de la copie de sauvegarde d'un journal illisible.

@@ -27,7 +27,7 @@ import type { Journal, JournalKey } from './journal';
 import type { Stars } from './types';
 
 /** Combien de temps un fait reste dans le fil. Q9 : le meme horizon que les purges. */
-export const ACTIVITY_WINDOW_DAYS = 90;
+const ACTIVITY_WINDOW_DAYS = 90;
 
 /**
  * Le jeu **ferme** des faits publiables.

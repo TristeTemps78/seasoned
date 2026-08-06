@@ -34,7 +34,7 @@ export const SPECIALS_SEASON_NUMBER = 0;
  * En deca, c'est presque toujours une meme commande diffusee en deux blocs.
  * Seuil heuristique — il produit un avertissement, jamais une fusion.
  */
-export const SPLIT_SEASON_PROXIMITY_DAYS = 90;
+const SPLIT_SEASON_PROXIMITY_DAYS = 90;
 
 /** Une saison telle que la rend un fournisseur, avant tout traitement. */
 export interface RawSeason {

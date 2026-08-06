@@ -32,7 +32,7 @@ function declinedKey(userId: string): string {
 }
 
 /** À qui appartient le journal range sous la cle de l'appareil, si on le sait. */
-export function readOwner(storage: StorageLike): string | undefined {
+function readOwner(storage: StorageLike): string | undefined {
   try {
     return storage.getItem(OWNER_KEY) ?? undefined;
   } catch {

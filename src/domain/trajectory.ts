@@ -23,7 +23,7 @@ import { MAX_STARS, MIN_STARS } from './types';
  * atteint quand la moitie des valeurs est a chaque borne. Sert a normaliser la
  * constance sur [0, 1].
  */
-export const MAX_STANDARD_DEVIATION = (MAX_STARS - MIN_STARS) / 2;
+const MAX_STANDARD_DEVIATION = (MAX_STARS - MIN_STARS) / 2;
 
 /**
  * Nombre minimal de saisons notees pour qu'une constance ait un sens.
@@ -37,7 +37,7 @@ export const MIN_SEASONS_FOR_CONSISTENCY = 3;
 export const HIGH_CONSISTENCY_THRESHOLD = 0.8;
 
 /** Pente, en etoiles par saison, au-dela de laquelle une tendance est nette. */
-export const SIGNIFICANT_SLOPE = 0.3;
+const SIGNIFICANT_SLOPE = 0.3;
 
 /**
  * Chute minimale entre deux saisons consecutives pour qu'un point de rupture soit
@@ -58,7 +58,7 @@ export const BREAK_POINT_MIN_DROP = 1;
  * notes. D'ou un garde-fou desactive par defaut, que la couche des notes publiques
  * active pour son compte.
  */
-export const DEFAULT_MIN_SPREAD_FOR_SHAPE = 0;
+const DEFAULT_MIN_SPREAD_FOR_SHAPE = 0;
 
 /**
  * Une note de saison, reduite au strict necessaire pour le calcul.

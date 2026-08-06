@@ -53,7 +53,7 @@ export interface RemoteJournal {
 }
 
 /** Le delai par defaut entre le dernier geste et la poussee. */
-export const PUSH_DELAY_MS = 2_000;
+const PUSH_DELAY_MS = 2_000;
 
 export interface SyncingJournalStoreOptions {
   readonly local: JournalStore;
