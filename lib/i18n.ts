@@ -437,7 +437,7 @@ const FR = {
   'safety.install': 'Installer l’application',
   // ⚠️ Ces deux lignes etaient sans accents — « Installee sur l'ecran » —, et c'est la
   // premiere chose que lit quelqu'un qui a des notes sans compte. Trouve **sur une capture
-  // d'ecran**, le 2026-08-05 : ni le typage, ni les 735 tests, ni le build ne voient qu'un
+  // d'ecran**, le 2026-08-05 : ni le typage, ni la suite de tests, ni le build ne voient qu'un
   // texte francais a perdu ses accents. C'est exactement ce que la passe « a l'oeil » du
   // lot 7 existe pour trouver, et les deux sessions precedentes n'avaient pu prendre
   // aucune capture.

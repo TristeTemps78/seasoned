@@ -238,6 +238,106 @@
 | 8.8 | **Lire** (UI caviardée) | ✅ 2026-08-06 — @claude-opus | `Reviews`, chargement paresseux, **aucune route serveur** — la page reste `force-static` et le coût Vercel est nul. Le caviardage se fait dans le navigateur avec le journal du lecteur : le serveur ne sait pas où en est celui qui lit. Le texte masqué est **déplacé** dans `hiddenText`, pas caché en CSS — mutation vérifiée |
 | 8.9 | **Boucler** | 🟡 partiel | ✅ L'export/import porte les trois champs neufs sans rien changer : ils traversent `parseEntry`/`serializeJournal`, testés. 🟢 **Restent** : la phrase de `/regles` sur le retrait d'une critique, et `ARCHITECTURE-APP.md` §5 dont la ligne « pas de texte libre avant 5.0 » est désormais levée |
 
+## 🔎 Lot 10 — l'audit : les failles, et les tests (2026-08-07) ✅
+
+> **Demande de Tristan** : « audite le tout, simplifie ce qui doit l'être, simplifie
+> également les tests, essaye de réfléchir à contre-sens pour trouver les failles. »
+> C'est la **deuxième fois** qu'il demande de simplifier les tests — la première avait
+> produit la règle qui a gouverné ce lot : *on garde un test si l'on sait nommer le bug
+> qu'il attrape ; on le supprime s'il ne fait que redire le code.*
+>
+> **787 → 708 tests**, typecheck strict vert, 29 routes prérendues (inchangé).
+> Six failles fermées, deux tests creux réparés, **chaque correctif prouvé par mutation**.
+
+### 🔴 Les failles trouvées, et ce qu'elles avaient en commun
+
+**Cinq des six décrivaient le dépôt d'avant.** Ce n'est pas de la négligence : c'est la
+forme d'échec de ce projet, et elle a maintenant un nom.
+
+| # | Faille | Ce qui la rendait invisible |
+|---|---|---|
+| A1 | **La garde CI des secrets était aveugle deux fois** : elle excluait `':!*.md'` — le seul type de fichier qui contienne une clé — et ne connaissait que le JWT hérité. `sb_secret_` (service_role, contourne RLS) et `sbp_` (le jeton personnel que `db-push.mjs` demande de poser) **passaient en vert** | Elle protégeait d'un cas qui n'arrive plus pendant que le cas réel était nu |
+| A2 | **`no-journal-on-server` couvrait 3 modules sur 9.** `app/journal/journalStore` n'était pas listé, alors qu'il importe `local`, `remote` et `syncing` à sa première ligne | Une liste noire de **fichiers** se périme à chaque ajout. Elle barre désormais les **répertoires** |
+| A3 | **Écrire une critique ne faisait pas remonter la série dans « Reprendre ».** `lastTouch` énumérait les champs à la main et il en manquait deux — `reviews` et `completions`, c'est-à-dire tout le lot 8 | L'oubli s'était **déjà produit** : `liked` avait été ajouté après coup, avec un commentaire posé au-dessus de la mauvaise ligne |
+| A4 | **`src/social/client.ts` promettait de ne jamais lever, et levait.** Le `try/catch` couvrait le réseau, pas le post-traitement : un corps JSON valide de la mauvaise forme traversait le garde puis `rows.map` levait | `?? []` ne rattrape que `null`/`undefined` — le piège du `??`, deuxième fois dans ce dépôt |
+| A5 | **`/regles` annonçait au public qu'il n'existe « aucun profil public, aucun commentaire »** — sur la page indexable, liée depuis tous les pieds de page, dont le rôle entier est de dire la vérité sur ce qu'on héberge | Le lot 8 a livré critiques, profils et fil. Aucune garde ne regarde le contenu des pages |
+| A6 | **`no-orphan-component` ne voyait que `export function X`** — `export const Foo = () => …` lui était invisible | Trou latent, fermé pendant qu'il ne coûtait rien |
+
+### La leçon de méthode, et elle vaut plus que les six correctifs
+
+🔴 **Mon propre outil de détection de code mort a menti** — il annonçait `parseJournal` et
+`t` comme morts. *Un outil de diagnostic qui ment est pire qu'aucun outil* : **quatrième
+fois** dans ce dépôt, **deuxième fois que c'est l'agent qui l'écrit**. Il n'a été cru
+qu'une fois **ancré** — une preuve qu'un symbole vivant est vu, une preuve qu'un symbole
+inexistant ne l'est pas — et l'ancrage a refusé de publier les résultats.
+
+⚠️ **Et j'ai failli écrire « mutation vérifiée » sur une mutation qui n'avait pas eu
+lieu** : un script de substitution n'avait rien substitué, et les tests restaient verts
+« sous mutation ». Depuis, toute mutation passe par une édition qui **échoue bruyamment**
+si elle ne s'applique pas.
+
+🔴 **Quatre conclusions d'agents écartées après vérification** — c'est le contre-sens
+appliqué à l'audit lui-même :
+1. La « fuite de spoiler » d'`activity.ts:134` : **fausse**. Le `@param` de
+   `redactActivity` dit *exactement* ce que le code fait (« rendre `undefined` pour une
+   série qu'il n'a pas commencée : dans ce cas **rien** n'est masqué »). Décision écrite,
+   et cohérente avec `entry-point`, que le produit montre **exprès** à qui n'a pas
+   commencé. ⚠️ **Ce qui reste vrai** : `spoiler.ts:47` et `activity.ts:134` ont des
+   défauts **opposés** pour la même entrée, chacun justifié séparément — à nommer dans
+   `AGENTS.md` règle 7 pour que le prochain chemin de caviardage n'en tire pas un au hasard.
+2. Supprimer le test « la page série câble le bandeau » : **non**. `no-orphan-component`
+   écrit lui-même qu'il est « moins précis sur **où** le composant est monté », et le dépôt
+   a une mutation documentée — le retirer laissait 655 tests verts.
+3. Retirer le `clear()` de `data-safety` : **non**, il défait le `beforeEach` du fichier.
+4. « Huit tests redondants » : **un seul** l'était vraiment.
+
+⚠️ **Une garde automatique a été mesurée puis refusée.** Détecter les affirmations périmées
+par leurs marqueurs de temps : « jamais » sort **177 fois** (noyade), « aujourd'hui | pour
+l'instant » **18 fois** — c'est une liste qu'on relit, pas une mécanique qu'on écrit. Relues
+à la main : **5 fausses, pas 3**. La relecture en a trouvé deux de plus que l'agent, dont
+celle de `/regles`. *Un garde-fou adossé à quinze exemptions est un garde-fou qu'on désactive.*
+
+### Les tests : 787 → 708, sans perdre un bug attrapé
+
+- 🔴 **Deux tests creux**, dont un qui reproduisait l'anti-patron que `CLAUDE.md` nomme mot
+  pour mot. `data-safety` : `await waitFor(() => textContent === '')` s'arrête au **premier**
+  passage réussi, et le rendu initial est déjà vide. **Prouvé, pas affirmé** : composant muté
+  pour parler en toutes circonstances → ancienne version **7 passed**, nouvelle **1 failed**.
+  La parade (la sonde `Probe`) était déjà écrite quarante lignes plus bas dans le même fichier.
+- **87 tests pour une propriété.** `no-hardcoded-strings` employait `it.each(files)` : 11 % du
+  total du dépôt mesurait la taille de `app/`, pas la couverture. Un seul `it()` désormais,
+  avec la **liste complète** des fautes et le chemin **dans** la ligne — meilleur diagnostic.
+- **22 égalités sur du texte littéral** dans `format.test.ts`, pour des bugs qui sont des
+  **chiffres**. Comparées à `tn('fr', 'say.awaiting.since', 25)`. **Double mutation** : calcul
+  faussé → 4 tests tombent ; dictionnaire reformulé → **24 verts**. ⚠️ Et la mutation a trouvé
+  un 25ᵉ couplage que la relecture avait raté.
+- Le **dé-commentateur** était écrit quatre fois, et deux copies portaient des chemins relatifs
+  au répertoire courant — la leçon écrite dans `no-adhoc-typography` et non appliquée ailleurs.
+  ⚠️ **Contrainte trouvée en la corrigeant** : `import.meta.url` n'est pas une URL `file:` sous
+  jsdom, donc `tests/sources.ts` n'est utilisable que dans le projet `domain`. Les chemins
+  relatifs des tests `.tsx` ne sont **plus un oubli, mais une contrainte**.
+
+---
+
+## 🧹 Lot 11 — la simplification du code (trouvé au lot 10, **non exécuté**)
+
+> Décision de Tristan (2026-08-07) : **les failles d'abord, seules**. Tout ce qui suit est
+> mesuré et vérifié, et attend son lot. Rien ici ne porte de bug : ce sont des coûts.
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| 11.1 | **Deux formes de carte concurrentes** | 🟢 libre — **à faire avec le lot 9** | `globals.css:557` promet « un seul rayon, une seule bordure, un seul fond dans toute l'application ». C'est **faux** : `.card` (rayon `0.75rem`, fond à 80 %) est employée **8 fois**, contre **19** copies à la main en `rounded-lg` (`0.5rem`) et fond **opaque**. **6 rayons distincts** circulent. Visible à l'œil, donc à traiter avec la direction visuelle |
+| 11.2 | **Trois formes au-dessus du seuil d'extraction** | 🟢 libre | La règle du dépôt est trois répétitions. La grille d'affiches (×3, `page.tsx`/`Library.tsx`/`serie/[id]`), le paragraphe de prose (×5), `text-{xs,sm} text-(--color-muted)` (×19 chacun) |
+| 11.3 | **`setWanted` et `setLiked` sont identiques** | 🟢 libre | `journal.ts:1363` et `:1484`, au nom du champ près — vérifié par normalisation. Un troisième drapeau daté produirait une troisième copie, et le jeu de pierres tombales devrait être corrigé trois fois |
+| 11.4 | **45 `export` que personne n'importe** | 🟢 libre | 44 types + `CURRENT_PROVIDER`. Retirer le mot-clé, pas le symbole. ⚠️ Mesuré par un outil **ancré** — le premier en annonçait 201, dont `parseJournal` |
+| 11.5 | **Deux clés de dictionnaire orphelines** | 🟢 libre | `friends.following` (le composant utilise `friends.followingLabel`) et `review.none`. 4 lignes |
+| 11.6 | **16 paramètres `AbortSignal` jamais passés** | 🟢 libre | `CatalogProvider` + `TmdbProvider`, 7 méthodes. Aucun appelant n'a jamais fourni de signal |
+| 11.7 | **L'horloge est injectable, pas injectée** | 🟢 libre | **18 `new Date()`** en valeur par défaut dans `src/domain/`, et quatre appels de production omettent l'argument dans un `useMemo([journal])` (`Library.tsx:42`, `MyStats.tsx:35-36`, `ResumeStrip.tsx:27`) : **l'heure est lue au montage et jamais relue**. Une PWA installée et laissée ouverte affiche « revient dans 3 jours » indéfiniment. ⚠️ La règle 2 dit « tout instant est injecté » — ce qui est vrai est « **injectable** » |
+| 11.8 | **Le test de `/regles` compte des `<li>`, pas des motifs** | 🟢 libre | `rules-page.test.tsx:29-36` affirme `listitem >= REPORT_GROUNDS.length` : il passe si la page liste cinq puces sans rapport. À renforcer, pas à supprimer — la propriété (« tout motif appliqué a été publié ») est la bonne |
+| 11.9 | **Deux `eslint-disable` pour un linter absent** | 🟢 libre | `Poster.tsx:50`, `WatchOptions.tsx:96`. Le dépôt n'a **aucune** dépendance ESLint |
+
+---
+
 ## 🎨 Lot 9 — la direction visuelle (2026-08-06) — **le vrai sujet ouvert**
 
 > **Verdict de Tristan : « le site est hyper moche », et il faut une vraie direction** — pas

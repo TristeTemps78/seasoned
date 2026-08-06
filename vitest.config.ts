@@ -14,7 +14,9 @@ import { defineConfig } from 'vitest/config';
  * et la casse n'apparaitrait qu'au premier appel serveur.
  *
  * Faire tourner le domaine sous `node` fait de cette regle une **verite executee** et
- * non un commentaire. Le cout d'un DOM sur 306 tests est accessoire ; la garantie, non.
+ * non un commentaire. Le cout d'un DOM sur toute la suite est accessoire — elle tourne en
+ * cinq secondes ; la garantie, elle, ne se rachete pas. (Ce commentaire annoncait « 306
+ * tests » : un chiffre dans un commentaire perime le jour ou on l'ecrit.)
  *
  * ## Ce que le second projet repare
  *

@@ -53,6 +53,16 @@ Ordre de lecture pour reprendre à froid :
    niveau 1 issue de `docs/ROADMAP-AUDIT.md` §2 — la trajectoire est elle-même un
    spoiler. Le filtrage vit dans le domaine (`src/domain/spoiler.ts`), jamais dans la
    couche de rendu : un filtre d'affichage laisse fuir les agrégats.
+   - ⚠️ **« Sans position » n'a pas le même sens partout, et les deux sens sont voulus**
+     (nommé le 2026-08-07, après qu'un audit l'a pris pour un défaut). `spoiler.ts`
+     masque **tout** à qui n'a pas de position : ce qu'on y montre décrit *l'intérieur*
+     d'une série, et mieux vaut masquer à tort que spoiler. `activity.ts` ne masque
+     **rien** dans le même cas : le fil décrit ce que font **les autres**, et le nombre de
+     saisons est public. C'est aussi ce que fait `entry-point`, qui s'adresse **exprès** à
+     qui n'a pas commencé.
+   - **Donc la question n'est pas « a-t-il une position ? » mais « ce fait décrit-il
+     l'œuvre ou quelqu'un d'autre ? »** Un nouveau chemin de caviardage doit trancher
+     celle-là, et écrire sa réponse — pas recopier le défaut du voisin.
 8. **On signale, on ne répare jamais en silence.** Vaut d'abord pour la normalisation des
    saisons : une fusion automatique erronée casserait des notes déjà posées.
 9. **Export intégral dès qu'il y a une donnée à exporter.** Non négociable — 26 millions
