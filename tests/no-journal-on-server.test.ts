@@ -69,10 +69,14 @@ const CLIENT_MARK = /^\s*['"]use client['"]/;
 const FORBIDDEN = [
   /['"]@\/src\/journal\//,
   /['"]@\/app\/journal\//,
-  /['"]@\/src\/domain\/journal['"]/,
+  // ⚠️ Sans ancre de fin : depuis que `journal.ts` est devenu un repertoire de briques
+  // (2026-08-07), `@/src/domain/journal/write` est un import parfaitement valide — et la
+  // version exacte `…journal['"]` ne le voyait pas. Le decoupage aurait rouvert la faille
+  // que ce fichier venait de fermer.
+  /['"]@\/src\/domain\/journal(\/|['"])/,
   /['"][./]+\/?src\/journal\//,
   /['"][./]+\/?journal\//,
-  /['"][./]+src\/domain\/journal['"]/,
+  /['"][./]+src\/domain\/journal(\/|['"])/,
 ];
 
 function isClientModule(source: string): boolean {
@@ -108,6 +112,8 @@ it('la garde voit bien ce qu elle vise', () => {
   expect(refused("import { x } from '@/src/journal/remote';")).toBe(1);
   expect(refused("import { x } from '@/app/journal/journalStore';")).toBe(1);
   expect(refused("import { x } from '@/src/domain/journal';")).toBe(1);
+  // Le faux negatif qu'aurait cree le decoupage en briques du 2026-08-07.
+  expect(refused("import { x } from '@/src/domain/journal/write';")).toBe(1);
   expect(refused("import { x } from '../journal/useJournal';")).toBe(1);
 
   // Et elle laisse passer ce qui est correct : un module client, et — le faux positif
