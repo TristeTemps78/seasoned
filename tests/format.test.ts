@@ -6,9 +6,30 @@ import {
   year,
 } from '../lib/format';
 import { deriveStatus } from '../src/domain/status';
+import { t, tn } from '../lib/i18n';
 
 /**
- * Ces tests-ci disent le **francais**, explicitement.
+ * ## Pourquoi on compare a `t(...)` et non a une phrase recopiee
+ *
+ * Ce fichier portait **22 egalites sur du texte litteral** pour 24 tests — le pire rapport
+ * du depot. Or le bug que chacune attrape est **le chiffre** (25 mois, 12 jours, 3 j) et
+ * **l'accord** (0 / 1 / 2), jamais la phrase : reformuler « Annoncee comme revenant » en
+ * « Annoncee pour revenir » faisait tomber deux tests sans qu'aucun defaut existe.
+ *
+ * Comparer a `tn('fr', 'say.awaiting.since', 25)` garde tout ce qui compte et perd la
+ * fragilite : le test tombe si le calcul des mois est faux, si la mauvaise cle est
+ * choisie, ou si le pluriel derape — et **pas** si le dictionnaire est reecrit.
+ *
+ * ⚠️ **Deux exceptions restent litterales, et c'est motive** : les durees composees
+ * (« 62 heures — 2 jours et 14 h »). Leur objet est la **decomposition**, et la comparer a
+ * `tn(..., { n: 62, d: 2, r: 14 })` reviendrait a recopier dans le test l'arithmetique que
+ * le test verifie. La phrase entiere se lit mieux et prouve la meme chose.
+ *
+ * ⚠️ Restent litterales aussi, et pour la raison inverse, les assertions du bloc anglais
+ * qui portent sur **le texte lui-meme** : « aucune trace de francais dans l'anglais » n'a
+ * de sens que sur la chaine rendue.
+ *
+ * ## Ces tests-ci disent le **francais**, explicitement.
  *
  * Ils ont ete ecrits quand le francais etait la seule langue, donc quand ne rien preciser
  * revenait a le demander. Depuis que la langue par defaut est l'anglais, ne rien preciser
@@ -43,9 +64,7 @@ describe('describeStatus — le cas qui porte la valeur', () => {
     );
 
     expect(status.status).toBe('awaiting_renewal');
-    expect(describeStatus(status)).toBe(
-      'Annoncée comme revenant, mais aucun épisode depuis 25 mois.',
-    );
+    expect(describeStatus(status)).toBe(tn('fr', 'say.awaiting.since', 25));
   });
 
   it('ne declare pas une serie morte a la place de ses producteurs', () => {
@@ -55,8 +74,11 @@ describe('describeStatus — le cas qui porte la valeur', () => {
     );
     const text = describeStatus(status);
 
+    // Ce que l'on refuse : que le produit conclue a la place des producteurs. Le motif
+    // reste litteral **a dessein** — c'est le vocabulaire interdit qui est le sujet.
     expect(text).not.toMatch(/mort|annul|fini/i);
-    expect(text).toMatch(/aucun épisode depuis/);
+    // Et ce qu'on exige a la place : la phrase du silence chiffre. 900 j / 30,44 = 30 mois.
+    expect(text).toBe(tn('fr', 'say.awaiting.since', 30));
   });
 });
 
@@ -66,7 +88,7 @@ describe('describeStatus — les autres statuts', () => {
       { production: 'returning', lastAiredAt: daysAgo(300), nextAiringAt: inDays(12) },
       NOW,
     );
-    expect(describeStatus(status)).toBe('Nouvel épisode dans 12 jours.');
+    expect(describeStatus(status)).toBe(tn('fr', 'say.airing.inDays', 12));
   });
 
   it('dit « demain » plutot que « dans 1 jours »', () => {
@@ -74,7 +96,7 @@ describe('describeStatus — les autres statuts', () => {
       { production: 'returning', lastAiredAt: daysAgo(300), nextAiringAt: inDays(1) },
       NOW,
     );
-    expect(describeStatus(status)).toBe('Nouvel épisode demain.');
+    expect(describeStatus(status)).toBe(t('fr', 'say.airing.tomorrow'));
   });
 
   it('distingue une pause normale d un abandon', () => {
@@ -106,12 +128,12 @@ describe('shortStatus — la valeur tient dans le chiffre', () => {
   // Series » ne dit rien) mais le temps ecoule chiffre.
   it('chiffre l attente entre deux saisons', () => {
     const status = deriveStatus({ production: 'returning', lastAiredAt: daysAgo(335) }, NOW);
-    expect(shortStatus(status)).toBe('en attente · 11 mois');
+    expect(shortStatus(status)).toBe(tn('fr', 'chip.waitingSince', 11));
   });
 
   it('chiffre le silence d une serie zombie', () => {
     const status = deriveStatus({ production: 'returning', lastAiredAt: daysAgo(760) }, NOW);
-    expect(shortStatus(status)).toBe('sans nouvelle · 25 mois');
+    expect(shortStatus(status)).toBe(tn('fr', 'chip.silentSince', 25));
   });
 
   it('annonce le prochain episode quand il est date', () => {
@@ -119,7 +141,7 @@ describe('shortStatus — la valeur tient dans le chiffre', () => {
       { production: 'returning', lastAiredAt: daysAgo(300), nextAiringAt: inDays(3) },
       NOW,
     );
-    expect(shortStatus(status)).toBe('ép. dans 3 j');
+    expect(shortStatus(status)).toBe(tn('fr', 'chip.inDays', 3));
   });
 
   it('reste muet quand il n y a rien d utile a dire', () => {
@@ -131,7 +153,7 @@ describe('shortStatus — la valeur tient dans le chiffre', () => {
 
   it('signale une annulation', () => {
     const status = deriveStatus({ production: 'canceled', lastAiredAt: daysAgo(100) }, NOW);
-    expect(shortStatus(status)).toBe('annulée');
+    expect(shortStatus(status)).toBe(t('fr', 'chip.cancelled'));
   });
 
   it('tient sur une vignette', () => {
@@ -150,12 +172,12 @@ describe('shortStatus — la valeur tient dans le chiffre', () => {
 describe('formatCommitment — « ça vaut mes 40 heures ? »', () => {
   it('compte en heures, pas en minutes', () => {
     // Les gens comptent leur temps libre en heures. 1800 minutes ne veut rien dire.
-    expect(formatCommitment(30 * 60)).toBe('30 heures');
+    expect(formatCommitment(30 * 60)).toBe(tn('fr', 'commit.hours', 30));
   });
 
   it('ajoute l equivalent en jours au-dela de deux jours', () => {
     // Sous 48 h, l'heure suffit : personne ne pense « 1 jour et 7 h ».
-    expect(formatCommitment(47 * 60)).toBe('47 heures');
+    expect(formatCommitment(47 * 60)).toBe(tn('fr', 'commit.hours', 47));
     // Au-dela, le chiffre en heures cesse de parler — c'est le moment de dire
     // ce que ca represente vraiment.
     expect(formatCommitment(62 * 60)).toBe('62 heures — 2 jours et 14 h');
@@ -164,13 +186,13 @@ describe('formatCommitment — « ça vaut mes 40 heures ? »', () => {
   });
 
   it('accorde le singulier', () => {
-    expect(formatCommitment(60)).toBe('1 heure');
-    expect(formatCommitment(120)).toBe('2 heures');
+    expect(formatCommitment(60)).toBe(tn('fr', 'commit.hours', 1));
+    expect(formatCommitment(120)).toBe(tn('fr', 'commit.hours', 2));
   });
 
   it('gere les durees minuscules', () => {
-    expect(formatCommitment(20)).toBe('moins d’une heure');
-    expect(formatCommitment(0)).toBe('moins d’une heure');
+    expect(formatCommitment(20)).toBe(t('fr', 'commit.underHour'));
+    expect(formatCommitment(0)).toBe(t('fr', 'commit.underHour'));
   });
 });
 
@@ -189,9 +211,7 @@ describe('year', () => {
 describe('en — le differenciateur doit se dire aussi bien en anglais', () => {
   it('chiffre le silence d une serie declaree vivante', () => {
     const status = deriveStatus({ production: 'returning', lastAiredAt: daysAgo(760) }, NOW);
-    expect(describeStatusIn(status, 'en')).toBe(
-      'Listed as returning, but no episode for 25 months.',
-    );
+    expect(describeStatusIn(status, 'en')).toBe(tn('en', 'say.awaiting.since', 25));
   });
 
   it('est bien la langue par defaut : ne rien preciser rend de l anglais', () => {
@@ -203,9 +223,9 @@ describe('en — le differenciateur doit se dire aussi bien en anglais', () => {
 
   it('accorde le pluriel anglais, qui n est pas le pluriel francais', () => {
     // 1 : les deux langues disent le singulier.
-    expect(formatCommitmentIn(60, 'en')).toBe('1 hour');
-    expect(formatCommitmentIn(60, 'fr')).toBe('1 heure');
-    expect(formatCommitmentIn(120, 'en')).toBe('2 hours');
+    expect(formatCommitmentIn(60, 'en')).toBe(tn('en', 'commit.hours', 1));
+    expect(formatCommitmentIn(60, 'fr')).toBe(tn('fr', 'commit.hours', 1));
+    expect(formatCommitmentIn(120, 'en')).toBe(tn('en', 'commit.hours', 2));
   });
 
   it('accorde zero comme l anglais l accorde, et non comme le francais', () => {
@@ -217,8 +237,8 @@ describe('en — le differenciateur doit se dire aussi bien en anglais', () => {
       NOW,
     );
     // Cas nominal a zero jour : les deux langues ont une phrase dediee, verifions-la.
-    expect(describeStatusIn(status, 'en')).toBe('New episode today.');
-    expect(describeStatusIn(status, 'fr')).toBe('Nouvel épisode aujourd’hui.');
+    expect(describeStatusIn(status, 'en')).toBe(t('en', 'say.airing.today'));
+    expect(describeStatusIn(status, 'fr')).toBe(t('fr', 'say.airing.today'));
   });
 
   it('tient sur une vignette en anglais aussi', () => {
