@@ -238,6 +238,14 @@
 | 8.8 | **Lire** (UI caviardée) | ✅ 2026-08-06 — @claude-opus | `Reviews`, chargement paresseux, **aucune route serveur** — la page reste `force-static` et le coût Vercel est nul. Le caviardage se fait dans le navigateur avec le journal du lecteur : le serveur ne sait pas où en est celui qui lit. Le texte masqué est **déplacé** dans `hiddenText`, pas caché en CSS — mutation vérifiée |
 | 8.9 | **Boucler** | 🟡 partiel | ✅ L'export/import porte les trois champs neufs sans rien changer : ils traversent `parseEntry`/`serializeJournal`, testés. 🟢 **Restent** : la phrase de `/regles` sur le retrait d'une critique, et `ARCHITECTURE-APP.md` §5 dont la ligne « pas de texte libre avant 5.0 » est désormais levée |
 
+### ▶️ Les trois features qui restent face à la cible « TvTime × Letterboxd »
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| 8.12 | **La page de profil public `/u/[handle]`** | 🟢 libre — **le blocage est levé, la voie est trouvée** | On suit un `@handle` sans pouvoir ouvrir sa page : c'est le maillon qui donne son sens au lot 8, puisque les critiques ne se lisent aujourd'hui que sur la fiche série. 🔴 **Ce qui semblait l'interdire** : le dépôt a **zéro route dynamique** et y tient (une invocation par visite, donc un coût par utilisateur — la cause de mort de TV Time). Or on ne connaît pas les handles au build. ✅ **La réponse existe déjà dans le dépôt** : `/compte/retour` est `force-static` et fait tout son travail **côté client**. Même motif ici — la coquille est prérendue et vide, le `@handle` est lu depuis `window.location`, et `SocialClient.findByHandle` + `reviewsFor` remplissent la page. Zéro invocation, zéro route serveur, et RLS décide déjà qui voit quoi. ⚠️ **Non indexable, et c'est voulu** : une page vide au build ne se référence pas — ce qui est cohérent avec Q1 (`followers` par défaut, l'indexation reste fermée). ⚠️ Démarrage à froid : *mieux vaut se taire que compter zéro* — pas de « 0 vu · 0 critique » |
+| 8.13 | **Les listes personnalisées** | 🟢 libre | 2ᵉ feature de Letterboxd. ⛔ **Prérequis réel** : c'est la première donnée de **taille non bornée** du produit, et la tâche 8.1 (mesurer le journal) existe pour ça — un `UPSERT` de `jsonb` réécrit tout le document à chaque geste |
+| 8.14 | **Le bilan annuel** | 🟢 libre | `tally.ts` et `taste.ts` ne contiennent **aucun** découpage temporel (vérifié : zéro occurrence de `getFullYear`). Or chaque fait du journal porte déjà sa date — la matière est là, il manque le filtre. C'est la feature la moins chère des trois, et la seule qui ne demande ni table, ni route, ni modération |
+
 ### 🔎 Audit de solidité (2026-08-06) — ce que la mesure a dit
 
 > Demandé par Tristan : « peur d'un château de cartes ». **Verdict : la base est saine.**
