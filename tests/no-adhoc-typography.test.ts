@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
+import { codeIn } from './sources';
 
 /**
  * Tout titre de `app/` porte un cran de l'echelle. Aucun ne redecide sa taille sur place.
@@ -56,12 +57,7 @@ const INVISIBLE = /\bsr-only\b/;
  * ce depot commente abondamment. `no-ssr-auth` documente avoir accuse un fichier « dont le
  * seul tort est d'expliquer l'interdiction ». Meme corps que `no-hardcoded-strings`.
  */
-function withoutComments(source: string): string {
-  return source
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^[ \t]*\/\/.*$/gm, '');
-}
+const withoutComments = codeIn;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

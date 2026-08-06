@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { ROOT, codeOf, filesUnder, pathOf } from './sources';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -26,38 +27,23 @@ import { describe, expect, it } from 'vitest';
  * c'est le seul moyen d'attraper une dependance qui n'aurait pas encore d'appelant.
  */
 
-const ROOTS = ['app', 'src', 'lib'] as const;
-
-function sourceFiles(dir: string): readonly string[] {
-  const out: string[] = [];
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) out.push(...sourceFiles(full));
-    else if (/\.tsx?$/.test(name)) out.push(full);
-  }
-  return out;
-}
-
-const FILES = ROOTS.flatMap((root) => sourceFiles(root));
-
 /**
- * Le code seul, sans les commentaires.
+ * Le parcours et le retrait des commentaires viennent de `./sources`.
  *
- * ⚠️ **Indispensable ici, et le test l'a prouve en echouant sur ses propres cibles.** Ce
- * depot documente abondamment *pourquoi* `@supabase/ssr` est refuse : chercher la chaine
- * brute accusait donc `src/auth/client.ts` et `AuthCallback.tsx`, dont le seul tort est
- * d'expliquer l'interdiction.
+ * ⚠️ **Le retrait des commentaires est indispensable ici, et le test l'a prouve en
+ * echouant sur ses propres cibles.** Ce depot documente abondamment *pourquoi*
+ * `@supabase/ssr` est refuse : chercher la chaine brute accusait donc `src/auth/client.ts`
+ * et `AuthCallback.tsx`, dont le seul tort est d'expliquer l'interdiction. C'est le meme
+ * defaut que le `grep -c "use client"` du 2026-08-03, qui comptait les mots dans les
+ * commentaires et « prouvait » l'inverse de la realite.
  *
- * C'est exactement le defaut deja consigne le 2026-08-03 : un `grep -c "use client"` qui
- * comptait les mots **dans les commentaires** et « prouvait » l'inverse de la realite.
- * *Une verification mal ancree est pire qu'aucune.*
+ * 🔴 **Et les chemins etaient relatifs au repertoire courant** (`sourceFiles('app')`,
+ * `readFileSync('package.json')`), alors que `no-adhoc-typography` ecrit que
+ * « `readdirSync('app')` cassait au premier deplacement ». `ROOT` est derive du fichier.
  */
-function code(file: string): string {
-  return readFileSync(file, 'utf8')
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^[ \t]*\/\/.*$/gm, '');
-}
+const FILES = ['app', 'src', 'lib'].flatMap((root) =>
+  filesUnder(root).map((file) => ({ path: pathOf(file), code: codeOf(file) })),
+);
 
 describe('⛔ rien ne rend le site dynamique pour authentifier', () => {
   it('garde-fou : le test regarde bien des fichiers', () => {
@@ -67,27 +53,27 @@ describe('⛔ rien ne rend le site dynamique pour authentifier', () => {
   });
 
   it('⛔ aucun module ne depend de @supabase/ssr', () => {
-    const guilty = FILES.filter((file) => code(file).includes('@supabase/ssr'));
-    expect(guilty).toEqual([]);
+    const guilty = FILES.filter(({ code }) => code.includes('@supabase/ssr'));
+    expect(guilty.map(({ path }) => path)).toEqual([]);
   });
 
   it('⛔ package.json ne declare pas @supabase/ssr', () => {
     // La dependance peut arriver avant son premier import — l'attraper la aussi.
-    const pkg = readFileSync('package.json', 'utf8');
+    const pkg = readFileSync(join(ROOT, 'package.json'), 'utf8');
     expect(pkg).not.toContain('@supabase/ssr');
   });
 
   it('⛔ il n existe aucun middleware', () => {
-    const middlewares = FILES.filter((file) => /(^|[\\/])middleware\.tsx?$/.test(file));
-    expect(middlewares).toEqual([]);
+    const middlewares = FILES.filter(({ path }) => /(^|\/)middleware\.tsx?$/.test(path));
+    expect(middlewares.map(({ path }) => path)).toEqual([]);
   });
 
   it('⛔ l authentification n a introduit aucune route serveur', () => {
     // Zero `route.ts` dans tout le projet, et c'est un fait dont `TASKS.md` se sert pour
     // chiffrer les propositions (« la premiere route serveur du projet »). Le retour du
     // lien magique n'en a pas besoin : le navigateur a le code ET le verificateur.
-    const routes = FILES.filter((file) => /(^|[\\/])route\.tsx?$/.test(file));
-    expect(routes).toEqual([]);
+    const routes = FILES.filter(({ path }) => /(^|\/)route\.tsx?$/.test(path));
+    expect(routes.map(({ path }) => path)).toEqual([]);
   });
 
   it('les pages du compte sont statiques', () => {
@@ -97,7 +83,7 @@ describe('⛔ rien ne rend le site dynamique pour authentifier', () => {
       'app/(fr)/fr/compte/page.tsx',
       'app/(fr)/fr/compte/retour/page.tsx',
     ]) {
-      expect(readFileSync(page, 'utf8'), page).toContain("dynamic = 'force-static'");
+      expect(readFileSync(join(ROOT, page), 'utf8'), page).toContain("dynamic = 'force-static'");
     }
   });
 });
@@ -107,10 +93,9 @@ describe('un seul module connait la forme de l authentification', () => {
     // `AGENTS.md` regle 3, appliquee a l'identite comme au catalogue : changer de
     // fournisseur doit rester un module a reecrire.
     const guilty = FILES.filter(
-      (file) =>
-        !file.replace(/\\/g, '/').startsWith('src/auth/') &&
-        /@supabase\/(auth-js|supabase-js)/.test(code(file)),
+      ({ path, code }) =>
+        !path.startsWith('src/auth/') && /@supabase\/(auth-js|supabase-js)/.test(code),
     );
-    expect(guilty).toEqual([]);
+    expect(guilty.map(({ path }) => path)).toEqual([]);
   });
 });
