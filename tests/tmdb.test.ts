@@ -74,9 +74,11 @@ describe('note du public de la serie', () => {
 });
 
 describe('mapSeriesDetail — parsing tolerant', () => {
-  it('ignore une cle inconnue sans broncher', () => {
-    expect(mapSeriesDetail(SERIES_FIXTURE)).toBeDefined();
-  });
+  // ⚠️ Ici vivait `it('ignore une cle inconnue sans broncher')`, qui affirmait
+  // `expect(mapSeriesDetail(SERIES_FIXTURE)).toBeDefined()`. La cle inconnue est **dans**
+  // ce fixture, et le cas nominal plus haut le mappe deja en verifiant six champs : il
+  // prouve strictement plus, sur la meme entree. Un test qui redit un autre test en moins
+  // fort ne protege de rien et donne un faux sentiment de couverture.
 
   it('ne tombe sur aucune entree malformee', () => {
     for (const input of [null, undefined, 42, 'texte', [], {}, { id: 1 }, { name: 'x' }]) {
