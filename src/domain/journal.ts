@@ -249,6 +249,63 @@ export interface JournalEpisodeMark {
 }
 
 /**
+ * Ce qu'on a ecrit sur une serie, ou sur une saison.
+ *
+ * ## Une seule structure pour les deux granularites
+ *
+ * Les cles reprennent **le vocabulaire des pierres tombales**, deja dans ce module :
+ * `series` pour l'oeuvre entiere, `season:3` pour une saison. Une structure, une fonction
+ * de fusion, un espace de suppression — au lieu de deux de chaque.
+ *
+ * ## `throughSeason` est declare par l'auteur, jamais devine
+ *
+ * C'est la borne de spoiler : « ce texte ne revele rien au-dela de la saison N ». Zero veut
+ * dire « sans spoiler », donc lisible par quelqu'un qui n'a pas commence — et c'est le cas
+ * qui compte, puisque l'audience d'une critique est justement celle qui hesite.
+ *
+ * ⚠️ Elle n'est PAS deduite de la position de l'auteur, meme si l'interface la prerenseigne
+ * ainsi : deduire reviendrait a publier sa position sans qu'il l'ait choisi (regle 7).
+ *
+ * ## Ce qui n'est pas ici, et pourquoi
+ *
+ * **L'etat « publie » ne vit pas dans le journal.** Deux appareils s'en disputeraient la
+ * valeur sans date qui les departage. L'etat publie, c'est **l'existence de la ligne** cote
+ * serveur, dont le serveur est l'autorite parce qu'il en detient la copie.
+ */
+export interface JournalReview {
+  readonly text: string;
+  readonly at: string;
+  /** Jusqu'ou ce texte va. `0` = rien au-dela du pitch. */
+  readonly throughSeason: number;
+  /** Langue **declaree** a l'ecriture. Irrattrapable apres coup (A9). */
+  readonly lang?: string;
+}
+
+/** Plafond d'une critique. Meme ordre de grandeur que la note d'un signalement. */
+export const MAX_REVIEW_CHARS = 2000;
+
+/** Ce qui cloche dans un texte, ou rien. Meme forme que `checkHandle`. */
+export type ReviewCheck = { readonly ok: true } | { readonly ok: false; readonly reason: 'empty' | 'too_long' };
+
+/**
+ * Le texte est-il publiable ?
+ *
+ * On **signale**, on ne tronque pas en silence (`AGENTS.md` regle 8) : couper la fin d'une
+ * critique a 2000 caracteres serait la reecrire sans le dire.
+ */
+export function checkReview(raw: string): ReviewCheck {
+  const text = raw.trim();
+  if (text.length === 0) return { ok: false, reason: 'empty' };
+  if (text.length > MAX_REVIEW_CHARS) return { ok: false, reason: 'too_long' };
+  return { ok: true };
+}
+
+/** Cle canonique d'une critique : `series`, ou `season:3`. */
+export function reviewKey(seasonNumber?: number): string {
+  return seasonNumber === undefined ? 'series' : `season:${seasonNumber}`;
+}
+
+/**
  * Le coeur : « celle-la compte pour moi ».
  *
  * ## Pourquoi il n'est pas une note de plus
@@ -468,6 +525,8 @@ export interface JournalEntry {
    * comme avant leur existence.
    */
   readonly episodeMarks?: Readonly<Record<string, JournalEpisodeMark>>;
+  /** Ce qu'on a ecrit, par cible. Voir {@link JournalReview}. */
+  readonly reviews?: Readonly<Record<string, JournalReview>>;
   /**
    * Chaque fois que la serie a ete menee au bout. Voir {@link JournalCompletion}.
    *
@@ -704,6 +763,29 @@ function parseEpisodeMarks(raw: unknown): Record<string, JournalEpisodeMark> {
   return out;
 }
 
+const REVIEW_KEY = /^(series|season:[0-9]+)$/;
+
+function parseReviews(raw: unknown): Record<string, JournalReview> {
+  const out: Record<string, JournalReview> = {};
+  for (const [key, value] of Object.entries(asRecord(raw))) {
+    if (!REVIEW_KEY.test(key)) continue;
+    const source = asRecord(value);
+    const text = source['text'];
+    if (typeof text !== 'string' || text.trim().length === 0) continue;
+    const through = source['throughSeason'];
+    const lang = source['lang'];
+    out[key] = {
+      // Tolerant a la lecture, strict a l'ecriture : un texte deja ecrit ne doit pas
+      // disparaitre parce qu'il depasse un plafond que nous avons change depuis.
+      text,
+      at: readInstant(source, 'at', UNDATED),
+      throughSeason: typeof through === 'number' && through >= 0 ? Math.floor(through) : 0,
+      ...(typeof lang === 'string' && lang.length > 0 ? { lang } : {}),
+    };
+  }
+  return out;
+}
+
 const SEASON_KEY = /^[0-9]+$/;
 const EPISODE_KEY = /^[0-9]+:[0-9]+$/;
 
@@ -785,6 +867,7 @@ const KNOWN_ENTRY_FIELDS = [
   'wanted',
   'liked',
   'episodeMarks',
+  'reviews',
   'completions',
   'snapshot',
   'seasonRatings',
@@ -859,6 +942,7 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
       : undefined;
 
   const episodeMarks = parseEpisodeMarks(source['episodeMarks']);
+  const reviews = parseReviews(source['reviews']);
   const completions = parseCompletions(source['completions']);
   const unknownFields = unknownFieldsOf(source, KNOWN_ENTRY_FIELDS);
 
@@ -868,6 +952,7 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
     ...(wanted !== undefined ? { wanted } : {}),
     ...(liked !== undefined ? { liked } : {}),
     ...(Object.keys(episodeMarks).length > 0 ? { episodeMarks } : {}),
+    ...(Object.keys(reviews).length > 0 ? { reviews } : {}),
     ...(completions.length > 0 ? { completions } : {}),
     ...(snapshot !== undefined ? { snapshot } : {}),
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
@@ -899,7 +984,8 @@ export function hasContent(entry: JournalEntry | undefined): boolean {
     Object.keys(entry.episodeRatings ?? {}).length > 0 ||
     // Une marque est un geste explicite : sans elle ici, `worthKeeping` supprimerait une
     // entree qui n'a que des marques, et le geste serait perdu a la relecture suivante.
-    Object.keys(entry.episodeMarks ?? {}).length > 0
+    Object.keys(entry.episodeMarks ?? {}).length > 0 ||
+    Object.keys(entry.reviews ?? {}).length > 0
   );
 }
 
@@ -1296,6 +1382,46 @@ export function setWanted(
 }
 
 /**
+ * Ecrire, reecrire ou effacer une critique.
+ *
+ * `text` vide efface — le meme geste rejoue annule, comme partout ailleurs ici.
+ */
+export function setReview(
+  journal: Journal,
+  key: JournalKey,
+  target: string,
+  review: { readonly text: string; readonly throughSeason: number; readonly lang?: string },
+  now = new Date(),
+): Journal {
+  const entry = journal.entries[key] ?? {};
+  const field = `review:${target}`;
+  const { [target]: _current, ...rest } = entry.reviews ?? {};
+
+  if (review.text.trim().length === 0) {
+    const { reviews: _dropped, ...withoutReviews } = entry;
+    return withEntry(journal, key, {
+      ...withoutReviews,
+      ...(Object.keys(rest).length > 0 ? { reviews: rest } : {}),
+      removed: withTombstone(entry, field, now.toISOString()),
+    });
+  }
+
+  return withEntry(journal, key, {
+    ...entry,
+    reviews: {
+      ...rest,
+      [target]: {
+        text: review.text.trim(),
+        at: now.toISOString(),
+        throughSeason: review.throughSeason,
+        ...(review.lang !== undefined ? { lang: review.lang } : {}),
+      },
+    },
+    ...reviseTombstone(entry, field),
+  });
+}
+
+/**
  * Les marques d'une entree, dans la forme qu'attend le domaine du calcul.
  *
  * La table du journal est indexee par `saison:episode` — pratique pour fusionner, illisible
@@ -1668,6 +1794,7 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
   // ⚠️ Prefixe `mark:` et surtout pas `episode:`, deja pris par la note d'episode :
   // effacer une note effacerait sinon la marque du meme episode, du meme geste.
   const episodeMarks = mergeDated(a.episodeMarks, b.episodeMarks, removed, (k) => `mark:${k}`);
+  const reviews = mergeDated(a.reviews, b.reviews, removed, (k) => `review:${k}`);
   const unknownFields = mergeUnknown(a.unknownFields, b.unknownFields);
 
   return {
@@ -1680,6 +1807,7 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
     ...(Object.keys(episodeRatings).length > 0 ? { episodeRatings } : {}),
     ...(Object.keys(episodeMarks).length > 0 ? { episodeMarks } : {}),
+    ...(Object.keys(reviews).length > 0 ? { reviews } : {}),
     ...(Object.keys(removed).length > 0 ? { removed } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };

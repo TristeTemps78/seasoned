@@ -171,14 +171,14 @@ describe('parseJournal — ne perd jamais tout', () => {
       entries: {
         [BB]: {
           wanted: { at: NOW.toISOString() },
-          reviews: { series: { text: 'ecrit par une version future' } },
+          futureField: { hello: 'ecrit par une version future' },
         },
       },
     });
 
     const reread = parseJournal(serializeJournal(parseJournal(raw, NOW)), NOW);
-    expect(reread.entries[BB]?.unknownFields?.['reviews']).toEqual({
-      series: { text: 'ecrit par une version future' },
+    expect(reread.entries[BB]?.unknownFields?.['futureField']).toEqual({
+      hello: 'ecrit par une version future',
     });
     expect(reread.unknownFields?.['futureRoot']).toEqual({ hello: 'world' });
     // Et le champ connu qui voisinait n'a pas bouge.
@@ -190,7 +190,7 @@ describe('parseJournal — ne perd jamais tout', () => {
     expect(written['futureRoot']).toEqual({ hello: 'world' });
     expect(written['unknownFields']).toBeUndefined();
     const entry = (written['entries'] as Record<string, Record<string, unknown>>)[BB];
-    expect(entry?.['reviews']).toEqual({ series: { text: 'ecrit par une version future' } });
+    expect(entry?.['futureField']).toEqual({ hello: 'ecrit par une version future' });
     expect(entry?.['unknownFields']).toBeUndefined();
   });
 
@@ -200,7 +200,7 @@ describe('parseJournal — ne perd jamais tout', () => {
     // la refuser, sinon une serie que l'utilisateur n'a jamais touchee apparait dans /moi.
     const raw = JSON.stringify({
       version: JOURNAL_VERSION,
-      entries: { [BB]: { reviews: { series: { text: 'x' } } } },
+      entries: { [BB]: { futureField: { hello: 'x' } } },
     });
     const journal = parseJournal(raw, NOW);
 
@@ -208,7 +208,7 @@ describe('parseJournal — ne perd jamais tout', () => {
     expect(hasContent(journal.entries[BB])).toBe(false);
     // Et elle survit a une ecriture portant sur une AUTRE serie.
     const after = setWanted(journal, journalKey('999'), true, NOW);
-    expect(after.entries[BB]?.unknownFields?.['reviews']).toBeDefined();
+    expect(after.entries[BB]?.unknownFields?.['futureField']).toBeDefined();
   });
 
   it('migre un journal v1 : les cles nues prennent leur prefixe', () => {

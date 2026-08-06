@@ -17,6 +17,7 @@ import {
   setWanted as setWantedIn,
   setLiked as setLikedIn,
   setEpisodeMark as setEpisodeMarkIn,
+  setReview as setReviewIn,
   type Journal,
   type JournalKey,
   type JournalSnapshot,
@@ -190,6 +191,14 @@ export function useJournal() {
     ),
     setWanted: useCallback(
       (key: JournalKey, wanted: boolean) => mutate((j) => setWantedIn(j, key, wanted)),
+      [mutate],
+    ),
+    setReview: useCallback(
+      (
+        key: JournalKey,
+        target: string,
+        review: { readonly text: string; readonly throughSeason: number; readonly lang?: string },
+      ) => mutate((j) => setReviewIn(j, key, target, review)),
       [mutate],
     ),
     setLiked: useCallback(

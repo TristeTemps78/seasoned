@@ -25,6 +25,8 @@ import { TrajectorySection } from '@/app/components/TrajectorySection';
 import { WatchOptions } from '@/app/components/WatchOptions';
 import { SeriesOrderings } from '@/app/components/SeriesOrderings';
 import { MyProgress } from '@/app/components/MyProgress';
+import { Reviews } from '@/app/components/Reviews';
+import { legalIsComplete } from '@/lib/legal';
 
 /**
  * Regeneration toutes les 24 h.
@@ -291,6 +293,7 @@ export async function SeriesView({ id, locale }: {
           journal ne traverse le serveur** — le HTML est partage entre tous les
           visiteurs par le cache de bord. */}
       <MyProgress
+        canPublish={legalIsComplete()}
         seriesId={id}
         seasons={seasons.rateable.map((s) => ({
           seasonNumber: s.ref.seasonNumber,
@@ -322,6 +325,12 @@ export async function SeriesView({ id, locale }: {
 
       {/* Juste apres les chiffres qu'il qualifie : il ne dit pas « erreur », il dit
           quelle convention ces chiffres suivent. Se tait sur la majorite des series. */}
+      {/* Ce que les autres ont ecrit. Sous la progression : on lit l'avis des gens APRES
+          avoir pu dire ou l'on en est, sans quoi le caviardage n'a rien sur quoi se regler.
+          Composant client, chargement paresseux, aucune route serveur — la page reste
+          `force-static`. */}
+      <Reviews seriesId={id} />
+
       <SeriesOrderings
         id={id}
         seasonCount={seasons.rateable.length}

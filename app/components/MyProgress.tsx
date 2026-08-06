@@ -5,6 +5,7 @@ import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { WhereItLives } from '@/app/components/WhereItLives';
 import { StarRating } from '@/app/components/StarRating';
+import { ReviewEditor } from '@/app/components/ReviewEditor';
 import {
   completionCount,
   isRewatching,
@@ -57,7 +58,7 @@ export type SeriesShape = Omit<JournalSnapshot, 'cachedAt' | 'seasonSizes'>;
  * Tout est garde dans le navigateur. Aucun compte, aucune donnee envoyee nulle part —
  * et la page qui l'accueille reste statique et mise en cache.
  */
-export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
+export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPublish = false }: {
   readonly seriesId: string;
   readonly seasons: readonly SeasonShape[];
   readonly series: SeriesShape;
@@ -66,6 +67,8 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
    * c'est le cas courant, pas l'exception (`TASKS.md` §1.10).
    */
   readonly episodeMinutes?: number;
+  /** Le verrou legal est-il leve ? Ecrire est toujours possible ; publier, non. */
+  readonly canPublish?: boolean;
 }) {
   const {
     journal,
@@ -179,6 +182,9 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
         </p>
       ) : null}
 
+      {/* Le carnet — le premier champ de texte libre du produit. Place ici, sous les
+          gestes, parce qu'ecrire demande plus que tout le reste : personne ne doit tomber
+          dessus avant d'avoir eu le geste a un tap. */}
       {/* Niveau 0 — le geste qui ne suppose rien. */}
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -340,6 +346,11 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
                     {/* On signale, on ne repare pas en silence (`AGENTS.md` regle 8) :
                         des episodes notes suggerent une note de saison, ils ne
                         l'ecrivent pas. */}
+                    <ReviewEditor
+                      seriesId={seriesId}
+                      seasonNumber={s.seasonNumber}
+                      canPublish={canPublish}
+                    />
                     {rating === undefined && suggestion !== undefined ? (
                       <button
                         type="button"
@@ -382,6 +393,11 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
           })}
         </div>
       ) : null}
+
+      {/* La critique de la serie entiere. Sous tout le reste, et c'est voulu : ecrire coute
+          plus que n'importe quel geste au-dessus, et personne ne doit tomber dessus avant
+          d'avoir eu la version a un tap. */}
+      <ReviewEditor seriesId={seriesId} canPublish={canPublish} />
     </section>
   );
 }

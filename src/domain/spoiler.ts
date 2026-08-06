@@ -131,3 +131,66 @@ export function redactTrajectory(
     hasHiddenSignal: hiddenSeasons > 0,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Les critiques
+// ---------------------------------------------------------------------------
+
+/** Le minimum qu'il faut d'une critique pour decider si on peut la lire. */
+export interface SpoilerBounded {
+  /** Jusqu'ou le texte va. `0` = sans spoiler. */
+  readonly throughSeason: number;
+  readonly text: string;
+}
+
+/** Une critique dont le texte a ete mis de cote. */
+export type Redacted<T extends SpoilerBounded> = Omit<T, 'text'> & {
+  readonly text: string;
+  /** Present quand le texte a ete retire ; il vit alors dans `hiddenText`. */
+  readonly hidden?: true;
+  readonly hiddenText?: string;
+};
+
+/**
+ * Retire le texte des critiques qui depassent la position du lecteur.
+ *
+ * ## Pourquoi un texte ne se degrade pas
+ *
+ * `redactTrajectory` **recalcule** une courbe tronquee, et `redactActivity` **degrade** un
+ * fait en retirant le numero de saison et les etoiles. Aucun des deux ne s'applique ici :
+ * un texte dit ce qu'il dit, ou rien. La seule question possible est donc binaire.
+ *
+ * ## Trois exigences sur la forme, chacune pour un defaut precis
+ *
+ * 1. **Generique.** Le caviardage ne doit pas effacer l'auteur en meme temps que le
+ *    spoiler — `activity.ts` porte deja cette lecon. Le typage l'impose, ce qui vaut mieux
+ *    qu'un test.
+ * 2. **Jamais retiree de la liste.** Un fil a trous est lui-meme un indice : « il y a
+ *    quelque chose ici que je n'ai pas le droit de lire » est une information, et savoir
+ *    QU'IL existe une critique de la saison 6 n'en revele pas le contenu.
+ * 3. **Le texte est deplace, pas efface.** Il part dans `hiddenText`, que le composant ne
+ *    rend pas — la revelation reste donc un geste local, sans aller-retour reseau, et la
+ *    decision reste dans le domaine.
+ *
+ * ⚠️ Le lecteur sans position ne voit que les critiques **sans spoiler**. C'est le defaut
+ * strict de `isBeyondPosition` (« mieux vaut masquer a tort que spoiler ») — et il ne coupe
+ * pas l'audience qui compte, puisque c'est precisement pour elle qu'on ecrit sans spoiler.
+ */
+export function redactReviews<T extends SpoilerBounded>(
+  reviews: readonly T[],
+  position: Position | undefined,
+): readonly Redacted<T>[] {
+  return reviews.map((review) => {
+    // Une seule regle, pour les deux granularites : sans spoiler, ou bien le lecteur a
+    // atteint la saison que le texte annonce. Une saison est atteinte des son premier
+    // episode — meme convention que `isSeasonBeyondPosition`, a laquelle on ne peut pas
+    // deleguer ici : elle exige un `SeasonRef` complet, donc un `seriesId` que chaque
+    // appelant devrait inventer alors que toutes ces critiques portent deja sur la meme
+    // serie.
+    const readable =
+      review.throughSeason === 0 ||
+      (position !== undefined && review.throughSeason <= position.at.seasonNumber);
+    if (readable) return review;
+    return { ...review, text: '', hidden: true, hiddenText: review.text };
+  });
+}

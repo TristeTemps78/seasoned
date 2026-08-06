@@ -35,6 +35,18 @@ export type ClaimOutcome =
   | { readonly kind: 'taken' }
   | { readonly kind: 'failed' };
 
+/** Une critique publiee, telle qu'elle revient du serveur. */
+export interface PublishedReview {
+  /** `series` ou `season:3`. */
+  readonly target: string;
+  readonly text: string;
+  readonly throughSeason: number;
+  readonly lang: string;
+  readonly publishedAt: string;
+  readonly handle: string;
+  readonly authorId: string;
+}
+
 /** Un fait du fil, tel qu'il revient du serveur — augmente de son auteur. */
 export interface FeedItem extends ActivityItem {
   readonly handle: string;
@@ -308,5 +320,80 @@ export class SocialClient {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Publie — ou republie — une critique.
+   *
+   * `merge-duplicates` sur la cle naturelle `(user_id, subject, target)` : corriger son
+   * texte remplace la ligne, ne la duplique pas. Meme mecanique que `publish()`.
+   */
+  async publishReview(
+    userId: string,
+    subject: string,
+    target: string,
+    review: { readonly text: string; readonly throughSeason: number; readonly lang: string },
+  ): Promise<boolean> {
+    try {
+      const response = await this.#fetch(this.#url('reviews'), {
+        method: 'POST',
+        headers: this.#headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+        body: JSON.stringify({
+          user_id: userId,
+          subject,
+          target,
+          body: review.text,
+          through_season: review.throughSeason,
+          lang: review.lang,
+        }),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Retire une critique publiee. Le texte reste dans le journal de son auteur. */
+  async unpublishReview(userId: string, subject: string, target: string): Promise<boolean> {
+    try {
+      const response = await this.#fetch(
+        this.#url(
+          `reviews?user_id=eq.${encodeURIComponent(userId)}&subject=eq.${encodeURIComponent(subject)}&target=eq.${encodeURIComponent(target)}`,
+        ),
+        { method: 'DELETE', headers: this.#headers() },
+      );
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Les critiques publiees sur une serie.
+   *
+   * ⚠️ Aucun caviardage ici : RLS decide **qui** peut lire, le navigateur decide **quoi**
+   * afficher (`redactReviews`, avec le journal du lecteur). Le serveur ne sait pas ou en
+   * est le lecteur, et c'est precisement ce qui empeche sa position de fuir.
+   */
+  async reviewsFor(subject: string, limit = 30): Promise<readonly PublishedReview[]> {
+    const rows = await this.#json<Record<string, unknown>[]>(
+      `reviews?subject=eq.${encodeURIComponent(subject)}&select=target,body,through_season,lang,published_at,profiles!inner(handle,user_id)&order=published_at.desc&limit=${limit}`,
+    );
+    return (rows ?? []).flatMap((row) => {
+      const author = row['profiles'] as { handle?: unknown; user_id?: unknown } | undefined;
+      if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
+      const through = row['through_season'];
+      return [
+        {
+          target: String(row['target']),
+          text: String(row['body']),
+          throughSeason: typeof through === 'number' ? through : 0,
+          lang: String(row['lang']),
+          publishedAt: String(row['published_at']),
+          handle: author.handle,
+          authorId: author.user_id,
+        },
+      ];
+    });
   }
 }

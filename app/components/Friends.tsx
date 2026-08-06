@@ -7,7 +7,7 @@ import { useJournal } from '@/app/journal/useJournal';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { projectActivity, redactActivity } from '@/src/domain/activity';
 import { checkHandle } from '@/src/domain/handles';
-import type { JournalKey } from '@/src/domain/journal';
+import { seriesEntries, type JournalKey } from '@/src/domain/journal';
 import { SocialClient, type FeedItem, type Profile } from '@/src/social/client';
 import { ReportButton } from '@/app/components/ReportButton';
 
@@ -64,6 +64,26 @@ export function Friends() {
       // absorbe les doublons. Tenir la liste de ce qui a deja ete envoye serait un etat de
       // plus a synchroniser, donc un etat de plus a desynchroniser.
       await social.publish(id, projectActivity(journal, new Date()));
+
+      // Les critiques partent par le meme chemin, et pour la meme raison : la cle naturelle
+      // `(user_id, subject, target)` absorbe les republications, donc renvoyer tout est plus
+      // sur que tenir la liste de ce qui a deja ete envoye.
+      //
+      // ⚠️ Ce qui n'a PAS de texte n'est pas publie — et une critique effacee du journal
+      // disparait donc du serveur au passage suivant. C'est la seule facon de depublier
+      // sans inventer un second etat qu'il faudrait garder d'accord avec le premier.
+      await Promise.all(
+        seriesEntries(journal).flatMap(([subject, entry]) =>
+          Object.entries(entry.reviews ?? {}).map(([target, review]) =>
+            social.publishReview(id, subject, target, {
+              text: review.text,
+              throughSeason: review.throughSeason,
+              lang: review.lang ?? 'fr',
+            }),
+          ),
+        ),
+      );
+
       setFriends(await social.following(id));
       setFeed(await social.feed());
     },
@@ -173,10 +193,63 @@ export function Friends() {
           {notFound ? t('friends.follow.notFound') : ''}
         </p>
         {friends.length > 0 ? (
-          <p className="text-sm text-(--color-muted)">
-            {t('friends.following', { list: friends.map((f) => `@${f.handle}`).join(' · ') })}
-          </p>
+          <div className="space-y-1 text-sm">
+            <p className="text-(--color-muted)">{t('friends.followingLabel')}</p>
+            <ul className="flex flex-wrap gap-2">
+              {friends.map((friend) => (
+                <li key={friend.userId} className="flex items-center gap-1">
+                  <span>@{friend.handle}</span>
+                  {/* `unfollow()` existait depuis le lot 6 et n'avait AUCUN appelant : on
+                      pouvait suivre quelqu'un sans jamais pouvoir arreter. */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (client === undefined || userId === undefined) return;
+                      void client.unfollow(userId, friend.userId).then(() => {
+                        void refresh(client, userId);
+                      });
+                    }}
+                    className="text-xs text-(--color-muted) underline decoration-dotted underline-offset-2 hover:text-(--color-text)"
+                  >
+                    {t('friends.unfollow')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
+
+        {/* 🔴 La visibilite du profil, qui n'etait reglable NULLE PART.
+            `setVisibility()` existait sans appelant, et la valeur etait codee en dur a
+            `followers` a la creation — donc aucune critique, aucun fait, n'aurait jamais pu
+            etre lu par quelqu'un qui ne vous suit pas deja. Le social etait bati et aveugle. */}
+        <div className="space-y-1 text-sm">
+          <p className="text-(--color-muted)">{t('friends.visibility')}</p>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ['private', 'friends.visibility.private'],
+                ['followers', 'friends.visibility.followers'],
+                ['public', 'friends.visibility.public'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={profile.visibility === value}
+                onClick={() => {
+                  if (client === undefined || userId === undefined) return;
+                  void client.setVisibility(userId, value).then((ok) => {
+                    if (ok) setProfile({ ...profile, visibility: value });
+                  });
+                }}
+                className="btn rounded-full"
+              >
+                {t(label)}
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="space-y-3">
