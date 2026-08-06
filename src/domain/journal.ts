@@ -557,11 +557,22 @@ export interface Journal {
    */
   readonly version: number;
   /**
-   * Identifiant local de l'appareil, anonyme et jamais envoye nulle part aujourd'hui.
+   * Identifiant local de l'appareil, anonyme.
    *
    * Il ne sert a rien tant qu'il n'y a qu'un appareil — c'est justement pour cela
    * qu'il faut l'ecrire maintenant : le jour ou deux journaux fusionnent, savoir d'ou
    * vient quoi n'est plus reconstituable.
+   *
+   * ⚠️ **Il PART sur le serveur**, et cette phrase disait le contraire jusqu'au
+   * 2026-08-07 (« jamais envoye nulle part aujourd'hui »). Elle etait vraie le jour ou
+   * elle a ete ecrite ; le lot 6.3 l'a rendue fausse en ajoutant la synchronisation.
+   * {@link serializeJournal} ecrit `deviceId` dans le document, et `RemoteJournalStore`
+   * le PUT a chaque sauvegarde d'un compte connecte.
+   *
+   * Ce que cela vaut exactement, mesure et pas suppose : `supabase/001_journal.sql` rend
+   * `journals` lisible **par son seul proprietaire**. L'identifiant part donc dans la
+   * ligne de la personne, et personne d'autre ne peut le lire. **Affirmation perimee,
+   * pas fuite** — et il ne faut pas l'ecrire plus fort que ca.
    */
   readonly deviceId?: string;
   /** Services auxquels l'utilisateur est abonne, pour « dispo chez vous ». */

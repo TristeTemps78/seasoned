@@ -61,16 +61,13 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
       <h1 className="page-title">{t(locale, 'rules.title')}</h1>
       <p className="text-(--color-muted)">{t(locale, 'rules.intro')}</p>
 
-      {/* On ne laisse pas croire a un espace social qui n'est pas ouvert. */}
-      <section className="rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4">
-        {/* `.card-title` et non `.section-heading` : c'est un encart d'avertissement, pas un
-            chapitre. Il doit rester **sous** les six sections de cette page, sinon la
-            premiere chose qu'on lit est ce qui n'existe pas encore. */}
-        <h2 className="card-title">{t(locale, 'rules.nothingYet.title')}</h2>
-        <p className="mt-1 text-sm text-(--color-muted)">
-          {t(locale, 'rules.nothingYet.body')}
-        </p>
-      </section>
+      {/* 🔴 Ici vivait un encart « Rien de tout cela n'est encore ouvert », qui annoncait
+          au public qu'il n'existait « aucun profil public, aucun commentaire, aucune liste
+          partagee ». Le lot 8 a livre les critiques publiques, les profils et le fil : la
+          phrase est devenue fausse, sur la page meme dont le role est de dire la verite sur
+          ce que le produit heberge, et qui est indexable et liee depuis tous les pieds de
+          page. Elle est retiree plutot que reecrite — son propos etait d'expliquer pourquoi
+          des regles arrivent avant le contenu, et ce propos n'a plus d'objet. */}
 
       <section className="space-y-3">
         <h2 className="section-heading">{t(locale, 'rules.grounds.title')}</h2>

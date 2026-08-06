@@ -43,8 +43,10 @@ export interface JournalStore {
   save(journal: Journal): Promise<void>;
 
   /**
-   * S'abonne aux changements venus d'ailleurs : un autre onglet aujourd'hui, un autre
-   * appareil demain.
+   * S'abonne aux changements venus d'ailleurs : un autre onglet, ou un autre appareil.
+   *
+   * ⚠️ Cette phrase disait « un autre onglet aujourd'hui, un autre appareil demain »
+   * jusqu'au 2026-08-07. Demain est arrive au lot 6.3.
    *
    * @returns la fonction de desabonnement.
    */

@@ -1,7 +1,9 @@
 /**
  * Le journal range dans le navigateur.
  *
- * Premiere — et pour l'instant seule — implementation du port {@link JournalStore}.
+ * Premiere implementation du port {@link JournalStore}. Il y en a **trois** depuis le
+ * lot 6.3 — celle-ci, {@link RemoteJournalStore} et {@link SyncingJournalStore} — et ce
+ * commentaire disait « pour l'instant seule » jusqu'au 2026-08-07.
  * Coût zero, aucun compte a creer, aucune donnee personnelle hebergee, aucune
  * obligation RGPD, et surtout : **cela valide l'usage avant d'investir dans une base.**
  *

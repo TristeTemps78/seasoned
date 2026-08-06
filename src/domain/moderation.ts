@@ -6,15 +6,22 @@
  *
  * ## Pourquoi c'est si court
  *
- * Il n'existe aujourd'hui **aucun contenu de tiers** : ni profil public, ni commentaire, ni
- * liste partagee. Ce qui doit exister avant eux, c'est la **politique publiee** — la liste de
- * ce qui est retire et le delai annonce. C'est elle qui rend un retrait legitime : retirer
+ * Ce qui doit exister avant tout contenu de tiers, c'est la **politique publiee** — la liste
+ * de ce qui est retire et le delai annonce. C'est elle qui rend un retrait legitime : retirer
  * sans avoir dit d'avance ce qui est interdit, c'est de l'arbitraire.
  *
- * Le reste — file d'attente, tri par urgence, exposé des motifs, retablissement — **viendra
- * avec le contenu**, pas avant. Une premiere version de ce module les avait ecrits : c'etait
- * deviner un flux de travail qui n'existe pas, et c'est la meme erreur que creer une table
- * `reports` « pendant qu'on y est » (`supabase/001_journal.sql`).
+ * Le reste — file d'attente, tri par urgence, exposé des motifs, retablissement — n'est
+ * toujours pas ecrit, et c'est **toujours** le bon choix : une premiere version de ce module
+ * les avait ecrits pour un flux de travail qui n'existait pas, la meme erreur que creer une
+ * table `reports` « pendant qu'on y est » (`supabase/001_journal.sql`). Ils s'ecriront quand
+ * il y aura un volume a traiter, pas quand il y a un contenu a traiter.
+ *
+ * ⚠️ **Ce paragraphe disait « il n'existe aujourd'hui aucun contenu de tiers » jusqu'au
+ * 2026-08-07, et c'etait faux depuis le lot 8** : les critiques publiques, les profils et le
+ * fil sont livres, et `ReportButton` est monte a deux endroits. La justification tenait par
+ * une absence qui n'existait plus — donc elle justifiait le contraire de ce qu'elle croyait.
+ * La meme phrase etait **publiee sur `/regles`**, ou elle annoncait au public qu'il n'y avait
+ * ni profil ni commentaire : elle en a ete retiree le meme jour.
  *
  * Les promesses de procedure — *on masque sans supprimer*, *l'auteur est informe*, *il peut
  * contester* — vivent pour l'instant dans le **texte** de `/regles`, ou elles engagent. Elles

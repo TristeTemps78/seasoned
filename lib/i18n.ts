@@ -692,9 +692,6 @@ const FR = {
   'rules.title': 'Les règles, et comment signaler',
   'rules.intro':
     'Ce que vous écrivez ici est visible par d’autres. Ces règles disent ce qui est retiré, comment le signaler, et ce que vous pouvez faire si vous n’êtes pas d’accord.',
-  'rules.nothingYet.title': 'Rien de tout cela n’est encore ouvert',
-  'rules.nothingYet.body':
-    'Il n’existe aujourd’hui aucun profil public, aucun commentaire, aucune liste partagée. Ces règles sont publiées **avant** — parce qu’un dispositif de signalement écrit sous la pression du premier signalement est un dispositif raté.',
   'rules.grounds.title': 'Ce qui est retiré',
   'rules.grounds.intro': 'Cette liste est courte, et c’est délibéré : ce qui n’y figure pas ne se retire pas.',
   'rules.ground.illegal': 'Contenu illicite — ce qui relève de la loi, pas de nos goûts.',
@@ -1290,9 +1287,6 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'rules.title': 'The rules, and how to report',
   'rules.intro':
     'What you write here is visible to others. These rules say what gets removed, how to report it, and what you can do if you disagree.',
-  'rules.nothingYet.title': 'None of this is open yet',
-  'rules.nothingYet.body':
-    'There are currently no public profiles, no comments, no shared lists. These rules are published **first** — because a reporting process written under the pressure of the first report is a failed one.',
   'rules.grounds.title': 'What gets removed',
   'rules.grounds.intro': 'This list is short, and deliberately so: what is not on it does not get removed.',
   'rules.ground.illegal': 'Illegal content — what the law covers, not what we dislike.',
