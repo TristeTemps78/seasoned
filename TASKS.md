@@ -310,25 +310,37 @@ sur **le même compte** claude.ai.
 > indiscernables** : cet écart mesurait la ponctualité de la saisie, pas la réalité du
 > visionnage.
 >
-> ✅ **Le discriminant n'est pas dans la série, il est dans le VOLUME du geste.** Une saisie
-> d'historique arrive en rafale — quinze, vingt séries d'un coup. Un visionnage réel arrive
-> au compte-gouttes, parce qu'on ne peut pas voir vingt séries en deux semaines : ce n'est
-> pas un jugement sur la saisie, c'est une **contrainte physique**, le temps d'écran existe.
+> 🔴 **Et le volume du geste reste une devinette** — quatrième objection de Tristan, tirée
+> de Letterboxd, et c'est celle qui ferme la question. Là-bas, **noter** un film ne le met
+> pas au journal ; **le consigner** l'y met, avec sa date. Deux gestes, deux sens, et
+> *aucune heuristique* : le geste porte son intention, on ne la devine pas.
 >
-> **La règle, une seule :** une journée où l'on décide plus de trois séries est une saisie,
-> pas un parcours. Ces séries comptent dans le journal, le bilan et les heures — elles ne
-> comptent pas pour la face.
+> ⚠️ **Cette distinction existait ici et a été supprimée le 2026-08-06 au matin.** `types.ts`
+> portait `LogEntry` : « une entrée date ce qui est arrivé ; une note exprime un jugement. On
+> peut avoir l'une sans l'autre. » Retiré comme code mort — il l'était — mais *le code était
+> mort, la pensée non*.
 >
-> Vérifié sur les trois cas de Tristan : 20 d'un bloc → rien ; Arcane + Succession au retour
-> → **ça compte** ; 3 au compte-gouttes puis 20 d'un coup → seules les 3 comptent.
+> ✅ **La traduction ici est directe** : une **note de saison** est un jugement, elle peut
+> porter sur quelque chose vu il y a dix ans. Une **décision** est un fait qui arrive. Ne
+> compter que les faits consignés supprime le besoin de compter les rafales.
 >
-> ⚠️ Reste exclu à tort : celui qui saisit son historique par paquets de deux sur des
-> semaines. Assumé — *le garde-fou doit échouer vers l'exclusion, omettre n'est qu'un oubli,
-> inclure corrompt* (règle du 5.10a). Une face fausse est pire qu'une face absente.
+> 🔴 **Mais le vrai piège est l'import, et Tristan le nomme** : un export TV Time produit
+> exactement les mêmes faits datés, en masse. **Toute règle fondée sur la nature du geste
+> s'effondre si l'import fabrique le même geste.**
+>
+> ✅ **La réponse n'est pas une heuristique de plus, c'est une PROVENANCE sur le fait.** Ce
+> qui vient de `/convertir` porte une marque, et la face l'ignore. Décidé **à l'écriture**,
+> une fois pour toutes, au lieu d'être redeviné à chaque calcul — et utile au-delà de la
+> face : savoir ce qu'on a importé plutôt que vécu est une information honnête en soi.
+>
+> ⚠️ **C'est un champ de plus dans le journal**, donc irrattrapable après coup : les faits
+> déjà importés ne se distingueront jamais des faits vécus. À écrire **avant** d'ouvrir la
+> face, pas après. Le format est additif depuis 8.0, donc le champ ne coûte aucune migration.
 
 | # | Tâche | Statut | Note |
 |---|---|---|---|
-| 9.1 | **`face.ts` — la face, pure** | 🟢 libre | Réutilise `taste.ts`, n'invente aucune donnée. **Un seul critère** : écarter les journées à plus de trois décisions — une rafale est une saisie d'historique (voir ci-dessus). ⚠️ **Fenêtre glissante** : les 10 **dernières** séries retenues, jamais les 10 premières — sinon la face se fige à vie, alors que **basculer *est* le produit**. ⚠️ Se **tait** sous le seuil (`MIN_SERIES_FOR_TASTE` existe), et le dit : « votre face se révèle en suivant des séries ici, pas en racontant celles d'avant » |
+| 9.0 | **La provenance d'un fait** ⚠️ **à faire AVANT 9.1** | 🟢 libre | Un fait écrit par `/convertir` porte une marque ; un fait saisi à la main n'en porte pas. Irrattrapable après coup — un journal déjà importé ne se démêlera jamais. Coût nul en migration (format additif depuis 8.0), et utile hors de la face : « 340 h, dont 120 déclarées » est plus honnête que « 340 h » |
+| 9.1 | **`face.ts` — la face, pure** | 🟢 libre | Réutilise `taste.ts`. Ne compte que les **faits vécus** — ni les notes (un jugement peut porter sur dix ans en arrière), ni ce qui vient d'un import (9.0). ⚠️ **Fenêtre glissante** : les 10 dernières, jamais les 10 premières — sinon la face se fige, alors que **basculer *est* le produit**. ⚠️ Se **tait** sous le seuil, et le dit |
 | 9.2 | **Le logo porte la face** | 🟢 libre | `Mark.tsx` existe : la face active devient vive, les deux autres reculent. La marque cesse d'être un logo et devient un miroir — et comme elle est sur **toutes** les pages, l'intégration est faite partout d'un coup, sans une ligne de plus |
 | 9.3 | **L'animation de révélation** | 🟢 libre | Le moment de plaisir que le produit n'a jamais eu. Le cube tourne, la face sort. ⚠️ Une seule fois, à la bascule — rejouée à chaque visite, elle devient une gêne. `prefers-reduced-motion` la supprime |
 | 9.4 | **La face des autres** | 🟢 libre | Une colonne sur `profiles`, affichée dans le fil et sur les critiques. Coût quasi nul |
