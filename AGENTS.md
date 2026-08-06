@@ -33,9 +33,20 @@ Ordre de lecture pour reprendre à froid :
    base à migrer.
 4. **Parsing tolérant.** Clé inconnue ignorée, champ absent ou mal typé jamais fatal. Un
    catalogue tiers change sans prévenir : le code dégrade, il ne casse pas.
-5. **Aucun secret dans le dépôt** (destiné à être public). Jetons, clés, identifiants de
-   compte : jamais dans le code, les fixtures, les journaux ni les messages de commit.
-   La CI le vérifie.
+5. **Aucun secret dans le dépôt** (destiné à être public). Jetons, clés d'API, jetons
+   d'accès personnels, clés `service_role` : jamais dans le code, les fixtures, les
+   journaux ni les messages de commit. La CI le vérifie.
+   - ⚠️ **Une clé publiable n'est pas un secret**, et confondre les deux coûte des deux
+     côtés. `NEXT_PUBLIC_SUPABASE_ANON_KEY` (`sb_publishable_…`) part dans le bundle
+     client : n'importe qui la lit dans l'inspecteur. Ce qui protège les données est
+     **RLS**, pas le secret de cette clé. L'interdire ferait crier la garde sur une valeur
+     publique par construction — et *on apprend à ignorer une garde qui a tort*.
+   - 🔴 **La garde a été aveugle jusqu'au 2026-08-06, et pour la raison la plus banale :
+     elle décrivait le dépôt d'avant.** Elle excluait `':!*.md'` — le seul type de fichier
+     qui contienne effectivement une clé — et ne connaissait que le format JWT hérité,
+     alors que Supabase émet désormais `sb_secret_` et `sbp_`. Les deux vrais secrets
+     passaient en vert. *Auditer le résultat, jamais l'intention* : une garde se prouve par
+     une mutation, pas par sa présence.
 6. **Jamais de secret dans un message d'erreur ni un journal.** Les erreurs réseau
    consignent le statut HTTP et l'endpoint, rien d'autre.
 7. **Rien qui dépasse la position du spectateur sans un geste explicite.** Contrainte de

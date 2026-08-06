@@ -32,7 +32,34 @@ jobs:
       - name: Build (sans aucun secret)
         run: npm run build
 
-  # Le depot est destine a etre public : aucune cle ne doit y entrer.
+  # Le depot est destine a etre public : aucun SECRET ne doit y entrer.
+  #
+  # ## Ce que cette garde a rate, et pourquoi (audit du 2026-08-06)
+  #
+  # Elle etait aveugle deux fois, et les deux fois pour la meme raison : elle
+  # decrivait le depot d'avant.
+  #
+  #   1. Elle excluait `':!*.md'` — c'est-a-dire le seul type de fichier qui
+  #      contienne effectivement une cle aujourd'hui (`CLAUDE.md`). Une garde qui
+  #      regarde la ou il n'y a rien est verte pour la pire des raisons.
+  #   2. Elle ne connaissait que l'ANCIEN format. Supabase emet desormais
+  #      `sb_secret_...` (la cle `service_role`, qui contourne RLS) et `sbp_...`
+  #      (le jeton personnel que `scripts/db-push.mjs` demande de poser dans
+  #      `.env`). Ni l'un ni l'autre ne ressemble a un JWT : les deux passaient
+  #      en vert.
+  #
+  # > *La garde protegeait d'un cas qui n'arrive plus, pendant que le cas reel
+  # > etait nu.* C'est la meme forme d'echec que le SEO en cul-de-sac et le cache
+  # > inoperant : le dispositif etait en place et l'effet nul.
+  #
+  # ## Une cle publiable n'est PAS un secret
+  #
+  # `sb_publishable_...` (ex-`anon`) est absente de cette liste, et c'est une
+  # decision : elle part de toute facon dans le bundle client, ou n'importe qui
+  # la lit dans l'inspecteur. C'est RLS qui protege les donnees, pas le secret de
+  # cette cle. L'interdire rendrait la garde fausse dans l'autre sens — elle
+  # crierait sur une valeur publique par construction, et on apprendrait a
+  # l'ignorer.
   secrets:
     runs-on: ubuntu-latest
     steps:
@@ -40,14 +67,29 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Aucun jeton TMDB committe
+      - name: Aucun secret committe
         run: |
-          if git grep -nIE 'eyJhbGciOi[A-Za-z0-9_-]{10,}' -- . ':!*.md'; then
-            echo "::error::Jeton de type JWT detecte dans le depot."
-            exit 1
-          fi
-          if git grep -nIE '\bapi_key=[A-Za-z0-9]{20,}' -- . ':!*.md'; then
-            echo "::error::Cle d API detectee dans le depot."
-            exit 1
-          fi
+          # Un motif par ligne, `libelle|expression`. Ajouter un format doit
+          # rester une ligne — c'est ce qui n'a pas ete fait quand Supabase a
+          # change le sien.
+          motifs=(
+            "jeton de type JWT (TMDB v4, Supabase herite)|eyJhbGciOi[A-Za-z0-9_-]{10,}"
+            "cle d API dans une URL|\\bapi_key=[A-Za-z0-9]{20,}"
+            "cle Supabase service_role|\\bsb_secret_[A-Za-z0-9_-]{20,}"
+            "jeton d acces personnel Supabase|\\bsbp_[A-Za-z0-9_-]{20,}"
+          )
+          faute=0
+          for motif in "${motifs[@]}"; do
+            libelle="${motif%%|*}"
+            regex="${motif#*|}"
+            # Pas de `':!*.md'` : la doc est du depot public comme le reste.
+            if git grep -nIE "$regex" -- .; then
+              echo "::error::Secret detecte — $libelle."
+              faute=1
+            fi
+          done
+          # On parcourt TOUS les motifs avant de sortir : signaler la premiere
+          # faute et s'arreter obligerait a rejouer la CI autant de fois qu'il y
+          # a de fuites.
+          if [ "$faute" -ne 0 ]; then exit 1; fi
           echo "Aucun secret detecte."
