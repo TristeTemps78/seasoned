@@ -293,16 +293,32 @@ sur **le même compte** claude.ai.
 >
 > 🔴 **Le piège, trouvé par Tristan avant l'écriture — c'est le BIAIS DE SURVIE**, celui que
 > ce dépôt documente déjà pour les notes TMDB. On se souvient de ce qu'on a **fini**, pas de
-> ce qu'on a lâché à S1E3 : un import initial est donc biaisé vers l'achèvement, et *tout le
-> monde arriverait rouge*.
-> ✅ **Sa solution le règle seule** : la face se révèle après **10 séries nouvelles**, donc
-> l'historique importé ne compte pas. Ce ne sont plus des souvenirs déclarés mais des
-> parcours **observés** — position posée, puis décision. Chaque fait porte sa date depuis
-> la v2, la matière est là.
+> ce qu'on a lâché à S1E3 : une saisie d'historique est biaisée vers l'achèvement, et *tout
+> le monde arriverait rouge*.
+>
+> 🔴 **Et « 10 séries nouvelles » ne le règle PAS** — deuxième objection de Tristan, décisive.
+> Ce critère compte des **saisies**, pas des **parcours** : 20 séries entrées d'un bloc
+> restent 20 souvenirs, qu'elles arrivent le premier jour ou trois mois après. Quelqu'un qui
+> pose 3 séries petit à petit puis en déverse 20 franchirait le seuil sans qu'on ait rien
+> observé de lui.
+>
+> ✅ **Le vrai discriminant n'est ni le nombre ni la date : c'est le temps écoulé À
+> L'INTÉRIEUR de chaque série.** Une série vécue dans l'app voit sa position posée, puis sa
+> décision prise **des jours plus tard**. Une série déclarée a les deux le même jour. L'écart
+> entre `position.declaredAt` et `decision.at` sépare les deux — et **les deux dates existent
+> depuis la v2**, sans rien ajouter au journal.
+>
+> Ça règle tous les cas d'un coup, sans compteur ni date d'inscription : saisie en bloc →
+> écart nul → rien ne compte ; import `/convertir` → invisible ; 3 vécues + 20 saisies →
+> seules les 3 comptent.
+>
+> ⚠️ **Le binge d'un week-end est exclu à tort, et c'est assumé** : *le garde-fou doit
+> échouer vers l'exclusion — omettre n'est qu'un oubli, inclure corrompt* (règle écrite au
+> 5.10a). Une face fausse est pire qu'une face absente.
 
 | # | Tâche | Statut | Note |
 |---|---|---|---|
-| 9.1 | **`face.ts` — la face, pure** | 🟢 libre | Réutilise `taste.ts`, n'invente aucune donnée. ⚠️ **Fenêtre glissante** — les 10 **dernières** séries décidées, jamais les 10 premières : sinon la face se fige à vie et ne peut plus basculer, alors que **basculer *est* le produit** (volte-face). ⚠️ Se **tait** sous le seuil, comme partout ailleurs (`MIN_SERIES_FOR_TASTE`) : « encore 4 séries pour que votre face se révèle » est la seule chose de ce produit qui donne envie d'attendre |
+| 9.1 | **`face.ts` — la face, pure** | 🟢 libre | Réutilise `taste.ts`, n'invente aucune donnée. **Ne compte que les séries OBSERVÉES** : écart d'au moins quelques jours entre `position.declaredAt` et `decision.at` (voir le piège ci-dessus). ⚠️ Second garde-fou : plusieurs séries décidées **le même jour** ne valent qu'une observation — une rafale est un geste de saisie, pas trois parcours. ⚠️ **Fenêtre glissante** — les 10 **dernières** observées, jamais les 10 premières : sinon la face se fige à vie, alors que **basculer *est* le produit**. ⚠️ Se **tait** sous le seuil (`MIN_SERIES_FOR_TASTE` existe) |
 | 9.2 | **Le logo porte la face** | 🟢 libre | `Mark.tsx` existe : la face active devient vive, les deux autres reculent. La marque cesse d'être un logo et devient un miroir — et comme elle est sur **toutes** les pages, l'intégration est faite partout d'un coup, sans une ligne de plus |
 | 9.3 | **L'animation de révélation** | 🟢 libre | Le moment de plaisir que le produit n'a jamais eu. Le cube tourne, la face sort. ⚠️ Une seule fois, à la bascule — rejouée à chaque visite, elle devient une gêne. `prefers-reduced-motion` la supprime |
 | 9.4 | **La face des autres** | 🟢 libre | Une colonne sur `profiles`, affichée dans le fil et sur les critiques. Coût quasi nul |
