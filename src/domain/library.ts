@@ -82,6 +82,10 @@ function lastTouch(entry: JournalEntry): number {
     instant(entry.wanted?.at),
     ...Object.values(entry.seasonRatings ?? {}).map((r) => instant(r.at)),
     ...Object.values(entry.episodeRatings ?? {}).map((r) => instant(r.at)),
+    // Marquer un episode saute est un geste : sans cette ligne, la serie ne remonterait
+    // pas dans « Reprendre » alors qu'on vient de s'en occuper.
+    instant(entry.liked?.at),
+    ...Object.values(entry.episodeMarks ?? {}).map((m) => instant(m.at)),
   ];
   return Math.max(0, ...dates);
 }

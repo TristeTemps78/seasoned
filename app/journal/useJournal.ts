@@ -16,6 +16,7 @@ import {
   setSnapshot as setSnapshotIn,
   setWanted as setWantedIn,
   setLiked as setLikedIn,
+  setEpisodeMark as setEpisodeMarkIn,
   type Journal,
   type JournalKey,
   type JournalSnapshot,
@@ -193,6 +194,15 @@ export function useJournal() {
     ),
     setLiked: useCallback(
       (key: JournalKey, liked: boolean) => mutate((j) => setLikedIn(j, key, liked)),
+      [mutate],
+    ),
+    setEpisodeMark: useCallback(
+      (
+        key: JournalKey,
+        seasonNumber: number,
+        episodeNumber: number,
+        kind: 'skipped' | 'watched' | undefined,
+      ) => mutate((j) => setEpisodeMarkIn(j, key, seasonNumber, episodeNumber, kind)),
       [mutate],
     ),
     setPlatforms: useCallback(

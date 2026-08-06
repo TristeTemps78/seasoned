@@ -59,6 +59,64 @@ export interface Remaining {
   readonly done: boolean;
 }
 
+/** Identite d'un episode dans une serie. Locale : jamais persistee, jamais affichee. */
+function episodeAt(seasonNumber: number, episodeNumber: number): string {
+  return seasonNumber + ':' + episodeNumber;
+}
+
+/** Une exception a la position, telle que le domaine la recoit. */
+export interface EpisodeMark {
+  readonly seasonNumber: number;
+  readonly episodeNumber: number;
+  readonly kind: 'skipped' | 'watched';
+}
+
+/**
+ * Les marques rangees par ce qu'elles changent — et **c'est le seul endroit qui en decide**.
+ *
+ * ## 🔴 Le piege que cette fonction existe pour fermer
+ *
+ * Deux consommateurs lisent les marques, et ils en tirent des conclusions de **signe
+ * oppose** :
+ *
+ * - {@link remainingAfter} compte ce qu'il RESTE : un episode saute apres la position n'est
+ *   plus a voir, donc le reste **diminue** ;
+ * - `buildTally` compte ce qui a ETE VU, et il le fait par `total − restant`. Lui passer
+ *   naivement les memes marques ferait donc **monter les heures vues** d'un episode qu'on
+ *   vient de declarer ne PAS avoir regarde.
+ *
+ * Le defaut serait silencieux — un bilan un peu trop flatteur, que rien ne contredit. Les
+ * deux consommateurs recoivent donc des listes **deja triees et nommees**, et doivent
+ * choisir explicitement laquelle ils appliquent.
+ *
+ * La position reste la verite : `watched` avant elle est redondant et ignore.
+ */
+export function classifyMarks(
+  marks: readonly EpisodeMark[],
+  position: WatchPosition | undefined,
+): {
+  /** Vus en avance, au-dela de la position : autant d'episodes en moins a voir. */
+  readonly aheadAfter: readonly EpisodeMark[];
+  /** Sautes au-dela de la position : plus a voir non plus, mais **jamais vus**. */
+  readonly skippedAfter: readonly EpisodeMark[];
+  /** Sautes en deca : compris dans ce que le pointeur dit « vu », et qui ne l'est pas. */
+  readonly skippedBefore: readonly EpisodeMark[];
+} {
+  if (position === undefined) {
+    return { aheadAfter: [], skippedAfter: [], skippedBefore: [] };
+  }
+
+  const after = (m: EpisodeMark): boolean =>
+    m.seasonNumber > position.seasonNumber ||
+    (m.seasonNumber === position.seasonNumber && m.episodeNumber > position.episodeNumber);
+
+  return {
+    aheadAfter: marks.filter((m) => m.kind === 'watched' && after(m)),
+    skippedAfter: marks.filter((m) => m.kind === 'skipped' && after(m)),
+    skippedBefore: marks.filter((m) => m.kind === 'skipped' && !after(m)),
+  };
+}
+
 /**
  * Ce qu'il reste apres la position.
  *
@@ -73,6 +131,11 @@ export function remainingAfter(
   seasons: readonly SeasonSize[],
   position: WatchPosition | undefined,
   episodeMinutes?: number,
+  /**
+   * Les exceptions. Absentes, le calcul est **identique a l'octet pres** a ce qu'il etait
+   * avant leur existence — c'est ce qui rend la feature additive.
+   */
+  marks: readonly EpisodeMark[] = [],
 ): Remaining | undefined {
   if (position === undefined) return undefined;
 
@@ -93,6 +156,25 @@ export function remainingAfter(
     // ou episode declare a la main.
     episodes += Math.max(0, season.episodeCount - position.episodeNumber);
   }
+
+  // Ce qui est devant et qu'on ne verra pas — vu en avance ou saute — n'est plus a voir.
+  // Les deux comptent pareil ICI, et c'est precisement ce qui trompe : ils ne comptent pas
+  // pareil dans le bilan. Voir {@link classifyMarks}.
+  //
+  // Borne aux episodes qui existent : une marque peut survivre a un decoupage revise chez
+  // le fournisseur, et deduire deux fois le meme episode rendrait un reste negatif.
+  const exists = new Set(
+    known.flatMap((s) =>
+      Array.from({ length: s.episodeCount }, (_, i) => episodeAt(s.seasonNumber, i + 1)),
+    ),
+  );
+  const { aheadAfter, skippedAfter } = classifyMarks(marks, position);
+  const ignored = new Set(
+    [...aheadAfter, ...skippedAfter]
+      .map((m) => episodeAt(m.seasonNumber, m.episodeNumber))
+      .filter((id) => exists.has(id)),
+  );
+  episodes = Math.max(0, episodes - ignored.size);
 
   return {
     episodes,

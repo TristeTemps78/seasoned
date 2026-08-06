@@ -9,6 +9,7 @@ import {
   completionCount,
   isRewatching,
   journalKey,
+  marksOf,
   suggestedSeasonRating,
   type JournalSnapshot,
 } from '@/src/domain/journal';
@@ -132,13 +133,17 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
 
   // Ce qu'il reste, et la saison qu'on peut noter maintenant : deux calculs purs, tires
   // de la seule position. Le serveur n'en sait rien et n'a pas a en savoir.
-  const left = remainingAfter(seasons, position, episodeMinutes);
+  // ⚠️ Les marques passent ICI, sinon la feature n'existe qu'en base : « il vous reste
+  // 12 episodes » continuerait de compter ceux qu'on vient de declarer sauter. Ce depot a
+  // livre `ordering.ts` et `episodeMinutes` morts-nes exactement comme ca.
+  const marks = marksOf(entry);
+  const left = remainingAfter(seasons, position, episodeMinutes, marks);
   const rated = new Set(
     Object.keys(entry?.seasonRatings ?? {})
       .map(Number)
       .filter((n) => Number.isFinite(n)),
   );
-  const toRate = seasonToRate(seasons, position, rated);
+  const toRate = seasonToRate(seasons, position, rated, marks);
 
   // Le revisionnage : le seul comportement qui distingue une serie aimee d'une serie
   // simplement finie. Une note de cinq etoiles se pose une fois ; un troisieme passage

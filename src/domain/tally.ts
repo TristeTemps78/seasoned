@@ -32,12 +32,19 @@
 import {
   completionCount,
   freshSnapshot,
+  marksOf,
   seriesEntries,
   type Journal,
   type JournalEntry,
   type JournalKey,
 } from './journal';
-import { remainingAfter, type SeasonSize, type WatchPosition } from './remaining';
+import {
+  classifyMarks,
+  remainingAfter,
+  type EpisodeMark,
+  type SeasonSize,
+  type WatchPosition,
+} from './remaining';
 
 /**
  * Part des series vues qu'il faut avoir pu chiffrer pour oser annoncer un total.
@@ -156,15 +163,41 @@ function positionIsNewPass(entry: JournalEntry, passes: number): boolean {
   return declaredAt > Math.max(...completedAt);
 }
 
-/** Episodes vus dans une serie, tous passages confondus. */
-function episodesOf(entry: JournalEntry, sizes: readonly SeasonSize[]): number {
+/**
+ * Episodes vus dans une serie, tous passages confondus.
+ *
+ * ## 🔴 Pourquoi les marques n'entrent PAS par `remainingAfter`
+ *
+ * Ce compte procede par soustraction : `vus = total − restant`. C'est ce qui rend le piege
+ * des exceptions non evident — passer les marques a `remainingAfter` ferait baisser le
+ * restant, donc **monter les episodes vus**, y compris pour un episode explicitement
+ * SAUTE. On compterait comme regarde ce que la personne vient de declarer ne pas avoir
+ * regarde, et le symptome serait un bilan legerement flatteur que rien ne contredit.
+ *
+ * Les deux sens sont donc appliques ici, separement et nommement :
+ *
+ *   + `aheadAfter`    vu en avance, au-dela du pointeur → **en plus**
+ *   − `skippedBefore` saute en deca, donc compte a tort par le pointeur → **en moins**
+ *   ∅ `skippedAfter`  saute devant : jamais vu, et pas encore compte → sans effet
+ */
+function episodesOf(
+  entry: JournalEntry,
+  sizes: readonly SeasonSize[],
+  marks: readonly EpisodeMark[],
+): number {
   const total = sizes.reduce((sum, s) => sum + s.episodeCount, 0);
   const passes = passesOf(entry);
 
   let episodes = passes * total;
   if (positionIsNewPass(entry, passes)) {
-    const left = remainingAfter(sizes, stoppedAt(entry));
-    if (left !== undefined) episodes += Math.max(0, total - left.episodes);
+    const position = stoppedAt(entry);
+    // ⚠️ Sans marques : le restant brut, exactement comme avant.
+    const left = remainingAfter(sizes, position);
+    if (left !== undefined) {
+      const { aheadAfter, skippedBefore } = classifyMarks(marks, position);
+      const seen = total - left.episodes + aheadAfter.length - skippedBefore.length;
+      episodes += Math.max(0, Math.min(total, seen));
+    }
   }
   return episodes;
 }
@@ -198,7 +231,7 @@ export function buildTally(journal: Journal, now: Date = new Date()): Tally {
       continue;
     }
 
-    const seen = episodesOf(entry, sizes);
+    const seen = episodesOf(entry, sizes, marksOf(entry));
     if (seen === 0) {
       // Vue, mais rien de comptable : une decision « abandonnee » sans position connue.
       // Elle n'est pas un manque de donnees — la compter comme tel ferait chuter la

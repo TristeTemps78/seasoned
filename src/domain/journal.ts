@@ -63,7 +63,7 @@
  */
 
 import type { DecisionKind, SeriesId, Stars } from './types';
-import type { SeasonSize } from './remaining';
+import type { EpisodeMark, SeasonSize } from './remaining';
 import { parseRealStatus, type RealStatus } from './status';
 
 /**
@@ -219,6 +219,32 @@ export interface JournalDecision {
 
 /** « Je veux la voir » — le premier geste possible, et le seul qui ne suppose rien. */
 export interface JournalWanted {
+  readonly at: string;
+}
+
+/**
+ * Une exception a la position — l'episode qu'on a saute, ou vu en avance.
+ *
+ * ## Pourquoi ce n'est pas le passage aux cases a cocher
+ *
+ * La position reste **un pointeur** (`RATING-MODEL.md` §7.3), et tout ce qui la precede
+ * reste implicitement vu. C'est ce qui permet de mettre a jour une progression en un geste
+ * au lieu de quarante-sept — et *la saisie manuelle est la cause n°1 d'abandon des
+ * trackers* (`RESEARCH.md`). Ce que le pointeur ne savait pas dire, c'est **l'exception** :
+ * « j'ai vu S03E07 mais pas S03E05 », « je saute les episodes de remplissage ».
+ *
+ * Donc on ajoute les exceptions, pas les regles. Un journal sans aucune marque se comporte
+ * exactement comme avant.
+ *
+ * ## Un seul enregistrement par episode, et c'est ce qui rend la fusion sure
+ *
+ * Deux champs separes — une liste de sautes, une liste de vus-en-avance — laisseraient le
+ * meme episode entrer dans les deux, un etat incoherent que la fusion devrait arbitrer sans
+ * aucune regle pour le faire. Un enregistrement unique rend l'exclusion **vraie par
+ * construction** : `laterOf` tranche, exactement comme pour une note.
+ */
+export interface JournalEpisodeMark {
+  readonly kind: 'skipped' | 'watched';
   readonly at: string;
 }
 
@@ -435,6 +461,13 @@ export interface JournalEntry {
   readonly wanted?: JournalWanted;
   /** Le coeur. Voir {@link JournalLiked}. */
   readonly liked?: JournalLiked;
+  /**
+   * Les exceptions a la position, indexees par `saison:episode`.
+   *
+   * Voir {@link JournalEpisodeMark}. Un journal sans marque se comporte exactement
+   * comme avant leur existence.
+   */
+  readonly episodeMarks?: Readonly<Record<string, JournalEpisodeMark>>;
   /**
    * Chaque fois que la serie a ete menee au bout. Voir {@link JournalCompletion}.
    *
@@ -656,6 +689,21 @@ function parseRatings(raw: unknown, keyPattern: RegExp): Record<string, JournalR
   return out;
 }
 
+function parseEpisodeMarks(raw: unknown): Record<string, JournalEpisodeMark> {
+  const out: Record<string, JournalEpisodeMark> = {};
+  for (const [key, value] of Object.entries(asRecord(raw))) {
+    if (!EPISODE_KEY.test(key)) continue;
+    const source = asRecord(value);
+    const kind = source['kind'];
+    // Regle 4 : un genre inconnu est ecarte, pas devine. Le jour ou une version future
+    // ajoute 'rewatched', cet ancien client l'ignore — et le pass-through de la decision
+    // n°4 ne le sauve pas ici, puisque la cle `episodeMarks` est connue de nous.
+    if (kind !== 'skipped' && kind !== 'watched') continue;
+    out[key] = { kind, at: readInstant(source, 'at', UNDATED) };
+  }
+  return out;
+}
+
 const SEASON_KEY = /^[0-9]+$/;
 const EPISODE_KEY = /^[0-9]+:[0-9]+$/;
 
@@ -736,6 +784,7 @@ const KNOWN_ENTRY_FIELDS = [
   'decision',
   'wanted',
   'liked',
+  'episodeMarks',
   'completions',
   'snapshot',
   'seasonRatings',
@@ -809,6 +858,7 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
       ? { at: readInstant(asRecord(likedSource), 'at', UNDATED) }
       : undefined;
 
+  const episodeMarks = parseEpisodeMarks(source['episodeMarks']);
   const completions = parseCompletions(source['completions']);
   const unknownFields = unknownFieldsOf(source, KNOWN_ENTRY_FIELDS);
 
@@ -817,6 +867,7 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
     ...(decision !== undefined ? { decision } : {}),
     ...(wanted !== undefined ? { wanted } : {}),
     ...(liked !== undefined ? { liked } : {}),
+    ...(Object.keys(episodeMarks).length > 0 ? { episodeMarks } : {}),
     ...(completions.length > 0 ? { completions } : {}),
     ...(snapshot !== undefined ? { snapshot } : {}),
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
@@ -845,7 +896,10 @@ export function hasContent(entry: JournalEntry | undefined): boolean {
     entry.liked !== undefined ||
     (entry.completions ?? []).length > 0 ||
     Object.keys(entry.seasonRatings ?? {}).length > 0 ||
-    Object.keys(entry.episodeRatings ?? {}).length > 0
+    Object.keys(entry.episodeRatings ?? {}).length > 0 ||
+    // Une marque est un geste explicite : sans elle ici, `worthKeeping` supprimerait une
+    // entree qui n'a que des marques, et le geste serait perdu a la relecture suivante.
+    Object.keys(entry.episodeMarks ?? {}).length > 0
   );
 }
 
@@ -1242,6 +1296,59 @@ export function setWanted(
 }
 
 /**
+ * Les marques d'une entree, dans la forme qu'attend le domaine du calcul.
+ *
+ * La table du journal est indexee par `saison:episode` — pratique pour fusionner, illisible
+ * pour compter. Cette traduction vit **ici**, en un seul endroit : chaque appelant qui
+ * refendrait la cle lui-meme finirait par le faire un peu differemment.
+ */
+export function marksOf(entry: JournalEntry | undefined): readonly EpisodeMark[] {
+  return Object.entries(entry?.episodeMarks ?? {}).flatMap(([key, mark]) => {
+    const [season, episode] = key.split(':').map(Number);
+    if (season === undefined || episode === undefined) return [];
+    if (!Number.isFinite(season) || !Number.isFinite(episode)) return [];
+    return [{ seasonNumber: season, episodeNumber: episode, kind: mark.kind }];
+  });
+}
+
+/**
+ * Marquer un episode saute ou vu en avance — ou retirer la marque.
+ *
+ * `kind` a `undefined` retire, comme partout ailleurs ici : c'est le meme geste rejoue qui
+ * annule, plutot qu'un second mutateur a tenir d'accord avec le premier.
+ */
+export function setEpisodeMark(
+  journal: Journal,
+  key: JournalKey,
+  seasonNumber: number,
+  episodeNumber: number,
+  kind: JournalEpisodeMark['kind'] | undefined,
+  now = new Date(),
+): Journal {
+  const entry = journal.entries[key] ?? {};
+  const at = episodeKey(seasonNumber, episodeNumber);
+  const field = `mark:${at}`;
+  const { [at]: _current, ...rest } = entry.episodeMarks ?? {};
+
+  if (kind === undefined) {
+    // ⚠️ La cle est **retiree**, jamais posee a `undefined` : `exactOptionalPropertyTypes`
+    // distingue les deux, et une table vide qui traine reapparaitrait dans l'export.
+    const { episodeMarks: _dropped, ...withoutMarks } = entry;
+    return withEntry(journal, key, {
+      ...withoutMarks,
+      ...(Object.keys(rest).length > 0 ? { episodeMarks: rest } : {}),
+      removed: withTombstone(entry, field, now.toISOString()),
+    });
+  }
+
+  return withEntry(journal, key, {
+    ...entry,
+    episodeMarks: { ...rest, [at]: { kind, at: now.toISOString() } },
+    ...reviseTombstone(entry, field),
+  });
+}
+
+/**
  * Poser ou retirer le coeur. Voir {@link JournalLiked}.
  *
  * Meme mecanique que {@link setWanted}, y compris la pierre tombale : sans elle, retirer un
@@ -1466,13 +1573,19 @@ function survives(at: string | undefined, tombstone: string | undefined): boolea
   return new Date(at).getTime() >= new Date(tombstone).getTime();
 }
 
-function mergeRatings(
-  a: Readonly<Record<string, JournalRating>> | undefined,
-  b: Readonly<Record<string, JournalRating>> | undefined,
+/**
+ * Fusionne deux tables de faits dates, indexees par cle.
+ *
+ * Une seule fonction pour les notes de saison, les notes d'episode et les marques : c'est
+ * le seul endroit ou le `survives` peut se tromper, donc il ne doit exister qu'une fois.
+ */
+function mergeDated<T extends { readonly at: string }>(
+  a: Readonly<Record<string, T>> | undefined,
+  b: Readonly<Record<string, T>> | undefined,
   removed: JournalTombstones,
   field: (key: string) => string,
-): Record<string, JournalRating> {
-  const out: Record<string, JournalRating> = {};
+): Record<string, T> {
+  const out: Record<string, T> = {};
   const keys = new Set([...Object.keys(a ?? {}), ...Object.keys(b ?? {})]);
   for (const key of keys) {
     const winner = laterOf(a?.[key], b?.[key], (r) => r.at);
@@ -1545,18 +1658,16 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
   // commutative, associative et idempotente sans rien faire de plus.
   const completions = dedupeByDay([...(a.completions ?? []), ...(b.completions ?? [])]);
 
-  const seasonRatings = mergeRatings(
-    a.seasonRatings,
-    b.seasonRatings,
-    removed,
-    (k) => `season:${k}`,
-  );
-  const episodeRatings = mergeRatings(
+  const seasonRatings = mergeDated(a.seasonRatings, b.seasonRatings, removed, (k) => `season:${k}`);
+  const episodeRatings = mergeDated(
     a.episodeRatings,
     b.episodeRatings,
     removed,
     (k) => `episode:${k}`,
   );
+  // ⚠️ Prefixe `mark:` et surtout pas `episode:`, deja pris par la note d'episode :
+  // effacer une note effacerait sinon la marque du meme episode, du meme geste.
+  const episodeMarks = mergeDated(a.episodeMarks, b.episodeMarks, removed, (k) => `mark:${k}`);
   const unknownFields = mergeUnknown(a.unknownFields, b.unknownFields);
 
   return {
@@ -1568,6 +1679,7 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
     ...(snapshot !== undefined ? { snapshot } : {}),
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
     ...(Object.keys(episodeRatings).length > 0 ? { episodeRatings } : {}),
+    ...(Object.keys(episodeMarks).length > 0 ? { episodeMarks } : {}),
     ...(Object.keys(removed).length > 0 ? { removed } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };

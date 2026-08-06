@@ -33,7 +33,7 @@
  * Module pur : ni reseau, ni horloge, ni langue.
  */
 
-import type { SeasonSize, WatchPosition } from './remaining';
+import type { EpisodeMark, SeasonSize, WatchPosition } from './remaining';
 
 /**
  * La saison a proposer a la notation, s'il y en a une.
@@ -47,11 +47,13 @@ export function seasonToRate(
   seasons: readonly SeasonSize[],
   position: WatchPosition | undefined,
   rated: ReadonlySet<number>,
+  /** Les exceptions. Absentes, le comportement est celui d'avant leur existence. */
+  marks: readonly EpisodeMark[] = [],
 ): number | undefined {
   if (position === undefined) return undefined;
 
   const candidates = seasons
-    .filter((season) => season.episodeCount > 0 && isFullyWatched(season, position))
+    .filter((season) => season.episodeCount > 0 && isFullyWatched(season, position, marks))
     .map((season) => season.seasonNumber)
     .filter((seasonNumber) => !rated.has(seasonNumber))
     .sort((a, b) => b - a);
@@ -67,8 +69,32 @@ export function seasonToRate(
  * d'avoir commence la saison suivante pour reconnaitre la precedente comme finie, ce
  * qui manquerait precisement le moment vise.
  */
-function isFullyWatched(season: SeasonSize, position: WatchPosition): boolean {
+/**
+ * A-t-on fini cette saison ?
+ *
+ * ⚠️ Les episodes **sautes de fin de saison** comptent comme franchis. Sans cela, sauter
+ * les deux derniers episodes d'une saison — un geste courant sur les series a remplissage —
+ * ferait disparaitre DEFINITIVEMENT le rappel de la noter : la position ne les atteindrait
+ * jamais, et rien ne le signalerait. Un rappel qu'on ne recoit pas est un rappel qui
+ * n'existe pas.
+ */
+function isFullyWatched(
+  season: SeasonSize,
+  position: WatchPosition,
+  marks: readonly EpisodeMark[],
+): boolean {
   if (season.seasonNumber < position.seasonNumber) return true;
   if (season.seasonNumber > position.seasonNumber) return false;
-  return position.episodeNumber >= season.episodeCount;
+  if (position.episodeNumber >= season.episodeCount) return true;
+
+  // Tout ce qui suit la position dans cette saison est-il saute ?
+  const skipped = new Set(
+    marks
+      .filter((m) => m.kind === 'skipped' && m.seasonNumber === season.seasonNumber)
+      .map((m) => m.episodeNumber),
+  );
+  for (let episode = position.episodeNumber + 1; episode <= season.episodeCount; episode += 1) {
+    if (!skipped.has(episode)) return false;
+  }
+  return true;
 }

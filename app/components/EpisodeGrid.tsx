@@ -51,7 +51,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
   readonly seriesId: string;
   readonly seasons: readonly GridSeason[];
 }) {
-  const { journal, ready, setPosition, setEpisodeRating } = useJournal();
+  const { journal, ready, setPosition, setEpisodeRating, setEpisodeMark } = useJournal();
   const { t, n } = useT();
   const [selected, setSelected] = useState<GridEpisode | undefined>(undefined);
   const [layer, setLayer] = useState<Layer>('public');
@@ -67,6 +67,14 @@ export function EpisodeGrid({ seriesId, seasons }: {
 
   const myStars = (e: GridEpisode): Stars | undefined =>
     mine[episodeKey(e.seasonNumber, e.episodeNumber)]?.stars;
+
+  const markOf = (e: GridEpisode): 'skipped' | 'watched' | undefined =>
+    entry?.episodeMarks?.[episodeKey(e.seasonNumber, e.episodeNumber)]?.kind;
+
+  /** Rejouer le meme marquage l'annule — un seul geste pour poser et pour retirer. */
+  const toggleMark = (e: GridEpisode, kind: 'skipped' | 'watched'): void => {
+    setEpisodeMark(key, e.seasonNumber, e.episodeNumber, markOf(e) === kind ? undefined : kind);
+  };
 
   return (
     <div className="space-y-3">
@@ -190,12 +198,36 @@ export function EpisodeGrid({ seriesId, seasons }: {
             ) : null}
           </span>
 
+          {/* ⚠️ `.btn` et non la chaine d'utilitaires qui vivait ici : c'etait la 15e copie
+              a la main du bouton secondaire, et surtout elle aurait fait de ce tiroir le
+              seul endroit du produit ou trois boutons voisins n'ont pas la meme forme. */}
           <button
             type="button"
             onClick={() => setPosition(key, selected.seasonNumber, selected.episodeNumber)}
-            className="rounded-full border border-(--color-edge) px-2.5 py-1 text-xs hover:border-(--color-muted)"
+            className="btn rounded-full"
           >
             {t('grid.here')}
+          </button>
+
+          {/* Les exceptions a la position. Elles ne remplacent pas le pointeur — elles
+              disent ce qu'il ne sait pas dire : « celui-la, je l'ai saute », « celui-la,
+              je l'ai deja vu ». Bascules, donc `aria-pressed` porte l'etat. */}
+          <button
+            type="button"
+            aria-pressed={markOf(selected) === 'skipped'}
+            onClick={() => toggleMark(selected, 'skipped')}
+            className="btn rounded-full"
+          >
+            {t('grid.skip')}
+          </button>
+
+          <button
+            type="button"
+            aria-pressed={markOf(selected) === 'watched'}
+            onClick={() => toggleMark(selected, 'watched')}
+            className="btn rounded-full"
+          >
+            {t('grid.ahead')}
           </button>
 
           <StarRating
