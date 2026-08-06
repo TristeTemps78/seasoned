@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   EMPTY_JOURNAL,
   journalKey,
+  markCompleted,
+  reviewKey,
   setDecision,
   setPosition,
+  setReview,
   setSeasonRating,
   setSnapshot,
   setWanted,
@@ -155,5 +158,44 @@ describe('nextToResume — le rappel que le produit s interdit d envoyer', () =>
     let j = setPosition(EMPTY_JOURNAL, DEXTER, 6, 1, NOW);
     j = setDecision(j, DEXTER, 'abandoned', NOW);
     expect(nextToResume(buildLibrary(j, NOW))).toBeUndefined();
+  });
+});
+
+/**
+ * 🔴 Le defaut repare le 2026-08-06 : `lastTouch` enumerait les champs a la main et
+ * **il en manquait deux**. Ecrire une critique — la fonctionnalite entiere du lot 8 —
+ * ne faisait pas remonter la serie, ni finir un revisionnage.
+ *
+ * Les deux tests construisent le meme piege : une serie touchee il y a longtemps, puis
+ * un seul geste **aujourd'hui**. Si ce geste ne compte pas, c'est l'autre serie qui
+ * ressort — et c'est exactement ce que faisait le code d'avant.
+ */
+describe('lastTouch — tout geste compte, y compris ceux du lot 8', () => {
+  const LONGTEMPS = new Date(NOW.getTime() - 10 * 86_400_000);
+  const HIER = new Date(NOW.getTime() - 86_400_000);
+
+  it('ecrire une critique fait remonter la serie', () => {
+    let j = setPosition(EMPTY_JOURNAL, BB, 1, 1, LONGTEMPS);
+    j = setPosition(j, DEXTER, 1, 1, HIER);
+    j = setReview(j, BB, reviewKey(), { text: 'Tenue de bout en bout.', throughSeason: 5 }, NOW);
+
+    expect(nextToResume(buildLibrary(j, NOW))?.key).toBe(BB);
+  });
+
+  it('mener une serie au bout fait remonter la serie', () => {
+    let j = setPosition(EMPTY_JOURNAL, BB, 1, 1, LONGTEMPS);
+    j = setPosition(j, DEXTER, 1, 1, HIER);
+    j = markCompleted(j, BB, NOW);
+
+    expect(nextToResume(buildLibrary(j, NOW))?.key).toBe(BB);
+  });
+
+  it('l ancrage : sans ce geste, c est bien l autre serie qui sort', () => {
+    // Sans cette ligne, les deux tests ci-dessus passeraient aussi avec un `lastTouch`
+    // qui rendrait n'importe quoi de constant — ils ne prouveraient que l'ordre des cles.
+    let j = setPosition(EMPTY_JOURNAL, BB, 1, 1, LONGTEMPS);
+    j = setPosition(j, DEXTER, 1, 1, HIER);
+
+    expect(nextToResume(buildLibrary(j, NOW))?.key).toBe(DEXTER);
   });
 });

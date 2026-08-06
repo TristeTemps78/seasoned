@@ -70,23 +70,56 @@ function instant(value: string | undefined): number {
 }
 
 /**
- * Date du dernier geste porte sur une serie.
+ * Ce qui n'est **pas** un geste, et pourquoi — un par un.
  *
- * L'instantane en est exclu volontairement : il est depose par une simple visite, et
- * le laisser compter ferait remonter en tete une serie qu'on n'a fait que consulter.
+ * `snapshot` est depose par une simple visite : le laisser compter ferait remonter en
+ * tete une serie qu'on n'a fait que consulter. `removed` est une trace de suppression,
+ * datee de l'effacement et non d'une action voulue. `unknownFields` appartient a une
+ * version du code qui n'est pas celle-ci — elle seule sait si c'est un geste.
  */
+const NOT_A_GESTURE = ['snapshot', 'removed', 'unknownFields'] as const;
+
+/**
+ * De quoi lire la date de chaque geste.
+ *
+ * 🔴 **Pourquoi ce n'est pas une simple liste de lignes.** La version precedente
+ * enumerait les champs a la main, et **il en manquait deux** : `reviews` et
+ * `completions`. Ecrire une critique — la fonctionnalite entiere du lot 8 — ne faisait
+ * donc pas remonter la serie dans « Reprendre », pas plus que finir un revisionnage.
+ * L'oubli s'etait deja produit une fois : `liked` avait ete ajoute apres coup, avec un
+ * commentaire expliquant precisement ce risque, pose au-dessus de la mauvaise ligne.
+ *
+ * Le type indexe rend l'oubli **impossible** : ajouter un champ a {@link JournalEntry}
+ * oblige a fournir son extracteur ici, ou a le ranger dans {@link NOT_A_GESTURE} avec sa
+ * raison. `npm run typecheck` refuse tout le reste — et il refuse **au moment ou l'on
+ * ecrit le champ**, la ou un test ne le dirait qu'apres coup.
+ *
+ * Meme procede que `KNOWN_ENTRY_FIELDS` dans `journal.ts` : le filet existait deja dans
+ * ce depot, il n'avait pas ete tendu ici.
+ */
+const GESTURE_DATES: {
+  readonly [K in Exclude<keyof JournalEntry, (typeof NOT_A_GESTURE)[number]>]: (
+    entry: JournalEntry,
+  ) => readonly number[];
+} = {
+  position: (e) => [instant(e.position?.declaredAt)],
+  decision: (e) => [instant(e.decision?.at)],
+  wanted: (e) => [instant(e.wanted?.at)],
+  liked: (e) => [instant(e.liked?.at)],
+  seasonRatings: (e) => Object.values(e.seasonRatings ?? {}).map((r) => instant(r.at)),
+  episodeRatings: (e) => Object.values(e.episodeRatings ?? {}).map((r) => instant(r.at)),
+  // Marquer un episode saute est un geste : sans cette ligne, la serie ne remonterait
+  // pas dans « Reprendre » alors qu'on vient de s'en occuper.
+  episodeMarks: (e) => Object.values(e.episodeMarks ?? {}).map((m) => instant(m.at)),
+  // Ecrire compte, et publier n'est pas la question : on a passe du temps sur la serie.
+  reviews: (e) => Object.values(e.reviews ?? {}).map((r) => instant(r.at)),
+  // Mener une serie au bout est le geste le plus fort du produit. Il manquait.
+  completions: (e) => (e.completions ?? []).map((c) => instant(c.at)),
+};
+
+/** Date du dernier geste porte sur une serie. */
 function lastTouch(entry: JournalEntry): number {
-  const dates = [
-    instant(entry.position?.declaredAt),
-    instant(entry.decision?.at),
-    instant(entry.wanted?.at),
-    ...Object.values(entry.seasonRatings ?? {}).map((r) => instant(r.at)),
-    ...Object.values(entry.episodeRatings ?? {}).map((r) => instant(r.at)),
-    // Marquer un episode saute est un geste : sans cette ligne, la serie ne remonterait
-    // pas dans « Reprendre » alors qu'on vient de s'en occuper.
-    instant(entry.liked?.at),
-    ...Object.values(entry.episodeMarks ?? {}).map((m) => instant(m.at)),
-  ];
+  const dates = Object.values(GESTURE_DATES).flatMap((dateOf) => dateOf(entry));
   return Math.max(0, ...dates);
 }
 
