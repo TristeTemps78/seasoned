@@ -1,7 +1,6 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { join, relative, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { join } from 'node:path';
+import { expect, it } from 'vitest';
+import { ROOT, codeOf, filesUnder, pathOf } from './sources';
 
 /**
  * Aucune phrase francaise ne doit vivre ailleurs que dans le dictionnaire.
@@ -31,8 +30,6 @@ import { describe, expect, it } from 'vitest';
  * que le francais y passe pour normal. On attrape la faute qu'on ne peut pas voir.
  */
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
-
 /**
  * Le dictionnaire, et lui seul, a le droit de contenir des phrases.
  *
@@ -46,55 +43,59 @@ const DICTIONARY = join(ROOT, 'lib', 'i18n.ts');
 /** Caracteres qui n'existent pratiquement qu'en francais dans ce depot. */
 const FRENCH = /[éèêëàâçôöûùîïœ]|«|»/i;
 
-function sourceFiles(dir: string): readonly string[] {
-  const found: string[] = [];
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) {
-      found.push(...sourceFiles(full));
-    } else if (name.endsWith('.tsx') || name.endsWith('.ts')) {
-      found.push(full);
-    }
-  }
-  return found;
+/**
+ * Le parcours de repertoire et le retrait des commentaires viennent de `./sources`.
+ *
+ * ⚠️ Ils etaient recopies ici. `tests/sources.ts` assumait de ne pas migrer les copies
+ * existantes — « ce depot s'interdit de toucher du vert pour l'elegance » — et ce refus
+ * portait sur le **parcours**, dont les variantes different reellement (`withFileTypes`
+ * contre `statSync`). Il ne portait pas sur le **dé-commentateur**, qui est le meme
+ * enchainement de trois `replace` dans quatre fichiers. Celui-ci est migre parce qu'on y
+ * touchait de toute facon.
+ */
+const FILES = [...filesUnder('app'), ...filesUnder('lib')]
+  .filter((file) => file !== DICTIONARY)
+  .map((file) => ({ path: pathOf(file), code: codeOf(file) }));
+
+/** Les lignes fautives d'un fichier, prefixees de son chemin. */
+function faults({ path, code }: { readonly path: string; readonly code: string }): string[] {
+  return code
+    .split('\n')
+    .map((line, index) => ({ line: line.trim(), number: index + 1 }))
+    .filter(({ line }) => FRENCH.test(line))
+    .map(({ number, line }) => `${path}:${number} — ${line}`);
 }
 
 /**
- * Retire tout ce qui ne sera jamais affiche : commentaires de bloc, de ligne, et
- * commentaires JSX. C'est la seule subtilite du fichier — ce depot documente
- * abondamment en francais, et c'est voulu.
+ * ⚠️ **Un seul `it()`, et c'est une correction.**
+ *
+ * Ce fichier employait `it.each(files)`, donc **un test par fichier inspecte** : 87 des
+ * 787 tests du depot, 11 % du total, pour **une seule propriete**. Le compte annonce
+ * mesurait la taille du repertoire `app/`, pas la couverture.
+ *
+ * `no-adhoc-typography` garde la meme classe de propriete avec un seul `it()` qui rend la
+ * **liste complete** des fautes. C'est aussi un meilleur message d'echec : `it.each`
+ * s'arrete au premier fichier fautif, ici on les voit tous d'un coup. Le chemin est
+ * desormais dans la ligne, donc rien n'est perdu du diagnostic.
  */
-function strippedOfComments(source: string): string {
-  return source
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^[ \t]*\/\/.*$/gm, '');
-}
+it('aucune chaine francaise en dur hors du dictionnaire', () => {
+  expect(
+    FILES.flatMap(faults),
+    'Chaine francaise en dur : elle doit passer par lib/i18n.ts',
+  ).toEqual([]);
+});
 
-describe('aucune chaine francaise en dur hors du dictionnaire', () => {
-  const files = [...sourceFiles(join(ROOT, 'app')), ...sourceFiles(join(ROOT, 'lib'))].filter(
-    (file) => file !== DICTIONARY,
-  );
+it('la garde voit bien ce qu elle vise', () => {
+  // Sans ce garde-fou, un chemin devenu faux rendrait le test vert pour la pire raison
+  // qui soit : il n'inspecterait plus rien.
+  expect(FILES.length).toBeGreaterThan(20);
 
-  it('trouve bien des fichiers a inspecter', () => {
-    // Sans ce garde-fou, un chemin devenu faux rendrait le test vert pour la pire
-    // raison qui soit : il n'inspecterait plus rien.
-    expect(files.length).toBeGreaterThan(20);
-  });
-
-  it.each(files.map((file) => relative(ROOT, file).split(sep).join('/')))(
-    '%s',
-    (relativePath) => {
-      const source = strippedOfComments(readFileSync(join(ROOT, relativePath), 'utf8'));
-      const offenders = source
-        .split('\n')
-        .map((line, index) => ({ line: line.trim(), number: index + 1 }))
-        .filter(({ line }) => FRENCH.test(line));
-
-      expect(
-        offenders.map(({ number, line }) => `l.${number} — ${line}`),
-        'Chaine francaise en dur : elle doit passer par lib/i18n.ts',
-      ).toEqual([]);
-    },
+  // Et le motif attrape bien une phrase francaise, sinon il n'examinerait que du vide.
+  expect(faults({ path: 'faux.tsx', code: "const x = 'Déjà vu';" })).toHaveLength(1);
+  // ⚠️ Y compris ce que ce depot ecrit vraiment : des guillemets francais sans accent.
+  expect(faults({ path: 'faux.tsx', code: 'const x = "« ainsi »";' })).toHaveLength(1);
+  // Mais pas un commentaire — ce depot documente abondamment en francais, et c'est voulu.
+  expect(faults({ path: 'faux.tsx', code: codeOf(join(ROOT, 'tests', 'sources.ts')) })).toEqual(
+    [],
   );
 });
