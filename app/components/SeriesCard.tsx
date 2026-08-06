@@ -13,11 +13,24 @@ import { seriesPath } from '@/lib/routes';
  * sait rien — elle peut etre blanche, saturee, ou chargee. Seuls le texte et le liseré
  * portent la couleur, ce qui garantit le contraste quelle que soit l'affiche dessous.
  */
+/**
+ * La teinte du statut, **et rien d'autre**.
+ *
+ * 🔴 Il y avait ici un anneau (`ring-1 ring-inset`) et un flou d'arriere-plan. Vu sur une
+ * vraie capture le 2026-08-06 : ils dessinaient un **rectangle** en travers du bas de
+ * chaque affiche, par-dessus le titre imprime dessus — « MIDSOMER MURDERS », « THE
+ * ROOKIE » — et sur des visuels deja tres colores, ca ressemblait a une etiquette de
+ * terminal collee sur une jaquette.
+ *
+ * Le degrade noir suffit a rendre le texte lisible sur une affiche claire ; le cadre
+ * n'ajoutait que du bruit. *L'affiche est l'interface* — l'information s'y pose, elle ne
+ * s'y colle pas.
+ */
 const TONE_CHIP = {
-  live: 'text-(--color-live) ring-(--color-live)/30',
-  waiting: 'text-(--color-volt) ring-(--color-volt)/30',
-  warning: 'text-(--color-warn) ring-(--color-warn)/30',
-  neutral: 'text-(--color-text) ring-white/15',
+  live: 'text-(--color-live)',
+  waiting: 'text-(--color-volt)',
+  warning: 'text-(--color-warn)',
+  neutral: 'text-(--color-text)',
 } as const;
 
 /**
@@ -71,7 +84,7 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE }: {
               className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/85 to-transparent"
             />
             <span
-              className={`numeric absolute bottom-2 left-2 right-2 truncate rounded px-1.5 py-0.5 text-[0.6875rem] font-medium ring-1 ring-inset backdrop-blur-[2px] ${
+              className={`numeric absolute right-2 bottom-1.5 left-2 truncate text-[0.6875rem] font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
                 TONE_CHIP[STATUS_TONE[status.status]]
               }`}
             >
