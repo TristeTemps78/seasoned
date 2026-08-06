@@ -310,12 +310,38 @@ body::before {
     fill: var(--color-face-yellow);
   }
 
+  /**
+   * Les arcs electriques — **volt**-face.
+   *
+   * Toujours visibles : ils sont la moitie du nom, pas un effet de survol. Le trait est
+   * fin et l'opacite basse pour qu'ils encadrent le cube sans lui disputer l'attention.
+   * L'epaisseur est en unites du `viewBox`, donc elle grossit avec le cube — ce qu'on veut :
+   * un trait fige a 1,4 px serait un cheveu sur un logo de 74 px.
+   */
+  .mark-arcs {
+    fill: none;
+    stroke: var(--color-volt);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.55;
+    transition:
+      opacity 220ms ease,
+      filter 220ms ease;
+  }
+
   /* Le cube pivote de quelques degres : assez pour qu'on sente un volume, pas assez pour
      que la barre bouge. Un logo qui tourne sur lui-meme serait un jouet. */
   a:hover > .mark,
   a:focus-visible > .mark {
     transform: rotate(-8deg) scale(1.06);
-    filter: drop-shadow(0 0 5px color-mix(in oklab, var(--color-volt) 70%, transparent));
+  }
+
+  /* Au survol, l'arc ne grossit pas : il **s'allume**. */
+  a:hover > .mark .mark-arcs,
+  a:focus-visible > .mark .mark-arcs {
+    opacity: 1;
+    filter: drop-shadow(0 0 3px color-mix(in oklab, var(--color-volt) 80%, transparent));
   }
 
   /* ⚠️ Le mouvement est retire pour qui le refuse — la couleur, elle, reste : c'est
