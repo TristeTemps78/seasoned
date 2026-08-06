@@ -68,8 +68,15 @@ déploiement, un appareil resté sur l'ancien build dépouille silencieusement l
 journal, ferme la tâche 4.5) et **8.5** (réveiller `unfollow()` et `setVisibility()`, qui
 n'ont aucun appelant — donc *aucune critique ne serait lisible par personne*).
 
-⏳ **Action de Tristan** : `LEGAL_CONTACT_EMAIL` dans le `.env`. Sans lui, `legalIsComplete()`
-est faux, `/amis` est fermée, et publier une critique le sera aussi.
+⏳ **Le verrou légal est à moitié levé (2026-08-06)** : `LEGAL_CONTACT_EMAIL` est **renseigné
+localement** par Tristan et passe `looksLikeEmail` — le contrôle né de D19. Mais
+`legalIsComplete()` exige **aussi `LEGAL_PUBLISHER_NAME`** (`lib/legal.ts:108`), qui manque.
+Tant qu'il manque, `/amis` reste fermée et publier une critique le sera aussi.
+- **Personne ne peut l'inventer** : c'est l'identité de l'éditeur au sens légal. À demander
+  à Tristan, puis à poser **aussi chez Vercel** — le `.env` local ne suit pas en production,
+  et `legal.ts` refuse délibérément que ces valeurs vivent dans le dépôt (public).
+- ⚠️ Écart relevé, non tranché : l'adresse donnée s'écrit `volteface…` alors que le produit
+  s'appelle **VOLTFACE**. Peut être voulu (« volte-face »). Posée telle que dictée.
 
 ## État précédent (2026-08-05 — la garde ne voyait pas le défaut pour lequel elle existait)
 
