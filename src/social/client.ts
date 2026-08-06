@@ -9,7 +9,7 @@
  * ne doit pas interrompre un produit dont tout le reste est local.
  */
 
-import type { ActivityItem } from '../domain/activity';
+import type { ActivityItem, ActivityKind } from '../domain/activity';
 
 export interface SocialOptions {
   readonly url: string;
@@ -40,6 +40,25 @@ export interface FeedItem extends ActivityItem {
   readonly handle: string;
   /** L'auteur du fait — necessaire pour pouvoir le signaler. */
   readonly authorId: string;
+}
+
+/**
+ * Les genres que ce navigateur sait afficher.
+ *
+ * Derive du type, donc **impossible a oublier** : ajouter un `ActivityKind` sans l'ajouter
+ * ici ne compile pas. C'est le meme procede que `REPORT_GROUNDS` sur `/regles`, ou le typage
+ * interdit d'appliquer une regle qu'on n'a pas publiee.
+ */
+const KNOWN_KINDS: Readonly<Record<ActivityKind, true>> = {
+  rated_season: true,
+  finished: true,
+  started: true,
+  wanted: true,
+  liked: true,
+};
+
+function isKnownKind(value: unknown): value is ActivityKind {
+  return typeof value === 'string' && Object.hasOwn(KNOWN_KINDS, value);
 }
 
 function rowToProfile(row: Record<string, unknown>): Profile {
@@ -207,11 +226,18 @@ export class SocialClient {
     return (rows ?? []).flatMap((row) => {
       const author = row['profiles'] as { handle?: unknown; user_id?: unknown } | undefined;
       if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
+      // ⚠️ Le genre est **valide**, pas simplement transtype. Il vient du serveur, mais
+      // le serveur est en avance sur ce navigateur des qu'un deploiement ajoute un genre
+      // — c'est exactement ce que fait `005_liked.sql`. Un `as` laissait alors passer une
+      // valeur pour laquelle il n'existe aucune cle de dictionnaire, et la ligne
+      // s'affichait **muette**. Regle 4 : on ecarte ce qu'on ne sait pas lire.
+      if (!isKnownKind(row['kind'])) return [];
+
       const season = row['season'];
       const stars = row['stars'];
       return [
         {
-          kind: row['kind'] as FeedItem['kind'],
+          kind: row['kind'],
           subject: row['subject'] as FeedItem['subject'],
           happenedOn: String(row['happened_on']),
           handle: author.handle,

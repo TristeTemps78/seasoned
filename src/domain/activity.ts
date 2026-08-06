@@ -35,7 +35,7 @@ const ACTIVITY_WINDOW_DAYS = 90;
  * Ferme et non libre : un fil de types arbitraires ne s'agrege pas et ne se traduit pas —
  * or le produit vise l'international, ou le texte libre fragmente par langue.
  */
-export type ActivityKind = 'rated_season' | 'finished' | 'started' | 'wanted';
+export type ActivityKind = 'rated_season' | 'finished' | 'started' | 'wanted' | 'liked';
 
 export interface ActivityItem {
   readonly kind: ActivityKind;
@@ -100,6 +100,12 @@ export function projectActivity(
 
     const wanted = entry.wanted === undefined ? undefined : day(entry.wanted.at);
     if (wanted !== undefined) keep({ kind: 'wanted', subject, happenedOn: wanted });
+
+    // Le coeur se publie, et il est le fait le moins spoilant du fil : il ne dit ni ou en
+    // est la personne, ni ce qu'elle en pense saison par saison. « Marie aime Breaking
+    // Bad » n'apprend rien a qui n'a pas commence.
+    const liked = entry.liked === undefined ? undefined : day(entry.liked.at);
+    if (liked !== undefined) keep({ kind: 'liked', subject, happenedOn: liked });
   }
 
   return items;

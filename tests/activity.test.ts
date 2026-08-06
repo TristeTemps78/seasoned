@@ -4,6 +4,7 @@ import {
   EMPTY_JOURNAL,
   journalKey,
   markCompleted,
+  setLiked,
   setPosition,
   setSeasonRating,
   setWanted,
@@ -75,4 +76,14 @@ it('ne masque rien pour une serie que le lecteur n a pas commencee', () => {
 
   expect(vu?.stars).toBe(1);
   expect(vu?.season).toBe(6);
+});
+
+it('publie le coeur, et c est le fait le moins spoilant du fil', () => {
+  // « Marie aime Breaking Bad » n'apprend a personne ou elle en est ni ce qu'elle pense de
+  // la saison 6 — contrairement a une note de saison, que `redactActivity` doit degrader.
+  const journal = setLiked(EMPTY_JOURNAL, BB, true, NOW);
+
+  const [item] = projectActivity(journal, NOW);
+
+  expect(item).toEqual({ kind: 'liked', subject: BB, happenedOn: '2026-08-03' });
 });

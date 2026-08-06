@@ -15,6 +15,7 @@ import {
   setSeasonRating as setSeasonRatingIn,
   setSnapshot as setSnapshotIn,
   setWanted as setWantedIn,
+  setLiked as setLikedIn,
   type Journal,
   type JournalKey,
   type JournalSnapshot,
@@ -188,6 +189,10 @@ export function useJournal() {
     ),
     setWanted: useCallback(
       (key: JournalKey, wanted: boolean) => mutate((j) => setWantedIn(j, key, wanted)),
+      [mutate],
+    ),
+    setLiked: useCallback(
+      (key: JournalKey, liked: boolean) => mutate((j) => setLikedIn(j, key, liked)),
       [mutate],
     ),
     setPlatforms: useCallback(

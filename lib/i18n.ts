@@ -353,6 +353,7 @@ const FR = {
   'friends.item.finished': 'a terminé une série',
   'friends.item.started': 'a commencé une série',
   'friends.item.wanted': 'veut voir une série',
+  'friends.item.liked': 'aime une série',
   'friends.item.season': 'la saison {season} — {stars} ★',
   'sync.adopt.title': 'Un journal existe déjà sur cet appareil',
   'sync.adopt.body.one':
@@ -507,6 +508,8 @@ const FR = {
   'lives.synced': 'gardé sur cet appareil, et sur votre compte',
   'progress.want': 'Je veux la voir',
   'progress.wanted': '✓ Dans ma liste',
+  'progress.like': 'J’aime',
+  'progress.liked': 'Aimée',
   'progress.start': 'Je l’ai commencée',
   'progress.season': 'Saison',
   'progress.episode': 'Épisode',
@@ -957,6 +960,7 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'friends.item.finished': 'finished a series',
   'friends.item.started': 'started a series',
   'friends.item.wanted': 'wants to watch a series',
+  'friends.item.liked': 'loves a series',
   'friends.item.season': 'season {season} — {stars} ★',
   'sync.adopt.title': 'A journal already exists on this device',
   'sync.adopt.body.one':
@@ -1093,6 +1097,8 @@ const EN: Readonly<Record<keyof typeof FR, string>> = {
   'lives.synced': 'kept on this device, and on your account',
   'progress.want': 'I want to watch it',
   'progress.wanted': '✓ On my list',
+  'progress.like': 'Love',
+  'progress.liked': 'Loved',
   'progress.start': 'I’ve started it',
   'progress.season': 'Season',
   'progress.episode': 'Episode',

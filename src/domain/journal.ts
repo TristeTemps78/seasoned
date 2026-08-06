@@ -223,6 +223,26 @@ export interface JournalWanted {
 }
 
 /**
+ * Le coeur : « celle-la compte pour moi ».
+ *
+ * ## Pourquoi il n'est pas une note de plus
+ *
+ * Une note dit **la qualite**, un coeur dit **l'attachement**, et ce ne sont pas les memes
+ * informations : on met cinq etoiles a une serie qu'on ne reverra jamais, et on garde un
+ * faible pour une serie qu'on sait bancale. Letterboxd separe les deux depuis toujours ;
+ * la note se discute, le coeur ne se discute pas.
+ *
+ * **Sur la serie seulement.** L'attachement porte sur l'oeuvre, pas sur une saison — et un
+ * `likedSeasons` reste possible plus tard sans migration, puisque le format est additif.
+ *
+ * Meme forme que {@link JournalWanted} : un booleen date. La date n'est pas decorative,
+ * c'est elle qui permet a la fusion de departager deux appareils.
+ */
+export interface JournalLiked {
+  readonly at: string;
+}
+
+/**
  * Une fois ou la serie a ete menee au bout.
  *
  * ## Version 3 (2026-08-03) — la quatrieme decision irreparable
@@ -413,6 +433,8 @@ export interface JournalEntry {
   readonly episodeRatings?: Readonly<Record<string, JournalRating>>;
   readonly decision?: JournalDecision;
   readonly wanted?: JournalWanted;
+  /** Le coeur. Voir {@link JournalLiked}. */
+  readonly liked?: JournalLiked;
   /**
    * Chaque fois que la serie a ete menee au bout. Voir {@link JournalCompletion}.
    *
@@ -713,6 +735,7 @@ const KNOWN_ENTRY_FIELDS = [
   'position',
   'decision',
   'wanted',
+  'liked',
   'completions',
   'snapshot',
   'seasonRatings',
@@ -780,6 +803,12 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
       ? { at: readInstant(asRecord(wantedSource), 'at', UNDATED) }
       : undefined;
 
+  const likedSource = source['liked'];
+  const liked =
+    likedSource !== undefined && likedSource !== null
+      ? { at: readInstant(asRecord(likedSource), 'at', UNDATED) }
+      : undefined;
+
   const completions = parseCompletions(source['completions']);
   const unknownFields = unknownFieldsOf(source, KNOWN_ENTRY_FIELDS);
 
@@ -787,6 +816,7 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
     ...(position !== undefined ? { position } : {}),
     ...(decision !== undefined ? { decision } : {}),
     ...(wanted !== undefined ? { wanted } : {}),
+    ...(liked !== undefined ? { liked } : {}),
     ...(completions.length > 0 ? { completions } : {}),
     ...(snapshot !== undefined ? { snapshot } : {}),
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
@@ -812,6 +842,7 @@ export function hasContent(entry: JournalEntry | undefined): boolean {
     entry.position !== undefined ||
     entry.decision !== undefined ||
     entry.wanted !== undefined ||
+    entry.liked !== undefined ||
     (entry.completions ?? []).length > 0 ||
     Object.keys(entry.seasonRatings ?? {}).length > 0 ||
     Object.keys(entry.episodeRatings ?? {}).length > 0
@@ -1211,6 +1242,34 @@ export function setWanted(
 }
 
 /**
+ * Poser ou retirer le coeur. Voir {@link JournalLiked}.
+ *
+ * Meme mecanique que {@link setWanted}, y compris la pierre tombale : sans elle, retirer un
+ * coeur sur le telephone le verrait revenir a la premiere synchronisation avec l'ordinateur
+ * qui l'ignorait — la suppression annulee par la synchronisation, decision n°3.
+ */
+export function setLiked(
+  journal: Journal,
+  key: JournalKey,
+  liked: boolean,
+  now = new Date(),
+): Journal {
+  const entry = journal.entries[key] ?? {};
+  if (!liked) {
+    const { liked: _removed, ...rest } = entry;
+    return withEntry(journal, key, {
+      ...rest,
+      removed: withTombstone(entry, 'liked', now.toISOString()),
+    });
+  }
+  return withEntry(journal, key, {
+    ...entry,
+    liked: { at: now.toISOString() },
+    ...reviseTombstone(entry, 'liked'),
+  });
+}
+
+/**
  * Memorise de quoi dessiner la vignette, si l'entree existe deja.
  *
  * **N'en cree jamais une** : sans cela, visiter une page serie suffirait a remplir le
@@ -1475,6 +1534,10 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
     : undefined;
   const wantedWinner = laterOf(a.wanted, b.wanted, (w) => w.at);
   const wanted = survives(wantedWinner?.at, removed['wanted']) ? wantedWinner : undefined;
+  // ⚠️ Pierre tombale `liked`, surtout pas `wanted` : retirer un coeur retirerait sinon
+  // « je veux la voir » du meme geste.
+  const likedWinner = laterOf(a.liked, b.liked, (l) => l.at);
+  const liked = survives(likedWinner?.at, removed['liked']) ? likedWinner : undefined;
   const snapshot = laterOf(a.snapshot, b.snapshot, (s) => s.cachedAt);
 
   // Union, et non « le plus recent gagne » : un visionnage acheve sur un appareil ne
@@ -1500,6 +1563,7 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
     ...(position !== undefined ? { position } : {}),
     ...(decision !== undefined ? { decision } : {}),
     ...(wanted !== undefined ? { wanted } : {}),
+    ...(liked !== undefined ? { liked } : {}),
     ...(completions.length > 0 ? { completions } : {}),
     ...(snapshot !== undefined ? { snapshot } : {}),
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),

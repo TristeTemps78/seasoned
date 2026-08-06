@@ -73,6 +73,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
     setSeasonRating,
     setDecision,
     setWanted,
+    setLiked,
     rememberSnapshot,
   } = useJournal();
   const { t, tn, n, locale } = useT();
@@ -186,6 +187,21 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes }: {
           className="btn rounded-full"
         >
           {entry?.wanted !== undefined ? t('progress.wanted') : t('progress.want')}
+        </button>
+
+        {/* Le coeur — l'attachement, qui n'est pas la note.
+            Il est offert **sans condition de position** : on peut aimer une serie qu'on n'a
+            pas finie, et meme une qu'on n'a pas commencee mais qu'on connait deja. Le
+            reserver a ceux qui ont pose une position en ferait une recompense de fin de
+            parcours, ce qu'il n'est pas. */}
+        <button
+          type="button"
+          aria-pressed={entry?.liked !== undefined}
+          onClick={() => setLiked(key, entry?.liked === undefined)}
+          className="btn rounded-full"
+        >
+          <span aria-hidden="true">{entry?.liked !== undefined ? '♥' : '♡'}</span>{' '}
+          {entry?.liked !== undefined ? t('progress.liked') : t('progress.like')}
         </button>
 
         {position === undefined ? (

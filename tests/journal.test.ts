@@ -17,6 +17,7 @@ import {
   serializeJournal,
   setDecision,
   setEpisodeRating,
+  setLiked,
   setPlatforms,
   setPosition,
   setSeasonRating,
@@ -586,5 +587,50 @@ describe('seasonScoresOf', () => {
 
   it('rend une liste vide pour une serie inconnue', () => {
     expect(seasonScoresOf(EMPTY_JOURNAL, 'tmdb:inconnue')).toEqual([]);
+  });
+});
+
+describe('le coeur — l attachement, distinct de la note', () => {
+  it('se pose, se retire, et ne ressuscite pas depuis un appareil qui l ignorait', () => {
+    const liked = setLiked(EMPTY_JOURNAL, BB, true, NOW);
+    expect(liked.entries[BB]?.liked?.at).toBe(NOW.toISOString());
+
+    // L'appareil A retire le coeur ; l'appareil B ne l'a jamais vu partir.
+    const removed = setLiked(liked, BB, false, LATER);
+    expect(mergeJournals(removed, liked).entries[BB]?.liked).toBeUndefined();
+    expect(mergeJournals(liked, removed).entries[BB]?.liked).toBeUndefined();
+  });
+
+  it('🔴 retirer le coeur ne retire pas « je veux la voir »', () => {
+    // Le defaut vise : reutiliser la pierre tombale 'wanted' pour le coeur. Les deux
+    // champs ont la meme forme, donc la copie est tentante et le symptome silencieux —
+    // un geste en efface un autre, sans erreur.
+    let journal = setWanted(EMPTY_JOURNAL, BB, true, NOW);
+    journal = setLiked(journal, BB, true, NOW);
+    const before = journal;
+    journal = setLiked(journal, BB, false, LATER);
+
+    expect(journal.entries[BB]?.liked).toBeUndefined();
+    expect(journal.entries[BB]?.wanted?.at).toBe(NOW.toISOString());
+
+    // ⚠️ Les deux assertions ci-dessus ne suffisent PAS : une pierre tombale n'agit qu'a la
+    // **fusion**, donc `setLiked(false)` laisserait `wanted` en place dans l'objet meme en
+    // visant la mauvaise cle. Sans la ligne qui suit, ce test reste vert sur le defaut qu'il
+    // pretend attraper — verifie par mutation, il ne tombait pas.
+    const merged = mergeJournals(journal, before);
+    expect(merged.entries[BB]?.liked).toBeUndefined();
+    expect(merged.entries[BB]?.wanted?.at).toBe(NOW.toISOString());
+  });
+
+  it('est du contenu, donc la serie apparait dans la bibliotheque', () => {
+    // `hasContent` gouverne l'affichage : un coeur seul doit suffire a faire exister la
+    // serie chez soi, sinon le geste est accepte puis invisible.
+    const liked = setLiked(EMPTY_JOURNAL, BB, true, NOW);
+    expect(hasContent(liked.entries[BB])).toBe(true);
+
+    // Et il survit a l'aller-retour de serialisation.
+    expect(parseJournal(serializeJournal(liked), NOW).entries[BB]?.liked?.at).toBe(
+      NOW.toISOString(),
+    );
   });
 });
