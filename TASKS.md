@@ -266,6 +266,12 @@
    faut une capture de l'accueil, de la fiche série et de `/moi`, **avant**.
 2. **Une référence choisie par Tristan** — un site dont il aime le rendu. « Faire plus beau »
    n'est pas une consigne exécutable ; « ressembler à ça » l'est.
+   ✅ **Tranché le 2026-08-06 : c'est Letterboxd.** Et la référence dit déjà quelque chose de
+   précis sur la palette, avant même de la regarder : son fond est un **charbon chaud**
+   (`#14181c`), pas un noir bleuté (`#08090e` ici), et ses trois accents — vert `#00e054`,
+   bleu `#40bcf4`, orange `#ff8000` — correspondent presque terme à terme à `--color-live`,
+   `--color-volt` et `--color-warn`. **Donc le sujet n'est probablement pas les accents, c'est
+   le fond.** Noté pour l'étape 2, pas exécuté : une seule chose à la fois.
 3. **Une seule chose à la fois, revue à l'œil** : typo, puis palette, puis densité. Trois
    changements simultanés rendent impossible de savoir lequel a aidé.
 4. **Le design system reste** — il n'est pas la cause du problème, il est le moyen de
@@ -275,6 +281,22 @@
 belongs to a different claude.ai account »). Sans elle, aucune capture, donc aucun jugement.
 Remède : `/logout` puis `/login` dans Claude Code, en vérifiant que l'extension est signée
 sur **le même compte** claude.ai.
+
+> ✅ **Contournement retenu le 2026-08-06, et il est meilleur que l'outil** : **c'est Tristan
+> qui capture et colle les images dans la conversation.** L'agent n'a alors aucun moyen de
+> confondre « j'ai lu le code » avec « j'ai vu l'écran » — la confusion exacte qui a produit
+> les quatre « vérifications mal ancrées » de ce dépôt. Le protocole tient en trois URL, et
+> **le `?v=1` n'est pas optionnel** : le service worker sert des pages en cache, donc sans lui
+> on juge un build d'il y a une heure.
+>
+> ```
+> npm run build && npm run start
+> localhost:3000/fr?v=1  ·  /fr/serie/1396?v=1  ·  /fr/moi?v=1
+> ```
+>
+> ⚠️ **Ce que ce contournement ne donne pas** : la CSSOM, la mesure au pixel, et le mobile
+> (7.1 reste ouvert). Une capture juge une **apparence**, elle ne mesure rien — ne pas écrire
+> « mesuré » là où on a regardé.
 
 ---
 
@@ -388,6 +410,9 @@ sur **le même compte** claude.ai.
 | 9.3 | **L'animation de révélation** | 🟢 libre | Le moment de plaisir que le produit n'a jamais eu. Le cube tourne, la face sort. ⚠️ Une seule fois, à la bascule — rejouée à chaque visite, elle devient une gêne. `prefers-reduced-motion` la supprime |
 | 9.4 | **La face des autres** | 🟢 libre | Une colonne sur `profiles`, affichée dans le fil et sur les critiques. Coût quasi nul |
 | 9.5 | **Les jeux entre faces** | ⛔ pas avant que 9.1-9.4 prennent | Comparer les faces demande une **agrégation serveur**, donc un coût par utilisateur — la cause de mort de TV Time. Un compteur mis en cache, jamais un calcul par visite |
+| 9.6 | **La police — le premier axe de la direction visuelle** | 🔒 **@claude-opus — 2026-08-06** | Référence choisie par Tristan : **Letterboxd**. Aucune police n'est chargée aujourd'hui : le site s'affiche en **Segoe UI** chez Tristan, **San Francisco** sur Mac, **Roboto** sur Android. 🔴 **Et le différenciateur n'a pas de dessin non plus** — la « grille monospace tabulaire » que `CLAUDE.md` désigne comme *le* caractère du produit est la pile système `ui-monospace, 'SF Mono', 'Cascadia Mono', …`, **recopiée trois fois** (`globals.css:128`, `:653`, `:800`) : « 537 h », « S5E3 », « 26 mois » sont dessinés différemment sur chaque machine. ✅ **Aucune modification de la CSP** : `next/font/local` sert depuis `/_next/static/media/`, donc `'self'` (`next.config.ts:97`), et pose son `@font-face` en style inline (`:94`). **Zéro dépendance ajoutée** |
+| 9.7 | **Deux formes de carte concurrentes, et `.card` affirme le contraire** | 🟢 libre | `globals.css:557` promet « un seul rayon, une seule bordure, un seul fond dans toute l'application », et c'est **faux aujourd'hui** : `.card` (rayon `0.75rem`, padding `1rem 1.25rem`) est employée **8 fois**, pendant que `rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4` — **rayon `0.5rem`, padding `1rem`** — est écrite à la main dans **19 endroits**, dont une douzaine sont bien le même objet « panneau » (`CalendarExport`, `MyTally`, `TasteCard`, `MyProgress`, `MyPlatforms`, `JournalTransfer`, `/convertir`, `/regles`…). Mot pour mot la leçon de 7.10 : *extraire une forme ne protège que les écrans qu'on rouvre le même jour*. ⚠️ **Densité, pas typographie** — délibérément hors de 9.6, sinon on ne saura pas ce que la police a apporté |
+| 9.8 | **Cinq tailles de police sous le plus petit cran** | 🟢 libre — **après 9.6** | Deux valeurs (10 et 11 px) écrites de **trois** façons — `text-[10px]`, `text-[11px]`, `text-[0.6875rem]` — dans `EpisodeGrid:108`, `StarRating:67`, `SeriesCard:87`, `TrajectoryChart:78` et `:93`. Un même objet visuel (la légende minuscule) sans cran nommé : le motif exact de `.label`, écrite **dix fois** avant d'être nommée. Invisibles à `no-adhoc-typography`, qui ne regarde que les `<h*>`. ⚠️ **À trancher après la police, pas avant** : elle change les métriques, donc le bon cran ne se décide qu'en regardant |
 
 ### ▶️ Les trois features qui restent face à la cible « TvTime × Letterboxd »
 
