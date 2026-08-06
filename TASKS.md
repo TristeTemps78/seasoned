@@ -302,23 +302,33 @@ sur **le même compte** claude.ai.
 > pose 3 séries petit à petit puis en déverse 20 franchirait le seuil sans qu'on ait rien
 > observé de lui.
 >
-> ✅ **Le vrai discriminant n'est ni le nombre ni la date : c'est le temps écoulé À
-> L'INTÉRIEUR de chaque série.** Une série vécue dans l'app voit sa position posée, puis sa
-> décision prise **des jours plus tard**. Une série déclarée a les deux le même jour. L'écart
-> entre `position.declaredAt` et `decision.at` sépare les deux — et **les deux dates existent
-> depuis la v2**, sans rien ajouter au journal.
+> 🔴 **Et l'écart `position` → `decision` ne le règle pas non plus** — troisième objection de
+> Tristan, et elle tue ma solution de la veille. *Personne ne met son tracker à jour en temps
+> réel.* On regarde, puis on vient déclarer. Quelqu'un qui a réellement enchaîné Arcane et
+> Succession en deux semaines pose position **et** décision dans le même geste, exactement
+> comme quelqu'un qui déclare un souvenir de 2019. **Dans le journal, les deux sont
+> indiscernables** : cet écart mesurait la ponctualité de la saisie, pas la réalité du
+> visionnage.
 >
-> Ça règle tous les cas d'un coup, sans compteur ni date d'inscription : saisie en bloc →
-> écart nul → rien ne compte ; import `/convertir` → invisible ; 3 vécues + 20 saisies →
-> seules les 3 comptent.
+> ✅ **Le discriminant n'est pas dans la série, il est dans le VOLUME du geste.** Une saisie
+> d'historique arrive en rafale — quinze, vingt séries d'un coup. Un visionnage réel arrive
+> au compte-gouttes, parce qu'on ne peut pas voir vingt séries en deux semaines : ce n'est
+> pas un jugement sur la saisie, c'est une **contrainte physique**, le temps d'écran existe.
 >
-> ⚠️ **Le binge d'un week-end est exclu à tort, et c'est assumé** : *le garde-fou doit
-> échouer vers l'exclusion — omettre n'est qu'un oubli, inclure corrompt* (règle écrite au
-> 5.10a). Une face fausse est pire qu'une face absente.
+> **La règle, une seule :** une journée où l'on décide plus de trois séries est une saisie,
+> pas un parcours. Ces séries comptent dans le journal, le bilan et les heures — elles ne
+> comptent pas pour la face.
+>
+> Vérifié sur les trois cas de Tristan : 20 d'un bloc → rien ; Arcane + Succession au retour
+> → **ça compte** ; 3 au compte-gouttes puis 20 d'un coup → seules les 3 comptent.
+>
+> ⚠️ Reste exclu à tort : celui qui saisit son historique par paquets de deux sur des
+> semaines. Assumé — *le garde-fou doit échouer vers l'exclusion, omettre n'est qu'un oubli,
+> inclure corrompt* (règle du 5.10a). Une face fausse est pire qu'une face absente.
 
 | # | Tâche | Statut | Note |
 |---|---|---|---|
-| 9.1 | **`face.ts` — la face, pure** | 🟢 libre | Réutilise `taste.ts`, n'invente aucune donnée. **Ne compte que les séries OBSERVÉES** : écart d'au moins quelques jours entre `position.declaredAt` et `decision.at` (voir le piège ci-dessus). ⚠️ Second garde-fou : plusieurs séries décidées **le même jour** ne valent qu'une observation — une rafale est un geste de saisie, pas trois parcours. ⚠️ **Fenêtre glissante** — les 10 **dernières** observées, jamais les 10 premières : sinon la face se fige à vie, alors que **basculer *est* le produit**. ⚠️ Se **tait** sous le seuil (`MIN_SERIES_FOR_TASTE` existe) |
+| 9.1 | **`face.ts` — la face, pure** | 🟢 libre | Réutilise `taste.ts`, n'invente aucune donnée. **Un seul critère** : écarter les journées à plus de trois décisions — une rafale est une saisie d'historique (voir ci-dessus). ⚠️ **Fenêtre glissante** : les 10 **dernières** séries retenues, jamais les 10 premières — sinon la face se fige à vie, alors que **basculer *est* le produit**. ⚠️ Se **tait** sous le seuil (`MIN_SERIES_FOR_TASTE` existe), et le dit : « votre face se révèle en suivant des séries ici, pas en racontant celles d'avant » |
 | 9.2 | **Le logo porte la face** | 🟢 libre | `Mark.tsx` existe : la face active devient vive, les deux autres reculent. La marque cesse d'être un logo et devient un miroir — et comme elle est sur **toutes** les pages, l'intégration est faite partout d'un coup, sans une ligne de plus |
 | 9.3 | **L'animation de révélation** | 🟢 libre | Le moment de plaisir que le produit n'a jamais eu. Le cube tourne, la face sort. ⚠️ Une seule fois, à la bascule — rejouée à chaque visite, elle devient une gêne. `prefers-reduced-motion` la supprime |
 | 9.4 | **La face des autres** | 🟢 libre | Une colonne sur `profiles`, affichée dans le fil et sur les critiques. Coût quasi nul |
