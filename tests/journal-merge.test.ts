@@ -36,123 +36,12 @@ import {
   type Journal,
   type JournalKey,
   mergeJournals,
-  parseJournal,
-  serializeJournal,
-  setDecision,
-  setEpisodeRating,
   setPosition,
   setSeasonRating,
-  setWanted,
 } from '../src/domain/journal';
-import type { DecisionKind, Stars } from '../src/domain/types';
+import type { Stars } from '../src/domain/types';
 
-// ---------------------------------------------------------------------------
-// Outillage
-// ---------------------------------------------------------------------------
-
-/** Forme canonique : cles triees, pour que l'egalite ne depende pas de l'ordre d'ecriture. */
-function canonical(value: unknown): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null';
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  const source = value as Record<string, unknown>;
-  return `{${Object.keys(source)
-    .sort()
-    .map((k) => `${JSON.stringify(k)}:${canonical(source[k])}`)
-    .join(',')}}`;
-}
-
-/** Ce que les lois comparent : la donnee de l'utilisateur, hors identite d'appareil. */
-function shape(journal: Journal): string {
-  return canonical(journal.entries);
-}
-
-/** Generateur congruentiel : reproductible, donc un echec se rejoue a l'identique. */
-function random(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state / 4294967296;
-  };
-}
-
-const KEYS: readonly JournalKey[] = ['tmdb:1396', 'tmdb:66732', 'tmdb:1399'];
-const STARS: readonly Stars[] = [1, 2.5, 3, 4, 5] as readonly Stars[];
-const KINDS: readonly DecisionKind[] = ['continuing', 'paused', 'abandoned', 'completed'];
-
-/**
- * Trois dates seulement, et volontairement.
- *
- * Un jeu large rendrait les ex aequo improbables — c'est-a-dire qu'il eviterait
- * soigneusement le seul cas que ces lois doivent couvrir.
- */
-const DATES: readonly Date[] = [
-  new Date('2026-01-01T00:00:00.000Z'),
-  new Date('2026-06-15T12:00:00.000Z'),
-  new Date('2026-08-02T09:30:00.000Z'),
-];
-
-/**
- * Ce qu'une version plus recente du produit aurait ecrit et que nous ne savons pas lire.
- *
- * ⚠️ Il n'existe **aucun** mutateur pour ce champ, et c'est voulu : ce code n'ecrit jamais
- * `unknownFields`, il ne fait que le traverser. On passe donc par le seul chemin reel —
- * serialiser, injecter, relire — ce qui a l'avantage d'exercer aussi le pass-through de
- * `parseEntry` et de `serializeJournal` a chaque graine.
- *
- * Sans ce cas, les huit lois ne prouveraient la convergence que sur les champs **connus**,
- * en laissant hors de leur portee le seul champ dont la fusion n'a pas de date pour
- * departager — c'est-a-dire precisement celui qui risquait de la casser.
- */
-function withUnknown(journal: Journal, key: JournalKey, value: unknown): Journal {
-  const document = JSON.parse(serializeJournal(journal)) as {
-    entries: Record<string, Record<string, unknown>>;
-  };
-  document.entries[key] = { ...(document.entries[key] ?? {}), futureField: value };
-  return parseJournal(JSON.stringify(document));
-}
-
-const FUTURE_VALUES: readonly unknown[] = [
-  'un texte',
-  { text: 'une critique', through: 3 },
-  [1, 2, 3],
-];
-
-function journalOf(seed: number): Journal {
-  const next = random(seed);
-  const pick = <T>(xs: readonly T[]): T => xs[Math.floor(next() * xs.length)] as T;
-
-  let journal = EMPTY_JOURNAL;
-  const gestures = 1 + Math.floor(next() * 6);
-
-  for (let i = 0; i < gestures; i += 1) {
-    const key = pick(KEYS);
-    const at = pick(DATES);
-    switch (Math.floor(next() * 6)) {
-      case 5:
-        journal = withUnknown(journal, key, pick(FUTURE_VALUES));
-        break;
-      case 0:
-        journal = setPosition(journal, key, 1 + Math.floor(next() * 5), 1 + Math.floor(next() * 9), at);
-        break;
-      case 1:
-        journal = setSeasonRating(journal, key, 1 + Math.floor(next() * 4), pick(STARS), at);
-        break;
-      case 2:
-        journal = setEpisodeRating(journal, key, 1 + Math.floor(next() * 3), 1 + Math.floor(next() * 6), pick(STARS), at);
-        break;
-      case 3:
-        journal = setDecision(journal, key, pick(KINDS), at);
-        break;
-      default:
-        journal = setWanted(journal, key, next() > 0.35, at);
-        break;
-    }
-  }
-  return journal;
-}
-
-const CASES = 120;
-
+import { CASES, KEYS, journalOf, shape, withUnknown } from './journal-fixtures';
 // ---------------------------------------------------------------------------
 // Les lois
 // ---------------------------------------------------------------------------
