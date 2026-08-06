@@ -8,7 +8,50 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-07 — l'audit : six failles, et cinq décrivaient le dépôt d'avant)
+## État actuel (2026-08-07 — l'audit, puis `journal.ts` découpé en six briques)
+
+- **✅ Lots 10 et 11.0 livrés.** **787 → 711 tests**, typecheck strict vert, build vert,
+  **29 routes prérendues**. Douze commits, `main` propre, **rien n'est poussé**.
+
+### 🧱 Le découpage, et la mesure qui l'a décidé
+
+**297 des 708 tests — 42 %** — visaient `src/domain/journal.ts` : 1858 lignes, 54 exports.
+Le contraste interne disait tout : `mergeJournals`, la seule partie **déjà isolée**, tenait
+en ~90 lignes et **10 tests dont 6 lois** ; tout le reste, ~1760 lignes et ~290 **exemples**.
+
+> **Le nombre de tests ne mesure pas la prudence, il mesure l'absence de contrat.**
+
+Six briques désormais, chacune avec sa phrase : `types` · `parse` (*lire est idempotent,
+rien ne lève*) · `write` (*rejouer un geste l'annule*) · `merge` (**1 export**) · `derive` ·
+`entry`. ✅ **Preuve de neutralité** : un barillet garde la surface publique au symbole près,
+donc **aucun fichier de test n'a été touché** — 708 verts, `git status tests/` vide.
+
+### 🔴 « On peut diviser les tests par 10 ? » — non, et c'est mesuré
+
+Mutation du pass-through des champs inconnus, suite entière lancée : **sur 711 tests, un
+seul tombe** — l'exemple « préserve un champ inconnu ». Ni les six lois de fusion, ni les
+trois lois de lecture, ni les 120 graines ne le voient.
+
+> **Les lois et les exemples n'attrapent pas les mêmes choses.** Les lois **s'ajoutent**,
+> elles ne remplacent pas. Sur les 14 exemples du plus gros bloc : **4** couverts par une
+> loi, **10** qui nomment chacun un bug qui a eu lieu.
+
+🔴 **Et la première loi écrite était fausse** — `parse(serialize(j)) = j` échoue dès la
+graine 21. Pas un défaut : **`parseJournal` n'est pas un décodeur pur, il *vieillit* le
+document** (traces à 90 j, instantanés à 30 j). Le contrat exact est l'**idempotence**, et
+personne ne l'avait écrit. *Une loi fausse qui échoue vaut mieux qu'un exemple juste qui ne
+dit rien.*
+
+⚠️ **Le découpage a failli rouvrir la faille fermée le matin même** : `no-journal-on-server`
+barrait `@/src/domain/journal` avec une **ancre de fin**, donc `…/journal/write` passait.
+
+### ▶️ Les briques suivantes
+
+`lib/i18n.ts` (84 % du fichier sont deux dictionnaires — les sortir débloque 8.10),
+`lib/catalog.ts` (trois métiers mélangés, dont du **domaine pur** coincé dans une couche
+réseau), et l'**algèbre des clés** encore dans `journal/types.ts`.
+
+## État précédent (2026-08-07 — l'audit : six failles, et cinq décrivaient le dépôt d'avant)
 
 - **✅ Lot 10 livré.** **787 → 708 tests**, typecheck strict vert, build vert, **29 routes
   prérendues** (inchangé). Neuf commits, `main` propre, **rien n'est poussé** — un push est un

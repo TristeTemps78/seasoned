@@ -319,6 +319,70 @@ celle de `/regles`. *Un garde-fou adossé à quinze exemptions est un garde-fou 
 
 ---
 
+## 🧱 Lot 11.0 — `journal.ts` devient six briques (2026-08-07) ✅
+
+> **Question de Tristan** : « tu peux diviser par 10 le nombre de tests ? Continue cette
+> réflexion de segmentation des briques pour avoir un château de cartes qui tient et qui
+> est super clair. »
+
+**La mesure qui a tout décidé** : **297 des 708 tests — 42 %** — visaient
+`src/domain/journal.ts`, un fichier de 1858 lignes et 54 exports. Et le contraste interne
+disait tout :
+
+| | code | tests | forme |
+|---|---|---|---|
+| `mergeJournals`, la seule partie **déjà isolée** | ~90 l. | **10** | 6 **lois** sur 120 graines |
+| tout le reste | ~1760 l. | ~290 | des **exemples** |
+
+> **Le nombre de tests ne mesure pas la prudence, il mesure l'absence de contrat.** Un
+> module à 54 exports n'a aucune phrase à tester, alors on écrit des exemples. Un module à
+> un export se teste par « c'est commutatif, associatif, idempotent », et c'est fini.
+
+**Les six briques**, chacune avec sa phrase : `types` (534 l., les formes) · `parse`
+(528 l., *lire est idempotent, rien ne lève*) · `write` (415 l., *rejouer un geste
+l'annule*) · `merge` (247 l., **1 export**) · `derive` (108 l.) · `entry` (88 l., *quand
+une entrée vaut d'être gardée*).
+
+- **`entry.ts` n'était pas prévu** : `hasContent`, `worthKeeping` et `dedupeByDay` servent à
+  la lecture, à l'écriture **et** à la fusion. Les laisser dans le parseur aurait fait
+  dépendre l'écriture de la lecture.
+- ✅ **La preuve que le découpage est neutre** : un barillet garde la surface publique au
+  symbole près, donc **aucun fichier de test n'a été touché**. 708 verts, `git status tests/`
+  vide. *Un refactor du cœur du produit sans toucher un seul test est un refactor dont on
+  peut prouver qu'il n'a rien changé.*
+- ⚠️ **Le découpage a failli rouvrir la faille fermée le matin même** : `no-journal-on-server`
+  barrait `@/src/domain/journal` avec une **ancre de fin**, donc `…/journal/write` lui serait
+  passé sous le nez.
+
+### 🔴 La réponse à « ÷10 », et elle est mesurée
+
+**Non, et voici la preuve.** J'ai muté le pass-through des champs inconnus et lancé la suite
+entière : **sur 711 tests, un seul tombe** — l'exemple « préserve un champ inconnu ». Ni les
+six lois de fusion, ni les trois lois de lecture, ni les 120 graines ne le voient.
+
+> **Les lois et les exemples n'attrapent pas les mêmes choses.** Supprimer les exemples au
+> nom des lois, c'est perdre le seul garde-fou du pass-through — le mécanisme même que le
+> lot 8.0 a construit. Les lois **s'ajoutent**, elles ne remplacent pas.
+
+Et sur les quatorze exemples du plus gros bloc, la relecture en donne **quatre** couverts par
+une loi, et **dix** qui nomment chacun un bug qui a réellement eu lieu.
+
+🔴 **La première loi écrite était fausse, et c'est le meilleur résultat du lot.** J'avais
+énoncé `parse(serialize(j)) = j` ; elle échoue dès la graine 21. Ce n'est pas un défaut :
+**`parseJournal` n'est pas un décodeur pur, il *vieillit* le document** (traces à 90 jours,
+instantanés à 30). Le contrat exact est l'**idempotence**, et personne ne l'avait écrit.
+*Une loi fausse qui échoue vaut mieux qu'un exemple juste qui ne dit rien.*
+
+### ▶️ Les briques suivantes, si on continue
+
+`lib/i18n.ts` (1464 l., dont **84 % sont deux dictionnaires** → sortir `fr.ts`/`en.ts`
+laisse un moteur de ~240 l. et débloque 8.10) · `lib/catalog.ts` (770 l., trois métiers :
+cache réseau, URL d'affiches, et un conseil d'arrêt qui est du **domaine pur** coincé dans
+une couche réseau) · et `journal/types.ts` (534 l., 31 exports) dont l'**algèbre des clés**
+mérite sa brique.
+
+---
+
 ## 🧹 Lot 11 — la simplification du code (trouvé au lot 10, **non exécuté**)
 
 > Décision de Tristan (2026-08-07) : **les failles d'abord, seules**. Tout ce qui suit est
