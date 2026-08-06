@@ -178,15 +178,12 @@ export class LocalJournalStore implements JournalStore {
   /**
    * Lit une valeur stockee, et **met de cote ce qu'on n'a pas su lire**.
    *
-   * Ici, contrairement au distant, repartir d'un journal vide est le seul comportement
-   * possible : c'est notre propre stockage, il n'y a pas d'autre source. Mais la premiere
-   * ecriture qui suivra ecrasera l'illisible, et avec lui la seule chance de comprendre ce
-   * qui s'est passe — ou de recuperer a la main un journal de plusieurs annees.
-   *
-   * D'ou la copie de sauvetage, posee **avant** toute ecriture et jamais effacee. Meme
-   * doctrine que {@link LEGACY_STORAGE_KEYS} : quelques kilo-octets abandonnes ne coutent
-   * rien a personne, une perte definitive coute tout. On n'ecrase jamais un sauvetage
-   * existant — le premier est celui qui a precede le degat.
+   * Ici, contrairement au distant, repartir a vide est le seul comportement possible :
+   * c'est notre propre stockage, il n'y a pas d'autre source. Mais la premiere ecriture
+   * ecrasera l'illisible, et avec lui toute chance de recuperer a la main un journal de
+   * plusieurs annees. D'ou la copie, posee **avant** cette ecriture et jamais remplacee —
+   * le premier sauvetage est celui qui a precede le degat. Meme doctrine que
+   * {@link LEGACY_STORAGE_KEYS}.
    */
   #parse(raw: string, from: string): Journal {
     const read = tryParseJournal(raw);

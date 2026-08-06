@@ -45,39 +45,21 @@
  *
  * ---
  *
- * ## Le format est ADDITIF PAR CONTRAT (2026-08-06) — decision n°4
+ * ## 4. Le format est ADDITIF PAR CONTRAT (2026-08-06)
  *
- * ### Ce qui l'a rendue necessaire
+ * Un champ inconnu — d'une entree comme du document — est **conserve et reecrit**, et une
+ * version future n'est plus jetee mais memorisee. Sans cela, un ancien client qui relit un
+ * journal ecrit par un plus recent le **reecrit dépouille** a la synchronisation suivante :
+ * `parseEntry` reconstruit un objet neuf a partir des seuls champs qu'il connait.
  *
- * Jusqu'ici, deux comportements se combinaient en perte de donnees, et les deux etaient
- * ecrits comme des protections :
+ * Le prix, a payer en connaissance de cause : **une version future ne peut plus changer le
+ * SENS d'un champ existant, seulement en ajouter** — un ancien client continue d'ecrire
+ * dans ceux qu'il croit comprendre. Les trois versions passees etaient deja additives.
  *
- * - `parseJournal` **jetait integralement** un document dont la version depassait la
- *   sienne (« on ne devine pas la forme d'un format qu'on ne connait pas ») ;
- * - `parseEntry` reconstruit un objet neuf a partir des seuls champs qu'il connait, donc
- *   `serializeJournal` **reecrit dépouille** de tout le reste.
- *
- * Le produit est deploye et le journal se synchronise. Donc au moment ou un client neuf
- * ecrit un champ que l'ancien ignore, l'ancien le **supprime en silence** a la premiere
- * synchronisation — et si la version avait ete incrementee, il aurait fait pire : lire
- * vide, puis pousser ce vide par-dessus le distant (voir la garde de
- * `src/journal/remote.ts`).
- *
- * ### La regle, et son prix
- *
- * Un champ inconnu — d'une entree comme du document — est **conserve tel quel et
- * reecrit**. Une version future n'est plus jetee : elle est memorisee et reemise.
- *
- * Le prix est reel et doit etre paye en connaissance de cause : **une version future ne
- * peut plus changer le SENS d'un champ existant, seulement en ajouter.** Un ancien client
- * continue en effet d'ecrire dans les champs qu'il croit comprendre. Les trois versions
- * passees etaient deja additives, donc la contrainte ne coute rien aujourd'hui — mais
- * c'est elle qui rend le pass-through sur.
- *
- * ⚠️ **Corollaire operationnel** : ne jamais incrementer {@link JOURNAL_VERSION} sans
- * avoir d'abord **deploye** un lecteur qui sait faire ce pass-through, et l'avoir verifie
- * sur le site servi. C'est ecrit ici, et pas dans `TASKS.md`, parce que c'est ici qu'on
- * le lit au moment ou l'on s'apprete a le faire.
+ * ⚠️ **Corollaire** : ne jamais incrementer {@link JOURNAL_VERSION} sans avoir d'abord
+ * **deploye** un lecteur qui sait faire ce pass-through. Ecrit ici et pas dans `TASKS.md`,
+ * parce que c'est ici qu'on le lit au moment de le faire. Ce que coutait l'inverse est
+ * raconte dans {@link tryParseJournal}.
  */
 
 import type { DecisionKind, SeriesId, Stars } from './types';
@@ -727,7 +709,7 @@ function dedupeByDay(
  * ({@link ExhaustiveEntryFields}) : c'est preferable a un test, parce qu'un test se lance
  * alors que le typage, lui, barre la route au moment ou l'on ecrit le champ.
  */
-export const KNOWN_ENTRY_FIELDS = [
+const KNOWN_ENTRY_FIELDS = [
   'position',
   'decision',
   'wanted',
@@ -739,7 +721,7 @@ export const KNOWN_ENTRY_FIELDS = [
 ] as const;
 
 /** Idem au niveau du document. */
-export const KNOWN_JOURNAL_FIELDS = ['version', 'deviceId', 'platforms', 'entries'] as const;
+const KNOWN_JOURNAL_FIELDS = ['version', 'deviceId', 'platforms', 'entries'] as const;
 
 /**
  * Le filet qui empeche les deux listes ci-dessus de deriver de leurs interfaces.
@@ -775,10 +757,9 @@ function unknownFieldsOf(
   source: Readonly<Record<string, unknown>>,
   known: readonly string[],
 ): Readonly<Record<string, unknown>> | undefined {
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(source)) {
-    if (!known.includes(key) && value !== undefined) out[key] = value;
-  }
+  const out = Object.fromEntries(
+    Object.entries(source).filter(([key, value]) => !known.includes(key) && value !== undefined),
+  );
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
@@ -854,10 +835,9 @@ function worthKeeping(entry: JournalEntry): boolean {
   return (
     hasContent(entry) ||
     Object.keys(entry.removed ?? {}).length > 0 ||
-    // Meme raisonnement que pour la trace de suppression, applique au pass-through : une
-    // entree qu'une version plus recente a remplie de champs que nous ne comprenons pas
-    // n'a, pour nous, « aucun contenu ». La jeter ici la supprimerait du document reecrit,
-    // ce qui est exactement la perte silencieuse que la decision n°4 existe pour empecher.
+    // Meme raisonnement, applique au pass-through : une entree qui n'a que des champs que
+    // nous ne comprenons pas n'a, pour nous, aucun contenu — la jeter la supprimerait du
+    // document reecrit.
     Object.keys(entry.unknownFields ?? {}).length > 0
   );
 }
@@ -965,43 +945,32 @@ function readJournal(
 }
 
 /**
- * Reetale un seau de champs inconnus au niveau ou il a ete trouve.
+ * Serialise un journal. Format stable — c'est aussi le format d'export.
  *
- * ⚠️ L'ordre compte : le seau vient **en premier**, pour qu'une valeur que nous savons
- * lire ne puisse jamais etre ecrasee par une homonyme mal rangee. Le seul cas ou les deux
- * coexisteraient est un bogue de {@link KNOWN_ENTRY_FIELDS} — et dans ce cas c'est la
- * valeur parsee qui fait foi.
+ * ⚠️ Les entrees sont reserialisees une par une, et non recopiees en bloc : elles portent
+ * un seau `unknownFields` qu'il faut **reetaler a plat**. Le recopier tel quel ecrirait un
+ * champ litteralement nomme `unknownFields`, que le client d'a cote relirait comme un
+ * inconnu de plus — un seau dans un seau, a chaque aller-retour.
+ *
+ * Le seau est etale **avant** les champs connus : si jamais les deux portaient le meme nom
+ * — ce qui ne peut venir que d'un oubli dans {@link KNOWN_ENTRY_FIELDS}, et le typage
+ * l'interdit — c'est la valeur que nous savons lire qui doit gagner.
  */
-function spread(
-  unknownFields: Readonly<Record<string, unknown>> | undefined,
-  known: Readonly<Record<string, unknown>>,
-): Readonly<Record<string, unknown>> {
-  return unknownFields === undefined ? known : { ...unknownFields, ...known };
-}
-
-/** Serialise un journal. Format stable — c'est aussi le format d'export. */
 export function serializeJournal(journal: Journal): string {
-  // ⚠️ Les entrees sont reserialisees une par une, et non recopiees en bloc : `entries`
-  // porte desormais des seaux `unknownFields` qu'il faut **reetaler** a plat. Les recopier
-  // tels quels ecrirait un champ litteralement nomme `unknownFields` dans le document, que
-  // le client d'a cote relirait comme un champ inconnu de plus — un seau dans un seau, a
-  // chaque aller-retour.
   const entries: Record<string, unknown> = {};
-  for (const [key, entry] of Object.entries(journal.entries)) {
-    const { unknownFields, ...known } = entry;
-    entries[key] = spread(unknownFields, known);
+  for (const [key, { unknownFields, ...known }] of Object.entries(journal.entries)) {
+    entries[key] = { ...unknownFields, ...known };
   }
 
-  return JSON.stringify(
-    spread(journal.unknownFields, {
-      version: journal.version,
-      ...(journal.deviceId !== undefined ? { deviceId: journal.deviceId } : {}),
-      ...(journal.platforms !== undefined && journal.platforms.length > 0
-        ? { platforms: journal.platforms }
-        : {}),
-      entries,
-    }),
-  );
+  return JSON.stringify({
+    ...journal.unknownFields,
+    version: journal.version,
+    ...(journal.deviceId !== undefined ? { deviceId: journal.deviceId } : {}),
+    ...(journal.platforms !== undefined && journal.platforms.length > 0
+      ? { platforms: journal.platforms }
+      : {}),
+    entries,
+  });
 }
 
 // ---------------------------------------------------------------------------
