@@ -8,7 +8,61 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
-## État actuel (2026-08-06 — le lot 8 s'ouvre, et sa première tâche répare une perte de données)
+## État actuel (2026-08-06 — le lot 8 est livré : on peut écrire, aimer, et sauter un épisode)
+
+- **✅ Lot 8 livré et poussé.** **787 tests** (+52), typecheck strict vert, build vert,
+  **29 routes statiques** (inchangé), CI verte. `005` et `006` **appliqués à la vraie base**.
+- **Trois features, décidées avec Tristan le 2026-08-06** après un état des lieux
+  « TvTime × Letterboxd » :
+  1. **Le cœur** — l'attachement, distinct de la note. Une note dit la qualité, un cœur dit
+     autre chose : on met cinq étoiles à une série qu'on ne reverra jamais.
+  2. **Les épisodes sautés ou vus en avance** — la position reste **un pointeur**, on ajoute
+     l'exception. Pas de cases à cocher, donc pas la friction qui est *la cause n°1
+     d'abandon des trackers*.
+  3. **Les critiques**, publiques, par série **et** par saison — le premier champ de texte
+     libre du produit.
+- 🔴 **Le piège du lot était dans `tally.ts`, et il était silencieux.** Le bilan compte par
+  `total − restant` : passer les marques à `remainingAfter` — le réflexe — aurait fait
+  **monter les heures vues** d'un épisode qu'on vient de déclarer avoir sauté. D'où
+  `classifyMarks`, seul endroit qui range les marques, avec deux listes **nommées** et leur
+  signe explicite. *Mutation vérifiée : la version naïve fait tomber deux tests.*
+- 🔴 **Le social était bâti et aveugle.** `setVisibility()` et `unfollow()` existaient depuis
+  le lot 6 **sans aucun appelant**, et la visibilité était codée en dur à `followers` — donc
+  aucune critique n'aurait jamais pu être lue par quelqu'un qui ne vous suit pas déjà.
+- **Les critiques vivent aux deux endroits, et la frontière est nette** : le journal reste la
+  source de vérité (règle 9 + Q12, on écrit hors ligne), la table `reviews` porte la copie
+  publiable — parce que `journals` est RLS « own only » par décision écrite, et parce que
+  `hidden_at` rend **exécutable** la promesse « on masque, on ne supprime jamais ».
+- **Le caviardage vit dans `spoiler.ts`**, là où `AGENTS.md` règle 7 l'exige, et **dans le
+  navigateur du lecteur** — le serveur ne sait pas où en est celui qui lit, donc sa position
+  ne peut pas fuir. ⚠️ Le texte masqué est **déplacé**, pas caché en CSS.
+- ✅ **Le verrou légal est levé, en local et en production** : `/mentions` affiche l'éditeur
+  sur le site servi (variables Vercel « sensitive » — vérifié, elles fonctionnent au build).
+  RLS de `reviews` éprouvée contre la vraie base : lecture anonyme vide, écriture refusée 401.
+- ⚠️ **Deux tests creux trouvés par leur propre mutation**, et c'est la leçon récurrente :
+  « retirer le cœur ne retire pas *je veux la voir* » ne tombait pas (une pierre tombale
+  n'agit qu'à la fusion, que le test ne faisait pas), et l'exemple de « champ inconnu » des
+  tests de 8.0 utilisait `reviews`… qui est devenu un champ **connu** deux commits plus tard.
+
+### ▶️ Pour reprendre
+
+**Reste du lot 8** : **8.1** (mesurer le journal, ferme la tâche 4.5 ouverte depuis le lot 4)
+et **8.9 partiel** (la phrase de `/regles` sur le retrait d'une critique, et
+`ARCHITECTURE-APP.md` §5 dont la ligne « pas de texte libre avant 5.0 » est levée).
+
+**Ce qui n'a pas été regardé à l'œil** : les critiques n'ont jamais été vues dans un
+navigateur, ni le cœur, ni le tiroir de la grille. Tout est prouvé par les tests et par la
+lecture de la source — *ce n'est pas la même chose que de l'avoir vu*. Un test vérifie que
+la fiche série monte bien `<Reviews />`, mais personne n'a jamais lu une critique à l'écran.
+
+**Ce qui manque encore face à la cible** : les **listes** personnalisées, la **page de profil
+public** `/@handle` (on suit un handle sans pouvoir ouvrir sa page), le **bilan annuel**.
+
+⚠️ **Tâche 8.10** — le seul vrai sujet de scalabilité trouvé par l'audit : les **deux
+dictionnaires** partent dans le même chunk client de 18 Ko gzip. À cinq langues, ce serait
+45 Ko dont 36 inutiles à chacun.
+
+## État précédent (2026-08-06, matin — 8.0, la perte de données réparée)
 
 - **✅ Sous-tâche 8.0 livrée.** **747 tests** (+12), typecheck strict vert, build vert,
   **29 routes statiques** (inchangé). **8 commits poussés, CI verte** (`check` + `secrets`),
