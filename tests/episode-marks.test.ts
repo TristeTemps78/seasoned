@@ -223,14 +223,14 @@ describe('le maillon que rien d autre ne couvre', () => {
     // ci-dessus prouvent le calcul ; aucun ne prouve que l'ecran l'APPELLE. C'est le trou
     // exact par lequel `ordering.ts` et `episodeMinutes` ont ete livres morts-nes, et le
     // meme procede que le test qui a rattrape `SeriesOrderings` : on lit la source.
-    const { readFileSync } = await import('node:fs');
-    const { fileURLToPath } = await import('node:url');
-    const source = readFileSync(
-      fileURLToPath(new URL('../app/components/MyProgress.tsx', import.meta.url)),
-      'utf8',
-    ).replace(/\/\*[\s\S]*?\*\//g, '');
+    const { join } = await import('node:path');
+    const { ROOT, codeOf } = await import('./sources');
+    const source = codeOf(join(ROOT, 'app/components/MyProgress.tsx'));
 
-    expect(source).toMatch(/remainingAfter\(seasons, position, episodeMinutes, marks\)/);
-    expect(source).toMatch(/seasonToRate\(seasons, position, rated, marks\)/);
+    // ⚠️ On verifie que `marks` est PASSE, sans figer l'ordre ni le nom des autres
+    // arguments : un test couple a une signature casse au premier renommage, pour un
+    // produit qui marche toujours.
+    expect(source).toMatch(/remainingAfter\([^)]*\bmarks\b[^)]*\)/);
+    expect(source).toMatch(/seasonToRate\([^)]*\bmarks\b[^)]*\)/);
   });
 });

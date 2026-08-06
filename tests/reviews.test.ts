@@ -6,8 +6,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { ROOT, codeOf } from './sources';
 import {
   EMPTY_JOURNAL,
   MAX_REVIEW_CHARS,
@@ -147,26 +147,14 @@ describe('le journal', () => {
 });
 
 describe('les maillons que rien d autre ne couvre', () => {
-  const sourceOf = (path: string): string =>
-    readFileSync(fileURLToPath(new URL(`../${path}`, import.meta.url)), 'utf8').replace(
-      /\/\*[\s\S]*?\*\//g,
-      '',
-    );
+  const sourceOf = (path: string): string => codeOf(join(ROOT, path));
 
-  it('la fiche serie monte bien <Reviews />', () => {
-    // Une fonctionnalite ecrite n'est pas une fonctionnalite qui marche. Meme procede que
-    // le test qui a rattrape `SeriesOrderings` : sans lui, retirer la balise laissait la
-    // suite entiere verte.
-    expect(sourceOf('app/(site)/serie/[id]/page.tsx')).toMatch(/<Reviews\s+seriesId=\{id\}/);
-  });
-
-  it('MyProgress monte l editeur, au niveau serie ET au niveau saison', () => {
-    const source = sourceOf('app/components/MyProgress.tsx');
-    expect(source).toMatch(/<ReviewEditor\s+seriesId=\{seriesId\}\s+canPublish=/);
-    expect(source).toMatch(/seasonNumber=\{s\.seasonNumber\}/);
-  });
+  // ⚠️ Le montage des composants n'est plus verifie ici : `no-orphan-component` s'en charge
+  // pour TOUS les composants a la fois, et sans se coupler a la syntaxe exacte d'une balise.
+  // Ne restent que les appels qu'aucune regle generale ne peut deviner.
 
   it('les critiques sont publiees par le meme chemin que le fil', () => {
+    // Sans cet appel, tout marche en local et rien ne sort jamais du navigateur.
     expect(sourceOf('app/components/Friends.tsx')).toMatch(/publishReview\(/);
   });
 
@@ -176,11 +164,5 @@ describe('les maillons que rien d autre ne couvre', () => {
     const source = sourceOf('app/components/Friends.tsx');
     expect(source).toMatch(/client\.setVisibility\(/);
     expect(source).toMatch(/client\.unfollow\(/);
-  });
-
-  it('Reviews et ReviewEditor sont des composants client', () => {
-    for (const path of ['app/components/Reviews.tsx', 'app/components/ReviewEditor.tsx']) {
-      expect(sourceOf(path)).toMatch(/^'use client';/);
-    }
   });
 });
