@@ -352,11 +352,58 @@ body::before {
     transform: rotate(-8deg) scale(1.06);
   }
 
-  /* Au survol, l'arc ne grossit pas : il **s'allume**. */
+  /**
+   * Au survol, le champ ne grossit pas : il **scintille**.
+   *
+   * Les paliers de l'animation sont volontairement **inegaux** — 0 %, 8 %, 14 %, 41 %… Un
+   * clignotement a intervalle regulier se lit comme un temoin de charge ; une decharge est
+   * saccadee. C'est la meme raison qui a fait abandonner les arcs lisses.
+   */
+  @keyframes mark-flicker {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    8% {
+      opacity: 0.45;
+    }
+    14% {
+      opacity: 1;
+    }
+    41% {
+      opacity: 0.7;
+    }
+    47% {
+      opacity: 1;
+    }
+    62% {
+      opacity: 0.35;
+    }
+    66% {
+      opacity: 1;
+    }
+    83% {
+      opacity: 0.8;
+    }
+  }
+
   a:hover > .mark .mark-arcs,
   a:focus-visible > .mark .mark-arcs {
     opacity: 1;
-    filter: drop-shadow(0 0 3px color-mix(in oklab, var(--color-volt) 80%, transparent));
+    filter: drop-shadow(0 0 3px color-mix(in oklab, var(--color-volt) 85%, transparent));
+    animation: mark-flicker 1.4s steps(1, end) infinite;
+  }
+
+  /* Les trois filaments scintillent en decalage : en phase, ils feraient un seul clignotant. */
+  a:hover > .mark .mark-arc-2,
+  a:focus-visible > .mark .mark-arc-2 {
+    animation-delay: 0.23s;
+    animation-duration: 1.1s;
+  }
+  a:hover > .mark .mark-arc-3,
+  a:focus-visible > .mark .mark-arc-3 {
+    animation-delay: 0.61s;
+    animation-duration: 1.7s;
   }
 
   /* ⚠️ Le mouvement est retire pour qui le refuse — la couleur, elle, reste : c'est
@@ -367,6 +414,17 @@ body::before {
     a:focus-visible > .mark {
       transition: none;
       transform: none;
+    }
+    /* ⚠️ Le scintillement disparait entierement : c'est exactement le genre de clignotement
+       que ce reglage existe pour supprimer. La couleur et les filaments restent — c'est
+       l'identite, pas une animation. */
+    a:hover > .mark .mark-arcs,
+    a:focus-visible > .mark .mark-arcs,
+    a:hover > .mark .mark-arc-2,
+    a:focus-visible > .mark .mark-arc-2,
+    a:hover > .mark .mark-arc-3,
+    a:focus-visible > .mark .mark-arc-3 {
+      animation: none;
     }
   }
 

@@ -35,8 +35,13 @@
  * la difference n'est pas l'epaisseur du trait, c'est que l'electricite doit **tourner
  * autour** au lieu d'etre plaquee a cote.
  *
- * D'ou des courbes fermees et non des segments brises, d'opacites inegales — une decharge
- * n'est jamais uniforme. Trois filaments : a 26 px, davantage se prend en masse.
+ * 🔴 Troisieme version, et la correction de Tristan tient en un mot : mes courbes etaient
+ * **regulieres**. Un arc lisse a rayon constant est mou par construction — l'oeil y lit un
+ * cercle decoratif, pas une decharge. Ce qui fait « electrique » n'est pas le zigzag, c'est
+ * l'IRREGULARITE : chaque sommet a une distance differente du centre, chaque segment une
+ * longueur differente. Des droites, donc, et jamais deux pareilles.
+ *
+ * Trois filaments seulement : a 26 px, davantage se prend en masse.
  *
  * Ils sont **toujours visibles** : c'est l'identite du produit, pas un effet de survol.
  * Ce qui change au survol, c'est leur intensite.
@@ -56,21 +61,18 @@ export function Mark({ className = '' }: { readonly className?: string }) {
       <polygon className="mark-left" points="6,10.5 16,16 16,27 6,21.5" />
       <polygon className="mark-right" points="26,10.5 26,21.5 16,27 16,16" />
 
-      {/* Le champ : trois boucles qui contournent le cube, chacune avec ses accidents.
-          `fill: none` — tout est dans le trait. */}
+      {/* Le champ : des segments DROITS qui font le tour, jamais des courbes.
+          🔴 La version d'avant etait faite d'arcs lisses et reguliers, et c'est exactement
+          ce qui la rendait molle : une decharge n'a pas de rayon constant. Ici chaque
+          sommet est a une distance differente du centre, et les longueurs de segment sont
+          inegales — c'est l'irregularite qui fait lire « electrique », pas le zigzag. */}
       <g className="mark-arcs">
         <path
           className="mark-arc-1"
-          d="M 16 1.5 C 25 2 31 8 30.5 16 C 30 24 24 30.5 16 30.5 C 8 30.5 2 24 1.5 16 C 1 8 7 2 16 1.5"
+          d="M 16 1 L 21.5 4.5 L 19.5 7 L 27 6.5 L 25.5 11.5 L 31 15 L 27 18.5 L 30 24 L 24 23.5 L 24.5 30 L 19 27 L 16 31 L 12.5 27.5 L 8 30.5 L 8.5 24 L 2 25 L 5 19.5 L 1 15.5 L 5.5 11.5 L 1.5 7 L 8 7.5 L 7 2 L 12 5 Z"
         />
-        <path
-          className="mark-arc-2"
-          d="M 8 3.5 C 2.5 8 1 13 3 18 C 4.5 22 3 25 5.5 28.5"
-        />
-        <path
-          className="mark-arc-3"
-          d="M 24.5 3.5 C 29 7 30 12 28 16.5 C 26.5 20 28.5 24 26 28"
-        />
+        <path className="mark-arc-2" d="M 10 2.5 L 4 6 L 6.5 10 L 2.5 13.5 L 5 17 L 2 22 L 7 24.5" />
+        <path className="mark-arc-3" d="M 23 3 L 28.5 8 L 25.5 12 L 29.5 17 L 26 20 L 28.5 26" />
       </g>
     </svg>
   );
