@@ -238,6 +238,26 @@
 | 8.8 | **Lire** (UI caviardée) | 🟢 libre | Chargement paresseux sur la fiche série, **aucune route serveur**, la page reste `force-static`. Le texte masqué doit être **absent du DOM**, pas caché en CSS |
 | 8.9 | **Boucler** | 🟢 libre | Export/import portant les trois nouveaux champs (règle 9), `/regles`, `ARCHITECTURE-APP.md` §5 |
 
+### 🔎 Audit de solidité (2026-08-06) — ce que la mesure a dit
+
+> Demandé par Tristan : « peur d'un château de cartes ». **Verdict : la base est saine.**
+> Ce qui suit est mesuré, pas ressenti.
+
+| Ce qui a été mesuré | Résultat |
+|---|---|
+| Dépendances de production | **4** : `next`, `react`, `react-dom`, `@supabase/auth-js`. Surface d'attaque et de rupture minuscule |
+| Règle 2 — le domaine n'importe rien d'externe | ✅ vérifié fichier par fichier : `src/domain/` n'importe que ses propres voisins |
+| Règle — aucun journal côté serveur | ✅ les 5 fichiers qui y touchent portent tous `'use client'` |
+| Code réellement mort | **5** symboles, supprimés (`8a0f0c5`). Dont 4 interfaces de `types.ts` qui décrivaient un modèle concurrent de celui du code |
+| Exports sans importeur | **19**, rendus privés |
+| Clés de dictionnaire mortes | **3 sur 461** — le dictionnaire est sain |
+| Volume | 18 000 lignes hors tests, 9 000 de tests. Plus gros fichiers : `journal.ts` (1554), `i18n.ts` (1412), `catalog.ts` (770) |
+
+| # | Ce qui reste, et qui est un vrai sujet | Statut | Note |
+|---|---|---|---|
+| 8.10 | 🔴 **Les DEUX dictionnaires sont livrés à chaque visiteur** | 🟢 libre | **Mesuré** : le chunk client de 18 Ko gzip contient `'Tenue de bout en bout'` **et** `'Holds up throughout'`. Un anglophone télécharge donc tout le français, et réciproquement. ⚠️ **Le problème n'est pas les ~9 Ko d'aujourd'hui, c'est la pente** : A9 vise l'international, et à cinq langues ce chunk ferait ~45 Ko dont 36 inutiles à chacun. **La contrainte à ne pas casser** : `MessageKey = keyof typeof FR` rend une clé anglaise manquante **fatale à la compilation** — un découpage par langue doit garder cette garantie, sinon on échange 9 Ko contre des textes manquants en production |
+| 8.11 | Le garde-fou contre le code mort | 🟢 libre | Les 5 morts et 19 exports inutiles se sont accumulés sans que rien ne le signale, et le dépôt en est à sa **sixième** occurrence (`ordering.ts`, `episodeMinutes`, `unfollow`, `setVisibility`, et deux que j'ai créées moi-même dans le commit précédent). ⚠️ **Écrire l'outil avant de l'automatiser** : mes deux premiers scans ont rendu **72** puis **210** faux positifs — un test bâti dessus aurait été bruyant, donc désactivé. Le scan corrigé vit dans le scratchpad ; le stabiliser d'abord, l'ancrer ensuite |
+
 ---
 
 ## Phase 0 — Socle ✅

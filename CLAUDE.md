@@ -68,15 +68,40 @@ déploiement, un appareil resté sur l'ancien build dépouille silencieusement l
 journal, ferme la tâche 4.5) et **8.5** (réveiller `unfollow()` et `setVisibility()`, qui
 n'ont aucun appelant — donc *aucune critique ne serait lisible par personne*).
 
-⏳ **Le verrou légal est à moitié levé (2026-08-06)** : `LEGAL_CONTACT_EMAIL` est **renseigné
-localement** par Tristan et passe `looksLikeEmail` — le contrôle né de D19. Mais
-`legalIsComplete()` exige **aussi `LEGAL_PUBLISHER_NAME`** (`lib/legal.ts:108`), qui manque.
-Tant qu'il manque, `/amis` reste fermée et publier une critique le sera aussi.
-- **Personne ne peut l'inventer** : c'est l'identité de l'éditeur au sens légal. À demander
-  à Tristan, puis à poser **aussi chez Vercel** — le `.env` local ne suit pas en production,
-  et `legal.ts` refuse délibérément que ces valeurs vivent dans le dépôt (public).
-- ⚠️ Écart relevé, non tranché : l'adresse donnée s'écrit `volteface…` alors que le produit
-  s'appelle **VOLTFACE**. Peut être voulu (« volte-face »). Posée telle que dictée.
+✅ **Le verrou légal est levé en local (2026-08-06)** : `LEGAL_CONTACT_EMAIL` et
+`LEGAL_PUBLISHER_NAME` sont renseignés dans le `.env`, l'adresse passe `looksLikeEmail` (le
+contrôle né de D19), et **`legalIsComplete()` rend `true`** — vérifié en rejouant la fonction,
+pas déduit. `/amis` s'ouvre donc, et publier une critique sera possible.
+- ⏳ **Il reste à les poser chez Vercel** : le `.env` local ne part pas en production, et
+  `legal.ts` refuse délibérément que ces valeurs vivent dans le dépôt (public).
+- ⚠️ Écart relevé, non tranché : l'adresse s'écrit `volteface…` alors que le produit s'appelle
+  **VOLTFACE**. Peut être voulu (« volte-face »). Posée telle que dictée.
+
+### 🔎 Audit de solidité (2026-08-06) — « pas un château de cartes », et c'est mesuré
+
+**Verdict : la base est saine.** 4 dépendances de production (`next`, `react`, `react-dom`,
+`@supabase/auth-js`), le domaine n'importe rien d'externe, aucun journal côté serveur — les
+trois règles structurelles tiennent, vérifiées fichier par fichier. Détail dans `TASKS.md`.
+
+- **Retiré** : 5 symboles réellement morts, 19 exports que personne n'importait, 3 clés de
+  dictionnaire orphelines. **95 lignes en moins, zéro test perdu.**
+- 🔴 **Le vrai défaut n'était pas du volume, c'était une contradiction** : `types.ts` — le
+  **deuxième** fichier de l'ordre de lecture d'`AGENTS.md` — portait quatre formes de la
+  phase 0.2 (`Highlight`, `Decision`, `SeriesVerdict`, `LogEntry`) que **rien n'a jamais
+  construites**, pendant que `journal.ts` bâtissait les siennes. Deux modèles concurrents,
+  et rien ne disait lequel était réel. *C'est exactement la sensation de château de cartes :
+  la base a l'air de dire une chose, le code en fait une autre.*
+- 🔴 **Mes deux outils de mesure ont menti** — 72 puis **210** faux positifs. Le second
+  ignorait que `tn()` compose la variante de pluriel à l'exécution et que cinq préfixes sont
+  construits dynamiquement. Après correction : **3 clés mortes sur 461**. J'ai vérifié à la
+  main avant de supprimer, seule raison pour laquelle 207 clés vivantes sont encore là.
+  > *Un outil de diagnostic qui ment est pire qu'aucun outil* — troisième fois dans ce
+  > dépôt, et cette fois c'est l'agent qui l'avait écrit.
+- 🔴 **Le seul vrai sujet de scalabilité trouvé — tâche 8.10** : le chunk client de 18 Ko
+  gzip contient **les deux dictionnaires**, `'Tenue de bout en bout'` et `'Holds up
+  throughout'` côte à côte. Chaque visiteur télécharge la langue qu'il ne lit pas. Le
+  problème n'est pas les ~9 Ko d'aujourd'hui, **c'est la pente** : A9 vise l'international,
+  et à cinq langues ce chunk ferait ~45 Ko dont 36 inutiles à chacun.
 
 ## État précédent (2026-08-05 — la garde ne voyait pas le défaut pour lequel elle existait)
 
