@@ -339,6 +339,49 @@ sur **le même compte** claude.ai.
 
 | # | Tâche | Statut | Note |
 |---|---|---|---|
+> ### 📱 Ce que le natif impose aux faces (audit du 2026-08-06)
+>
+> **Mesuré** : `src/domain/` fait **5 977 lignes et n'importe rien d'externe** — il part tel
+> quel sur iOS et Android. Ce qui ne part pas : `app/`, Tailwind, le CSS. La règle 2, écrite
+> pour la testabilité, est en réalité de la **portabilité** (A11).
+>
+> D'où le partage, qui vaut pour les cinq tâches ci-dessous :
+>
+> | Ce qui va dans `src/domain/face.ts` | Ce qui reste dans `app/` |
+> |---|---|
+> | Quelle face, à partir de quels faits | Les couleurs, le cube, l'animation |
+> | Le seuil, et le **silence** sous le seuil | Le texte affiché |
+> | La **bascule** : ai-je changé de face ? | Comment on la célèbre |
+>
+> ⚠️ **La bascule se calcule, elle ne se déclenche pas depuis l'interface.** Si c'est un
+> composant qui décide « tiens, elle a changé », il faudra le réécrire en Swift et en Kotlin,
+> et les trois versions divergeront. Le domaine rend « votre face **vient de** basculer » ;
+> chaque plateforme décide comment le fêter.
+>
+> ### 🎬 L'animation de découverte
+>
+> **Une seule fois, à la bascule** — rejouée à chaque visite, elle devient une gêne. Elle a
+> donc besoin d'un fait mémorisé : la dernière face **annoncée**. C'est un champ de journal,
+> donc à poser avec 9.0 pendant que le format est gratuit.
+>
+> Le geste juste est déjà écrit dans `CLAUDE.md` du 2026-08-03 et jamais réalisé : *« le cube
+> se déplie en patron, les faces deviennent les onglets »*. La découverte en est l'inverse
+> exact — **le patron se replie et une face reste devant**. Même vocabulaire, deux sens.
+>
+> ⚠️ Un `@keyframes` ne traverse pas vers le natif. Ce n'est pas grave **à condition de ne
+> pas y mettre de logique** : l'animation ne décide de rien, elle montre un résultat déjà
+> calculé.
+>
+> ### Où les faces s'intègrent, du gratuit au coûteux
+>
+> 1. **Le logo** — déjà sur toutes les pages, donc l'intégration est faite d'un coup. Zéro
+>    écran à modifier.
+> 2. **`/bilan`** — presque vide (tâche 7.6, ouverte), et c'est l'écran qui dit *qui vous
+>    êtes*. La face y appartient plus qu'ailleurs.
+> 3. **Le fil et les critiques** — une colonne sur `profiles`, l'auteur porte sa face.
+> 4. **Les jeux** ⛔ — agrégation serveur, donc coût par utilisateur. Pas avant que 1-3 aient
+>    pris.
+
 | 9.0 | **La provenance d'un fait** ⚠️ **à faire AVANT 9.1** | 🟢 libre | Un fait écrit par `/convertir` porte une marque ; un fait saisi à la main n'en porte pas. Irrattrapable après coup — un journal déjà importé ne se démêlera jamais. Coût nul en migration (format additif depuis 8.0), et utile hors de la face : « 340 h, dont 120 déclarées » est plus honnête que « 340 h » |
 | 9.1 | **`face.ts` — la face, pure** | 🟢 libre | Réutilise `taste.ts`. Ne compte que les **faits vécus** — ni les notes (un jugement peut porter sur dix ans en arrière), ni ce qui vient d'un import (9.0). ⚠️ **Fenêtre glissante** : les 10 dernières, jamais les 10 premières — sinon la face se fige, alors que **basculer *est* le produit**. ⚠️ Se **tait** sous le seuil, et le dit |
 | 9.2 | **Le logo porte la face** | 🟢 libre | `Mark.tsx` existe : la face active devient vive, les deux autres reculent. La marque cesse d'être un logo et devient un miroir — et comme elle est sur **toutes** les pages, l'intégration est faite partout d'un coup, sans une ligne de plus |
