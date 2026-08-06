@@ -278,6 +278,36 @@ sur **le même compte** claude.ai.
 
 ---
 
+### 🎲 Les trois faces — l'identité devient une mécanique (idée de Tristan, 2026-08-06)
+
+> Née de l'idée « des équipes comme Pokémon GO », **retournée** : on ne choisit pas sa face,
+> on la **découvre**. Une face choisie ne dit rien de vous ; une face méritée est
+> structurellement incopiable — il faut *votre* journal.
+> *(Note : Pokémon GO a exactement les trois couleurs du logo — Valor rouge, Mystic bleu,
+> Instinct jaune. Trois faces, pas quatre : une quatrième exigerait une couleur qui
+> n'existe nulle part.)*
+>
+> **Rouge** finit tout, même quand ça décroche · **Bleu** coupe tôt et sans regret ·
+> **Jaune** revient et revisionne. Les trois se calculent déjà : `taste.ts` fournit le taux
+> d'achèvement, la saison médiane d'abandon et la série-refuge.
+>
+> 🔴 **Le piège, trouvé par Tristan avant l'écriture — c'est le BIAIS DE SURVIE**, celui que
+> ce dépôt documente déjà pour les notes TMDB. On se souvient de ce qu'on a **fini**, pas de
+> ce qu'on a lâché à S1E3 : un import initial est donc biaisé vers l'achèvement, et *tout le
+> monde arriverait rouge*.
+> ✅ **Sa solution le règle seule** : la face se révèle après **10 séries nouvelles**, donc
+> l'historique importé ne compte pas. Ce ne sont plus des souvenirs déclarés mais des
+> parcours **observés** — position posée, puis décision. Chaque fait porte sa date depuis
+> la v2, la matière est là.
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| 9.1 | **`face.ts` — la face, pure** | 🟢 libre | Réutilise `taste.ts`, n'invente aucune donnée. ⚠️ **Fenêtre glissante** — les 10 **dernières** séries décidées, jamais les 10 premières : sinon la face se fige à vie et ne peut plus basculer, alors que **basculer *est* le produit** (volte-face). ⚠️ Se **tait** sous le seuil, comme partout ailleurs (`MIN_SERIES_FOR_TASTE`) : « encore 4 séries pour que votre face se révèle » est la seule chose de ce produit qui donne envie d'attendre |
+| 9.2 | **Le logo porte la face** | 🟢 libre | `Mark.tsx` existe : la face active devient vive, les deux autres reculent. La marque cesse d'être un logo et devient un miroir — et comme elle est sur **toutes** les pages, l'intégration est faite partout d'un coup, sans une ligne de plus |
+| 9.3 | **L'animation de révélation** | 🟢 libre | Le moment de plaisir que le produit n'a jamais eu. Le cube tourne, la face sort. ⚠️ Une seule fois, à la bascule — rejouée à chaque visite, elle devient une gêne. `prefers-reduced-motion` la supprime |
+| 9.4 | **La face des autres** | 🟢 libre | Une colonne sur `profiles`, affichée dans le fil et sur les critiques. Coût quasi nul |
+| 9.5 | **Les jeux entre faces** | ⛔ pas avant que 9.1-9.4 prennent | Comparer les faces demande une **agrégation serveur**, donc un coût par utilisateur — la cause de mort de TV Time. Un compteur mis en cache, jamais un calcul par visite |
+
 ### ▶️ Les trois features qui restent face à la cible « TvTime × Letterboxd »
 
 | # | Tâche | Statut | Note |
