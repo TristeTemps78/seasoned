@@ -102,13 +102,33 @@ d'abord — 35 tests qui ne gardent aucune décision de leur module), puis muter
   résultat ne se redemande pas à l'utilisateur.* Deux autres affirmations périmées tombent
   avec : la région UE (faite le 2026-08-03) et D18 « jeton TMDB vide ».
 
+### ✅ Puis 9.7 et l'affiche, tranchés par la mesure (2026-08-07, soir)
+
+- **Une seule forme de surface.** `.panel` l'emporte sur deux relevés : l'accueil rend **59
+  éléments tous à 8 px**, et le fond translucide de `.card` (`#0f1119`) est **plus proche du
+  fond** que l'opaque (`#11131c`) — or le défaut vu est que rien ne se détache.
+  - 🔴 **Le diagnostic de la tâche était périmé le jour même** : « 19 copies à la main » était
+    vrai la veille, il en restait **8**. *Une tâche se remesure avant d'être faite.*
+  - 🔴 **Et fusionner `.card`/`.panel` n'aurait pas suffi** : le 12 px de `/moi` ne venait pas
+    de `.card` mais de **`.empty-state`**, qui portait sa propre copie de l'ancienne recette —
+    comme `.tile`. **L'écran vide, premier écran de tout le monde, serait resté seul avec la
+    forme abandonnée.** Mot pour mot la leçon déjà payée trois fois ici.
+  - ⚠️ **La tuile `ENGAGEMENT` est intacte** : son identité vient de `emphasis` (liseré volt,
+    halo, chiffre en grille), **pas de sa géométrie** — les quatre tuiles ont toujours eu le
+    même rayon, une seule brille. Vérifié sur le code, puis sur le rendu.
+  - **Mesure : fiche série 6 rayons → 5, `/moi` 2 → 1.**
+- **L'affiche passe de 14 % à 22 % de la colonne**, et **ça ne coûte pas un octet** : le
+  fichier téléchargé fait **342 px** et n'était rendu qu'à **144**. Le mobile n'est pas touché —
+  il n'a jamais été regardé à l'œil, et on ne change pas ce qu'on n'a pas vu.
+
 ### ▶️ Pour reprendre le lot 9
 
-**La police est posée, donc les crans peuvent se décider** — 9.8 (cinq tailles sous le plus
-petit cran) était explicitement « après 9.6 ». Restent, dans l'ordre du plus visible :
-**9.7 / 11.1** (les deux formes de carte : `.card` à 12 px contre 19 copies à 8 px — **vu à
-l'œil**, `/moi` porte les deux côte à côte pour trois surfaces), l'**affiche trop petite** sur
-la fiche série, et le **vide vertical** des écrans peu remplis.
+1. **9.8 — les cinq tailles sous le plus petit cran**, désormais décidables : elles attendaient
+   la police, qui change les métriques.
+2. **Le vide vertical** des écrans peu remplis. ⚠️ **Non mesuré** — vu sur une capture.
+3. ⚠️ **Dette de nommage sans effet visible** : 8 sites portent encore
+   `rounded-lg border border-(--color-edge)` à la main. Ils rendent **exactement** `.panel`,
+   donc **le corriger ne change aucun pixel** — risque de dérive, pas défaut.
 
 ## État précédent (2026-08-07 — l'audit, puis `journal.ts` découpé en six briques)
 
