@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MIN_STOP_POINT_SAVING, stopPointAdvice } from '../lib/catalog';
+import { MIN_STOP_POINT_SAVING, stopPointAdvice } from '../src/domain/stop-point';
 import { computeTrajectory } from '../src/domain/trajectory';
 import { normalizeSeasons } from '../src/domain/seasons';
 

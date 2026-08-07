@@ -7,7 +7,6 @@ import {
   posterDimensions,
   posterUrl,
   publicTrajectory,
-  stopPointAdvice,
   watchOptions,
 } from '@/lib/catalog';
 import { SeriesCard } from '@/app/components/SeriesCard';
@@ -15,6 +14,7 @@ import { formatCommitment, formatDate, statusLabel, year } from '@/lib/format';
 import { DEFAULT_LOCALE, localeTag, t, tn, watchRegion, type Locale } from '@/lib/i18n';
 import { judgeCurrentSeason } from '@/src/domain/current-season';
 import { findEntryPoint } from '@/src/domain/entry-point';
+import { stopPointAdvice } from '@/src/domain/stop-point';
 import { serializeJsonLd } from '@/lib/jsonld';
 import { alternatesFor } from '@/lib/routes';
 import { TmdbError } from '@/src/catalog/tmdb';
