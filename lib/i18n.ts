@@ -223,6 +223,37 @@ function interpolate(template: string, params: Params | undefined): string {
 }
 
 /**
+ * Les espaces insecables du francais, posees a l'affichage.
+ *
+ * ## Pourquoi ici, et pas dans le dictionnaire
+ *
+ * Le francais met une espace **avant** `: ; ! ?` et **autour** des guillemets — et cette
+ * espace ne doit pas pouvoir casser en fin de ligne. Constate a l'ecran le 2026-08-07 sur
+ * `/moi` : *« Ouvrez une serie et dites « je veux la voir* **»**`, ou cliquez…` — le
+ * guillemet fermant rejete seul au debut de la ligne suivante, sur le **premier ecran d'un
+ * nouvel utilisateur**.
+ *
+ * Ce n'etait pas un cas isole : **zero** espace insecable dans tout `fr.ts`, pour
+ * **67 lignes** portant une ponctuation double precedee d'une espace secable. Corriger la
+ * phrase vue aurait laisse les 66 autres casser au hasard de la largeur — et la 68ᵉ, ecrite
+ * demain, serait repartie du meme mauvais pied.
+ *
+ * > C'est la lecon que ce depot a deja payee trois fois : *extraire une forme ne protege que
+ * > les ecrans qu'on rouvre le meme jour.* Un point de passage unique protege aussi ceux
+ * > qu'on n'a pas ouverts, et les phrases qui n'existent pas encore.
+ *
+ * ⚠️ **Sur le modele, jamais sur les valeurs interpolees** : un titre TMDB est une donnee
+ * externe, parfois anglaise, et n'a rien a faire dans une regle de composition francaise.
+ * ⚠️ **U+00A0 et pas U+202F** (la fine insecable) : la fine est typographiquement plus juste,
+ * mais toutes les polices ne la dessinent pas, et une police qui l'ignore rend un mot colle.
+ * Le risque est asymetrique — trop d'espace se remarque, un mot colle est une faute.
+ * ⚠️ Une URL n'est jamais touchee : son `:` n'est pas precede d'une espace.
+ */
+function frenchSpacing(template: string): string {
+  return template.replace(/ ([:;!?»])/g, ' $1').replace(/« /g, '« ');
+}
+
+/**
  * Une chaine, dans une langue.
  *
  * Ne rend jamais une cle nue a l'ecran : une traduction manquante retombe sur le francais,
@@ -230,7 +261,8 @@ function interpolate(template: string, params: Params | undefined): string {
  * voir `safety.title` est casse.
  */
 export function t(locale: Locale, key: MessageKey, params?: Params): string {
-  return interpolate(DICTIONARIES[locale][key] ?? FR[key], params);
+  const template = DICTIONARIES[locale][key] ?? FR[key];
+  return interpolate(locale === 'fr' ? frenchSpacing(template) : template, params);
 }
 
 /**

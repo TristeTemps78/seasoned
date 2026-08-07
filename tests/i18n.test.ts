@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_LOCALE,
+  type MessageKey,
   SUPPORTED_LOCALES,
   formatDateIn,
   isLocale,
@@ -9,6 +10,8 @@ import {
   t,
   watchRegion,
 } from '../lib/i18n';
+import { FR } from '../lib/i18n/fr';
+import { EN } from '../lib/i18n/en';
 
 describe('negotiateLocale — tolerant par principe', () => {
   it('rend la langue par defaut sur une entree absente ou vide', () => {
@@ -68,6 +71,35 @@ describe('t — une traduction manquante ne casse jamais l affichage', () => {
 
   it('dit bien deux choses differentes dans deux langues differentes', () => {
     expect(t('fr', 'safety.later')).not.toBe(t('en', 'safety.later'));
+  });
+});
+
+describe('la composition francaise — une ponctuation double ne se retrouve jamais seule', () => {
+  // Une espace **secable** avant `: ; ! ?` ou `»`, ou apres `«`. C'est ce qui a rejete le
+  // guillemet fermant au debut de la ligne suivante sur `/moi`, constate a l'ecran.
+  const SECABLE = / [:;!?»]|« /;
+
+  const KEYS = Object.keys(FR) as MessageKey[];
+
+  it("ANCRAGE : le dictionnaire brut contient bien la faute qu'on pretend corriger", () => {
+    // Sans cet ancrage, la loi ci-dessous passerait aussi sur un dictionnaire qui n'a
+    // aucune ponctuation double — elle comparerait deux fois rien. Ce depot a deja failli
+    // publier cinq faux negatifs de fixture pour exactement cette raison.
+    const fautifs = KEYS.filter((k) => SECABLE.test(FR[k]));
+    expect(fautifs.length).toBeGreaterThan(20);
+  });
+
+  it('aucune chaine francaise rendue ne porte une espace secable avant sa ponctuation', () => {
+    // Une **loi**, pas un exemple : elle couvre les 67 chaines d'aujourd'hui et la 68e,
+    // ecrite demain par quelqu'un qui n'aura pas lu ce fichier.
+    const fautifs = KEYS.filter((k) => SECABLE.test(t('fr', k)));
+    expect(fautifs).toEqual([]);
+  });
+
+  it("l'anglais n'est pas touche : il ne met pas d'espace avant sa ponctuation", () => {
+    // Poser une insecable en anglais serait une faute symetrique, et invisible a un
+    // francophone. La regle est une regle de langue, pas de gout.
+    for (const key of KEYS) expect(t('en', key)).toBe(EN[key]);
   });
 });
 
