@@ -202,6 +202,17 @@ export async function SeriesView({ id, locale }: {
           // C'est le plus gros element visible au chargement, donc celui que Google
           // chronometre. `fetchPriority="high"` le sort de la file d'attente ; les
           // dimensions declarees empechent la page de sauter quand il arrive.
+          //
+          // ⚠️ **`sm:w-56` et non `w-36` : l'agrandissement ne coute pas un octet.** Mesure du
+          // 2026-08-07 sur la page servie : l'affiche etait rendue a **144 px de large, soit
+          // 14 % de la colonne**, alors que le fichier telecharge fait deja **342 px**. On
+          // payait donc une image 2,4 fois plus grande que ce qu'on montrait, sur la page dont
+          // la regle fondatrice est « l'affiche est l'interface » (`RESEARCH.md` §2.3). A
+          // 224 px elle occupe 22 % de la colonne — l'ordre de grandeur de Letterboxd, la
+          // reference choisie — et reste **sous** la resolution du fichier, donc nette.
+          //
+          // Le mobile garde `w-36` : sous 640 px la disposition passe en colonne, et cet
+          // ecran-la n'a pas encore ete regarde a l'oeil. On ne change pas ce qu'on n'a pas vu.
           <img
             src={poster}
             alt=""
@@ -209,7 +220,7 @@ export async function SeriesView({ id, locale }: {
             decoding="async"
             width={posterDimensions('w342').width}
             height={posterDimensions('w342').height}
-            className="w-36 shrink-0 self-start rounded-lg border border-(--color-edge)"
+            className="w-36 shrink-0 self-start rounded-lg border border-(--color-edge) sm:w-56"
           />
         ) : null}
 
