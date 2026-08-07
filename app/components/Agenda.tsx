@@ -63,7 +63,7 @@ export function Agenda() {
             <h2 className="label font-semibold">
               {t(labelKey)}
             </h2>
-            <ul className="divide-y divide-(--color-edge) rounded-lg border border-(--color-edge) bg-(--color-surface)">
+            <ul className="divide-y divide-(--color-edge) panel">
               {episodes.map((episode) => (
                 <Row key={episode.key} episode={episode} now={now} />
               ))}

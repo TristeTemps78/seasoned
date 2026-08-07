@@ -562,6 +562,33 @@ body::before {
   }
 
   /**
+   * La surface encadree — **la forme la plus repandue du produit, et elle n'avait pas de nom**.
+   *
+   * 🔴 `rounded-lg border border-(--color-edge) bg-(--color-surface)` etait recopie **19 fois**
+   * dans 18 fichiers, pendant que `.card` — extraite au 6.7 pour ce role — n'etait employee que
+   * 8 fois. Autrement dit : **71 % des surfaces du produit passaient par la forme qui n'est
+   * ecrite nulle part**, et le commentaire de `.card` affirmait pourtant « un seul rayon, une
+   * seule bordure, un seul fond dans toute l'application ».
+   *
+   * ⚠️ **Elle ne porte QUE la sous-couche** — rayon, bordure, fond — et laisse le rembourrage
+   * aux utilitaires, comme `.section-title` laisse la typographie a `.row-title`. C'est ce qui
+   * rend l'extraction **strictement neutre au pixel** : les dix-neuf sites gardaient deja des
+   * rembourrages differents (`py-4`, `py-3`, aucun), et trois surchargent l'opacite du fond
+   * (`/50`, `/70`) — ce que la couche `components` laisse gagner aux utilitaires.
+   *
+   * ⚠️ **`.card` et `.panel` coexistent, et c'est un etat de transition assume.** Elles rendent
+   * deux surfaces differentes — `0.75rem` et un fond a 80 % contre `0.5rem` et un fond opaque —
+   * et ce n'est pas a un refactor de trancher laquelle est la bonne : ca se regarde. `TASKS.md`
+   * 11.1 le confie au lot 9. Ce qui change aujourd'hui, c'est qu'il y a **deux formes nommees
+   * au lieu d'une nommee et dix-neuf anonymes** : la fusion sera deux lignes.
+   */
+  .panel {
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-edge);
+    background-color: var(--color-surface);
+  }
+
+  /**
    * L'ecran vide — la premiere impression de tout le monde.
    * =============================================================================
    *

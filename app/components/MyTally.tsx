@@ -34,7 +34,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
 
   return (
     <section
-      className="edge-lit space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
+      className="edge-lit space-y-3 panel px-4 py-4"
       aria-label={t('tally.aria')}
     >
       <h2 className="card-title">{t('tally.title')}</h2>

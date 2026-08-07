@@ -265,7 +265,7 @@ export function Friends() {
             {visible.map((item, index) => (
               <li
                 key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
-                className="rounded-lg border border-(--color-edge) bg-(--color-surface)/50 px-4 py-3 text-sm"
+                className="panel bg-(--color-surface)/50 px-4 py-3 text-sm"
               >
                 <span className="text-(--color-muted)">@{item.handle}</span>{' '}
                 {t(`friends.item.${item.kind}`)}{' '}

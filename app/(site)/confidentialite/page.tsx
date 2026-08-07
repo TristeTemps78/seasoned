@@ -70,7 +70,7 @@ function Section({ title, body, highlight = false }: {
     <section
       className={
         highlight
-          ? 'edge-lit rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4'
+          ? 'edge-lit panel px-4 py-4'
           : ''
       }
     >

@@ -37,7 +37,7 @@ export function ResumeStrip() {
   return (
     <Link
       href={seriesPath(parsed.providerId, locale)}
-      className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-3 text-sm hover:border-(--color-muted)"
+      className="flex flex-wrap items-center gap-x-3 gap-y-1 panel px-4 py-3 text-sm hover:border-(--color-muted)"
     >
       <span className="text-(--color-muted)">
         {item.daysUntilNext !== undefined ? t('resume.returning') : t('resume.resume')}

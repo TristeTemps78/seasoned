@@ -180,7 +180,7 @@ export function DataSafety() {
     // actions restent a un clic. Seule l'explication se deplie, pour qui la veut.
     <aside
       aria-label={t('safety.title')}
-      className="mb-6 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-3"
+      className="mb-6 panel px-4 py-3"
     >
       <details className="group">
         <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold marker:content-none">

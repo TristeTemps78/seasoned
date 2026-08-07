@@ -68,7 +68,7 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE }: {
       href={seriesPath(series.providerId, locale)}
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-volt)"
     >
-      <div className="relative aspect-2/3 overflow-hidden rounded-lg border border-(--color-edge) bg-(--color-surface) transition-colors group-hover:border-(--color-volt)/50">
+      <div className="relative aspect-2/3 overflow-hidden panel transition-colors group-hover:border-(--color-volt)/50">
         <Poster
           path={series.posterPath}
           title={series.title}

@@ -51,7 +51,7 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
       href={href}
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-live)"
     >
-      <div className="aspect-2/3 overflow-hidden rounded-lg border border-(--color-edge) bg-(--color-surface)">
+      <div className="aspect-2/3 overflow-hidden panel">
         <Poster
           path={item.snapshot?.posterPath}
           title={item.snapshot?.title ?? t('library.card.tracked')}

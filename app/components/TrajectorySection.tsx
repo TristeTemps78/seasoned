@@ -118,7 +118,7 @@ export function TrajectorySection({
           s'ameliore ? », la question la plus posee sur une serie. La cacher derriere un
           depliant la retirerait du seul canal d'acquisition qui marche a froid. */}
       {entryPoint !== undefined ? (
-        <div className="mb-4 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-3">
+        <div className="mb-4 panel px-4 py-3">
           <p className="text-sm font-medium">{t('entry.title')}</p>
           <p className="mt-1 text-sm text-(--color-muted)">
             {tn('entry.body', entryPoint.skipped, {
@@ -132,7 +132,7 @@ export function TrajectorySection({
       ) : null}
 
       {showsMine && redacted !== undefined ? (
-        <div className="mb-4 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4">
+        <div className="mb-4 panel px-4 py-4">
           <h3 className="card-title mb-3">
             {t('traj.yours')}
             <span className="ml-2 font-normal text-(--color-muted)">
@@ -165,7 +165,7 @@ export function TrajectorySection({
         </div>
       ) : null}
 
-      <details className="group rounded-lg border border-(--color-edge) bg-(--color-surface)">
+      <details className="group panel">
         <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium marker:content-none">
           <span className="group-open:hidden">
             {hidden > 0 ? t('traj.seeMore') : t('traj.seeAll')}

@@ -24,7 +24,7 @@ export function SearchForm({ defaultValue = '', autoFocus = false, locale = DEFA
     <form
       action={pathIn('/recherche', locale)}
       method="GET"
-      className="flex items-stretch gap-0 overflow-hidden rounded-lg border border-(--color-edge) bg-(--color-surface)/70 focus-within:border-(--color-volt)/60"
+      className="flex items-stretch gap-0 overflow-hidden panel bg-(--color-surface)/70 focus-within:border-(--color-volt)/60"
     >
       <input
         type="search"

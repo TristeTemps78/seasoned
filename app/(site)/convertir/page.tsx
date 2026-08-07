@@ -42,7 +42,7 @@ export function ConvertView({ locale }: { readonly locale: Locale }) {
 
       <ForeignImport />
 
-      <section className="space-y-2 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4">
+      <section className="space-y-2 panel px-4 py-4">
         <h2 className="card-title">{t(locale, 'convert.honestTitle')}</h2>
         <p className="text-xs leading-relaxed text-(--color-muted)">
           {t(locale, 'convert.honestBody')}

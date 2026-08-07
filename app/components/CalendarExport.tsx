@@ -62,7 +62,7 @@ export function CalendarExport() {
 
   return (
     <section
-      className="space-y-3 rounded-lg border border-(--color-edge) bg-(--color-surface) px-4 py-4"
+      className="space-y-3 panel px-4 py-4"
       aria-label={t('calendar.aria')}
     >
       <div>

@@ -69,7 +69,7 @@ export function SeasonList({ seasons, locale = DEFAULT_LOCALE }: {
       {seasons.rateable.length === 0 ? (
         <p className="text-(--color-muted)">{t(locale, 'seasons.none')}</p>
       ) : (
-        <ol className="divide-y divide-(--color-edge) rounded-lg border border-(--color-edge) bg-(--color-surface)">
+        <ol className="divide-y divide-(--color-edge) panel">
           {seasons.rateable.map((season) => (
             <li
               key={season.ref.seasonNumber}
