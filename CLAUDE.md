@@ -26,15 +26,35 @@ rien ne lève*) · `write` (*rejouer un geste l'annule*) · `merge` (**1 export*
 `entry`. ✅ **Preuve de neutralité** : un barillet garde la surface publique au symbole près,
 donc **aucun fichier de test n'a été touché** — 708 verts, `git status tests/` vide.
 
-### 🔴 « On peut diviser les tests par 10 ? » — non, et c'est mesuré
+### 🔴 « On peut diviser les tests par 10 ? » — mesuré par mutation testing, et c'est l'inverse
 
-Mutation du pass-through des champs inconnus, suite entière lancée : **sur 711 tests, un
-seul tombe** — l'exemple « préserve un champ inconnu ». Ni les six lois de fusion, ni les
-trois lois de lecture, ni les 120 graines ne le voient.
+Tristan a posé la question **deux fois**. Ma première réponse reposait sur **une seule
+mutation** — trop mince. **77 mutations** jouées sur `src/domain/`, une suite complète
+chacune :
 
-> **Les lois et les exemples n'attrapent pas les mêmes choses.** Les lois **s'ajoutent**,
-> elles ne remplacent pas. Sur les 14 exemples du plus gros bloc : **4** couverts par une
-> loi, **10** qui nomment chacun un bug qui a eu lieu.
+| | |
+|---|---|
+| tuées | **57** |
+| **survivantes** | **20** — soit **26 % des décisions du domaine que personne ne garde** |
+| tests qui tombent par défaut, **médiane** | **4** |
+| défauts vus par **un seul** test | **11 sur 57** |
+
+**Une suite redondante ferait tomber des dizaines de tests par défaut.** La médiane est 4.
+
+> **La suite n'est pas trop grosse, elle est mal distribuée.** `calendar.ts` a **20 tests** et
+> **aucune** de ses deux décisions gardée — 17 vérifient le *format* du `.ics`, jamais son
+> *effet*. Pendant que `spoiler`, `remaining`, `taste`, `status`, `activity` et `library`
+> n'ont **aucun survivant**.
+
+🔴 **Et ça a trouvé un vrai défaut** : `import.ts` avait 4 survivants sur 8 avec 14 tests. Un
+export ne portant qu'un `tmdb_id` **importait zéro série** — l'orphelin de TV Time lit « 0
+série importée » sans pouvoir savoir pourquoi, pour la population même que `/convertir` vise.
+Trois tests, mutations vérifiées. **Les 18 survivants restants sont listés dans `TASKS.md`,
+lot 12** — à juger un par un, une partie sont des mutants équivalents.
+
+⚠️ L'outil (`mutants.mjs`) vit dans le scratchpad, **hors du dépôt** : c'est un instrument de
+mesure, pas une garde. Il s'ancre avant de servir — parce que deux outils de diagnostic ont
+menti ici, dont un que j'avais écrit le matin même.
 
 🔴 **Et la première loi écrite était fausse** — `parse(serialize(j)) = j` échoue dès la
 graine 21. Pas un défaut : **`parseJournal` n'est pas un décodeur pur, il *vieillit* le

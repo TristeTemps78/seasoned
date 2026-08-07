@@ -319,6 +319,65 @@ celle de `/regles`. *Un garde-fou adossé à quinze exemptions est un garde-fou 
 
 ---
 
+## 🧬 Lot 12 — le mutation testing, et ce qu'il dit du nombre de tests (2026-08-07)
+
+> **Question de Tristan, posée deux fois** : « c'est impossible qu'on ait besoin de 750
+> tests ». Ma première réponse reposait sur **une seule mutation** — trop mince. Mesuré
+> pour de bon : **77 mutations** jouées sur `src/domain/`, une suite complète par mutation.
+
+### 🔴 Le résultat, et il renverse la question
+
+| | |
+|---|---|
+| mutations tuées | **57** |
+| mutations **survivantes** | **20** — soit **26 % des décisions du domaine que personne ne garde** |
+| tests qui tombent par défaut, **médiane** | **4** |
+| défauts attrapés par **un seul** test | **11 sur 57** |
+
+**Une suite redondante ferait tomber des dizaines de tests par défaut.** Ici la médiane est
+4, onze défauts ne sont vus que par un test unique, et un quart des décisions n'est pas
+gardé du tout.
+
+> **La suite n'est pas trop grosse, elle est mal distribuée.** `calendar.ts` a **20 tests** et
+> **aucune** de ses deux décisions gardée — dont 17 vérifient le *format* du `.ics`, jamais
+> son *effet*, ce que ce dépôt avait déjà écrit une fois. Pendant que `spoiler`, `remaining`,
+> `taste`, `status`, `activity` et `library` n'ont **aucun survivant**.
+
+### ✅ Ce qui a été fermé
+
+🔴 **`import.ts` — un export sans colonne de titre importait ZÉRO série.** 4 de ses 8
+mutations survivaient, avec 14 tests. Le trou tient en une ligne :
+`if (idColumn < 0 && titleColumn < 0) return []`. Les quatorze tests employaient **tous** un
+document portant à la fois un identifiant **et** un titre. L'orphelin de TV Time colle un
+export qui n'a que `tmdb_id`, lit « 0 série importée », et n'a aucun moyen de savoir
+pourquoi — pour la population même que `/convertir` vise. Trois tests, mutations vérifiées.
+
+### 🟢 Les 18 mutations qui survivent encore, par ordre de gravité
+
+| Module | Ligne | Ce qui n'est pas gardé |
+|---|---|---|
+| `import.ts` | 120, 335 | deux décisions de lecture de plus |
+| `calendar.ts` | 150, 302 | **les deux seules décisions du module**, 20 tests à côté |
+| `tally.ts` | 114, 248 | `wasWatched` rend `true` sur les achèvements — muter en `false` ne casse rien |
+| `journal/parse.ts` | 144, 259 | deux bornes de lecture |
+| `catch-up.ts` | 99 | la seule décision du module, 15 tests à côté |
+| `nudge.ts` | 93 | le `&&` qui filtre les marques par saison |
+| `current-season.ts` | 80 · `entry-point.ts` 164 · `seasons.ts` 245 · `ordering.ts` 157 · `cadence.ts` 103 · `trajectory.ts` 240 · `journal/merge.ts` 32 · `journal/write.ts` 281 | une borne chacun |
+
+⚠️ **À traiter comme des candidats, pas comme des bugs.** Une partie sont des **mutants
+équivalents** (`< now` contre `<= now` ne diffère qu'à la milliseconde près). J'en ai examiné
+quatre à la main : `import.ts` ×2 étaient de vrais trous, `calendar.ts` ×2 sont probablement
+équivalents. **Chaque survivant se juge en le lisant, jamais en le comptant.**
+
+### L'outil
+
+`mutants.mjs` + `analyse.mjs` vivent dans le scratchpad de session, **délibérément hors du
+dépôt** : c'est un instrument de mesure, pas une garde. Il s'ancre avant de servir — suite
+verte au départ, sinon il refuse de publier — parce que **deux outils de diagnostic ont déjà
+menti ici, dont un que j'avais écrit moi-même le matin même**.
+
+---
+
 ## 🧱 Lot 11.0 — `journal.ts` devient six briques (2026-08-07) ✅
 
 > **Question de Tristan** : « tu peux diviser par 10 le nombre de tests ? Continue cette
