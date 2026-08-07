@@ -99,6 +99,43 @@ describe('importForeign', () => {
     const out = importForeign(csv, EMPTY_JOURNAL, NOW);
     expect(out.journal.entries['tmdb:1396']).toBeDefined();
   });
+
+  /**
+   * 🔴 **Ces trois cas manquaient, et le mutation testing du 2026-08-07 les a trouves.**
+   *
+   * Les quatorze tests d'import employaient tous un document portant **a la fois** une
+   * colonne d'identifiant et une colonne de titre. Aucun ne disait ce qui arrive quand il
+   * n'y en a qu'une — alors que `fromCsv` decide precisement la-dessus, en une ligne :
+   * `if (idColumn < 0 && titleColumn < 0) return []`.
+   *
+   * Le defaut qu'ils ferment n'est pas theorique : ce `&&` transforme en `ou` fait rendre
+   * **une liste vide** a tout export ne portant qu'un identifiant. C'est-a-dire que
+   * l'orphelin de TV Time colle son fichier, voit « 0 serie importee », et n'a aucune
+   * facon de savoir pourquoi. `AGENTS.md` regle 9 existe pour l'inverse.
+   *
+   * ⚠️ Trois tests pour une ligne de code, et c'est justifie : c'est **la** ligne qui
+   * decide si un fichier est lisible ou non, et elle a trois issues.
+   */
+  it('importe un document qui ne porte QU un identifiant, sans colonne de titre', () => {
+    const csv = 'tmdb_id,season,episode\n1396,5,9\n';
+    const out = importForeign(csv, EMPTY_JOURNAL, NOW);
+    expect(out.imported).toBe(1);
+    expect(out.journal.entries['tmdb:1396']?.position?.episodeNumber).toBe(9);
+  });
+
+  it('importe un document qui ne porte QUE des titres, sans identifiant', () => {
+    // Ils ne sont pas repris — on ne devine pas un identifiant TMDB — mais ils sont
+    // COMPTES (`skipped`), et c'est ce qui permet de dire « 12 series non reprises ».
+    const csv = 'title,season\nBreaking Bad,5\n';
+    const out = importForeign(csv, EMPTY_JOURNAL, NOW);
+    expect(out.skipped).toBe(1);
+  });
+
+  it('ne perd pas une ligne dont le titre est vide mais qui porte un identifiant', () => {
+    const csv = 'title,tmdb_id\n,1396\n';
+    const out = importForeign(csv, EMPTY_JOURNAL, NOW);
+    expect(out.journal.entries['tmdb:1396']).toBeDefined();
+  });
 });
 
 describe('parseCsvLine', () => {
