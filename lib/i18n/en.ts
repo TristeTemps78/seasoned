@@ -32,8 +32,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'say.awaiting.plain': 'Listed as returning, with no sign of life.',
   'say.awaiting.since.one': 'Listed as returning, but no episode for {n} month.',
   'say.awaiting.since.other': 'Listed as returning, but no episode for {n} months.',
-  'say.ended': 'Ended. It has an ending.',
-  'say.cancelled': 'Cancelled. It may stop without a conclusion.',
+  // Voir `fr.ts` : la pastille porte deja « Ended » / « Cancelled » juste a cote.
+  'say.ended': 'It has an ending.',
+  'say.cancelled': 'It may stop without a conclusion.',
   'say.upcoming': 'Announced, nothing has aired yet.',
   'say.unknown': 'Not enough airing data to tell.',
 

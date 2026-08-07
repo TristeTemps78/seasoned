@@ -36,8 +36,12 @@ export const FR = {
   'say.awaiting.plain': 'Annoncée comme revenant, sans signe de vie.',
   'say.awaiting.since.one': 'Annoncée comme revenant, mais aucun épisode depuis {n} mois.',
   'say.awaiting.since.other': 'Annoncée comme revenant, mais aucun épisode depuis {n} mois.',
-  'say.ended': 'Terminée. Elle a une fin.',
-  'say.cancelled': 'Annulée. Elle peut s’arrêter sans conclusion.',
+  // Ces deux phrases ne s'affichent **jamais seules** : `StatusBadge` les colle a la
+  // pastille, qui dit deja « Terminee » / « Annulee ». Elles le repetaient mot pour mot —
+  // vu a l'ecran le 2026-08-07, « Terminee · Terminee. Elle a une fin. ». La pastille dit
+  // l'etat, la phrase dit ce qu'il **implique pour le spectateur** ; c'est son seul travail.
+  'say.ended': 'Elle a une fin.',
+  'say.cancelled': 'Elle peut s’arrêter sans conclusion.',
   'say.upcoming': 'Annoncée, rien n’a encore été diffusé.',
   'say.unknown': 'Données de diffusion insuffisantes pour trancher.',
 
