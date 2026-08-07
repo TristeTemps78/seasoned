@@ -432,13 +432,28 @@ une loi, et **dix** qui nomment chacun un bug qui a réellement eu lieu.
 instantanés à 30). Le contrat exact est l'**idempotence**, et personne ne l'avait écrit.
 *Une loi fausse qui échoue vaut mieux qu'un exemple juste qui ne dit rien.*
 
-### ▶️ Les briques suivantes, si on continue
+### ✅ Brique suivante faite : `lib/i18n.ts` (2026-08-07)
 
-`lib/i18n.ts` (1464 l., dont **84 % sont deux dictionnaires** → sortir `fr.ts`/`en.ts`
-laisse un moteur de ~240 l. et débloque 8.10) · `lib/catalog.ts` (770 l., trois métiers :
-cache réseau, URL d'affiches, et un conseil d'arrêt qui est du **domaine pur** coincé dans
-une couche réseau) · et `journal/types.ts` (534 l., 31 exports) dont l'**algèbre des clés**
-mérite sa brique.
+**1459 → 254 lignes.** 84 % du fichier étaient des phrases, pas du moteur : les deux
+dictionnaires partent dans `lib/i18n/fr.ts` (659 l., 482 clés — **la source du typage**) et
+`lib/i18n/en.ts` (587 l.).
+
+- ✅ **Le typage ne change pas d'un iota** : `MessageKey` vaut toujours `keyof typeof FR`, et
+  `en.ts` déclare `Record<keyof typeof FR, string>`. Une clé française sans équivalent anglais
+  ne compile toujours pas — la contrainte que 8.10 pose explicitement.
+- ⚠️ **Ça ne résout PAS 8.10** : séparer des fichiers ne sépare pas des chunks. Ça le rend
+  faisable.
+- 🔴 **Deux gardes sont tombées, et c'était la bonne alerte** : elles encodaient « le
+  dictionnaire est **un** fichier ». `no-hardcoded-strings` excluait `lib/i18n.ts` du parcours
+  et a donc accusé **274 phrases légitimes** ; elle exclut maintenant le **répertoire**.
+  `no-false-privacy-claim` lisait le **fichier** pour y chercher une clé ; elle interroge
+  maintenant l'**objet**. *Ce qui compte est que la clé existe, pas où elle est écrite.*
+
+### ▶️ Les briques restantes
+
+`lib/catalog.ts` (770 l., trois métiers : cache réseau, URL d'affiches, et un conseil d'arrêt
+qui est du **domaine pur** coincé dans une couche réseau) · et `journal/types.ts` (534 l.,
+31 exports) dont l'**algèbre des clés** mérite sa brique.
 
 ---
 

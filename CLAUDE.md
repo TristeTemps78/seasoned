@@ -65,9 +65,20 @@ dit rien.*
 ⚠️ **Le découpage a failli rouvrir la faille fermée le matin même** : `no-journal-on-server`
 barrait `@/src/domain/journal` avec une **ancre de fin**, donc `…/journal/write` passait.
 
-### ▶️ Les briques suivantes
+### ✅ Deuxième brique : `lib/i18n.ts`, 1459 → 254 lignes
 
-`lib/i18n.ts` (84 % du fichier sont deux dictionnaires — les sortir débloque 8.10),
+84 % du fichier étaient des phrases, pas du moteur. Les dictionnaires partent dans
+`lib/i18n/{fr,en}.ts`. **Le typage ne bouge pas** — `MessageKey = keyof typeof FR` tient, donc
+une clé française sans équivalent anglais ne compile toujours pas. ⚠️ **Ça ne résout pas
+8.10** : séparer des fichiers ne sépare pas des chunks.
+
+🔴 **Deux gardes sont tombées, et c'était la bonne alerte** : elles encodaient « le
+dictionnaire est **un** fichier ». `no-hardcoded-strings` a accusé **274 phrases légitimes** ;
+`no-false-privacy-claim` lisait le fichier au lieu de l'objet. Les deux restent
+mutation-vérifiées après correction.
+
+### ▶️ Les briques restantes
+
 `lib/catalog.ts` (trois métiers mélangés, dont du **domaine pur** coincé dans une couche
 réseau), et l'**algèbre des clés** encore dans `journal/types.ts`.
 
