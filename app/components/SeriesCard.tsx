@@ -84,7 +84,14 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE }: {
               className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/85 to-transparent"
             />
             <span
-              className={`numeric absolute right-2 bottom-1.5 left-2 truncate text-[0.6875rem] font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
+              // `text-[11px]` et non `text-[0.6875rem]` : **la meme valeur, ecrite deux
+              // façons** dans le depot (ici et `StarRating`), donc impossible a compter ou a
+              // chercher. Aucun pixel ne change. ⚠️ Pas de cran nomme pour autant : les cinq
+              // tailles sous le plus petit cran servent **trois objets differents** (grille
+              // dense, etiquette d'axe, incrustation sur affiche), et la regle du fichier est
+              // d'extraire a partir de trois repetitions du **meme** objet — sinon on refait
+              // `.empty-state-actions`, retiree le jour de sa creation.
+              className={`numeric absolute right-2 bottom-1.5 left-2 truncate text-[11px] font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${
                 TONE_CHIP[STATUS_TONE[status.status]]
               }`}
             >

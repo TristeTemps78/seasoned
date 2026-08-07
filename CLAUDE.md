@@ -123,10 +123,26 @@ d'abord — 35 tests qui ne gardent aucune décision de leur module), puis muter
 
 ### ▶️ Pour reprendre le lot 9
 
-1. **9.8 — les cinq tailles sous le plus petit cran**, désormais décidables : elles attendaient
-   la police, qui change les métriques.
-2. **Le vide vertical** des écrans peu remplis. ⚠️ **Non mesuré** — vu sur une capture.
-3. ⚠️ **Dette de nommage sans effet visible** : 8 sites portent encore
+1. **9.8 — partiellement fait, et volontairement partiel.** ✅ `text-[0.6875rem]` et
+   `text-[11px]` étaient **la même valeur écrite deux façons** : une seule désormais, zéro
+   pixel changé. 🔴 **Mais aucun cran nommé, et c'est le résultat du recul** : les cinq tailles
+   servent **trois objets différents** (grille dense de 17 colonnes, étiquette d'axe,
+   incrustation sur affiche). La règle est d'extraire à partir de trois répétitions du **même**
+   objet — sinon on refait `.empty-state-actions`, retirée le jour de sa création.
+   ⏳ **Les `10px` ne sont pas touchés : ils n'ont pas été vus** (panneau refermé), et la
+   méthode du lot 9 vaut aussi contre l'agent qui l'applique.
+2. ✅ **Vérifié que 9.6 n'a rien dégradé** — la question qu'il fallait se poser après avoir
+   imposé une police : Instrument Sans et la pile système ont la **même hauteur d'x** (5 px à
+   10 px, 6 px à 11 px) et la même largeur à **0,2 px** près. Et la grille d'épisodes est en
+   `instrumentSans`, **pas** en monospace — or Plex Mono est **39 % plus large**, ce qui
+   l'aurait fait déborder. Elle tient dans 376 px sur 719 disponibles.
+3. 🔴 **« Le vide vertical » n'est PAS un défaut — la mesure a corrigé ma propre observation.**
+   Le pied de page va jusqu'à **798 px sur une fenêtre de 798** : il est collé en bas, `main`
+   est en `flex: 1`, et il n'y a **aucun vide après lui**. Ce que j'avais lu comme « 200 px de
+   noir » est le comportement normal d'un écran peu rempli. Centrer verticalement
+   `.empty-state` reste une option de **design**, à regarder — pas un bug à corriger.
+   *Quatrième fois de la session qu'une impression tombe devant une mesure.*
+4. ⚠️ **Dette de nommage sans effet visible** : 8 sites portent encore
    `rounded-lg border border-(--color-edge)` à la main. Ils rendent **exactement** `.panel`,
    donc **le corriger ne change aucun pixel** — risque de dérive, pas défaut.
 
