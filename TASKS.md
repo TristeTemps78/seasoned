@@ -319,6 +319,65 @@ celle de `/regles`. *Un garde-fou adossé à quinze exemptions est un garde-fou 
 
 ---
 
+## 🏁 Verdict de stabilité (2026-08-07) — **lire ceci en premier**
+
+> Demande de Tristan : *« continue ce process jusqu'à me dire, en le justifiant jusqu'au
+> bout, que tu as une base stable. »* Voici la réponse, mesurée. **Elle est nuancée, et la
+> nuance est le sujet.**
+
+### ✅ Ce qui est stable, et prouvé
+
+| Mesure | Avant | Après |
+|---|---|---|
+| Plus gros fichier | **1858 l.** (`journal.ts`) | **716 l.** (`lib/catalog.ts`) |
+| Fichiers > 1000 lignes | 2 | **0** |
+| Chaînes de classes répétées ≥ 3× dans `app/` | 3 formes (19 + 5 + 3 sites) | **0** |
+| Tests | 787 | **712** |
+| Score de mutation du **domaine** | 57/77 (74 %) | **59/78 (76 %)** |
+| Dépendances de production | 4 | **4** |
+| Routes prérendues | 29 | **29** |
+
+- **Chaque correctif de la session est prouvé par mutation, pas par relecture.** Sans
+  exception, y compris les deux mutations qui ont montré que mes propres tests étaient creux.
+- **Le domaine est pur, et l'est redevenu** : `stopPointAdvice` vivait dans la couche réseau.
+- **Deux refactors du cœur sans toucher un seul test** (`journal.ts`, `i18n.ts`) : un barillet
+  garde la surface publique, donc les tests eux-mêmes sont la preuve de neutralité.
+
+### 🔴 Ce que je ne peux PAS attester — et c'est ce qui compte
+
+1. 🔴 **26 commits ne sont pas poussés. La CI n'a jamais tourné sur rien de tout ça.**
+   `AGENTS.md` est catégorique : *« La preuve d'un travail est la CI verte. Ne jamais déclarer
+   une tâche finie sans. »* **Donc je ne déclare pas la base stable. Je déclare qu'elle est
+   verte sur cette machine** — typecheck strict, 712 tests, build, 29 routes. Ce n'est pas la
+   même phrase, et le dépôt a déjà payé la différence.
+2. 🔴 **19 mutations survivent : ~24 % des décisions du domaine ne sont gardées par personne.**
+   Dont `calendar.ts` (2 sur 2) et `catch-up.ts` (1 sur 1) — **35 tests qui ne gardent aucune
+   décision de leur module**. C'est le vrai chantier restant, et il est chiffré, module par
+   module, au lot 12.
+3. 🔴 **Le score ne couvre que `src/domain/`.** `lib/`, `src/catalog/`, `src/social/` et `app/`
+   n'ont **jamais** été mutés. `src/social/client.ts` fait 422 lignes et n'a que 4 tests, tous
+   écrits aujourd'hui sur une seule propriété.
+4. ⚠️ **Rien n'a été vu à l'œil.** Le lot 9 attend les captures, le mobile n'a jamais été
+   regardé (7.1), et la divergence `.card` / `.panel` est **nommée mais pas tranchée** —
+   ça se regarde, ça ne se déduit pas.
+5. ⚠️ **Le volume n'a pas baissé** — ~19 200 → ~19 400 lignes hors tests. Les découpages
+   ajoutent des en-têtes qui expliquent le contrat de chaque brique. **Ce projet n'est pas
+   devenu plus petit, il est devenu segmenté**, et c'est la seule chose que je puisse
+   défendre : le plus gros fichier a fondu de 61 %, la duplication a disparu, et la surface
+   qu'il faut tenir en tête pour modifier une brique est celle de la brique.
+
+### La phrase exacte
+
+> **La base est structurellement saine et mieux gardée qu'au début de la session, et je peux
+> le prouver ligne par ligne. Elle n'est pas « stable » au sens de ce dépôt tant que la CI
+> n'a pas tourné et tant qu'un quart du domaine reste non gardé.**
+
+**Les deux actions qui feraient basculer le verdict**, dans l'ordre : (1) pousser et obtenir
+une CI verte ; (2) fermer les 19 survivants du lot 12, en commençant par `calendar` et
+`catch-up`, dont les 35 tests ne gardent rien.
+
+---
+
 ## 🧬 Lot 12 — le mutation testing, et ce qu'il dit du nombre de tests (2026-08-07)
 
 > **Question de Tristan, posée deux fois** : « c'est impossible qu'on ait besoin de 750

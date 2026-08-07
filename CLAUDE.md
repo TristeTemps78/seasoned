@@ -8,6 +8,41 @@
 - Avant d'écrire : réserver dans `TASKS.md` (protocole `C:\Git project\WORKFLOW.md`).
 - `npm run check` = typecheck + tests. Doit être vert avant tout commit.
 
+## 🏁 Verdict de stabilité (2026-08-07) — la première chose à lire
+
+| Mesure | Avant | Après |
+|---|---|---|
+| Plus gros fichier | **1858 l.** | **716 l.** |
+| Fichiers > 1000 lignes | 2 | **0** |
+| Chaînes de classes répétées ≥ 3× | 3 formes (19+5+3 sites) | **0** |
+| Tests | 787 | **712** |
+| Mutation du **domaine** | 57/77 (74 %) | **59/78 (76 %)** |
+
+✅ **Chaque correctif est prouvé par mutation, pas par relecture.** Deux refactors du cœur
+(`journal.ts`, `i18n.ts`) sans toucher un seul test — le barillet garde la surface publique,
+donc les tests sont eux-mêmes la preuve de neutralité.
+
+🔴 **Ce que je ne peux PAS attester :**
+1. **26 commits non poussés, la CI n'a jamais tourné.** `AGENTS.md` : *« la preuve d'un
+   travail est la CI verte »*. **Je ne déclare donc pas la base stable — je déclare qu'elle
+   est verte sur cette machine.** Ce n'est pas la même phrase.
+2. **19 mutations survivent : ~24 % des décisions du domaine ne sont gardées par personne**,
+   dont `calendar.ts` (2/2) et `catch-up.ts` (1/1) — **35 tests qui ne gardent rien**.
+3. **Le score ne couvre que `src/domain/`.** `lib/`, `src/catalog/`, `src/social/`, `app/`
+   n'ont jamais été mutés. `src/social/client.ts` : 422 lignes, 4 tests.
+4. **Rien n'a été vu à l'œil** — lot 9 bloqué, mobile jamais vu, `.card`/`.panel` nommées
+   mais pas tranchées.
+5. ⚠️ **Le volume n'a pas baissé** (~19 200 → ~19 400 lignes) : les découpages ajoutent les
+   en-têtes qui énoncent le contrat de chaque brique. **Ce projet n'est pas plus petit, il
+   est segmenté.**
+
+> **La base est structurellement saine et mieux gardée qu'au début de la session, et ça se
+> prouve ligne par ligne. Elle n'est pas « stable » au sens de ce dépôt tant que la CI n'a
+> pas tourné et tant qu'un quart du domaine reste non gardé.**
+
+**Pour basculer le verdict** : (1) pousser, CI verte ; (2) fermer les 19 survivants du
+lot 12, en commençant par `calendar` et `catch-up`.
+
 ## État actuel (2026-08-07 — l'audit, puis `journal.ts` découpé en six briques)
 
 - **✅ Lots 10 et 11.0 livrés.** **787 → 711 tests**, typecheck strict vert, build vert,
