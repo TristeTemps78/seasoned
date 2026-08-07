@@ -60,7 +60,38 @@
 d'abord — 35 tests qui ne gardent aucune décision de leur module), puis muter `lib/` et
 `src/social/`, qui n'ont jamais été mesurés.
 
-## État actuel (2026-08-07, soir — le site a été VU, et il a enfin un caractère)
+## État actuel (2026-08-07, soir — le social a enfin une destination)
+
+- **✅ 724 tests**, typecheck strict vert, build vert, `main` propre. **Tout est poussé, CI verte.**
+- ✅ **8.12 livré — la page de profil public.** Le lot 6 avait livré « suivre », le lot 8
+  « publier une critique », et **il n'y avait aucune page où aller** : on suivait un nom sans
+  pouvoir l'ouvrir, et les critiques ne se lisaient qu'en tombant sur la fiche de la bonne
+  série. `/u/<nom>` et `/fr/u/<nom>`, **toutes deux prérendues**.
+  - 🔴 **Mon intuition « ce dépôt refuse les routes dynamiques » était fausse, et le dépôt m'a
+    contredit** : `/serie/[id]` en est une, avec son motif documenté (`force-static` sans
+    `generateStaticParams` → rendue à la première demande, puis servie du cache). Ce n'est pas
+    une invocation par visite. L'URL reste donc propre et partageable.
+  - 🔴 **Et la décision de spoiler était dans la couche de rendu — en citant la règle 7 qui
+    l'interdit.** `redactReviews` ne prend qu'**une** position (elle est écrite pour une fiche
+    série) ; un profil mélange les œuvres, donc elle révélait la saison 6 d'une série **jamais
+    commencée** parce que le lecteur en est à la saison 6 d'une **autre**. D'où
+    `redactReviewsAcross`, **dans le domaine**. *Mutation vérifiée.*
+  - ⚠️ **Une seule phrase pour « ce nom n'existe pas » et « ce profil ne vous est pas
+    visible »** : les distinguer ferait de la page un **oracle** d'énumération des comptes, et
+    la visibilité par défaut étant `followers`, il marcherait sur presque tout le monde.
+- 📋 **État du social, mesuré et non récité (2026-08-07)** : les **7 tables existent en
+  production** (RLS actif, écriture anonyme refusée), les **12 méthodes du client ont toutes un
+  appelant** — vérifié spécifiquement, parce que ce dépôt en a déjà livré deux qui n'ont servi
+  à rien pendant deux lots.
+- 🔴 **Ce qui manque encore côté social** : les **listes** (8.13), le **bilan annuel** (8.14) et
+  les **faces/équipes** — `src/domain/face.ts` **n'existe pas**, rien n'est commencé. Le
+  prérequis reste **9.0 la provenance d'un fait**, irrattrapable après coup : à poser **avant
+  d'inviter les premiers utilisateurs**, pas avant les faces.
+- ⚠️ **Ce que je ne peux pas savoir** : si quelqu'un s'est déjà inscrit. `profiles` me rend `[]`
+  en anonyme, mais un profil `followers` serait invisible de toute façon — *ne pas écrire
+  « zéro utilisateur » quand on mesure « rien de visible ».*
+
+## État précédent (2026-08-07, soir — le site a été VU, et il a enfin un caractère)
 
 - **✅ 721 tests** (+3), typecheck strict vert, build vert. **Quatre commits**, `main` propre.
   ⏳ **Rien n'est poussé** — décision de Tristan.
