@@ -570,15 +570,41 @@ body::before {
   }
 
   /**
-   * La surface qui contient.
+   * La surface qui contient — **une seule forme, deux rembourrages** (9.7, tranche le
+   * 2026-08-07 apres avoir regarde l'ecran).
    *
-   * Un seul rayon, une seule bordure, un seul fond dans toute l'application. Trois valeurs
-   * differentes de rayon sur un meme ecran suffisent a faire « pas fini », et c'etait le cas.
+   * `.panel` est la surface nue ; `.card` est la meme surface **avec le rembourrage
+   * standard**. Elles ne sont plus concurrentes : l'une est l'autre, plus le padding, et la
+   * forme n'est ecrite qu'ici.
+   *
+   * ## Ce qui a ete tranche, et sur quoi
+   *
+   * Les deux differaient de `0.75rem` contre `0.5rem`, et d'un fond a 80 % contre opaque.
+   * Deux mesures ont decide, pas un gout :
+   *
+   * 1. **Le rayon** : l'accueil rend **59 elements, tous a 8 px** (releve sur la production).
+   *    `0.5rem` etait donc deja, de fait, le rayon du produit — les affiches en tete. Choisir
+   *    `0.75rem` aurait demande de changer l'accueil pour aligner huit surfaces.
+   * 2. **Le fond** : `color-mix(--color-surface 80%)` sur `--color-ink` rend `#0f1119`,
+   *    c'est-a-dire **plus proche du fond** que `--color-surface` opaque (`#11131c`). Or ce
+   *    qui a ete vu a l'ecran est que **rien ne se detache** : la page est un empilement de
+   *    rectangles gris. Un fond qui se rapproche du fond va contre le seul defaut constate.
+   *
+   * ⚠️ **Et le diagnostic de `TASKS.md` 9.7 etait perime** : il annoncait « 19 copies a la
+   * main », chiffre vrai la veille et faux le jour meme — le commit qui a extrait `.panel`
+   * les avait deja absorbees. Il en restait **8**. *Une tache se remesure avant d'etre faite,
+   * surtout quand quelqu'un a travaille entre-temps.*
    */
-  .card {
-    border-radius: 0.75rem;
+  .panel,
+  .card,
+  .empty-state,
+  .tile {
+    border-radius: 0.5rem;
     border: 1px solid var(--color-edge);
-    background-color: color-mix(in oklab, var(--color-surface) 80%, transparent);
+    background-color: var(--color-surface);
+  }
+
+  .card {
     padding: 1rem 1.25rem;
   }
 
@@ -597,17 +623,11 @@ body::before {
    * rembourrages differents (`py-4`, `py-3`, aucun), et trois surchargent l'opacite du fond
    * (`/50`, `/70`) — ce que la couche `components` laisse gagner aux utilitaires.
    *
-   * ⚠️ **`.card` et `.panel` coexistent, et c'est un etat de transition assume.** Elles rendent
-   * deux surfaces differentes — `0.75rem` et un fond a 80 % contre `0.5rem` et un fond opaque —
-   * et ce n'est pas a un refactor de trancher laquelle est la bonne : ca se regarde. `TASKS.md`
-   * 11.1 le confie au lot 9. Ce qui change aujourd'hui, c'est qu'il y a **deux formes nommees
-   * au lieu d'une nommee et dix-neuf anonymes** : la fusion sera deux lignes.
+   * ✅ **La transition est finie (2026-08-07)** : `.card` rendait `0.75rem` et un fond a 80 %,
+   * `.panel` `0.5rem` et un fond opaque. C'est `.panel` qui l'a emporte, sur deux mesures
+   * — voir sa declaration plus haut, ou les deux selecteurs partagent desormais **une seule
+   * definition de forme**. `.card` n'ajoute plus que son rembourrage.
    */
-  .panel {
-    border-radius: 0.5rem;
-    border: 1px solid var(--color-edge);
-    background-color: var(--color-surface);
-  }
 
   /**
    * Le paragraphe de commentaire — **cinq fois**, au mot pres.
@@ -681,12 +701,11 @@ body::before {
    * un ecran vide qui affiche « 0 element » a decrit l'etat sans rien ouvrir. Ceux qui
    * portent une action lui donnent `.btn` — il n'y a pas de bouton special ici.
    */
+  /* La forme (rayon, bordure, fond) est declaree une seule fois, plus haut, avec `.panel`.
+     Ne restent ici que les choix propres a un ecran vide : centre, borne, aere. */
   .empty-state {
     margin-inline: auto;
     max-width: 32rem;
-    border-radius: 0.75rem;
-    border: 1px solid var(--color-edge);
-    background-color: color-mix(in oklab, var(--color-surface) 80%, transparent);
     padding: 2.5rem 1.5rem;
     text-align: center;
   }
@@ -730,10 +749,13 @@ body::before {
    * Le chiffre ne revient jamais a la ligne : « 2 jours et 2 h » coupe en deux au milieu
    * d'un tiret cadratin est la difference exacte entre une donnee et un accident.
    */
+  /* Meme forme que `.panel` (declaree une fois, plus haut) — seul le rembourrage differe.
+     ⚠️ **Ce que la tuile ENGAGEMENT doit a sa geometrie : rien.** Elle est le seul element du
+     site qui ait une identite, et c'est `emphasis` qui la lui donne — liseré volt, fond volt a
+     6 %, halo, chiffre en grille. Les quatre tuiles ont toujours eu le meme rayon ; une seule
+     brille. Aligner la forme ne touche donc pas a ce qui marche, et c'est verifie sur le code
+     de `Stat`, pas suppose. */
   .tile {
-    border-radius: 0.75rem;
-    border: 1px solid var(--color-edge);
-    background-color: color-mix(in oklab, var(--color-surface) 80%, transparent);
     padding: 0.875rem 1rem;
   }
 

@@ -65,7 +65,7 @@ export function OrderingNotice({
   return (
     <section
       aria-label={t(locale, 'ordering.title')}
-      className="space-y-2 rounded-md border border-(--color-edge) bg-(--color-surface) px-3 py-2.5 text-sm"
+      className="panel space-y-2 px-3 py-2.5 text-sm"
     >
       {/* ⚠️ Ce titre rendait deja `0.875rem`, mais **par heritage** du `text-sm` de la
           section : sa taille dependait d'un parent, donc d'une decision prise ailleurs. Le
