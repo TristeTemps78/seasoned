@@ -37,6 +37,14 @@ export type ClaimOutcome =
 
 /** Une critique publiee, telle qu'elle revient du serveur. */
 export interface PublishedReview {
+  /**
+   * La cle de journal de l'oeuvre — `tmdb:1396`.
+   *
+   * ⚠️ Redondante sur une fiche serie, **indispensable sur une page de profil** : la fiche
+   * sait de quelle serie elle parle, un profil non. Sans elle, la page montrerait des textes
+   * sans dire de quoi ils parlent.
+   */
+  readonly subject: string;
   /** `series` ou `season:3`. */
   readonly target: string;
   readonly text: string;
@@ -399,8 +407,35 @@ export class SocialClient {
    * est le lecteur, et c'est precisement ce qui empeche sa position de fuir.
    */
   async reviewsFor(subject: string, limit = 30): Promise<readonly PublishedReview[]> {
+    return this.#reviews(`subject=eq.${encodeURIComponent(subject)}`, limit);
+  }
+
+  /**
+   * Les critiques ecrites **par quelqu'un** — ce que sa page de profil montre.
+   *
+   * ⚠️ **Aucun controle de visibilite ici, et c'est voulu** : la politique `reviews_select`
+   * porte `can_see(user_id)`, donc la base rend une liste **vide** a qui n'a pas le droit de
+   * lire, sans que le client ait a le savoir. Refaire le test cote navigateur donnerait deux
+   * sources de verite pour une meme regle — et c'est celle du client qui se perime.
+   *
+   * ⚠️ Le `subject` est rendu **en plus** du reste : sur une fiche serie on sait de quelle
+   * serie on parle, sur un profil non. Sans lui, la page afficherait des textes sans dire
+   * de quoi ils parlent.
+   */
+  async reviewsBy(userId: string, limit = 30): Promise<readonly PublishedReview[]> {
+    return this.#reviews(`user_id=eq.${encodeURIComponent(userId)}`, limit);
+  }
+
+  /**
+   * Le corps commun des deux lectures de critiques — elles ne different que par leur filtre.
+   *
+   * Les ecrire deux fois aurait duplique le parsing tolerant (`AGENTS.md` regle 4) et son
+   * rejet des lignes sans auteur : deux copies qui se seraient repondu differemment le jour
+   * ou l'une aurait ete corrigee.
+   */
+  async #reviews(filter: string, limit: number): Promise<readonly PublishedReview[]> {
     const rows = await this.#rows<Record<string, unknown>>(
-      `reviews?subject=eq.${encodeURIComponent(subject)}&select=target,body,through_season,lang,published_at,profiles!inner(handle,user_id)&order=published_at.desc&limit=${limit}`,
+      `reviews?${filter}&select=subject,target,body,through_season,lang,published_at,profiles!inner(handle,user_id)&order=published_at.desc&limit=${limit}`,
     );
     return rows.flatMap((row) => {
       const author = row['profiles'] as { handle?: unknown; user_id?: unknown } | undefined;
@@ -408,6 +443,7 @@ export class SocialClient {
       const through = row['through_season'];
       return [
         {
+          subject: String(row['subject']),
           target: String(row['target']),
           text: String(row['body']),
           throughSeason: typeof through === 'number' ? through : 0,

@@ -176,6 +176,35 @@ export type Redacted<T extends SpoilerBounded> = Omit<T, 'text'> & {
  * strict de `isBeyondPosition` (« mieux vaut masquer a tort que spoiler ») — et il ne coupe
  * pas l'audience qui compte, puisque c'est precisement pour elle qu'on ecrit sans spoiler.
  */
+/**
+ * Le meme caviardage, mais pour des critiques qui **ne portent pas sur la meme oeuvre**.
+ *
+ * ## Pourquoi cette fonction existe, et ce qu'elle empeche
+ *
+ * {@link redactReviews} ne prend qu'**une** position, et son commentaire le dit : elle est
+ * ecrite pour une fiche serie, ou « toutes ces critiques portent deja sur la meme serie ».
+ * Une page de profil melange les oeuvres. L'appeler telle quelle sur une liste melangee
+ * appliquerait la position d'une serie aux critiques d'une autre — c'est-a-dire
+ * **revelerait la saison 6 de l'une parce que le lecteur en est a la saison 6 de l'autre**.
+ *
+ * ⚠️ **Et c'est pour ca que la decision est ici et pas dans le composant.** « Quelle position
+ * s'applique a quelle critique » est une decision de spoiler ; la laisser dans la couche de
+ * rendu est exactement ce que la regle 7 interdit, et ce qu'aucun test de composant ne
+ * garderait serieusement.
+ *
+ * @param positionOf rend la position du lecteur sur une oeuvre donnee, ou `undefined` s'il
+ *   ne l'a pas commencee. Le defaut est donc le masquage — « mieux vaut masquer a tort que
+ *   spoiler », comme partout dans ce module.
+ */
+export function redactReviewsAcross<T extends SpoilerBounded & { readonly subject: string }>(
+  reviews: readonly T[],
+  positionOf: (subject: string) => Position | undefined,
+): readonly Redacted<T>[] {
+  // Une par une, chacune avec SA position : `redactReviews` mappe 1:1, donc l'appeler sur un
+  // singleton est exactement le meme calcul, applique au bon contexte.
+  return reviews.flatMap((review) => redactReviews([review], positionOf(review.subject)));
+}
+
 export function redactReviews<T extends SpoilerBounded>(
   reviews: readonly T[],
   position: Position | undefined,

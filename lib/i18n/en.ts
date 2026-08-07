@@ -327,6 +327,16 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'review.hiddenSeries': 'Contains spoilers for what comes next.',
   'review.reveal': 'Show it anyway',
   'review.none': 'Nobody has written about this series yet.',
+
+  // Voir `fr.ts` : une seule phrase pour « inconnu » et « invisible », sans quoi la page
+  // devient un oracle permettant d'enumerer les comptes.
+  'profile.unknown': 'That name matches nobody, or this profile is not visible to you.',
+  'profile.title': 'Profile',
+  'profile.reviews': 'What they have written',
+  'profile.none': 'Nothing public to read here yet.',
+  'profile.follow': 'Follow',
+  'profile.unfollow': 'Unfollow',
+  'profile.self': 'This is you.',
   'review.title': 'What the people you follow say',
   'progress.start': 'I’ve started it',
   'progress.season': 'Season',

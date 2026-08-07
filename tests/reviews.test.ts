@@ -20,7 +20,7 @@ import {
   serializeJournal,
   setReview,
 } from '../src/domain/journal';
-import { redactReviews } from '../src/domain/spoiler';
+import { redactReviews, redactReviewsAcross } from '../src/domain/spoiler';
 import type { Position } from '../src/domain/types';
 
 const NOW = new Date('2026-08-06T12:00:00Z');
@@ -185,5 +185,54 @@ describe('les maillons que rien d autre ne couvre', () => {
     const source = sourceOf('app/components/Friends.tsx');
     expect(source).toMatch(/client\.setVisibility\(/);
     expect(source).toMatch(/client\.unfollow\(/);
+  });
+});
+
+describe('redactReviewsAcross — une page de profil melange les oeuvres', () => {
+  const BREAKING_BAD = 'tmdb:1396';
+  const AUTRE = 'tmdb:1399';
+
+  const criqueDe = (subject: string, throughSeason: number, text: string) => ({
+    subject,
+    throughSeason,
+    text,
+  });
+
+  it('ANCRAGE : ces memes critiques sont bien lisibles quand le lecteur a la position', () => {
+    // Sans cet ancrage, le test suivant passerait aussi sur une fonction qui masque TOUT :
+    // il comparerait deux fois rien. Ce depot a failli publier cinq faux negatifs de fixture
+    // pour exactement cette raison.
+    const visible = redactReviewsAcross(
+      [criqueDe(BREAKING_BAD, 6, 'la fin est ratee'), criqueDe(AUTRE, 6, 'idem ici')],
+      () => at(6),
+    );
+    expect(visible.map((r) => r.text)).toEqual(['la fin est ratee', 'idem ici']);
+    expect(visible.every((r) => r.hidden !== true)).toBe(true);
+  });
+
+  it('la position sur UNE serie ne devoile pas les critiques d une AUTRE', () => {
+    // 🔴 Le defaut que ce test attrape, et il serait invisible autrement : la page de profil
+    // appelait `redactReviews` avec une position unique. Le lecteur etant a la saison 6 de
+    // Breaking Bad, la critique de la saison 6 d'une serie qu'il n'a JAMAIS commencee
+    // s'affichait en clair.
+    const visible = redactReviewsAcross(
+      [criqueDe(BREAKING_BAD, 6, 'la fin est ratee'), criqueDe(AUTRE, 6, 'le twist final')],
+      (subject) => (subject === BREAKING_BAD ? at(6) : undefined),
+    );
+
+    expect(visible[0]?.hidden).not.toBe(true);
+    expect(visible[0]?.text).toBe('la fin est ratee');
+
+    expect(visible[1]?.hidden).toBe(true);
+    expect(visible[1]?.text).toBe('');
+    // Le texte est deplace, pas efface : la revelation reste un geste local.
+    expect(visible[1]?.hiddenText).toBe('le twist final');
+  });
+
+  it('une critique sans spoiler reste lisible sur une oeuvre jamais commencee', () => {
+    // C'est precisement le public vise par un texte ecrit sans spoiler : celui qui hesite.
+    const visible = redactReviewsAcross([criqueDe(AUTRE, 0, 'ca vaut le detour')], () => undefined);
+    expect(visible[0]?.hidden).not.toBe(true);
+    expect(visible[0]?.text).toBe('ca vaut le detour');
   });
 });

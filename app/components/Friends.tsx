@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
@@ -10,6 +11,7 @@ import { checkHandle } from '@/src/domain/handles';
 import { seriesEntries, type JournalKey } from '@/src/domain/journal';
 import { SocialClient, type FeedItem, type Profile } from '@/src/social/client';
 import { ReportButton } from '@/app/components/ReportButton';
+import { pathIn } from '@/lib/routes';
 
 /**
  * La face « Mes amis » : reclamer un nom, suivre quelqu'un, lire le fil.
@@ -198,7 +200,16 @@ export function Friends() {
             <ul className="flex flex-wrap gap-2">
               {friends.map((friend) => (
                 <li key={friend.userId} className="flex items-center gap-1">
-                  <span>@{friend.handle}</span>
+                  {/* ⚠️ Le nom devient un lien vers sa page — sans quoi 8.12 serait une page
+                      que personne n'atteint, c'est-a-dire le defaut que ce depot a deja
+                      commis deux fois avec `unfollow` et `setVisibility`. C'est ici que la
+                      question « et sa page ? » se pose naturellement : on lit un nom. */}
+                  <Link
+                    href={pathIn(`/u/${friend.handle}`, locale)}
+                    className="hover:text-(--color-volt)"
+                  >
+                    @{friend.handle}
+                  </Link>
                   {/* `unfollow()` existait depuis le lot 6 et n'avait AUCUN appelant : on
                       pouvait suivre quelqu'un sans jamais pouvoir arreter. */}
                   <button

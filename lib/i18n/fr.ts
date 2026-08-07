@@ -370,6 +370,21 @@ export const FR = {
   'review.hiddenSeries': 'Contient des révélations sur la suite.',
   'review.reveal': 'Afficher quand même',
   'review.none': 'Personne n’a encore écrit sur cette série.',
+
+  // ⚠️ Une seule phrase pour « ce nom n'existe pas » ET « ce profil ne vous est pas
+  // visible ». Les distinguer ferait de la page un oracle : on testerait des noms un par un
+  // pour savoir lesquels sont pris. La visibilité par défaut étant `followers`, presque tous
+  // les profils sont invisibles à un inconnu — l'oracle marcherait donc sur tout le monde.
+  'profile.unknown': 'Ce nom ne correspond à personne, ou ce profil n’est pas visible pour vous.',
+  // ⚠️ Distinct de `profile.reviews` : constaté au navigateur, l'onglet s'intitulait « Ce
+  // qu'elle ou il a écrit », ce qui ne désigne pas une page. Un titre nomme la page, une
+  // section nomme son contenu — les confondre marche tant qu'on ne regarde pas l'onglet.
+  'profile.title': 'Profil',
+  'profile.reviews': 'Ce qu’elle ou il a écrit',
+  'profile.none': 'Rien de public à lire ici pour l’instant.',
+  'profile.follow': 'Suivre',
+  'profile.unfollow': 'Ne plus suivre',
+  'profile.self': 'C’est vous.',
   'review.title': 'Ce qu’en disent les gens que vous suivez',
   'progress.start': 'Je l’ai commencée',
   'progress.season': 'Saison',
