@@ -84,6 +84,29 @@ describe('computeTrajectory — formes', () => {
     expect(computeTrajectory('s', flat).shape).toBe('masterpiece');
   });
 
+  /**
+   * 🔴 **Trouve par mutation le 2026-08-07, et c'etait le survivant le plus grave.**
+   *
+   * Le test ci-dessus n'exerce la garde que **quand elle declenche**. Il manquait l'autre
+   * moitie : une serie franchement differenciee, **avec** le garde-fou actif, doit garder
+   * sa forme.
+   *
+   * Sans ce cas, `minSpread > 0 && spread < minSpread` pouvait devenir un `ou` sans que
+   * rien ne bouge — et alors **toute page notee par la foule aurait repondu
+   * « indifferenciee »**, c'est-a-dire que le livrable central du produit se serait taise
+   * partout, en silence.
+   */
+  it('garde-fou actif, mais la forme reste nommee quand la dispersion la merite', () => {
+    const nette = [
+      { seasonNumber: 1, stars: 4.5 },
+      { seasonNumber: 2, stars: 4.0 },
+      { seasonNumber: 3, stars: 3.0 },
+      { seasonNumber: 4, stars: 2.0 },
+    ];
+    // La dispersion (2,5) depasse largement le seuil : le garde-fou ne doit pas mordre.
+    expect(computeTrajectory('s', nette, { minSpread: 0.25 }).shape).toBe('decline');
+  });
+
   it('detecte un decrochage tenu que le seuil des notes humaines manquait', () => {
     // L'ecart reel entre les saisons de Dexter sur TMDB, une fois l'arrondi retire.
     const dexterPublic = [

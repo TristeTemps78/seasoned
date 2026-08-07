@@ -39,6 +39,23 @@ describe('seasonCadence', () => {
     expect(cadence?.samples).toBe(4);
   });
 
+  /**
+   * 🔴 **Trouve par mutation le 2026-08-07.** La garde `median <= 0` pouvait devenir
+   * `median < 0` sans qu'aucun test ne bouge : **rien n'exercait le rythme nul**.
+   *
+   * Ce n'est pas theorique. Deux saisons diffusees **le meme jour** — une plateforme qui
+   * publie deux saisons d'un coup, ce que Netflix fait — donnent un ecart median de zero.
+   * Le rythme partirait alors dans `limboThresholdDays`, ou il **divise** : un seuil
+   * infini, donc une serie qu'on ne declarerait jamais sans nouvelle.
+   */
+  it('refuse un rythme nul plutot que de le propager', () => {
+    const memeJour: Season[] = [
+      { ref: { seriesId: 's', seasonNumber: 1 }, kind: 'regular', episodeCount: 10, airedFrom: daysAgo(100) },
+      { ref: { seriesId: 's', seasonNumber: 2 }, kind: 'regular', episodeCount: 10, airedFrom: daysAgo(100) },
+    ];
+    expect(seasonCadence(memeJour)).toBeUndefined();
+  });
+
   it('resiste a une interruption exceptionnelle', () => {
     // Greve, pandemie, changement de diffuseur : une seule longue coupure ne doit pas
     // redefinir le rythme d'une serie par ailleurs reguliere. D'ou la mediane.

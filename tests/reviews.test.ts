@@ -100,6 +100,27 @@ describe('le journal', () => {
     expect(cleared.entries[BB]?.reviews?.['series']?.text).toBe('sur la serie');
   });
 
+  /**
+   * 🔴 **Trouve par mutation le 2026-08-07.** Effacer la **derniere** critique doit retirer
+   * le porte-critiques entier, pas laisser un `reviews: {}` vide.
+   *
+   * Le test voisin efface une critique sur deux, donc il n'atteint jamais ce cas. Sans
+   * celui-ci, `Object.keys(rest).length > 0` pouvait devenir `>= 0` — toujours vrai — et
+   * chaque entree ayant un jour porte une critique aurait garde une accolade vide **a
+   * jamais**, recopiee dans chaque export, chaque synchronisation et chaque fusion.
+   *
+   * C'est le meme raisonnement que `unknownFieldsOf`, qui rend `undefined` plutot qu'un
+   * objet vide « pour ne pas faire exister le seau sur toutes les entrees du monde ».
+   */
+  it('effacer la DERNIERE critique ne laisse pas un porte-critiques vide', () => {
+    const ecrite = setReview(EMPTY_JOURNAL, BB, reviewKey(), review(0, 'sur la serie'), NOW);
+    const effacee = setReview(ecrite, BB, reviewKey(), review(0, ''), LATER);
+
+    expect(effacee.entries[BB]?.reviews).toBeUndefined();
+    // Et la pierre tombale est bien la : c'est elle qui empeche la resurrection.
+    expect(effacee.entries[BB]?.removed?.['review:series']).toBeDefined();
+  });
+
   it('une critique effacee ne ressuscite pas a la fusion', () => {
     const written = setReview(EMPTY_JOURNAL, BB, reviewKey(), review(0), NOW);
     const cleared = setReview(written, BB, reviewKey(), review(0, ''), LATER);

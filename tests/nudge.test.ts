@@ -57,4 +57,52 @@ describe('seasonToRate', () => {
   it('survit a une position au-dela du catalogue connu', () => {
     expect(seasonToRate(SEASONS, { seasonNumber: 9, episodeNumber: 1 }, NONE)).toBe(3);
   });
+
+  /**
+   * 🔴 **Trouve par mutation le 2026-08-07** : le filtre des marques etait le seul
+   * survivant de ce module. Il tient en une ligne —
+   * `m.kind === 'skipped' && m.seasonNumber === season.seasonNumber` — et les deux
+   * moities y sont indispensables :
+   *
+   *   - sans le **genre**, un episode marque « vu en avance » compterait comme saute,
+   *     donc la saison serait declaree finie alors qu'il reste des episodes a voir ;
+   *   - sans la **saison**, une marque posee ailleurs dans la serie compterait ici.
+   *
+   * Aucun test ne posait de marque d'un autre genre ni d'une autre saison : le `&&`
+   * pouvait devenir un `ou` sans que rien ne bouge.
+   */
+  it('ne compte pas une marque d une AUTRE saison', () => {
+    // Position S2E10 sur 12 episodes : il en reste deux. Les marques « saute » portent
+    // sur la saison 3 — elles ne doivent rien finir du tout ici.
+    const ailleurs = [
+      { kind: 'skipped' as const, seasonNumber: 3, episodeNumber: 11 },
+      { kind: 'skipped' as const, seasonNumber: 3, episodeNumber: 12 },
+    ];
+    expect(
+      seasonToRate(SEASONS, { seasonNumber: 2, episodeNumber: 10 }, new Set([1]), ailleurs),
+    ).toBeUndefined();
+  });
+
+  it('ne compte pas une marque d un autre GENRE', () => {
+    // « Vu en avance » n'est pas « saute » : ces deux episodes restent a voir.
+    const enAvance = [
+      { kind: 'watched' as const, seasonNumber: 2, episodeNumber: 11 },
+      { kind: 'watched' as const, seasonNumber: 2, episodeNumber: 12 },
+    ];
+    expect(
+      seasonToRate(SEASONS, { seasonNumber: 2, episodeNumber: 10 }, new Set([1]), enAvance),
+    ).toBeUndefined();
+  });
+
+  it('l ancrage — les MEMES marques, au bon genre et a la bonne saison, finissent bien la saison', () => {
+    // Sans lui, les deux tests ci-dessus passeraient aussi avec un `seasonToRate` qui
+    // ignore les marques entierement : ils compareraient deux fois rien.
+    const ici = [
+      { kind: 'skipped' as const, seasonNumber: 2, episodeNumber: 11 },
+      { kind: 'skipped' as const, seasonNumber: 2, episodeNumber: 12 },
+    ];
+    expect(
+      seasonToRate(SEASONS, { seasonNumber: 2, episodeNumber: 10 }, new Set([1]), ici),
+    ).toBe(2);
+  });
 });
