@@ -59,9 +59,6 @@ export class ExpiringCache<T> {
   readonly #entries = new Map<string, CacheEntry<T>>();
   readonly #maxEntries: number;
   readonly #now: Clock;
-  #hits = 0;
-  #misses = 0;
-  #evictions = 0;
 
   constructor(options: { readonly maxEntries?: number; readonly now?: Clock } = {}) {
     this.#maxEntries = options.maxEntries ?? 5_000;
@@ -70,16 +67,14 @@ export class ExpiringCache<T> {
 
   get(key: string): T | undefined {
     const entry = this.#entries.get(key);
-    if (entry === undefined) {
-      this.#misses += 1;
-      return undefined;
-    }
+    if (entry === undefined) return undefined;
+    // L'expiration est **paresseuse** : on la constate a la lecture. C'est ce qui rend
+    // une purge periodique inutile — et ce qui a permis de retirer `prune()`, que rien
+    // n'appelait, le 2026-08-07.
     if (entry.expiresAt <= this.#now()) {
       this.#entries.delete(key);
-      this.#misses += 1;
       return undefined;
     }
-    this.#hits += 1;
     return entry.value;
   }
 
@@ -98,43 +93,27 @@ export class ExpiringCache<T> {
 
     if (this.#entries.size >= this.#maxEntries) {
       const oldest = this.#entries.keys().next();
-      if (!oldest.done) {
-        this.#entries.delete(oldest.value);
-        this.#evictions += 1;
-      }
+      if (!oldest.done) this.#entries.delete(oldest.value);
     }
     this.#entries.set(key, { value, expiresAt: this.#now() + ttl });
-  }
-
-  delete(key: string): void {
-    this.#entries.delete(key);
   }
 
   clear(): void {
     this.#entries.clear();
   }
 
-  /** Purge les entrees expirees. Renvoie le nombre d'entrees retirees. */
-  prune(): number {
-    const now = this.#now();
-    let removed = 0;
-    for (const [key, entry] of this.#entries) {
-      if (entry.expiresAt <= now) {
-        this.#entries.delete(key);
-        removed += 1;
-      }
-    }
-    return removed;
-  }
-
-  stats(): CacheStats {
-    return {
-      hits: this.#hits,
-      misses: this.#misses,
-      evictions: this.#evictions,
-      size: this.#entries.size,
-    };
-  }
+  /**
+   * ⚠️ **Ici vivaient `delete()`, `prune()` et `stats()`, retires le 2026-08-07.**
+   *
+   * `delete()` n'avait aucun appelant. `prune()` et `stats()` n'en avaient que dans les
+   * tests — et `stats()` etait la seule raison d'exister de trois compteurs incrementes a
+   * quatre endroits, c'est-a-dire d'une instrumentation dont la production ne lisait
+   * jamais le resultat.
+   *
+   * *Un compteur que personne ne lit n'est pas une mesure, c'est une ligne a maintenir.*
+   * Et les tests qui l'exercaient ne prouvaient rien du produit : ils verifiaient qu'un
+   * accesseur rend ce qu'on vient d'y mettre.
+   */
 }
 
 /**

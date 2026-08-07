@@ -184,27 +184,24 @@ export interface CatalogProvider {
   /** Nom court, pour les journaux de diagnostic et l'attribution. */
   readonly name: string;
 
-  search(query: string, options?: { readonly signal?: AbortSignal }): Promise<readonly SeriesSummary[]>;
+  search(query: string): Promise<readonly SeriesSummary[]>;
 
-  getSeries(providerId: string, options?: { readonly signal?: AbortSignal }): Promise<SeriesDetail>;
+  getSeries(providerId: string): Promise<SeriesDetail>;
 
   getSeason(
     providerId: string,
     seasonNumber: number,
-    options?: { readonly signal?: AbortSignal },
   ): Promise<SeasonDetail>;
 
   /** @param page 1-indexee, comme chez tous les fournisseurs. */
   discover(
     kind: DiscoverKind,
     page?: number,
-    options?: { readonly signal?: AbortSignal },
   ): Promise<readonly SeriesSummary[]>;
 
   /** Les autres series d'une personne creditee a la creation. */
   seriesByCreator(
     personId: string,
-    options?: { readonly signal?: AbortSignal },
   ): Promise<readonly SeriesSummary[]>;
 
   /**
@@ -216,7 +213,6 @@ export interface CatalogProvider {
   watchOptions(
     providerId: string,
     region: string,
-    options?: { readonly signal?: AbortSignal },
   ): Promise<readonly WatchOption[]>;
 
   /**
@@ -228,7 +224,6 @@ export interface CatalogProvider {
    */
   episodeGroups(
     providerId: string,
-    options?: { readonly signal?: AbortSignal },
   ): Promise<readonly EpisodeGrouping[]>;
 }
 

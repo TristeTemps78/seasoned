@@ -413,22 +413,19 @@ export class TmdbProvider implements CatalogProvider {
 
   async search(
     query: string,
-    options: { readonly signal?: AbortSignal } = {},
   ): Promise<readonly SeriesSummary[]> {
     const trimmed = query.trim();
     if (trimmed.length === 0) return [];
-    const raw = await this.#get('/search/tv', { query: trimmed }, options.signal);
+    const raw = await this.#get('/search/tv', { query: trimmed });
     return mapSearchResults(raw);
   }
 
   async getSeries(
     providerId: string,
-    options: { readonly signal?: AbortSignal } = {},
   ): Promise<SeriesDetail> {
     const raw = await this.#get(
       `/tv/${encodeURIComponent(providerId)}`,
       { append_to_response: 'external_ids' },
-      options.signal,
     );
     const mapped = mapSeriesDetail(raw);
     if (mapped === undefined) {
@@ -440,12 +437,10 @@ export class TmdbProvider implements CatalogProvider {
   async getSeason(
     providerId: string,
     seasonNumber: number,
-    options: { readonly signal?: AbortSignal } = {},
   ): Promise<SeasonDetail> {
     const raw = await this.#get(
       `/tv/${encodeURIComponent(providerId)}/season/${seasonNumber}`,
       {},
-      options.signal,
     );
     return mapSeasonDetail(raw, seasonNumber);
   }
@@ -453,12 +448,10 @@ export class TmdbProvider implements CatalogProvider {
   async discover(
     kind: DiscoverKind,
     page = 1,
-    options: { readonly signal?: AbortSignal } = {},
   ): Promise<readonly SeriesSummary[]> {
     const raw = await this.#get(
       DISCOVER_ENDPOINT[kind],
       { page: String(Math.max(1, Math.floor(page))) },
-      options.signal,
     );
     return mapSearchResults(raw);
   }
@@ -466,36 +459,30 @@ export class TmdbProvider implements CatalogProvider {
   async watchOptions(
     providerId: string,
     region: string,
-    options: { readonly signal?: AbortSignal } = {},
   ): Promise<readonly WatchOption[]> {
     const raw = await this.#get(
       `/tv/${encodeURIComponent(providerId)}/watch/providers`,
       {},
-      options.signal,
     );
     return mapWatchOptions(raw, region);
   }
 
   async episodeGroups(
     providerId: string,
-    options: { readonly signal?: AbortSignal } = {},
   ): Promise<readonly EpisodeGrouping[]> {
     const raw = await this.#get(
       `/tv/${encodeURIComponent(providerId)}/episode_groups`,
       {},
-      options.signal,
     );
     return mapEpisodeGroups(raw);
   }
 
   async seriesByCreator(
     personId: string,
-    options: { readonly signal?: AbortSignal } = {},
   ): Promise<readonly SeriesSummary[]> {
     const raw = await this.#get(
       `/person/${encodeURIComponent(personId)}/tv_credits`,
       {},
-      options.signal,
     );
     return mapPersonSeriesCredits(raw);
   }

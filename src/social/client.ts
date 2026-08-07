@@ -374,19 +374,22 @@ export class SocialClient {
   }
 
   /** Retire une critique publiee. Le texte reste dans le journal de son auteur. */
-  async unpublishReview(userId: string, subject: string, target: string): Promise<boolean> {
-    try {
-      const response = await this.#fetch(
-        this.#url(
-          `reviews?user_id=eq.${encodeURIComponent(userId)}&subject=eq.${encodeURIComponent(subject)}&target=eq.${encodeURIComponent(target)}`,
-        ),
-        { method: 'DELETE', headers: this.#headers() },
-      );
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }
+  /**
+   * ⚠️ **Ici vivait `unpublishReview()`, retiree le 2026-08-07.**
+   *
+   * Zero appelant, zero test — le motif exact que ce depot documente comme sa panne la
+   * plus chere : `setVisibility()` et `unfollow()` ont vecu deux lots sans appelant, ce qui
+   * rendait tout le social illisible sans que rien ne le signale.
+   *
+   * 🔴 **Et la garder etait pire que l'oublier.** Elle faisait un `DELETE` dur, alors que
+   * `/regles` promet « on masque, on ne supprime jamais » et que `006_reviews.sql` porte
+   * `hidden_at` precisement pour rendre cette promesse executable. La phrase publique sur
+   * le **retrait d'une critique par son auteur** n'est pas encore ecrite (`TASKS.md` 8.9) :
+   * on avait donc du code qui supprime, et aucune regle publiee qui dise ce qu'il fait.
+   *
+   * *On ecrit le geste le jour ou l'on ecrit ce qu'il promet* — 8.9 tranchera masquer ou
+   * supprimer, et la methode reviendra avec son bouton.
+   */
 
   /**
    * Les critiques publiees sur une serie.

@@ -79,7 +79,6 @@ describe('ExpiringCache', () => {
     expect(cache.get('a')).toBeUndefined();
     expect(cache.get('b')).toBe(2);
     expect(cache.get('c')).toBe(3);
-    expect(cache.stats().evictions).toBe(1);
   });
 
   it('rafraichit la position d une cle reecrite', () => {
@@ -94,25 +93,16 @@ describe('ExpiringCache', () => {
     expect(cache.get('b')).toBeUndefined();
   });
 
-  it('purge les entrees expirees', () => {
-    const clock = manualClock();
-    const cache = new ExpiringCache<number>({ now: clock.now });
-    cache.set('a', 1, 100);
-    cache.set('b', 2, 10_000);
-
-    clock.advance(200);
-    expect(cache.prune()).toBe(1);
-    expect(cache.stats().size).toBe(1);
-  });
-
-  it('compte succes et echecs', () => {
-    const cache = new ExpiringCache<number>();
-    cache.set('a', 1);
-    cache.get('a');
-    cache.get('b');
-
-    expect(cache.stats()).toMatchObject({ hits: 1, misses: 1 });
-  });
+  /**
+   * ⚠️ Ici vivaient « purge les entrees expirees » et « compte succes et echecs ».
+   *
+   * Ils exercaient `prune()` et `stats()`, retires du cache le 2026-08-07 faute
+   * d'appelant en production. Le second est le cas d'ecole du test qui ne prouve rien :
+   * il verifiait qu'un compteur rend ce qu'on vient d'y mettre.
+   *
+   * L'expiration, elle, reste testee — mais **par son effet** : « oublie une valeur
+   * expiree », plus haut, qui est ce que le produit constate reellement.
+   */
 });
 
 describe('memoizeAsync', () => {
