@@ -352,12 +352,17 @@ vérifié sur le résultat, pas sur le commit : les chunks référencés par l'a
 lisible par personne*, la visibilité étant codée en dur à `followers`), puis **8.1** (mesurer
 le journal, ferme la tâche 4.5), puis **8.2**, **8.3**, et enfin **8.4 → 8.9**.
 
-✅ **Le verrou légal est levé en local (2026-08-06)** : `LEGAL_CONTACT_EMAIL` et
-`LEGAL_PUBLISHER_NAME` sont renseignés dans le `.env`, l'adresse passe `looksLikeEmail` (le
-contrôle né de D19), et **`legalIsComplete()` rend `true`** — vérifié en rejouant la fonction,
-pas déduit. `/amis` s'ouvre donc, et publier une critique sera possible.
-- ⏳ **Il reste à les poser chez Vercel** : le `.env` local ne part pas en production, et
-  `legal.ts` refuse délibérément que ces valeurs vivent dans le dépôt (public).
+✅ **Le verrou légal est levé partout — local ET production. C'est fini, ne plus le demander.**
+En local depuis le 2026-08-06 (`.env`, l'adresse passe `looksLikeEmail`, le contrôle né de D19).
+✅ **Chez Vercel : vérifié le 2026-08-07 sur le site servi**, pas sur un tableau de bord ni sur
+parole — `seasoned-two.vercel.app/fr/mentions` affiche « ÉDITEUR — Tristan de Forges » et
+« CONTACT — volteface.app@gmail.com », et `/fr/amis` s'ouvre sur l'invitation à créer un compte
+au lieu de l'avertissement. Or la page **ne peut afficher l'éditeur que si `legalIsComplete()`
+est vrai** : c'est donc la variable elle-même qui est prouvée, par son effet.
+- 🔴 **Tristan a dû le redire plusieurs fois avant que ce fichier soit corrigé**, alors que la
+  vérification tenait en une requête sur la page publique. *Une dette qu'on peut fermer en
+  regardant le résultat ne se redemande pas à l'utilisateur* — c'est la règle du dépôt
+  (« auditer le résultat, jamais l'intention ») appliquée à ses propres notes de session.
 - ⚠️ Écart relevé, non tranché : l'adresse s'écrit `volteface…` alors que le produit s'appelle
   **VOLTFACE**. Peut être voulu (« volte-face »). Posée telle que dictée.
 
