@@ -231,6 +231,42 @@ export function isRewatching(entry: JournalEntry | undefined): boolean {
 }
 
 /**
+ * Poser ou retirer un **drapeau daté** : « je veux la voir », le cœur.
+ *
+ * Ces gestes n'ont pas de valeur, seulement une date — on les a faits ou pas. La mecanique
+ * est donc entierement partagee, y compris la **pierre tombale** : sans elle, retirer un
+ * coeur sur le telephone le verrait revenir a la premiere synchronisation avec l'ordinateur
+ * qui l'ignorait — la suppression annulee par la synchronisation, decision n°3.
+ *
+ * ⚠️ **`setWanted` et `setLiked` etaient identiques au nom du champ pres**, verifie par
+ * normalisation le 2026-08-07 : vingt lignes en double. Le prix n'etait pas la longueur,
+ * c'est qu'un troisieme drapeau en aurait produit une troisieme copie — et que toute
+ * correction du jeu de pierres tombales devait etre faite deux fois, sans que rien ne le
+ * rappelle.
+ */
+function setDatedFlag(
+  journal: Journal,
+  key: JournalKey,
+  field: 'wanted' | 'liked',
+  on: boolean,
+  now: Date,
+): Journal {
+  const entry = journal.entries[key] ?? {};
+  if (!on) {
+    const { [field]: _removed, ...rest } = entry;
+    return withEntry(journal, key, {
+      ...rest,
+      removed: withTombstone(entry, field, now.toISOString()),
+    });
+  }
+  return withEntry(journal, key, {
+    ...entry,
+    [field]: { at: now.toISOString() },
+    ...reviseTombstone(entry, field),
+  });
+}
+
+/**
  * « Je veux la voir. »
  *
  * Le premier geste possible, et le seul qui ne suppose **rien** — ni d'avoir commence,
@@ -243,19 +279,7 @@ export function setWanted(
   wanted: boolean,
   now = new Date(),
 ): Journal {
-  const entry = journal.entries[key] ?? {};
-  if (!wanted) {
-    const { wanted: _removed, ...rest } = entry;
-    return withEntry(journal, key, {
-      ...rest,
-      removed: withTombstone(entry, 'wanted', now.toISOString()),
-    });
-  }
-  return withEntry(journal, key, {
-    ...entry,
-    wanted: { at: now.toISOString() },
-    ...reviseTombstone(entry, 'wanted'),
-  });
+  return setDatedFlag(journal, key, 'wanted', wanted, now);
 }
 
 /**
@@ -352,11 +376,11 @@ export function setEpisodeMark(
 }
 
 /**
- * Poser ou retirer le coeur. Voir {@link JournalLiked}.
+ * Poser ou retirer le coeur. Voir {@link setDatedFlag}, dont c'est le second emploi.
  *
- * Meme mecanique que {@link setWanted}, y compris la pierre tombale : sans elle, retirer un
- * coeur sur le telephone le verrait revenir a la premiere synchronisation avec l'ordinateur
- * qui l'ignorait — la suppression annulee par la synchronisation, decision n°3.
+ * ⚠️ **Le coeur n'est pas la note.** Une note dit la qualite, un coeur dit l'attachement :
+ * on met cinq etoiles a une serie qu'on ne reverra jamais, et on revoit chaque annee une
+ * serie qu'on sait imparfaite.
  */
 export function setLiked(
   journal: Journal,
@@ -364,19 +388,7 @@ export function setLiked(
   liked: boolean,
   now = new Date(),
 ): Journal {
-  const entry = journal.entries[key] ?? {};
-  if (!liked) {
-    const { liked: _removed, ...rest } = entry;
-    return withEntry(journal, key, {
-      ...rest,
-      removed: withTombstone(entry, 'liked', now.toISOString()),
-    });
-  }
-  return withEntry(journal, key, {
-    ...entry,
-    liked: { at: now.toISOString() },
-    ...reviseTombstone(entry, 'liked'),
-  });
+  return setDatedFlag(journal, key, 'liked', liked, now);
 }
 
 /**
