@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import { DICTIONARIES } from '../lib/i18n';
 
@@ -81,5 +80,11 @@ it('le motif attrape bien ce qu il vise', () => {
 it('le dictionnaire lu est bien celui du depot', () => {
   // Verifie que l'import n'est pas un objet vide : un test qui parcourt zero cle passe.
   expect(Object.keys(DICTIONARIES.fr).length).toBeGreaterThan(200);
-  expect(readFileSync('lib/i18n.ts', 'utf8')).toContain("'lives.local'");
+  // ⚠️ On interroge l'OBJET, pas le fichier. La version precedente lisait
+  // `lib/i18n.ts` et y cherchait `'lives.local'` — donc elle encodait « le dictionnaire
+  // est un seul fichier », et elle est tombee le jour ou il en est devenu trois
+  // (2026-08-07). C'etait la bonne alerte au mauvais endroit : ce qui compte est que la
+  // cle existe, pas ou elle est ecrite.
+  expect(DICTIONARIES.fr['lives.local']).toBeDefined();
+  expect(DICTIONARIES.en['lives.local']).toBeDefined();
 });

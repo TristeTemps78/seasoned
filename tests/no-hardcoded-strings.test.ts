@@ -40,6 +40,16 @@ import { ROOT, codeOf, filesUnder, pathOf } from './sources';
  */
 const DICTIONARY = join(ROOT, 'lib', 'i18n.ts');
 
+/**
+ * Le repertoire des dictionnaires, un fichier par langue.
+ *
+ * ⚠️ **Cette garde encodait « le dictionnaire est UN fichier »**, et elle est tombee le jour
+ * ou il en est devenu trois (2026-08-07) — en accusant 274 phrases parfaitement legitimes.
+ * C'etait la bonne alerte : elle a vu le deplacement. Ce qu'elle protege est que les phrases
+ * vivent **au meme endroit**, pas qu'elles vivent dans un fichier donne.
+ */
+const DICTIONARIES_DIR = join(ROOT, 'lib', 'i18n');
+
 /** Caracteres qui n'existent pratiquement qu'en francais dans ce depot. */
 const FRENCH = /[éèêëàâçôöûùîïœ]|«|»/i;
 
@@ -54,7 +64,7 @@ const FRENCH = /[éèêëàâçôöûùîïœ]|«|»/i;
  * touchait de toute facon.
  */
 const FILES = [...filesUnder('app'), ...filesUnder('lib')]
-  .filter((file) => file !== DICTIONARY)
+  .filter((file) => file !== DICTIONARY && !file.startsWith(DICTIONARIES_DIR))
   .map((file) => ({ path: pathOf(file), code: codeOf(file) }));
 
 /** Les lignes fautives d'un fichier, prefixees de son chemin. */
