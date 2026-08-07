@@ -84,7 +84,7 @@ export function JournalSync() {
     <section className="mx-auto w-full max-w-3xl px-4 py-3">
       <div className="card space-y-3 border-(--color-warn)/40">
         <h2 className="card-title">{t('sync.adopt.title')}</h2>
-        <p className="max-w-prose leading-relaxed text-(--color-muted)">
+        <p className="prose-note">
           {tn('sync.adopt.body', ask)}
         </p>
         <div className="flex flex-wrap gap-2">

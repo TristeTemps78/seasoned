@@ -61,7 +61,7 @@ export function AccountPanel() {
 
       <section className="card max-w-md space-y-3 border-(--color-warn)/40">
         <h2 className="card-title">{t('account.delete.title')}</h2>
-        <p className="max-w-prose leading-relaxed text-(--color-muted)">
+        <p className="prose-note">
           {t('account.delete.body')}
         </p>
         {confirming ? (

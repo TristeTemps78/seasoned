@@ -139,7 +139,7 @@ export function Friends() {
     return (
       <section className="card max-w-md space-y-4">
         <h2 className="card-title">{t('friends.claim.title')}</h2>
-        <p className="max-w-prose leading-relaxed text-(--color-muted)">
+        <p className="prose-note">
           {t('friends.claim.body')}
         </p>
         <form onSubmit={onClaim} className="flex flex-wrap items-center gap-2">

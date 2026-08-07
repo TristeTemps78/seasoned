@@ -589,6 +589,51 @@ body::before {
   }
 
   /**
+   * Le paragraphe de commentaire — **cinq fois**, au mot pres.
+   *
+   * Ce que le produit dit *a cote* d'une donnee : l'explication sous un reglage, la phrase
+   * qui accompagne un etat vide, le synopsis. Toujours borne a `max-w-prose`, parce qu'une
+   * phrase sur 1080 px ne se lit pas, et toujours en `--color-muted`, parce que ce n'est
+   * jamais l'information principale.
+   */
+  .prose-note {
+    max-width: 65ch;
+    line-height: 1.625;
+    color: var(--color-muted);
+  }
+
+  /**
+   * La grille d'affiches — **le meme rythme sur les trois ecrans qui en rendent une**.
+   *
+   * L'accueil, la bibliotheque et « aussi par ce createur » rendent le meme objet : une
+   * grille de vignettes 2:3. Les trois ecrivaient la meme chaine de six utilitaires, et
+   * rien ne garantissait qu'ils resteraient d'accord — c'est exactement ainsi que
+   * `LibraryCard` et `SeriesCard` avaient diverge jusqu'a ce que l'un affiche trois
+   * rectangles gris.
+   *
+   * ⚠️ Trois colonnes au telephone, et c'est un choix : deux donneraient des affiches
+   * inutilement grandes pour un objet qu'on parcourt, quatre les rendraient illisibles.
+   */
+  .poster-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 1rem;
+    row-gap: 1.5rem;
+  }
+
+  @media (width >= 40rem) {
+    .poster-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @media (width >= 48rem) {
+    .poster-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  /**
    * L'ecran vide — la premiere impression de tout le monde.
    * =============================================================================
    *

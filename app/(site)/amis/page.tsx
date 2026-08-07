@@ -38,7 +38,7 @@ export function FriendsView({ locale }: { readonly locale: Locale }) {
     <div className="space-y-6">
       <header className="space-y-2">
         <h1 className="page-title">{t(locale, 'friendsPage.title')}</h1>
-        <p className="max-w-prose leading-relaxed text-(--color-muted)">
+        <p className="prose-note">
           {t(locale, 'friendsPage.lede')}
         </p>
       </header>

@@ -112,7 +112,7 @@ function Row({ title, subtitle, series, locale }: {
   return (
     <section className="space-y-4" aria-label={title}>
       <RowHeader title={title} subtitle={subtitle} />
-      <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
+      <ul className="poster-grid">
         {series.map(({ summary, status }) => (
           <li key={summary.providerId}>
             <SeriesCard

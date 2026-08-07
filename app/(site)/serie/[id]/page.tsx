@@ -254,7 +254,7 @@ export async function SeriesView({ id, locale }: {
           ) : null}
 
           {detail.overview !== undefined ? (
-            <p className="max-w-prose leading-relaxed text-(--color-muted)">
+            <p className="prose-note">
               {detail.overview}
             </p>
           ) : null}
@@ -392,7 +392,7 @@ async function AlsoByCreators({ detail, locale }: {
           <p className="text-sm text-(--color-muted)">{names}</p>
         ) : null}
       </div>
-      <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
+      <ul className="poster-grid">
         {others.map((series) => (
           <li key={series.providerId}>
             <SeriesCard series={series} locale={locale} />
