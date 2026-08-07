@@ -12,6 +12,7 @@ import { AuthProvider } from '@/app/auth/AuthProvider';
 import { JournalSync } from '@/app/components/JournalSync';
 import { localeTag, t, type Locale } from '@/lib/i18n';
 import { pathIn } from '@/lib/routes';
+import { instrumentSans, plexMono } from '@/app/fonts';
 
 /**
  * L'enveloppe du site — en-tete, contenu, pied de page — dans une langue.
@@ -43,7 +44,11 @@ export function SiteChrome({ locale, children }: {
   readonly children: React.ReactNode;
 }) {
   return (
-    <html lang={locale}>
+    // Les deux variables de police vivent sur `<html>` : c'est le seul element commun aux
+    // deux dispositions racines, donc le seul endroit ou les poser une fois pour les deux
+    // langues. Les classes de `next/font` n'ont pas d'effet visuel par elles-memes — elles
+    // declarent `--font-voltface-*`, que `@theme` branche sur `font-sans` et `font-mono`.
+    <html lang={locale} className={`${instrumentSans.variable} ${plexMono.variable}`}>
       <body className="min-h-screen flex flex-col">
       <LocaleProvider locale={locale}>
         {/* Même patron que `LocaleProvider` : composant client qui reçoit `children` en

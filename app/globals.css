@@ -14,15 +14,33 @@
  *    fond sombre est spectaculaire et illisible sur un paragraphe. Les accents servent
  *    les **aretes, les etats et les chiffres** ; le corps de texte reste `--color-text`.
  *
- * ## Pourquoi aucune police n'est chargee
+ * ## Les deux polices, et pourquoi il n'y en avait aucune avant le 2026-08-07
  *
- * `font-src 'self'` (`next.config.ts`) interdit Google Fonts, et c'est voulu : une
- * webfont est un aller-retour reseau de plus sur le seul canal qui marche a froid. Le
- * caractere vient donc d'ailleurs — de la **grille monospace tabulaire appliquee aux
- * chiffres**, qui est a la fois le cliche du genre et la bonne decision fonctionnelle :
- * « 537 h », « S5E3 », « 26 mois » sont le differenciateur du produit, et ils s'alignent.
+ * Ce bloc affirmait : « `font-src 'self'` interdit Google Fonts, donc le caractere vient
+ * de la grille monospace ». La premisse est vraie, **la conclusion ne suivait pas** :
+ * `next/font/local` sert depuis `/_next/static/media/`, c'est-a-dire depuis `'self'`. La
+ * CSP interdisait un *fournisseur tiers*, jamais une police. Meme forme d'erreur que
+ * « pas de Mac, donc pas de natif » (A11) — et elle a survecu tout aussi longtemps, parce
+ * qu'elle etait ecrite comme un fait.
+ *
+ * Pire : la « grille monospace tabulaire » censee porter le differenciateur etait la pile
+ * **systeme**, recopiee trois fois dans ce fichier. « 537 h », « S5E3 », « 26 mois » —
+ * c'est-a-dire ce que le produit a d'unique — etaient dessines differemment sur chaque
+ * machine, et personne ne les avait jamais vus deux fois pareil.
+ *
+ * Desormais : **Instrument Sans** pour l'interface, **IBM Plex Mono** pour les chiffres.
+ * Le detail du choix et son cout (43 Ko, sous-ensemble latin) sont dans `app/fonts.ts`.
+ * Les deux familles sont branchees ici, donc **un seul endroit** decide du caractere de
+ * tout le site — y compris des ecrans que personne n'a rouverts.
  */
 @theme {
+  /* `next/font` declare `--font-voltface-*` sur `<html>` ; le repli est deja dans la
+     declaration de chaque police, donc il tient meme si le fichier ne se charge pas. */
+  --font-sans: var(--font-voltface-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, sans-serif;
+  --font-mono: var(--font-voltface-mono), ui-monospace, 'SF Mono', 'Cascadia Mono',
+    'Segoe UI Mono', monospace;
+
   /* Le fond descend vers un noir bleute : c'est lui qui fait exister la lueur.
      Un gris neutre eteindrait les accents au lieu de les porter. */
   --color-ink: #08090e;
@@ -118,14 +136,17 @@ body::before {
  *
  * `tabular-nums` fige la chasse des chiffres : une colonne de durees cesse de danser
  * quand un 1 remplace un 8. C'est la moitie fonctionnelle du choix ; l'autre moitie est
- * que le monospace **est** le vocabulaire visuel du genre, obtenu ici sans charger
- * quoi que ce soit.
+ * que le monospace **est** le vocabulaire visuel du genre.
+ *
+ * ⚠️ **Cette pile etait ecrite ici a la main, et deux fois de plus ailleurs dans ce
+ * fichier** — donc le differenciateur du produit changeait de dessin selon la machine.
+ * Elle passe par `--font-mono`, defini une seule fois dans `@theme`.
  *
  * A poser sur ce qui se lit comme une mesure — durees, positions, compteurs — et non
  * sur les titres de series.
  */
 .numeric {
-  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', monospace;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
@@ -722,7 +743,7 @@ body::before {
 
   .tile-value {
     margin-top: 0.375rem;
-    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', monospace;
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     font-size: 1.125rem;
     line-height: 1.4;
@@ -869,7 +890,7 @@ body::before {
   }
 
   .poster-void > span {
-    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 2rem;
     font-weight: 600;
     letter-spacing: 0.1em;
