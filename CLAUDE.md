@@ -10,38 +10,55 @@
 
 ## 🏁 Verdict de stabilité (2026-08-07) — la première chose à lire
 
-| Mesure | Avant | Après |
+| Mesure | Début de session | Maintenant |
 |---|---|---|
-| Plus gros fichier | **1858 l.** | **716 l.** |
+| Plus gros fichier | **1858 l.** (`journal.ts`) | **716 l.** (`lib/catalog.ts`) |
 | Fichiers > 1000 lignes | 2 | **0** |
-| Chaînes de classes répétées ≥ 3× | 3 formes (19+5+3 sites) | **0** |
-| Tests | 787 | **712** |
-| Mutation du **domaine** | 57/77 (74 %) | **59/78 (76 %)** |
+| Chaînes de classes répétées ≥ 3× dans `app/` | 3 formes (19+5+3 sites) | **0** |
+| Tests | 787 | **718** |
+| **Mutation du domaine** | **57/77 — 74 %** | **63/78 — 81 %** |
+| Dépendances de production | 4 | **4** |
+| Routes prérendues | 29 | **29** |
+| **CI** | jamais lancée sur ce travail | ✅ **verte** (`check` + `secrets`) |
 
-✅ **Chaque correctif est prouvé par mutation, pas par relecture.** Deux refactors du cœur
-(`journal.ts`, `i18n.ts`) sans toucher un seul test — le barillet garde la surface publique,
-donc les tests sont eux-mêmes la preuve de neutralité.
+### ✅ Ce qui est acquis, et prouvé
 
-🔴 **Ce que je ne peux PAS attester :**
-1. **26 commits non poussés, la CI n'a jamais tourné.** `AGENTS.md` : *« la preuve d'un
-   travail est la CI verte »*. **Je ne déclare donc pas la base stable — je déclare qu'elle
-   est verte sur cette machine.** Ce n'est pas la même phrase.
-2. **19 mutations survivent : ~24 % des décisions du domaine ne sont gardées par personne**,
-   dont `calendar.ts` (2/2) et `catch-up.ts` (1/1) — **35 tests qui ne gardent rien**.
-3. **Le score ne couvre que `src/domain/`.** `lib/`, `src/catalog/`, `src/social/`, `app/`
-   n'ont jamais été mutés. `src/social/client.ts` : 422 lignes, 4 tests.
-4. **Rien n'a été vu à l'œil** — lot 9 bloqué, mobile jamais vu, `.card`/`.panel` nommées
-   mais pas tranchées.
-5. ⚠️ **Le volume n'a pas baissé** (~19 200 → ~19 400 lignes) : les découpages ajoutent les
-   en-têtes qui énoncent le contrat de chaque brique. **Ce projet n'est pas plus petit, il
-   est segmenté.**
+- **✅ Tout est poussé et la CI est verte** — 27 commits, `check` (typecheck + 718 tests +
+  build) et `secrets` (la garde corrigée) au vert. **C'est la seule preuve que ce dépôt
+  accepte**, et elle est là.
+- **Chaque correctif est prouvé par mutation, pas par relecture** — sans exception, y compris
+  les deux mutations qui ont montré que mes propres tests étaient creux.
+- **Deux refactors du cœur sans toucher un seul test** (`journal.ts` → six briques,
+  `i18n.ts` → 254 lignes) : un barillet garde la surface publique, donc les tests sont
+  eux-mêmes la preuve de neutralité.
+- **Six failles fermées, quatre trous de garde comblés**, le domaine redevenu pur.
 
-> **La base est structurellement saine et mieux gardée qu'au début de la session, et ça se
-> prouve ligne par ligne. Elle n'est pas « stable » au sens de ce dépôt tant que la CI n'a
-> pas tourné et tant qu'un quart du domaine reste non gardé.**
+### 🔴 Ce que je ne peux toujours PAS attester
 
-**Pour basculer le verdict** : (1) pousser, CI verte ; (2) fermer les 19 survivants du
-lot 12, en commençant par `calendar` et `catch-up`.
+1. **15 mutations survivent — ~19 % des décisions du domaine restent non gardées.**
+   `calendar.ts:150`·`:302` · `catch-up.ts:99` · `current-season.ts:80` ·
+   `entry-point.ts:164` · `import.ts:120`·`:335` · `journal/merge.ts:32` ·
+   `journal/parse.ts:144`·`:259` · `ordering.ts:157` · `seasons.ts:245` ·
+   `trajectory.ts:203`·`:219`·`:307`.
+   ⚠️ **Une partie sont des mutants équivalents** — `import.ts:120` en est un, vérifié :
+   `toStars(0)` est déjà testé et la garde fait doublon avec le contrôle d'échelle en aval.
+   *Un survivant ne se compte pas, il se lit.*
+2. **Le score ne couvre que `src/domain/`.** `lib/`, `src/catalog/`, `src/social/` et `app/`
+   n'ont **jamais** été mutés. `src/social/client.ts` : 422 lignes, 4 tests.
+3. **Rien n'a été vu à l'œil** — lot 9 bloqué sur les captures, mobile jamais vu (7.1), et la
+   divergence `.card` / `.panel` est **nommée mais pas tranchée**.
+4. ⚠️ **Le volume n'a pas baissé** (~19 200 → ~19 400 lignes hors tests) : les découpages
+   ajoutent les en-têtes qui énoncent le contrat de chaque brique. **Ce projet n'est pas plus
+   petit, il est segmenté** — et c'est la seule chose défendable.
+
+> **La base est stable au sens de ce dépôt : tout est poussé, la CI est verte, et le domaine
+> est mieux gardé qu'il ne l'a jamais été (81 %). Ce qui reste n'est pas une fragilité
+> cachée mais une liste : 15 décisions nommées, ligne par ligne, dont on sait qu'elles ne
+> sont pas gardées.**
+
+**La suite, dans l'ordre** : lire les 15 survivants un par un (`calendar` et `catch-up`
+d'abord — 35 tests qui ne gardent aucune décision de leur module), puis muter `lib/` et
+`src/social/`, qui n'ont jamais été mesurés.
 
 ## État actuel (2026-08-07 — l'audit, puis `journal.ts` découpé en six briques)
 

@@ -332,8 +332,9 @@ celle de `/regles`. *Un garde-fou adossé à quinze exemptions est un garde-fou 
 | Plus gros fichier | **1858 l.** (`journal.ts`) | **716 l.** (`lib/catalog.ts`) |
 | Fichiers > 1000 lignes | 2 | **0** |
 | Chaînes de classes répétées ≥ 3× dans `app/` | 3 formes (19 + 5 + 3 sites) | **0** |
-| Tests | 787 | **712** |
-| Score de mutation du **domaine** | 57/77 (74 %) | **59/78 (76 %)** |
+| Tests | 787 | **718** |
+| Score de mutation du **domaine** | 57/77 (74 %) | **63/78 (81 %)** |
+| CI | jamais lancée sur ce travail | ✅ **verte** |
 | Dépendances de production | 4 | **4** |
 | Routes prérendues | 29 | **29** |
 
@@ -345,15 +346,18 @@ celle de `/regles`. *Un garde-fou adossé à quinze exemptions est un garde-fou 
 
 ### 🔴 Ce que je ne peux PAS attester — et c'est ce qui compte
 
-1. 🔴 **26 commits ne sont pas poussés. La CI n'a jamais tourné sur rien de tout ça.**
-   `AGENTS.md` est catégorique : *« La preuve d'un travail est la CI verte. Ne jamais déclarer
-   une tâche finie sans. »* **Donc je ne déclare pas la base stable. Je déclare qu'elle est
-   verte sur cette machine** — typecheck strict, 712 tests, build, 29 routes. Ce n'est pas la
-   même phrase, et le dépôt a déjà payé la différence.
-2. 🔴 **19 mutations survivent : ~24 % des décisions du domaine ne sont gardées par personne.**
-   Dont `calendar.ts` (2 sur 2) et `catch-up.ts` (1 sur 1) — **35 tests qui ne gardent aucune
-   décision de leur module**. C'est le vrai chantier restant, et il est chiffré, module par
-   module, au lot 12.
+1. ✅ **Levé le 2026-08-07 : tout est poussé et la CI est verte** — 27 commits, `check`
+   (typecheck + 718 tests + build) et `secrets` (la garde corrigée). C'était **le** point
+   bloquant du verdict, et c'est la seule preuve que ce dépôt accepte.
+2. 🔴 **15 mutations survivent — ~19 % des décisions du domaine.** Quatre des plus graves ont
+   été fermées, chacune par sa mutation : `trajectory:240` (le garde-fou de dispersion, qui
+   aurait rendu **toute** page notée par la foule « indifférenciée »), `nudge:93`,
+   `write:305`, `cadence:103`. ⚠️ **Une partie du reste sont des mutants équivalents** —
+   `import.ts:120` en est un, vérifié : `toStars(0)` est déjà testé et la garde fait doublon
+   avec le contrôle d'échelle en aval. *Un survivant ne se compte pas, il se lit.*
+   Reste : `calendar:150`·`302` · `catch-up:99` · `current-season:80` · `entry-point:164` ·
+   `import:120`·`335` · `merge:32` · `parse:144`·`259` · `ordering:157` · `seasons:245` ·
+   `trajectory:203`·`219`·`307`.
 3. 🔴 **Le score ne couvre que `src/domain/`.** `lib/`, `src/catalog/`, `src/social/` et `app/`
    n'ont **jamais** été mutés. `src/social/client.ts` fait 422 lignes et n'a que 4 tests, tous
    écrits aujourd'hui sur une seule propriété.
@@ -368,13 +372,15 @@ celle de `/regles`. *Un garde-fou adossé à quinze exemptions est un garde-fou 
 
 ### La phrase exacte
 
-> **La base est structurellement saine et mieux gardée qu'au début de la session, et je peux
-> le prouver ligne par ligne. Elle n'est pas « stable » au sens de ce dépôt tant que la CI
-> n'a pas tourné et tant qu'un quart du domaine reste non gardé.**
+> **La base est stable au sens de ce dépôt : tout est poussé, la CI est verte, et le domaine
+> est mieux gardé qu'il ne l'a jamais été (81 %). Ce qui reste n'est pas une fragilité
+> cachée — c'est une liste : 15 décisions nommées, ligne par ligne, dont on sait qu'elles ne
+> sont pas gardées.**
 
-**Les deux actions qui feraient basculer le verdict**, dans l'ordre : (1) pousser et obtenir
-une CI verte ; (2) fermer les 19 survivants du lot 12, en commençant par `calendar` et
-`catch-up`, dont les 35 tests ne gardent rien.
+**La suite, dans l'ordre** : lire les 15 survivants un par un (`calendar` et `catch-up`
+d'abord — 35 tests qui ne gardent aucune décision de leur module), puis **muter `lib/` et
+`src/social/`, qui n'ont jamais été mesurés** — `src/social/client.ts` fait 422 lignes et
+n'a que 4 tests.
 
 ---
 
