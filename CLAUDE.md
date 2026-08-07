@@ -60,7 +60,57 @@
 d'abord — 35 tests qui ne gardent aucune décision de leur module), puis muter `lib/` et
 `src/social/`, qui n'ont jamais été mesurés.
 
-## État actuel (2026-08-07 — l'audit, puis `journal.ts` découpé en six briques)
+## État actuel (2026-08-07, soir — le site a été VU, et il a enfin un caractère)
+
+- **✅ 721 tests** (+3), typecheck strict vert, build vert. **Quatre commits**, `main` propre.
+  ⏳ **Rien n'est poussé** — décision de Tristan.
+- 🔴 **Le blocage du lot 9 a sauté : le site a été regardé pour la première fois.** Le panneau
+  navigateur de l'application compose les pixels dès qu'il est **affiché à l'écran** — ça ne
+  dépend d'aucun compte, ni de l'extension Chrome (signée sur l'autre compte Claude de
+  Tristan, `list_connected_browsers` → `[]`), ni du connecteur Vercel (`teams: []`).
+  ⚠️ **Vérifié que ce n'est pas une question d'origine** : la capture échoue **identiquement**
+  sur `localhost` et sur la production.
+- ✅ **Ce que voir a donné, et qu'aucune mesure n'avait dit** :
+  1. **La tuile `ENGAGEMENT`** — « ~ 50 heures » en monospace cyan, bordure lumineuse — est le
+     **seul élément du site qui a une identité**, et c'est le différenciateur. Ça marche.
+  2. 🔴 **Un guillemet fermant rejeté seul en début de ligne** sur `/moi`, le premier écran d'un
+     nouvel utilisateur. **Zéro insécable dans tout `fr.ts`**, pour **67 lignes** à risque.
+  3. 🔴 **« Terminée · Terminée. Elle a une fin. »** — la pastille et sa phrase répétaient le
+     même mot, côte à côte, sur la fiche série.
+  4. **L'affiche est une vignette** (~115×175) sur la fiche série, alors que « l'affiche est
+     l'interface » ; la page est un empilement de rectangles identiques ; `/moi` a ~200 px de
+     noir sous sa carte.
+- ⚠️ **Deux fausses alertes évitées par la mesure, dans la même session** : un « trou noir »
+  après un scroll (`scrollY` valait **0** — artefact du panneau) et un « débordement des
+  tuiles » (`innerWidth` 1280 contre une capture cadrée à 800). *Une capture est un
+  instrument, elle ment comme les autres* — c'est la quatrième fois ici.
+- ✅ **9.6 livré — le produit a un caractère** : **Instrument Sans** + **IBM Plex Mono**, 43 Ko,
+  sous-ensemble latin, zéro dépendance, CSP inchangée, OFL incluse. 🔴 **Le commentaire qui
+  justifiait l'absence de police était faux** : `font-src 'self'` interdit un **fournisseur
+  tiers**, pas une police — `next/font/local` sert depuis `'self'`. Même forme que « pas de Mac
+  donc pas de natif » (A11). Et la « grille monospace » censée porter le différenciateur était
+  la **pile système recopiée trois fois** : « 537 h » n'avait jamais eu le même dessin deux
+  fois. **Un seul `--font-mono` désormais.**
+- ✅ **La composition française est réparée à un seul endroit** — `t()`, sur le modèle et jamais
+  sur les valeurs interpolées (un titre TMDB n'a pas à subir une règle française).
+  **Mutation vérifiée** : désactivée, le test tombe **en nommant les 52 chaînes**. Sans lui,
+  718 tests restaient verts.
+- ✅ **La dette légale est fermée, vérifiée, et effacée de partout** (`CLAUDE.md`, `TASKS.md`
+  D19, `_ORCHESTRATION.md`) : `/fr/mentions` en production nomme l'éditeur, donc
+  `legalIsComplete()` est vrai chez Vercel. 🔴 **Tristan a dû le redire plusieurs fois** alors
+  que la vérification tenait en une requête. *Une dette qu'on peut fermer en regardant le
+  résultat ne se redemande pas à l'utilisateur.* Deux autres affirmations périmées tombent
+  avec : la région UE (faite le 2026-08-03) et D18 « jeton TMDB vide ».
+
+### ▶️ Pour reprendre le lot 9
+
+**La police est posée, donc les crans peuvent se décider** — 9.8 (cinq tailles sous le plus
+petit cran) était explicitement « après 9.6 ». Restent, dans l'ordre du plus visible :
+**9.7 / 11.1** (les deux formes de carte : `.card` à 12 px contre 19 copies à 8 px — **vu à
+l'œil**, `/moi` porte les deux côte à côte pour trois surfaces), l'**affiche trop petite** sur
+la fiche série, et le **vide vertical** des écrans peu remplis.
+
+## État précédent (2026-08-07 — l'audit, puis `journal.ts` découpé en six briques)
 
 - **✅ Lots 10 et 11.0 livrés.** **787 → 711 tests**, typecheck strict vert, build vert,
   **29 routes prérendues**. Douze commits, `main` propre, **rien n'est poussé**.
