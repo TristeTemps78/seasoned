@@ -6,17 +6,16 @@
 
 ---
 
-## ▶️ À FAIRE — la seule section à lire pour commencer (2026-08-09)
+## ▶️ À FAIRE — la seule section à lire pour commencer (2026-08-10)
 
 Le reste du fichier est l'**historique** des lots livrés : on l'ouvre pour savoir pourquoi
 une décision a été prise, pas pour choisir quoi faire.
 
 | Ce qui manque | Pourquoi c'est la suite |
 |---|---|
-| **Les followers** | On voit qui l'on suit, jamais qui nous suit. Le pendant manquant du lot 6 |
-| **La face (`face.ts`)** | 9.1 → 9.4. Son prérequis (9.0, la provenance) est posé |
+| **🔒 Lot 10 — en cours** | Les followers, « qui a aimé cette série », Discover trié, **et les trois faces**. Section juste dessous |
 | **8.10 — un dictionnaire par langue** | Chaque visiteur télécharge la langue qu'il ne lit pas. Le problème n'est pas les 9 Ko, c'est la pente à cinq langues |
-| **Le chemin connecté, vu à l'œil** | Listes, critiques, fil : tout est prouvé par RLS contre la vraie base, **rien n'a été vu depuis un compte**. Ce n'est pas la même chose |
+| **Le chemin connecté, vu à l'œil** | Listes, critiques, fil : tout est prouvé par RLS contre la vraie base, **rien n'a été vu depuis un compte**. Ce n'est pas la même chose. Le lot 10 est l'occasion de le fermer |
 
 ✅ **Livré le 2026-08-09** : les listes (8.13), le bilan annuel (8.14), la provenance d'un
 fait (9.0), « découvrir des gens », et le correctif Google (le fournisseur n'était pas
@@ -24,6 +23,50 @@ activé, et le bouton s'affichait quand même en avalant l'erreur).
 
 **Dette mesurée, sans urgence** : 15 mutations survivent dans `src/domain/` (lot 12) ;
 `lib/`, `src/catalog/`, `src/social/` et `app/` n'ont **jamais** été mutés.
+
+---
+
+## 🤝 Lot 10 — le social réciproque, et les trois faces (2026-08-10)
+
+> **🔒 Réservé — @claude-opus — 2026-08-10.**
+>
+> Demande de Tristan : *« avance sur le social, les amis, les équipes, les fonctions de
+> découverte »*. **Les « équipes » sont les trois faces** — confirmé par Tristan, et c'est
+> bien leur origine (§ « Les trois faces », plus bas : *« nées de l'idée "des équipes comme
+> Pokémon GO", retournées : on ne choisit pas sa face, on la découvre »*).
+>
+> Le social livré aux lots 6 et 8 est **asymétrique** : on suit, on n'est jamais suivi. Ce
+> lot referme les quatre manques dans l'ordre où chacun débloque le suivant — la
+> **réciprocité**, la **rencontre** (on croise quelqu'un par une série), la **découverte**,
+> l'**identité**.
+>
+> ### Trois constats vérifiés avant d'écrire une ligne
+>
+> 1. 🔴 **« Qui me suit » ne montrerait aucun nom.** `profiles_select_visible`
+>    (`003_social.sql:198`) passe par `can_see()`, qui exige que **je** suive la personne. Un
+>    abonné en visibilité `followers` — la valeur par défaut (Q1) — m'est donc invisible, et
+>    le bloc afficherait « 3 personnes vous suivent » sans un seul nom.
+>    ✅ **Tranché par Tristan, 2026-08-10 : le nom de qui me suit m'est visible.** On ne suit
+>    personne anonymement, et c'est ce qui rend « suivre en retour » et « signaler » possibles.
+> 2. 🔴 **`parseDecision` (`parse.ts:144`) ne lit pas `origin`**, ni `parseCompletions`. Or
+>    `asImported` (`write.ts:479`) marque **par parcours**, donc il les marque bien. La
+>    provenance d'une décision serait donc écrite puis **effacée à la première sauvegarde** —
+>    le défaut exact que 9.0 documente, resté ouvert sur les deux seuls champs dont la face a
+>    besoin. Latent aujourd'hui (`toJournal` n'écrit ni décision ni completion), **définitif**
+>    le jour où ça change.
+> 3. ✅ **Et c'est ce qui rend la face saine** : les trois faces se calculent sur `decision` et
+>    `completions`, qu'un import **ne peut pas fabriquer**. Le biais de survie que Tristan
+>    avait nommé est fermé par le **choix de la matière**, pas par une heuristique de plus.
+>
+> ⚠️ **Ne pas confondre deux « faces »** : `app/components/Faces.tsx` = les six onglets du
+> cube. La face-identité est `src/domain/face.ts`, et c'est autre chose.
+
+| # | Tâche | Statut | Note |
+|---|---|---|---|
+| 10.1 | **Les followers** | 🔒 in-progress — @claude-opus — 2026-08-10 | `008_followers.sql` : `follows_me()` en `security definer` (même forme que `can_see`, et pour la raison écrite dans `003_social.sql:172` — une sous-requête dans une politique est soumise à RLS) + une **seconde** politique `select` sur `profiles`, jamais une modification de l'existante : Postgres unit les politiques permissives en OU, donc les 11 scénarios déjà vérifiés ne bougent pas |
+| 10.2 | **« Qui a aimé cette série »** | 🔒 in-progress — @claude-opus — 2026-08-10 | Zéro table neuve : `activity_select_visible` filtre déjà. ⚠️ `liked` et `finished` **seulement** — ni l'un ni l'autre ne porte de saison, donc rien à caviarder. C'est la porte que `Discover.tsx:29` désigne lui-même comme « la principale » et qui n'a jamais été ouverte |
+| 10.3 | **Discover trié par ce qui se lit** | 🔒 in-progress — @claude-opus — 2026-08-10 | `discoverable()` rend aujourd'hui les 24 derniers **inscrits**, par date : on ouvre des profils vides |
+| 10.4 | **La face — les « équipes »** (9.1 · 9.2 · 9.4) | 🔒 in-progress — @claude-opus — 2026-08-10 | Précédée du prélude sur `origin` (constat 2). ⛔ **9.3 hors périmètre** : l'animation de bascule exige un champ de journal (la dernière face **annoncée**) que 9.0 n'a pas posé — le format est additif, elle ne coûtera pas plus cher plus tard, et elle n'a aucun sens tant que personne n'a vu la face fixe |
 
 ---
 
