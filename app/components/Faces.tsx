@@ -36,6 +36,7 @@ interface Face {
     | 'face.library'
     | 'face.calendar'
     | 'face.tally'
+    | 'face.lists'
     | 'face.friends';
 }
 
@@ -49,6 +50,10 @@ const FACES: readonly Face[] = [
   // plus cliquer dessus. Elle mene desormais quelque part — un ecran qui dit quoi faire
   // quand on n'a encore suivi personne, ce qui n'est pas la meme chose que « bientot ».
   { path: '/amis', labelKey: 'face.friends' },
+  // La sixieme, pour la meme raison et au meme moment que la cinquieme : les listes ont
+  // desormais un ecran qui fait quelque chose. **Le cube est complet** — les six faces de
+  // `docs/ARCHITECTURE-APP.md` §2 existent enfin toutes.
+  { path: '/listes', labelKey: 'face.lists' },
 ];
 
 export function Faces({ locale }: { readonly locale: Locale }) {

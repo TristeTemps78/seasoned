@@ -166,6 +166,42 @@ export const FR = {
   'report.sent': 'Signalement reçu. Nous répondons sous 72 h, à l’adresse des règles.',
   'report.failed': 'Le signalement n’est pas parti. Réessayez, ou écrivez-nous.',
   'face.friends': 'Mes amis',
+  'face.lists': 'Mes listes',
+
+  // --- Les listes (8.13) ---------------------------------------------------
+  // Le premier objet que ce produit fabrique POUR QUELQU'UN D'AUTRE : une note, une
+  // position, une critique parlent de soi ; une liste se tend.
+  'listsPage.title': 'Mes listes',
+  'listsPage.intro':
+    'Ce que vous rangez pour plus tard, ou pour quelqu’un. Vos listes sont visibles par les mêmes personnes que votre profil.',
+  'lists.new': 'Nouvelle liste',
+  'lists.newAria': 'Créer une liste',
+  'lists.titleLabel': 'Titre de la liste',
+  'lists.titlePlaceholder': 'À faire voir à ma mère',
+  'lists.noteLabel': 'Une phrase, si vous voulez',
+  'lists.notePlaceholder': 'Pourquoi celles-là (facultatif)',
+  'lists.create': 'Créer la liste',
+  'lists.none': 'Vous n’avez pas encore de liste.',
+  'lists.noneOther': 'Aucune liste à lire ici pour l’instant.',
+  'lists.count.one': '{n} série',
+  'lists.count.other': '{n} séries',
+  'lists.open': 'Voir',
+  'lists.close': 'Replier',
+  'lists.empty': 'Cette liste est vide. Ajoutez-y une série depuis sa fiche.',
+  'lists.remove': 'Retirer',
+  'lists.delete': 'Supprimer la liste',
+  'lists.needAccount':
+    'Créez un compte pour tenir des listes — c’est la seule partie du produit qui en demande un, parce qu’une liste que personne ne peut lire n’est pas une liste.',
+  'lists.error.empty': 'Une liste a besoin d’un titre.',
+  'lists.error.too_long': 'Ce titre est trop long.',
+  'lists.error.note_too_long': 'Cette phrase est trop longue.',
+  'lists.error.unusable_title':
+    'Ce titre ne donne aucune adresse lisible. Ajoutez-y au moins deux lettres ou chiffres.',
+  'lists.error.failed': 'La liste n’a pas pu être créée. Réessayez.',
+  'addToList.label': 'Ajouter à une liste',
+  'addToList.added': '{title} ✓',
+  'addToList.none': 'Vous n’avez pas encore de liste.',
+  'addToList.goToLists': 'En créer une',
   'friendsPage.title': 'Mes amis',
   'friendsPage.lede':
     'Ce que vos proches regardent, sans que rien ne vous dévoile la suite de ce que vous n’avez pas vu.',
@@ -380,6 +416,7 @@ export const FR = {
   // qu'elle ou il a écrit », ce qui ne désigne pas une page. Un titre nomme la page, une
   // section nomme son contenu — les confondre marche tant qu'on ne regarde pas l'onglet.
   'profile.title': 'Profil',
+  'profile.lists': 'Ses listes',
   'profile.reviews': 'Ce qu’elle ou il a écrit',
   'profile.none': 'Rien de public à lire ici pour l’instant.',
   'profile.follow': 'Suivre',

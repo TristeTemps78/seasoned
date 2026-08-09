@@ -10,6 +10,7 @@ import { redactReviewsAcross } from '@/src/domain/spoiler';
 import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { SocialClient, type Profile, type PublishedReview } from '@/src/social/client';
+import { Lists } from '@/app/components/Lists';
 
 /**
  * La page publique de quelqu'un — `/u/<nom>`.
@@ -138,6 +139,14 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           </button>
         ) : null}
       </div>
+
+      {/* Les listes avant les critiques : une liste se lit sans rien savoir de la personne,
+          une critique suppose qu'on connaisse la serie. C'est aussi le seul contenu de cette
+          page qui ne puisse rien spoiler. */}
+      <section className="space-y-3" aria-label={t('profile.lists')}>
+        <h2 className="section-heading">{t('profile.lists')}</h2>
+        <Lists ownerId={profile.userId} />
+      </section>
 
       <section className="space-y-3" aria-label={t('profile.reviews')}>
         <h2 className="section-heading">{t('profile.reviews')}</h2>

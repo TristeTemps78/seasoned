@@ -26,6 +26,7 @@ import { WatchOptions } from '@/app/components/WatchOptions';
 import { SeriesOrderings } from '@/app/components/SeriesOrderings';
 import { MyProgress } from '@/app/components/MyProgress';
 import { Reviews } from '@/app/components/Reviews';
+import { AddToList } from '@/app/components/AddToList';
 import { legalIsComplete } from '@/lib/legal';
 
 /**
@@ -340,6 +341,11 @@ export async function SeriesView({ id, locale }: {
           avoir pu dire ou l'on en est, sans quoi le caviardage n'a rien sur quoi se regler.
           Composant client, chargement paresseux, aucune route serveur — la page reste
           `force-static`. */}
+      {/* Ranger une serie est un geste de **consultation**, pas de progression : on le fait
+          avant d'avoir commence, souvent sans avoir d'avis. Il vit donc avec les critiques
+          et non dans la carte de progression. Silencieux sans compte. */}
+      <AddToList seriesId={id} />
+
       <Reviews seriesId={id} />
 
       <SeriesOrderings

@@ -142,6 +142,40 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'report.sent': 'Report received. We answer within 72 h, at the address on the rules page.',
   'report.failed': 'The report did not go through. Try again, or write to us.',
   'face.friends': 'Friends',
+  'face.lists': 'Lists',
+
+  // --- Lists (8.13) --------------------------------------------------------
+  'listsPage.title': 'My lists',
+  'listsPage.intro':
+    'What you set aside for later, or for someone else. Your lists are visible to the same people as your profile.',
+  'lists.new': 'New list',
+  'lists.newAria': 'Create a list',
+  'lists.titleLabel': 'List title',
+  'lists.titlePlaceholder': 'Shows to make my mother watch',
+  'lists.noteLabel': 'A sentence, if you like',
+  'lists.notePlaceholder': 'Why these ones (optional)',
+  'lists.create': 'Create the list',
+  'lists.none': 'You do not have any list yet.',
+  'lists.noneOther': 'Nothing to read here yet.',
+  'lists.count.one': '{n} series',
+  'lists.count.other': '{n} series',
+  'lists.open': 'Open',
+  'lists.close': 'Collapse',
+  'lists.empty': 'This list is empty. Add a series from its page.',
+  'lists.remove': 'Remove',
+  'lists.delete': 'Delete the list',
+  'lists.needAccount':
+    'Create an account to keep lists — it is the only part of the product that needs one, because a list nobody can read is not a list.',
+  'lists.error.empty': 'A list needs a title.',
+  'lists.error.too_long': 'That title is too long.',
+  'lists.error.note_too_long': 'That sentence is too long.',
+  'lists.error.unusable_title':
+    'That title gives no readable address. Add at least two letters or digits.',
+  'lists.error.failed': 'The list could not be created. Try again.',
+  'addToList.label': 'Add to a list',
+  'addToList.added': '{title} ✓',
+  'addToList.none': 'You do not have any list yet.',
+  'addToList.goToLists': 'Create one',
   'friendsPage.title': 'Friends',
   'friendsPage.lede':
     'What the people close to you are watching, without anything revealing what you have not seen yet.',
@@ -332,6 +366,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   // devient un oracle permettant d'enumerer les comptes.
   'profile.unknown': 'That name matches nobody, or this profile is not visible to you.',
   'profile.title': 'Profile',
+  'profile.lists': 'Their lists',
   'profile.reviews': 'What they have written',
   'profile.none': 'Nothing public to read here yet.',
   'profile.follow': 'Follow',
