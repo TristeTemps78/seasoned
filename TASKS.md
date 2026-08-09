@@ -13,11 +13,14 @@ une décision a été prise, pas pour choisir quoi faire.
 
 | Ce qui manque | Pourquoi c'est la suite |
 |---|---|
-| **Le bilan annuel** — « votre 2026 » | La feature la moins chère : aucune table, aucune route, aucune modération. Chaque fait du journal porte déjà sa date. ⚠️ Le filtre est `origin === undefined` **et** l'année, jamais l'année seule — sinon un import affiche dix ans de TV Time en 2026 |
-| **Découvrir des gens** | On ne trouve quelqu'un qu'en connaissant son nom exact. C'est le démarrage à froid du social, et rien ne le traite. ⚠️ Pas un annuaire — parcourir des gens qui ne l'ont pas demandé est l'outil de qui veut en harceler un |
+| **Les followers** | On voit qui l'on suit, jamais qui nous suit. Le pendant manquant du lot 6 |
 | **La face (`face.ts`)** | 9.1 → 9.4. Son prérequis (9.0, la provenance) est posé |
-| **Les followers** | On voit qui l'on suit, jamais qui nous suit |
 | **8.10 — un dictionnaire par langue** | Chaque visiteur télécharge la langue qu'il ne lit pas. Le problème n'est pas les 9 Ko, c'est la pente à cinq langues |
+| **Le chemin connecté, vu à l'œil** | Listes, critiques, fil : tout est prouvé par RLS contre la vraie base, **rien n'a été vu depuis un compte**. Ce n'est pas la même chose |
+
+✅ **Livré le 2026-08-09** : les listes (8.13), le bilan annuel (8.14), la provenance d'un
+fait (9.0), « découvrir des gens », et le correctif Google (le fournisseur n'était pas
+activé, et le bouton s'affichait quand même en avalant l'erreur).
 
 **Dette mesurée, sans urgence** : 15 mutations survivent dans `src/domain/` (lot 12) ;
 `lib/`, `src/catalog/`, `src/social/` et `app/` n'ont **jamais** été mutés.
