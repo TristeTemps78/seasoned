@@ -55,6 +55,35 @@ export interface PublishedReview {
   readonly authorId: string;
 }
 
+/** Une liste, telle qu'une page de profil la montre — sans son contenu. */
+export interface SeriesList {
+  /** L'identifiant d'URL, derive du titre par `src/domain/lists.ts`. */
+  readonly slug: string;
+  readonly title: string;
+  readonly note?: string;
+  /**
+   * Nombre de series dedans.
+   *
+   * ⚠️ Rendu par la base dans la meme requete (`list_items(count)`) et non par un appel par
+   * liste : une page de profil qui montre dix listes en ferait sinon onze.
+   */
+  readonly count: number;
+  readonly updatedAt: string;
+}
+
+/**
+ * Le compte que PostgREST renvoie pour une relation imbriquee.
+ *
+ * Sa forme est `[{ count: 3 }]`, et elle **change selon la version** — un tableau vide
+ * quand rien ne correspond. Parsing tolerant (`AGENTS.md` regle 4) : tout ce qui n'est pas
+ * un nombre lisible vaut zero, plutot qu'un `NaN` qui traverserait jusqu'a l'ecran.
+ */
+function countOf(value: unknown): number {
+  const first = Array.isArray(value) ? value[0] : value;
+  const count = (first as { count?: unknown } | undefined)?.count;
+  return typeof count === 'number' && Number.isFinite(count) ? count : 0;
+}
+
 /** Un fait du fil, tel qu'il revient du serveur — augmente de son auteur. */
 export interface FeedItem extends ActivityItem {
   readonly handle: string;
@@ -454,5 +483,133 @@ export class SocialClient {
         },
       ];
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // Les listes (8.13)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Les listes de quelqu'un, avec le nombre d'elements de chacune.
+   *
+   * ⚠️ **Aucun controle de visibilite ici**, exactement comme {@link reviewsBy} : la
+   * politique `lists_select` porte `can_see(user_id)`, donc la base rend une liste vide a
+   * qui n'a pas le droit de lire. Le refaire ici donnerait deux sources de verite pour une
+   * meme regle, et c'est celle du client qui se perime.
+   *
+   * Le compte vient de PostgREST (`list_items(count)`) plutot que d'un second appel : une
+   * page de profil qui affiche dix listes ferait sinon onze requetes.
+   */
+  async listsBy(userId: string, limit = 50): Promise<readonly SeriesList[]> {
+    const rows = await this.#rows<Record<string, unknown>>(
+      `lists?user_id=eq.${encodeURIComponent(userId)}&select=slug,title,note,updated_at,list_items(count)&order=updated_at.desc&limit=${limit}`,
+    );
+    return rows.flatMap((row) => {
+      const slug = row['slug'];
+      const title = row['title'];
+      if (typeof slug !== 'string' || typeof title !== 'string') return [];
+      const note = row['note'];
+      return [
+        {
+          slug,
+          title,
+          ...(typeof note === 'string' && note.length > 0 ? { note } : {}),
+          count: countOf(row['list_items']),
+          updatedAt: String(row['updated_at'] ?? ''),
+        },
+      ];
+    });
+  }
+
+  /** Les series d'une liste, dans l'ordre ou elles y ont ete posees. */
+  async listItems(userId: string, slug: string, limit = 500): Promise<readonly string[]> {
+    const rows = await this.#rows<Record<string, unknown>>(
+      `list_items?user_id=eq.${encodeURIComponent(userId)}&slug=eq.${encodeURIComponent(slug)}&select=subject&order=added_at.asc&limit=${limit}`,
+    );
+    return rows.flatMap((row) => (typeof row['subject'] === 'string' ? [row['subject']] : []));
+  }
+
+  /**
+   * Cree une liste.
+   *
+   * ⚠️ **Pas de `merge-duplicates` ici, contrairement a `publishReview`** : republier une
+   * critique corrige un texte, mais deux listes de meme nom sont deux listes. Un `upsert`
+   * ecraserait silencieusement la premiere — c'est {@link uniqueSlug} qui evite le conflit,
+   * en amont et visiblement.
+   */
+  async createList(
+    userId: string,
+    list: { readonly slug: string; readonly title: string; readonly note?: string },
+  ): Promise<boolean> {
+    return this.#write('lists', 'POST', {
+      user_id: userId,
+      slug: list.slug,
+      title: list.title,
+      ...(list.note !== undefined ? { note: list.note } : {}),
+    });
+  }
+
+  /**
+   * Supprime une liste, et ses elements avec elle (la cascade est dans le SQL).
+   *
+   * ⚠️ **Une suppression dure, et c'est la difference avec une critique.** `/regles` promet
+   * « on masque, on ne supprime jamais » pour un contenu **retire par la moderation** — pas
+   * pour ce que son auteur defait lui-meme. `hidden_at` reste la colonne de la moderation ;
+   * personne d'autre que l'auteur ne peut passer par ici (`lists_delete`).
+   */
+  async deleteList(userId: string, slug: string): Promise<boolean> {
+    return this.#write(
+      `lists?user_id=eq.${encodeURIComponent(userId)}&slug=eq.${encodeURIComponent(slug)}`,
+      'DELETE',
+    );
+  }
+
+  /**
+   * Ajoute une serie a une liste.
+   *
+   * `merge-duplicates` ici, et pour la raison inverse de {@link createList} : ajouter deux
+   * fois la meme serie est un geste **repete**, pas un second element. Sans lui, le second
+   * clic remonterait une erreur de cle dupliquee pour un geste sans consequence.
+   */
+  async addToList(userId: string, slug: string, subject: string): Promise<boolean> {
+    return this.#write(
+      'list_items',
+      'POST',
+      { user_id: userId, slug, subject },
+      'resolution=merge-duplicates,return=minimal',
+    );
+  }
+
+  /** Retire une serie d'une liste. */
+  async removeFromList(userId: string, slug: string, subject: string): Promise<boolean> {
+    return this.#write(
+      `list_items?user_id=eq.${encodeURIComponent(userId)}&slug=eq.${encodeURIComponent(slug)}&subject=eq.${encodeURIComponent(subject)}`,
+      'DELETE',
+    );
+  }
+
+  /**
+   * Une ecriture qui ne leve jamais — le pendant de {@link #rows} pour ce qui modifie.
+   *
+   * Les cinq methodes ci-dessus repetaient sinon le meme `try/catch` autour du meme `fetch`,
+   * ce qui est exactement la forme qui a laisse `client.ts` promettre de ne jamais lever
+   * **et lever** : une copie corrigee et quatre oubliees.
+   */
+  async #write(
+    path: string,
+    method: 'POST' | 'DELETE',
+    body?: Record<string, unknown>,
+    prefer = 'return=minimal',
+  ): Promise<boolean> {
+    try {
+      const response = await this.#fetch(this.#url(path), {
+        method,
+        headers: this.#headers({ Prefer: prefer }),
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 }
