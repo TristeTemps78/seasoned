@@ -60,7 +60,65 @@
 d'abord — 35 tests qui ne gardent aucune décision de leur module), puis muter `lib/` et
 `src/social/`, qui n'ont jamais été mesurés.
 
-## État actuel (2026-08-07, soir — le social a enfin une destination)
+## État actuel (2026-08-09 — un fait repris d'ailleurs ne se fait plus passer pour du vécu)
+
+- **✅ 734 tests** (+10), typecheck strict vert, build vert, `main` propre. **Deux commits, non
+  poussés** — un push est un déploiement public, décision de Tristan.
+- ✅ **9.0 livré — la provenance d'un fait.** `origin?: 'import'` sur les trois faits qu'un
+  import écrit (`position`, `wanted`, `seasonRatings`). **L'absence est la valeur normale**,
+  donc aucun journal existant n'est touché — le format est additif par contrat depuis 8.0.
+  - 📏 **Le motif est mesuré, pas intuité** : `importForeign` date **chaque** fait de `now`.
+    Reprendre dix ans de TV Time dépose donc deux cents séries portant **toutes la date du
+    jour**. Une fenêtre glissante (9.1, la face) n'y verrait qu'un clic ; un bilan annuel
+    (8.14) y verrait dix ans en 2026. `src/` ne contient **aucun** `getFullYear` : le filtre
+    n'existe pas encore, donc la marque arrive à temps — **de justesse**.
+  - 🔴 **Le défaut le plus discret n'était pas celui-là.** `parseEntry` reconstruit un objet
+    neuf champ par champ, et le pass-through de la décision n°4 ne protège que les champs
+    **d'entrée** inconnus, **pas ceux nichés dans un champ connu**. Sans lecture au parse, la
+    marque était écrite puis **effacée à la première sauvegarde** — et les huit autres tests
+    restaient verts. *Quatrième occurrence de « un champ qui existe n'est pas un champ qui est
+    écrit ».* **Mutation vérifiée : un seul test tombe, et c'est celui qui nomme le défaut.**
+  - **Trois décisions** : (a) la marque est sur le **fait**, pas sur la série — importer puis
+    avancer laisse une position **vécue** et un « je veux la voir » **repris**, une marque
+    d'entrée mentirait sur l'un des deux ; (b) **notre propre export n'est PAS marqué**, il
+    porte les vraies dates — les déclarer importées effacerait du bilan des années réellement
+    vécues ; (c) on ne **devine** pas la vraie date (règle 8), on signale qu'on l'ignore.
+  - `asImported` marque par **parcours** et non par liste de champs : `lastTouch` en oubliait
+    deux (tout le lot 8). Le parcours se trompe vers l'**exclusion**, comme `isSeriesKey` —
+    *omettre n'est qu'un oubli, inclure corrompt*. **Sept mutations vérifiées en tout.**
+- ✅ **Et il a un lecteur, sans quoi c'était la septième livraison mort-née de ce dépôt**
+  (`ordering.ts`, `episodeMinutes`, `unfollow`, `setVisibility`… — la tâche 8.11 existe pour
+  ça). `/bilan` dit « **dont 30 heures d'historique repris d'un import** ». Seule la part
+  déduite du **pointeur** est déclarée, jamais les passages achevés — aucun import n'écrit de
+  `completions`. Deux mutations en sens inverse.
+- 🔴 **L'écran a montré deux défauts que 734 tests ne voyaient pas** :
+  1. La ligne était sous « Surtout », donc elle suivait « Dexter : 30 heures » et se lisait
+     comme portant sur **Dexter** — la seule des deux séries que l'import n'avait **pas**
+     écrite. *Un qualificatif du total se place avec le total.*
+  2. « Dont 30 heures **repris** » : accord faux, et surtout un accord qui **dépendait de la
+     valeur interpolée** — `formatCommitment` rend « 30 heures » (féminin pluriel) comme
+     « 2 jours et 12 h » (masculin). Le participe s'accorde désormais avec « historique » et
+     « temps », **écrits dans le modèle**. Même règle que la ponctuation française de 9.6 :
+     *on compose sur le modèle, jamais sur la valeur.*
+- ⚠️ **Ce que le chiffre ne peut pas savoir, et c'est écrit dans le type** : reprendre le
+  pointeur à la main **efface** la provenance du fait, donc une série importée puis reprise
+  recompte son arrière-catalogue comme vécu. On ne peut pas faire mieux sans inventer.
+- 📏 **Mesuré au build ce jour : 32 routes `○` et 2 `ƒ`** (`/recherche` et `/fr/recherche`,
+  dynamiques de longue date car elles lisent `searchParams`). ⚠️ **Le « 29 routes prérendues »
+  du verdict de stabilité ci-dessus est périmé** — il date d'avant 8.12, qui a ajouté
+  `/u/[handle]` dans les deux langues. Rien de ce lot ne touche au routage.
+
+### ▶️ Pour reprendre
+
+1. **9.1 — `face.ts`**, désormais débloquée : son prérequis était 9.0. Ne compter que les
+   faits **vécus** (`origin === undefined`), fenêtre glissante sur les **10 dernières**.
+2. **8.14 — le bilan annuel**, la moins chère des trois features restantes, et son piège est
+   maintenant nommé : le filtre est `origin === undefined` **et** l'année, **jamais l'année
+   seule** — sinon « votre 2026 » affiche dix ans de TV Time repris le matin même.
+3. Le reste est inchangé : les **15 survivants** du lot 12, `lib/` et `src/social/` **jamais
+   mutés**, et **8.13** (les listes) qui attend toujours 8.1.
+
+## État précédent (2026-08-07, soir — le social a enfin une destination)
 
 - **✅ 724 tests**, typecheck strict vert, build vert, `main` propre. **Tout est poussé, CI verte.**
 - ✅ **8.12 livré — la page de profil public.** Le lot 6 avait livré « suivre », le lot 8
