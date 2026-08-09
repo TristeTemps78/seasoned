@@ -6,6 +6,24 @@
 
 ---
 
+## ▶️ À FAIRE — la seule section à lire pour commencer (2026-08-09)
+
+Le reste du fichier est l'**historique** des lots livrés : on l'ouvre pour savoir pourquoi
+une décision a été prise, pas pour choisir quoi faire.
+
+| Ce qui manque | Pourquoi c'est la suite |
+|---|---|
+| **Le bilan annuel** — « votre 2026 » | La feature la moins chère : aucune table, aucune route, aucune modération. Chaque fait du journal porte déjà sa date. ⚠️ Le filtre est `origin === undefined` **et** l'année, jamais l'année seule — sinon un import affiche dix ans de TV Time en 2026 |
+| **Découvrir des gens** | On ne trouve quelqu'un qu'en connaissant son nom exact. C'est le démarrage à froid du social, et rien ne le traite. ⚠️ Pas un annuaire — parcourir des gens qui ne l'ont pas demandé est l'outil de qui veut en harceler un |
+| **La face (`face.ts`)** | 9.1 → 9.4. Son prérequis (9.0, la provenance) est posé |
+| **Les followers** | On voit qui l'on suit, jamais qui nous suit |
+| **8.10 — un dictionnaire par langue** | Chaque visiteur télécharge la langue qu'il ne lit pas. Le problème n'est pas les 9 Ko, c'est la pente à cinq langues |
+
+**Dette mesurée, sans urgence** : 15 mutations survivent dans `src/domain/` (lot 12) ;
+`lib/`, `src/catalog/`, `src/social/` et `app/` n'ont **jamais** été mutés.
+
+---
+
 ## Arbitrages
 
 | # | Tâche | Statut | Note |
@@ -743,7 +761,7 @@ Chrome est signée sur l'**autre** compte Claude de Tristan (`list_connected_bro
 | # | Tâche | Statut | Note |
 |---|---|---|---|
 | 8.12 | **La page de profil public `/u/[handle]`** | ✅ **2026-08-07 — @claude-opus.** `/u/<nom>` et `/fr/u/<nom>`, **toutes deux `○ Static`** (vérifié au build). 🔴 **Mon intuition « pas de route dynamique » était fausse** : `/serie/[id]` en est une, avec le motif documenté (`force-static` sans `generateStaticParams` → rendue à la première demande puis servie du cache). Donc l'URL reste propre et partageable. 🔴 **Et la décision de spoiler était au mauvais endroit** : je l'avais mise dans le composant, c'est-à-dire dans la couche de rendu — ce que la règle 7 interdit, et je citais la règle en l'enfreignant. D'où `redactReviewsAcross` **dans le domaine**, avec sa loi et son ancrage. **Mutation vérifiée** : une position unique fait tomber le test qui nomme le défaut (la saison 6 d'une série jamais commencée s'affichait parce que le lecteur en est à la saison 6 d'une **autre**). ⚠️ **Une seule phrase** pour « inconnu » et « invisible » — les distinguer ferait un **oracle** d'énumération des comptes. Le nom est un lien depuis `/amis`, sans quoi la page serait injoignable. **724 tests.** _Voie d'origine :_ | On suit un `@handle` sans pouvoir ouvrir sa page : c'est le maillon qui donne son sens au lot 8, puisque les critiques ne se lisent aujourd'hui que sur la fiche série. 🔴 **Ce qui semblait l'interdire** : le dépôt a **zéro route dynamique** et y tient (une invocation par visite, donc un coût par utilisateur — la cause de mort de TV Time). Or on ne connaît pas les handles au build. ✅ **La réponse existe déjà dans le dépôt** : `/compte/retour` est `force-static` et fait tout son travail **côté client**. Même motif ici — la coquille est prérendue et vide, le `@handle` est lu depuis `window.location`, et `SocialClient.findByHandle` + `reviewsFor` remplissent la page. Zéro invocation, zéro route serveur, et RLS décide déjà qui voit quoi. ⚠️ **Non indexable, et c'est voulu** : une page vide au build ne se référence pas — ce qui est cohérent avec Q1 (`followers` par défaut, l'indexation reste fermée). ⚠️ Démarrage à froid : *mieux vaut se taire que compter zéro* — pas de « 0 vu · 0 critique » |
-| 8.13 | **Les listes personnalisées** | 🟢 libre | 2ᵉ feature de Letterboxd. ⛔ **Prérequis réel** : c'est la première donnée de **taille non bornée** du produit, et la tâche 8.1 (mesurer le journal) existe pour ça — un `UPSERT` de `jsonb` réécrit tout le document à chaque geste |
+| 8.13 | **Les listes personnalisées** | ✅ **2026-08-09 — @claude-opus** | `007_lists.sql` (deux tables, **appliqué à la vraie base**), `src/domain/lists.ts`, 5 méthodes sur `SocialClient`, `/listes` ×2 prérendues, les listes sur `/u/<nom>`, et « Ajouter à une liste » sur la fiche série. **Le prérequis 8.1 tombe** : il ne valait que pour un `jsonb` dans le journal — deux tables n'ont pas de taille non bornée. 🔴 Les éléments **ne refont pas** le calcul de visibilité, ils le demandent à `lists` par un `exists`. **11 scénarios RLS rejoués contre la vraie base**, écritures réellement tentées. ⚠️ Le titre d'une série n'est pas stocké (règle 1) : il vient de l'instantané du lecteur, sinon repli + lien |
 | 8.14 | **Le bilan annuel** | 🟢 libre — **9.0 est son prérequis, et il est posé** | `tally.ts` et `taste.ts` ne contiennent **aucun** découpage temporel (vérifié : zéro occurrence de `getFullYear`). Or chaque fait du journal porte déjà sa date — la matière est là, il manque le filtre. C'est la feature la moins chère des trois, et la seule qui ne demande ni table, ni route, ni modération. ⚠️ **Le piège, nommé le 2026-08-09** : un fait importé porte la date de **l'import**, pas celle du visionnage. Sans le filtre de provenance livré en 9.0, « votre 2026 » afficherait dix ans de TV Time repris le matin même. Le filtre à écrire est donc `origin === undefined` **et** l'année, jamais l'année seule |
 
 ### 🔎 Audit de solidité (2026-08-06) — ce que la mesure a dit
