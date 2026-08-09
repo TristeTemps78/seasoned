@@ -42,6 +42,7 @@ export function Friends() {
   const [handle, setHandle] = useState('');
   const [claimError, setClaimError] = useState<'taken' | 'shape' | 'failed' | undefined>(undefined);
   const [friends, setFriends] = useState<readonly Profile[]>([]);
+  const [fans, setFans] = useState<readonly Profile[]>([]);
   const [feed, setFeed] = useState<readonly FeedItem[]>([]);
   const [lookup, setLookup] = useState('');
   const [notFound, setNotFound] = useState(false);
@@ -87,7 +88,14 @@ export function Friends() {
         ),
       );
 
-      setFriends(await social.following(id));
+      // ⚠️ Les deux ensemble, et jamais l'un sans l'autre : « suivre en retour » se decide en
+      // comparant les deux listes, donc une seule des deux rendrait le bouton faux.
+      const [followed, following] = await Promise.all([
+        social.following(id),
+        social.followers(id),
+      ]);
+      setFriends(followed);
+      setFans(following);
       setFeed(await social.feed());
     },
     [journal],
@@ -227,6 +235,61 @@ export function Friends() {
                   </button>
                 </li>
               ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {/* 🔴 Le pendant manquant du lot 6 : on voyait qui l'on suit, jamais qui nous suit.
+            ⚠️ Ce bloc **depend d'une politique**, pas seulement de ce code : sans
+            `008_followers.sql`, `followers()` rend des identifiants dont aucun profil n'est
+            lisible, donc une liste vide — et rien ne le signalerait.
+            Muet quand il n'y a personne : *mieux vaut se taire que compter zero*. Et aucun
+            compteur nulle part, parce qu'il ne collerait pas aux noms (un compte sans handle
+            suit sans rien avoir a montrer). */}
+        {fans.length > 0 ? (
+          <div className="space-y-1 text-sm">
+            <p className="text-(--color-muted)">{t('friends.followersLabel')}</p>
+            <ul className="flex flex-wrap gap-3">
+              {fans.map((fan) => {
+                const mutual = friends.some((friend) => friend.userId === fan.userId);
+                return (
+                  <li key={fan.userId} className="flex items-center gap-1">
+                    <Link
+                      href={pathIn(`/u/${fan.handle}`, locale)}
+                      className="hover:text-(--color-volt)"
+                    >
+                      @{fan.handle}
+                    </Link>
+                    {/* Le bouton ne s'affiche que quand il a un sens : « suivre en retour »
+                        quelqu'un qu'on suit deja ne veut rien dire, et un bouton sans effet
+                        apprend a ne plus lire les boutons. */}
+                    {mutual ? null : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (client === undefined || userId === undefined) return;
+                          void client.follow(userId, fan.userId).then(() => {
+                            void refresh(client, userId);
+                          });
+                        }}
+                        className="text-xs text-(--color-muted) underline decoration-dotted underline-offset-2 hover:text-(--color-text)"
+                      >
+                        {t('friends.followBack')}
+                      </button>
+                    )}
+                    {/* ⚠️ Ici et pas seulement dans le fil : quelqu'un qui vous suit sans rien
+                        publier n'apparait sur **aucune** autre surface. Sans ce bouton, le
+                        seul abonne qu'on ne peut pas signaler serait le plus silencieux. */}
+                    <ReportButton
+                      onReport={(ground) =>
+                        client === undefined || userId === undefined
+                          ? Promise.resolve(false)
+                          : client.report(userId, fan.userId, ground)
+                      }
+                    />
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : null}

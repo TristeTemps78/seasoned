@@ -270,6 +270,45 @@ if (grantees.length > 0) {
 ok('delete_me : security definer, search_path fixe, reservee aux comptes connectes');
 
 // ---------------------------------------------------------------------------
+// 3bis. Toutes les autres fonctions `security definer`, pas seulement celle-la
+// ---------------------------------------------------------------------------
+//
+// 🔴 **Le bloc ci-dessus nomme UNE fonction, et le schema en compte six.** `can_see`,
+// `is_followable`, `follows_me`, `has_handle`, `refuse_reserved_handle` et `retire_handle`
+// sont toutes `security definer` — c'est-a-dire qu'elles s'executent avec les droits de leur
+// proprietaire — et le defaut que `002_account.sql` documente les vise **exactement de la
+// meme facon** : sans `search_path` fixe, un objet homonyme place dans un schema que
+// l'appelant controle est resolu a la place du bon.
+//
+// Le controle etait donc juste et **trop etroit** : ecrit le jour ou il n'existait qu'une
+// fonction, jamais elargi quand le lot 6 en a ajoute trois. C'est le motif que ce depot
+// documente sous « une liste ecrite a la main se perime au premier ajout, en silence » —
+// d'ou une **question** posee au catalogue plutot qu'une liste de noms.
+
+const definers = await api('POST', `/v1/projects/${ref}/database/query`, {
+  query: `select p.proname, p.proconfig
+          from pg_proc p
+          join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname = 'public' and p.prosecdef = true;`,
+  read_only: true,
+});
+
+if (!definers.ok) {
+  fail(`Audit des fonctions security definer impossible : HTTP ${definers.status} — ${definers.message}`);
+}
+
+const loose = (definers.payload ?? []).filter(
+  (row) => !Array.isArray(row.proconfig) || !row.proconfig.some((set) => /^search_path=/.test(set)),
+);
+if (loose.length > 0) {
+  fail(
+    `Fonctions \`security definer\` sans search_path fixe : ${loose.map((row) => row.proname).join(', ')}`,
+    'Ajouter `set search_path = \'\'` a chacune dans supabase/*.sql, puis relancer.',
+  );
+}
+ok('Fonctions security definer', `${(definers.payload ?? []).length}, toutes a search_path fixe`);
+
+// ---------------------------------------------------------------------------
 // 4. Les URLs de retour — sans elles, le lien magique revient sur une porte fermee
 // ---------------------------------------------------------------------------
 //

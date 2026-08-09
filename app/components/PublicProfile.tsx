@@ -59,6 +59,16 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   const [reviews, setReviews] = useState<readonly PublishedReview[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [followsMe, setFollowsMe] = useState(false);
+  /**
+   * Ai-je moi-meme reclame un nom ? **Trois etats, pas deux.**
+   *
+   * `undefined` = on ne sait pas encore, et c'est la meme doctrine que le reste de ce
+   * fichier : le silence tant qu'on ne sait pas. Avec un booleen, la zone d'action
+   * afficherait « prenez un nom » pendant le chargement puis basculerait sur « Suivre » —
+   * c'est-a-dire reprocherait a quelqu'un un manque qu'il n'a pas.
+   */
+  const [named, setNamed] = useState<boolean | undefined>(undefined);
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
 
   const accessToken = account?.accessToken;
@@ -80,9 +90,18 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     setLoaded(true);
     if (found === undefined) return;
     setReviews(await social.reviewsBy(found.userId));
-    if (userId !== undefined) {
-      setFollowing((await social.following(userId)).some((p) => p.userId === found.userId));
-    }
+    if (userId === undefined) return;
+    // Les trois d'un coup : elles decident **ensemble** de ce que la zone d'action affiche —
+    // le bouton, la mention « vous suit », ou l'invitation a prendre un nom. Les enchainer
+    // ferait clignoter la reponse trois fois.
+    const [mine, theirs, me] = await Promise.all([
+      social.following(userId),
+      social.followers(userId),
+      social.myProfile(userId),
+    ]);
+    setFollowing(mine.some((p) => p.userId === found.userId));
+    setFollowsMe(theirs.some((p) => p.userId === found.userId));
+    setNamed(me !== undefined);
   }, [handle, accessToken, userId]);
 
   useEffect(() => {
@@ -133,11 +152,29 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
         <h1 className="page-title">@{profile.handle}</h1>
         {isSelf ? (
           <span className="text-sm text-(--color-muted)">{t('profile.self')}</span>
-        ) : account !== undefined ? (
-          <button type="button" className="btn" aria-pressed={following} onClick={toggleFollow}>
-            {following ? t('profile.unfollow') : t('profile.follow')}
-          </button>
-        ) : null}
+        ) : account === undefined || named === undefined ? null : (
+          <div className="flex flex-wrap items-center gap-3">
+            {/* La reciprocite se dit ici et nulle part ailleurs : c'est la seule page ou l'on
+                regarde **une** personne. Sur `/amis` on lit une liste, et une mention par
+                ligne y serait du bruit. */}
+            {followsMe ? (
+              <span className="text-sm text-(--color-muted)">{t('profile.followsYou')}</span>
+            ) : null}
+            {/* 🔴 Le bouton « Suivre » s'affichait a tout compte connecte, y compris a qui
+                n'a pas reclame de nom — et `008_followers.sql` refuse desormais ce suivi.
+                *Un bouton qui ne peut pas marcher ne se degrade pas, il ne s'affiche pas*
+                (2026-08-09) : on montre a la place le geste qui debloque. */}
+            {named ? (
+              <button type="button" className="btn" aria-pressed={following} onClick={toggleFollow}>
+                {following ? t('profile.unfollow') : t('profile.follow')}
+              </button>
+            ) : (
+              <Link className="btn" href={pathIn('/amis', locale)}>
+                {t('profile.needName')}
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Les listes avant les critiques : une liste se lit sans rien savoir de la personne,

@@ -83,3 +83,71 @@ describe('SocialClient ne leve jamais', () => {
     await expect(client.feed()).resolves.toHaveLength(1);
   });
 });
+
+/**
+ * Les abonnes — le pendant manquant du lot 6.
+ *
+ * ## Pourquoi les URL sont regardees, et pas seulement le resultat
+ *
+ * `following` et `followers` sont **le meme code lu dans l'autre sens** : une colonne pour
+ * filtrer, l'autre pour collecter. Un copier-coller qui oublie d'inverter les deux rend une
+ * liste parfaitement bien formee — **celle des gens que je suis**, affichee sous le titre
+ * « vous suivent ». Aucun test de forme ne verrait la difference, et a l'ecran ce serait
+ * juste faux pour tout le monde sauf les abonnements reciproques.
+ *
+ * C'est le meme raisonnement que la mutation de signe du `VALARM` (lot 4.3) : ce qui doit
+ * etre teste n'est pas que la fonction rend quelque chose, c'est **qu'elle demande la bonne
+ * chose**.
+ */
+describe('SocialClient.followers', () => {
+  /** Un `fetch` qui note ce qu'on lui demande et rend une reponse par etape. */
+  function recording(bodies: readonly unknown[]) {
+    const asked: string[] = [];
+    let step = 0;
+    const fetchImpl = (async (url: string) => {
+      asked.push(String(url));
+      const body = bodies[Math.min(step++, bodies.length - 1)];
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+    return { asked, client: new SocialClient({ ...OPTIONS, fetchImpl }) };
+  }
+
+  it('interroge `followee_id`, la ou `following` interroge `follower_id`', async () => {
+    const mine = recording([[{ follower_id: 'u2' }], [{ user_id: 'u2', handle: 'marie' }]]);
+    await mine.client.followers('moi');
+
+    expect(mine.asked[0]).toContain('followee_id=eq.moi');
+    expect(mine.asked[0]).toContain('select=follower_id');
+
+    // L'ancrage par le miroir : sans lui, les deux assertions ci-dessus passeraient encore
+    // avec une methode qui interroge toujours la meme colonne dans les deux sens.
+    const theirs = recording([[{ followee_id: 'u2' }], [{ user_id: 'u2', handle: 'marie' }]]);
+    await theirs.client.following('moi');
+
+    expect(theirs.asked[0]).toContain('follower_id=eq.moi');
+    expect(theirs.asked[0]).toContain('select=followee_id');
+  });
+
+  it('rend les profils des abonnes, pas leurs identifiants', async () => {
+    const { client } = recording([
+      [{ follower_id: 'u2' }],
+      [{ user_id: 'u2', handle: 'marie', visibility: 'followers' }],
+    ]);
+
+    await expect(client.followers('moi')).resolves.toEqual([
+      { userId: 'u2', handle: 'marie', visibility: 'followers' },
+    ]);
+  });
+
+  it('personne ne me suit : aucun second appel', async () => {
+    // ⚠️ Sans le garde, la seconde requete part avec `in.()` — une demande vide envoyee au
+    // reseau, sur une page que tout le monde ouvre.
+    const { asked, client } = recording([[]]);
+
+    await expect(client.followers('moi')).resolves.toEqual([]);
+    expect(asked).toHaveLength(1);
+  });
+});

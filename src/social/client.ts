@@ -271,12 +271,46 @@ export class SocialClient {
     const rows = await this.#rows<{ followee_id: string }>(
       `follows?follower_id=eq.${encodeURIComponent(followerId)}&select=followee_id`,
     );
-    if (rows.length === 0) return [];
-    const ids = rows.map((row) => row.followee_id);
-    const profiles = await this.#rows<Record<string, unknown>>(
+    return this.#profilesOf(rows.map((row) => row.followee_id));
+  }
+
+  /**
+   * Les profils qui me suivent — le pendant manquant du lot 6.
+   *
+   * ⚠️ **Sans `008_followers.sql`, cette methode rend une liste vide et personne ne le
+   * signale.** `follows_select_mine` rend bien la ligne d'abonnement (`auth.uid() =
+   * followee_id`), donc on **sait** que quelqu'un suit ; mais `profiles_select_visible`
+   * passe par `can_see()`, qui exige de suivre en retour. Un abonne en visibilite
+   * `followers` — la valeur par defaut — n'aurait donc **aucun nom** a afficher.
+   *
+   * ⚠️ La liste rendue peut etre **plus courte** que le nombre d'abonnements, et c'est
+   * voulu : un compte sans handle n'a pas de ligne dans `profiles`, donc rien a montrer.
+   * `008` refuse desormais qu'il suive — mais les lignes anterieures, elles, restent.
+   * C'est aussi pourquoi rien n'affiche de **compteur** : il ne collerait pas aux noms.
+   */
+  async followers(followeeId: string): Promise<readonly Profile[]> {
+    const rows = await this.#rows<{ follower_id: string }>(
+      `follows?followee_id=eq.${encodeURIComponent(followeeId)}&select=follower_id`,
+    );
+    return this.#profilesOf(rows.map((row) => row.follower_id));
+  }
+
+  /**
+   * Les profils d'une liste d'identifiants, en un appel.
+   *
+   * Le corps commun de {@link following} et {@link followers}, qui ne different que par la
+   * colonne lue. Meme motif que {@link #reviews}, et pour la meme raison : deux copies du
+   * meme parsing finissent par se repondre differemment le jour ou l'une est corrigee.
+   *
+   * L'appel est evite quand il n'y a rien a demander — `in.()` est une requete vide envoyee
+   * pour rien.
+   */
+  async #profilesOf(ids: readonly string[]): Promise<readonly Profile[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.#rows<Record<string, unknown>>(
       `profiles?user_id=in.(${ids.map(encodeURIComponent).join(',')})&select=*`,
     );
-    return profiles.map(rowToProfile);
+    return rows.map(rowToProfile);
   }
 
   /**
