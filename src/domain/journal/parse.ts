@@ -19,6 +19,7 @@ import {
   journalKey,
   parseJournalKey,
   TOMBSTONE_TTL_MS,
+  type FactOrigin,
   type Journal,
   type JournalCompletion,
   type JournalDecision,
@@ -94,15 +95,37 @@ function readText(source: Record<string, unknown>, key: string): string | undefi
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+/**
+ * La provenance d'un fait (9.0).
+ *
+ * 🔴 **Sans cette lecture, la marque serait ecrite puis effacee a la premiere
+ * sauvegarde** : {@link parseEntry} reconstruit un objet neuf champ par champ, et le
+ * pass-through de la decision n°4 protege les champs **d'entree** inconnus, pas ceux
+ * niches dans un champ connu. C'est la quatrieme occurrence de « un champ qui existe n'est
+ * pas un champ qui est ecrit », et la loi d'aller-retour de `tests/journal-origin.test.ts`
+ * est ce qui la rend impossible a refaire ici.
+ *
+ * ⚠️ Une valeur inconnue est **ecartee** (regle 4) : le fait redevient « pose a la main »
+ * pour ce client-ci. C'est un arbitrage, pas une evidence — la conserver comme « import »
+ * ferait disparaitre des agregats les faits qu'ecrira un jour notre extension (5.20),
+ * lesquels sont **vecus**. On prefere donc l'erreur qui compte un fait vecu que celle qui
+ * en efface un.
+ */
+function readOrigin(source: Record<string, unknown>): FactOrigin | undefined {
+  return source['origin'] === 'import' ? 'import' : undefined;
+}
+
 function parsePosition(raw: unknown): JournalPosition | undefined {
   const source = asRecord(raw);
   const seasonNumber = readPositiveInt(source, 'seasonNumber');
   const episodeNumber = readPositiveInt(source, 'episodeNumber');
   if (seasonNumber === undefined || episodeNumber === undefined) return undefined;
+  const origin = readOrigin(source);
   return {
     seasonNumber,
     episodeNumber,
     declaredAt: readInstant(source, 'declaredAt', UNDATED),
+    ...(origin !== undefined ? { origin } : {}),
   };
 }
 
@@ -110,7 +133,12 @@ function parseRating(raw: unknown): JournalRating | undefined {
   const source = asRecord(raw);
   const stars = source['stars'];
   if (typeof stars !== 'number' || !VALID_STARS.has(stars)) return undefined;
-  return { stars: stars as Stars, at: readInstant(source, 'at', UNDATED) };
+  const origin = readOrigin(source);
+  return {
+    stars: stars as Stars,
+    at: readInstant(source, 'at', UNDATED),
+    ...(origin !== undefined ? { origin } : {}),
+  };
 }
 
 function parseDecision(raw: unknown): JournalDecision | undefined {
@@ -363,7 +391,12 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
   const wantedSource = source['wanted'];
   const wanted =
     wantedSource !== undefined && wantedSource !== null
-      ? { at: readInstant(asRecord(wantedSource), 'at', UNDATED) }
+      ? {
+          at: readInstant(asRecord(wantedSource), 'at', UNDATED),
+          ...(readOrigin(asRecord(wantedSource)) !== undefined
+            ? { origin: 'import' as const }
+            : {}),
+        }
       : undefined;
 
   const likedSource = source['liked'];

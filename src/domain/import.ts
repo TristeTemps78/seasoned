@@ -41,6 +41,7 @@
  */
 
 import {
+  asImported,
   EMPTY_JOURNAL,
   journalKey,
   mergeJournals,
@@ -303,7 +304,21 @@ function fromCsv(raw: string): readonly Found[] {
   return found;
 }
 
-/** Transforme ce qui a ete releve en journal, et compte ce qui n'a pas pu l'etre. */
+/**
+ * Transforme ce qui a ete releve en journal, et compte ce qui n'a pas pu l'etre.
+ *
+ * ## 9.0 — pourquoi la provenance est posee ICI, et pas sur le chemin `voltface`
+ *
+ * Tout ce que cette fonction ecrit est date de `now`, l'instant de l'import : un export
+ * tiers ne nous dit pas **quand** la personne a regarde, seulement qu'elle a regarde. La
+ * marque dit exactement cela — *cette date est celle de l'entree, pas celle du fait*.
+ *
+ * 🔴 **Le chemin `voltface` ne doit surtout pas etre marque.** Notre propre export porte
+ * les vraies dates de chaque fait ; les declarer « importes » effacerait l'historique
+ * qu'on vient precisement de restaurer, et ferait disparaitre de la face et du bilan
+ * annuel des annees reellement vecues. Reprendre sa sauvegarde n'est pas reprendre
+ * l'historique de quelqu'un d'autre.
+ */
 function toJournal(found: readonly Found[], now: Date): { journal: Journal; imported: number; skipped: number } {
   let journal = EMPTY_JOURNAL;
   let imported = 0;
@@ -342,7 +357,7 @@ function toJournal(found: readonly Found[], now: Date): { journal: Journal; impo
     }
   }
 
-  return { journal, imported, skipped };
+  return { journal: asImported(journal), imported, skipped };
 }
 
 /**

@@ -140,18 +140,68 @@ export function seriesEntries(journal: Journal): readonly [JournalKey, JournalEn
   return Object.entries(journal.entries).filter(([key]) => isSeriesKey(key));
 }
 
+// ---------------------------------------------------------------------------
+// 9.0 — la provenance d'un fait, et pourquoi elle ne s'ajoute pas apres coup
+// ---------------------------------------------------------------------------
+//
+// ## Ce que la marque dit exactement
+//
+// Pas « ce fait vient d'un fichier » — **« la date de ce fait est celle ou il est entre
+// ici, pas celle ou il a eu lieu »**. C'est la seule formulation qui soit vraie, et c'est
+// elle qui rend la marque utile.
+//
+// Mesure a l'appui : {@link importForeign} ecrit **chaque** fait a `now`, l'instant de
+// l'import. Reprendre dix ans de TV Time depose donc deux cents series portant toutes la
+// **meme** date, celle du jour. Deux consequences, verifiees sur le code du 2026-08-09 :
+//
+//   - une fenetre glissante sur les derniers faits (9.1, la face) serait **entierement**
+//     remplie par l'import, et la face decrirait un clic au lieu d'une annee ;
+//   - un bilan annuel (8.14) attribuerait dix ans d'historique a l'annee de l'import.
+//     `src/` ne contient aujourd'hui **aucun** `getFullYear` : le filtre n'existe pas
+//     encore, donc la marque arrive a temps — de justesse.
+//
+// ## Pourquoi maintenant, et pas quand on en aura besoin
+//
+// Un journal deja importe ne se demele **jamais** : rien, dans un fait non marque, ne
+// distingue une soiree d'hier de dix ans repris d'ailleurs. C'est la cinquieme decision
+// irreparable du format, apres les trois de la v2 et le rewatch — et comme les autres,
+// elle ne coute rien tant qu'il y a peu de journaux a preserver.
+//
+// ## Ce qu'on ne fait PAS : deviner la vraie date
+//
+// Un export porte parfois la date reelle du visionnage. La lire serait mieux ; l'inventer
+// serait pire que tout. Tant qu'on ne la lit pas, on **signale** qu'on ne la connait pas
+// (`AGENTS.md` regle 8) plutot que de laisser croire que `now` est la bonne.
+
+/**
+ * D'ou vient un fait — c'est-a-dire d'ou vient **sa date**.
+ *
+ * **L'absence est la valeur normale** : un fait pose a la main dans le produit ne porte
+ * rien. C'est ce qui rend la migration gratuite — aucun journal existant n'a besoin d'etre
+ * touche, et un ancien client qui ne connait pas ce champ le preserve (decision n°4).
+ *
+ * Une seule valeur aujourd'hui. Le jour ou notre extension de navigateur ecrira des faits
+ * (5.20), elle en ajoutera une — et ce sera un fait **vecu**, donc a traiter autrement
+ * qu'un import. C'est pour ca que c'est une union et non un booleen `imported`.
+ */
+export type FactOrigin = 'import';
+
 /** Ou en est l'utilisateur dans une serie. */
 export interface JournalPosition {
   readonly seasonNumber: number;
   readonly episodeNumber: number;
   /** ISO 8601. Une chaine et non une `Date` : c'est ce qui se serialise. */
   readonly declaredAt: string;
+  /** Voir {@link FactOrigin}. Absent = pose a la main. */
+  readonly origin?: FactOrigin;
 }
 
 /** Une note posee par l'utilisateur. */
 export interface JournalRating {
   readonly stars: Stars;
   readonly at: string;
+  /** Voir {@link FactOrigin}. Absent = pose a la main. */
+  readonly origin?: FactOrigin;
 }
 
 /** Ce que l'utilisateur a decide de faire de la serie. */
@@ -165,6 +215,8 @@ export interface JournalDecision {
 /** « Je veux la voir » — le premier geste possible, et le seul qui ne suppose rien. */
 export interface JournalWanted {
   readonly at: string;
+  /** Voir {@link FactOrigin}. Absent = pose a la main. */
+  readonly origin?: FactOrigin;
 }
 
 /**

@@ -12,6 +12,7 @@ import type { DecisionKind, Stars } from '../types';
 import type { EpisodeMark } from '../remaining';
 import {
   episodeKey,
+  type FactOrigin,
   type Journal,
   type JournalEntry,
   type JournalEpisodeMark,
@@ -418,6 +419,74 @@ export function setPlatforms(
   platforms: readonly string[],
 ): Journal {
   return { ...journal, platforms: [...platforms] };
+}
+
+// ---------------------------------------------------------------------------
+// 9.0 — marquer ce qui vient d'un import
+// ---------------------------------------------------------------------------
+
+/**
+ * Un fait, au sens de ce format : **un enregistrement qui porte sa propre date**.
+ *
+ * C'est la definition qui gouverne tout le reste du journal — la decision n°2 de la v2
+ * (« chaque fait porte sa date, la fusion se fait au niveau du champ »). La reutiliser ici
+ * plutot qu'en inventer une autre est ce qui garantit que les deux ne divergeront pas.
+ *
+ * `snapshot` n'en est pas un : il porte `cachedAt`, qui date une **metadonnee de
+ * catalogue** et non un geste. `removed` non plus : ses valeurs sont des chaines.
+ */
+function isDatedFact(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record['at'] === 'string' || typeof record['declaredAt'] === 'string';
+}
+
+function stampDeep(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stampDeep);
+  if (typeof value !== 'object' || value === null) return value;
+  if (isDatedFact(value)) return { ...value, origin: 'import' satisfies FactOrigin };
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, stampDeep(v)]),
+  );
+}
+
+/**
+ * Marque **tous** les faits d'un journal comme venant d'un import.
+ *
+ * S'applique a un journal fraichement construit par {@link importForeign}, dont chaque
+ * fait vient de l'import **par construction** — il part de `EMPTY_JOURNAL`. C'est ce qui
+ * permet de marquer en bloc plutot que de passer une provenance a travers douze
+ * signatures d'ecriture dont onze n'en ont que faire.
+ *
+ * ## 🔴 Pourquoi un parcours et pas une liste de champs
+ *
+ * Le reflexe serait d'enumerer `position`, `wanted`, `seasonRatings` — les trois que
+ * l'import ecrit aujourd'hui. Ce depot a paye trois fois cette forme-la : `lastTouch`
+ * enumerait les champs et il en manquait **deux** (tout le lot 8), `no-journal-on-server`
+ * enumerait des fichiers, `KNOWN_ENTRY_FIELDS` a du etre protege par le typage. Une liste
+ * ecrite a la main se perime au premier champ ajoute, **en silence**, et ici le silence est
+ * definitif : un fait importe sans marque ne se distinguera plus jamais d'un fait vecu.
+ *
+ * Le parcours, lui, se trompe dans l'autre sens — il marquerait un jour un enregistrement
+ * date qui ne serait pas un geste. C'est le sens qu'on veut, et c'est la meme regle que
+ * {@link isSeriesKey} : **omettre n'est qu'un oubli, inclure corrompt.** Un fait marque a
+ * tort sort d'un agregat ; un fait non marque le fausse.
+ *
+ * ⚠️ **`unknownFields` est laisse intact** : il appartient a une version du code qui n'est
+ * pas celle-ci, et son contrat est de traverser sans etre touche (decision n°4). Y ecrire
+ * une provenance serait modifier une donnee dont on ignore la forme.
+ */
+export function asImported(journal: Journal): Journal {
+  const entries: Record<JournalKey, JournalEntry> = {};
+  for (const [key, { unknownFields, ...known }] of Object.entries(journal.entries)) {
+    // Le parcours n'ajoute que `origin` et ne touche aucune cle : la forme est celle
+    // d'entree, ce que la loi d'aller-retour de `tests/journal-origin.test.ts` verifie.
+    const stamped = Object.fromEntries(
+      Object.entries(known).map(([field, value]) => [field, stampDeep(value)]),
+    ) as JournalEntry;
+    entries[key] = unknownFields !== undefined ? { ...stamped, unknownFields } : stamped;
+  }
+  return { ...journal, entries };
 }
 
 /** Attache un identifiant d'appareil s'il n'y en a pas encore. */
