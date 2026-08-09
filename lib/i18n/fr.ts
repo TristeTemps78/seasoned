@@ -143,6 +143,8 @@ export const FR = {
     'Trop d’envois pour le moment. Réessayez dans quelques minutes.',
   'account.failed': 'L’envoi a échoué. Réessayez dans un instant.',
   'account.google': 'Continuer avec Google',
+  'account.google.failed':
+    'La connexion avec Google n’a pas pu démarrer. Utilisez le lien par e-mail ci-dessus.',
   'account.or': 'ou',
   'account.code.label': 'Ou saisissez le code reçu par e-mail',
   'account.code.placeholder': '123456',

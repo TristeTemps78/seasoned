@@ -13,6 +13,9 @@ import type { Locale } from '@/lib/i18n';
  * ornement, et il vaudrait mieux ne pas l'afficher que de faire semblant.
  */
 
+/** Les fournisseurs externes que le projet declare. Mutable : un test les retire. */
+let providers: ReadonlySet<string> = new Set(['google']);
+
 vi.mock('@/app/auth/AuthProvider', () => ({
   useAuth: () => ({
     configured: true,
@@ -20,7 +23,12 @@ vi.mock('@/app/auth/AuthProvider', () => ({
     account: undefined,
     sendLink: async () => ({ kind: 'sent' as const }),
     submitCode: async () => true,
-    withGoogle: async () => undefined,
+    // ⚠️ Il faut le declarer : depuis le 2026-08-09 le bouton Google **ne s'affiche pas**
+    // tant que `/auth/v1/settings` ne dit pas que le fournisseur est branche. Sans cette
+    // ligne, le test « Google est ferme tant que l'age n'est pas declare » ne trouverait
+    // aucun bouton — et passerait pour une bonne raison qui n'est pas la sienne.
+    providers,
+    withGoogle: async () => true,
     completeCallback: async () => ({ kind: 'nothing_to_do' as const }),
     leave: async () => undefined,
     erase: async () => false,
@@ -60,6 +68,24 @@ describe('la connexion', () => {
     renderIn();
     const google = screen.getByRole('button', { name: /google/i });
     expect((google as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('🔴 et il ne s affiche PAS quand le fournisseur n est pas branche', () => {
+    // Le defaut constate le 2026-08-09, en essayant de creer un compte : le bouton etait
+    // affiche en dur alors que `external_google_enabled` valait `false` cote Supabase.
+    // Supabase repond « provider is not enabled », l'erreur etait avalee, et il ne se
+    // passait rien. Un bouton qui ne PEUT PAS marcher ne se degrade pas, il disparait.
+    const avant = providers;
+    providers = new Set();
+    try {
+      renderIn();
+      expect(screen.queryByRole('button', { name: /google/i })).toBeNull();
+      // Ancrage : le formulaire par e-mail, lui, est toujours la. Sans cette ligne, le test
+      // passerait aussi bien si le composant entier avait cesse de rendre quoi que ce soit.
+      expect(screen.getByRole('button', { name: /sign-in link/i })).toBeDefined();
+    } finally {
+      providers = avant;
+    }
   });
 
   it('l age annonce est celui du domaine, jamais un nombre recopie', () => {

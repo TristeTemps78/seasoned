@@ -7,6 +7,7 @@ import {
   finishSignIn,
   hasStoredSession,
   sendMagicLink,
+  enabledProviders,
   signInWithGoogle,
   signOut,
   verifyCode,
@@ -45,7 +46,15 @@ export interface AuthState {
   readonly account: Account | undefined;
   readonly sendLink: (email: string, redirectTo: string) => Promise<SignInOutcome>;
   readonly submitCode: (email: string, code: string) => Promise<boolean>;
-  readonly withGoogle: (redirectTo: string) => Promise<void>;
+  /**
+   * Les fournisseurs externes reellement branches sur ce projet.
+   *
+   * 🔴 Le bouton Google etait affiche en dur alors que le fournisseur n'a jamais ete
+   * active cote Supabase : on cliquait, l'erreur etait avalee, et rien ne se passait.
+   * L'interface demande donc au lieu de supposer.
+   */
+  readonly providers: ReadonlySet<string>;
+  readonly withGoogle: (redirectTo: string) => Promise<boolean>;
   readonly completeCallback: (href: string) => Promise<CallbackOutcome>;
   readonly leave: () => Promise<void>;
   readonly erase: () => Promise<boolean>;
@@ -57,7 +66,8 @@ const NOT_CONFIGURED: AuthState = {
   account: undefined,
   sendLink: async () => ({ kind: 'failed' }),
   submitCode: async () => false,
-  withGoogle: async () => undefined,
+  providers: new Set<string>(),
+  withGoogle: async () => false,
   completeCallback: async () => ({ kind: 'nothing_to_do' }),
   leave: async () => undefined,
   erase: async () => false,
@@ -119,10 +129,27 @@ export function AuthProvider({ children }: { readonly children: React.ReactNode 
     };
   }, [config, engaged]);
 
+  // Les fournisseurs externes, demandes une fois : `/auth/v1/settings` est public, donc
+  // cette lecture n'attend ni session ni engagement. Elle est **hors** de l'effet ci-dessus
+  // a dessein — celui-ci ne s'allume que pour qui s'engage, or il faut savoir quoi afficher
+  // *avant* que quiconque clique.
+  const [providers, setProviders] = useState<ReadonlySet<string>>(new Set());
+
+  useEffect(() => {
+    if (config === undefined) return;
+    let alive = true;
+    void enabledProviders(config).then((found) => {
+      if (alive) setProviders(found);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [config]);
+
   const value = useMemo<AuthState>(() => {
     if (config === undefined) return NOT_CONFIGURED;
-    return authStateFor(config, account, ready, () => setEngaged(true));
-  }, [config, account, ready]);
+    return authStateFor(config, account, ready, providers, () => setEngaged(true));
+  }, [config, account, ready, providers]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -131,6 +158,7 @@ function authStateFor(
   config: AuthConfig,
   account: Account | undefined,
   ready: boolean,
+  providers: ReadonlySet<string>,
   engage: () => void,
 ): AuthState {
   // Chaque action commence par declarer qu'on s'engage : c'est ce qui allume l'ecoute des
@@ -145,6 +173,7 @@ function authStateFor(
     configured: true,
     ready,
     account,
+    providers,
     sendLink: (email, redirectTo) => start(() => sendMagicLink(config, email, redirectTo)),
     submitCode: (email, code) => start(() => verifyCode(config, email, code)),
     withGoogle: (redirectTo) => start(() => signInWithGoogle(config, redirectTo)),

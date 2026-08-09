@@ -123,6 +123,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'account.rateLimited': 'Too many attempts for now. Try again in a few minutes.',
   'account.failed': 'Sending failed. Try again in a moment.',
   'account.google': 'Continue with Google',
+  'account.google.failed':
+    'Signing in with Google could not start. Use the email link above.',
   'account.or': 'or',
   'account.code.label': 'Or enter the code from the email',
   'account.code.placeholder': '123456',

@@ -217,21 +217,67 @@ export async function verifyCode(
 }
 
 /**
+ * Google est-il reellement branche sur ce projet ?
+ *
+ * ## 🔴 Le defaut que cette fonction repare, constate le 2026-08-09
+ *
+ * Le bouton « Continuer avec Google » etait affiche **en dur**, et le fournisseur n'a
+ * jamais ete active cote Supabase (`external_google_enabled: false`, ni identifiant ni
+ * secret). Supabase repond donc « provider is not enabled » — que {@link signInWithGoogle}
+ * **avalait**, au nom du contrat « on degrade, on n'interrompt pas ». Resultat : on clique,
+ * il ne se passe rien, et rien ne dit pourquoi.
+ *
+ * > *On degrade quand une fonctionnalite a un repli. Ici il n'y en a pas : le bouton ne
+ * > peut pas marcher. Un bouton qui ne peut pas marcher ne se degrade pas, il ne s'affiche
+ * > pas.*
+ *
+ * `/auth/v1/settings` est **public** (la cle publiable suffit) et dit exactement quels
+ * fournisseurs sont actifs. On demande donc au lieu de supposer — et le bouton reapparaitra
+ * **tout seul** le jour ou le fournisseur sera configure, sans redeploiement ni drapeau a
+ * penser a retirer.
+ *
+ * En cas de panne reseau, on rend « rien d'active » : l'erreur va vers le lien par courriel,
+ * qui marche. Meme sens que partout ailleurs ici — omettre n'est qu'un oubli.
+ */
+export async function enabledProviders(config: AuthConfig): Promise<ReadonlySet<string>> {
+  try {
+    const response = await fetch(`${config.url.replace(/\/$/, '')}/auth/v1/settings`, {
+      headers: { apikey: config.anonKey },
+    });
+    if (!response.ok) return new Set();
+    const body: unknown = await response.json();
+    const external = (body as { external?: Record<string, unknown> } | null)?.external;
+    if (external === undefined || external === null) return new Set();
+    return new Set(
+      Object.entries(external)
+        .filter(([, on]) => on === true)
+        .map(([name]) => name),
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+/**
  * Part vers Google.
  *
  * ⚠️ C'est une **navigation de premier niveau**, pas une requete : aucune directive CSP ne
  * la gouverne (`connect-src` ne s'applique pas, `form-action` non plus puisque ce n'est
  * pas une soumission). Rien a ouvrir dans `next.config.ts`.
+ *
+ * Rend `false` quand le depart n'a pas pu avoir lieu — voir {@link enabledProviders} pour
+ * la raison pour laquelle le silence d'avant etait une faute et non une prudence.
  */
 export async function signInWithGoogle(
   config: AuthConfig,
   redirectTo: string,
-): Promise<void> {
+): Promise<boolean> {
   try {
     const auth = await authClient(config);
-    await auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+    const { error } = await auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+    return error === null;
   } catch {
-    // Le contrat du reste du produit : on degrade, on n'interrompt pas.
+    return false;
   }
 }
 

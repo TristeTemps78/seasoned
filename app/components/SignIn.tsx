@@ -28,7 +28,7 @@ import { MINIMUM_AGE } from '@/src/domain/handles';
  */
 export function SignIn() {
   const { t, locale } = useT();
-  const { sendLink, submitCode, withGoogle } = useAuth();
+  const { sendLink, submitCode, withGoogle, providers } = useAuth();
   const emailId = useId();
   const ageId = useId();
   const codeId = useId();
@@ -40,6 +40,7 @@ export function SignIn() {
   );
   const [code, setCode] = useState('');
   const [codeFailed, setCodeFailed] = useState(false);
+  const [googleFailed, setGoogleFailed] = useState(false);
 
   // ⚠️ Absolue, et dans la langue de la page : Supabase renvoie ici apres l'e-mail, et
   // atterrir en anglais apres avoir clique un lien francais est le meme defaut que la
@@ -156,19 +157,33 @@ export function SignIn() {
         </form>
       ) : null}
 
-      <div className="border-t border-(--color-edge) pt-4">
-        <p className="mb-2 label">
-          {t('account.or')}
-        </p>
-        <button
-          type="button"
-          disabled={!oldEnough}
-          onClick={() => void withGoogle(redirectTo())}
-          className="btn"
-        >
-          {t('account.google')}
-        </button>
-      </div>
+      {/* 🔴 Ce bloc etait affiche EN DUR, et le fournisseur Google n'a jamais ete active
+          cote Supabase : on cliquait, l'erreur « provider is not enabled » etait avalee, et
+          il ne se passait rien. Un bouton qui ne peut pas marcher ne se degrade pas, il ne
+          s'affiche pas. `providers` vient de `/auth/v1/settings`, qui est public — donc le
+          bouton reapparaitra tout seul le jour ou le fournisseur sera branche, sans
+          redeploiement ni drapeau a penser a retirer. */}
+      {providers.has('google') ? (
+        <div className="border-t border-(--color-edge) pt-4">
+          <p className="mb-2 label">
+            {t('account.or')}
+          </p>
+          <button
+            type="button"
+            disabled={!oldEnough}
+            onClick={() => {
+              void withGoogle(redirectTo()).then((ok) => setGoogleFailed(!ok));
+            }}
+            className="btn"
+          >
+            {t('account.google')}
+          </button>
+          {/* Et s'il echoue quand meme, on le dit. Le silence etait la moitie du defaut. */}
+          <p role="status" className="mt-2 text-sm text-(--color-warn)">
+            {googleFailed ? t('account.google.failed') : ''}
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }
