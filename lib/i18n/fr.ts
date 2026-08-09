@@ -170,6 +170,24 @@ export const FR = {
   'face.friends': 'Mes amis',
   'face.lists': 'Mes listes',
 
+  'year.aria': 'Mon année',
+  'year.title': 'Votre {year}',
+  'year.pick': 'Choisir une année',
+  'year.finished.one': '{n} série menée au bout.',
+  'year.finished.other': '{n} séries menées au bout.',
+  'year.rated.one': '{n} saison notée.',
+  'year.rated.other': '{n} saisons notées.',
+  'year.written.one': '{n} critique écrite.',
+  'year.written.other': '{n} critiques écrites.',
+  'year.liked.one': '{n} coup de cœur.',
+  'year.liked.other': '{n} coups de cœur.',
+  // ⚠️ « ce que pèsent les séries terminées », jamais « ce que vous avez regardé » : un
+  // visionnage achevé en janvier a pu commencer l'année d'avant. Le journal ne sait pas
+  // quand chaque épisode a été vu, et ce produit ne comble pas ce qu'il ignore.
+  'year.weight': 'Les séries terminées cette année-là pèsent {commitment}.',
+  'year.best': 'La saison que vous avez le mieux notée :',
+  'year.thin': 'Peu de choses cette année-là.',
+
   // --- Les listes (8.13) ---------------------------------------------------
   // Le premier objet que ce produit fabrique POUR QUELQU'UN D'AUTRE : une note, une
   // position, une critique parlent de soi ; une liste se tend.

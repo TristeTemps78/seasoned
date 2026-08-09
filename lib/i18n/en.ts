@@ -146,6 +146,21 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'face.friends': 'Friends',
   'face.lists': 'Lists',
 
+  'year.aria': 'My year',
+  'year.title': 'Your {year}',
+  'year.pick': 'Pick a year',
+  'year.finished.one': '{n} series seen through to the end.',
+  'year.finished.other': '{n} series seen through to the end.',
+  'year.rated.one': '{n} season rated.',
+  'year.rated.other': '{n} seasons rated.',
+  'year.written.one': '{n} review written.',
+  'year.written.other': '{n} reviews written.',
+  'year.liked.one': '{n} favourite.',
+  'year.liked.other': '{n} favourites.',
+  'year.weight': 'The series you finished that year add up to {commitment}.',
+  'year.best': 'The season you rated highest:',
+  'year.thin': 'Not much that year.',
+
   // --- Lists (8.13) --------------------------------------------------------
   'listsPage.title': 'My lists',
   'listsPage.intro':

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { MyTally } from '@/app/components/MyTally';
+import { MyYear } from '@/app/components/MyYear';
 import { TasteCard } from '@/app/components/TasteCard';
 import { buildTally } from '@/src/domain/tally';
 import { buildTasteProfile } from '@/src/domain/taste';
@@ -58,6 +59,10 @@ export function MyStats() {
         </div>
       ) : (
         <>
+          {/* L'annee en cours d'abord : c'est la question qu'on se pose en ouvrant cet
+              ecran en decembre, et la seule qui ait une reponse differente chaque annee.
+              Se tait tout seul si l'annee est trop maigre. */}
+          <MyYear />
           <MyTally tally={tally} />
           <TasteCard
             profile={taste}
