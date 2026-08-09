@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useAuth } from '@/app/auth/AuthProvider';
@@ -9,6 +10,7 @@ import { ReportButton } from '@/app/components/ReportButton';
 import { journalKey } from '@/src/domain/journal';
 import { redactReviews } from '@/src/domain/spoiler';
 import { SocialClient, type PublishedReview } from '@/src/social/client';
+import { pathIn } from '@/lib/routes';
 
 /**
  * Ce que les autres ont ecrit — caviarde par la position du lecteur.
@@ -32,7 +34,7 @@ import { SocialClient, type PublishedReview } from '@/src/social/client';
 export function Reviews({ seriesId }: { readonly seriesId: string }) {
   const { account } = useAuth();
   const { journal, ready } = useJournal();
-  const { t } = useT();
+  const { t, locale } = useT();
   const [reviews, setReviews] = useState<readonly PublishedReview[] | undefined>(undefined);
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
 
@@ -87,7 +89,16 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
           return (
             <li key={id} className="card space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm font-medium">@{review.handle}</span>
+                {/* 🔴 C'etait un `<span>` : on lisait quelqu'un sans pouvoir ouvrir son
+                    profil. La fiche serie est pourtant le premier endroit ou l'on croise
+                    un inconnu dont l'avis nous interesse — c'est LA porte de decouverte,
+                    et elle etait fermee. */}
+                <Link
+                  href={pathIn(`/u/${review.handle}`, locale)}
+                  className="text-sm font-medium hover:text-(--color-volt)"
+                >
+                  @{review.handle}
+                </Link>
                 {/* Signaler exige un compte : c'est l'auteur du signalement que la base
                     enregistre, et un signalement anonyme n'est pas examinable. */}
                 {account !== undefined ? (

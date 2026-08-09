@@ -170,6 +170,13 @@ export const FR = {
   'face.friends': 'Mes amis',
   'face.lists': 'Mes listes',
 
+  'discover.aria': 'Des gens à découvrir',
+  'discover.title': 'Des gens à découvrir',
+  // ⚠️ La phrase dit POURQUOI ces gens-là et pas d'autres. Sans elle, la section
+  // ressemblerait à un annuaire — ce que ce produit s'interdit.
+  'discover.why':
+    'Ces personnes ont choisi de rendre leur profil public. Personne d’autre n’apparaît ici.',
+
   'year.aria': 'Mon année',
   'year.title': 'Votre {year}',
   'year.pick': 'Choisir une année',

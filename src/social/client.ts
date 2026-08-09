@@ -485,6 +485,28 @@ export class SocialClient {
     });
   }
 
+  /**
+   * Des gens a decouvrir — **ceux qui ont rendu leur profil public, et eux seuls**.
+   *
+   * ## ⚠️ Ce n'est pas un annuaire, et la difference est toute la decision
+   *
+   * `Friends.tsx` s'interdit la recherche approchante sur les profils, et pour une bonne
+   * raison : parcourir des gens qui ne l'ont pas demande est le premier outil de qui veut
+   * en harceler un. Cette methode ne contredit pas la regle, elle en donne l'exception
+   * exacte — **`public` est une demande explicite d'etre trouve**. La visibilite par defaut
+   * est `followers` (Q1), donc personne n'y arrive par inadvertance.
+   *
+   * ⚠️ Le filtre est ecrit ici **et** applique par RLS (`profiles_select_visible`) : le
+   * retirer ne montrerait rien de plus, la base rendrait la meme liste. La base decide, le
+   * client demande.
+   */
+  async discoverable(limit = 24): Promise<readonly Profile[]> {
+    const rows = await this.#rows<Record<string, unknown>>(
+      `profiles?visibility=eq.public&select=*&order=created_at.desc&limit=${limit}`,
+    );
+    return rows.map(rowToProfile);
+  }
+
   // -------------------------------------------------------------------------
   // Les listes (8.13)
   // -------------------------------------------------------------------------

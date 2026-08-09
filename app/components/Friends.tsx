@@ -11,6 +11,7 @@ import { checkHandle } from '@/src/domain/handles';
 import { seriesEntries, type JournalKey } from '@/src/domain/journal';
 import { SocialClient, type FeedItem, type Profile } from '@/src/social/client';
 import { ReportButton } from '@/app/components/ReportButton';
+import { Discover } from '@/app/components/Discover';
 import { pathIn } from '@/lib/routes';
 
 /**
@@ -263,6 +264,10 @@ export function Friends() {
         </div>
       </section>
 
+      {/* Avant le fil : quand on n'a suivi personne, le fil est vide et c'est justement
+          la qu'il faut proposer quelqu'un. Se tait tout seul s'il n'y a personne. */}
+      <Discover />
+
       <section className="space-y-3">
         <h2 className="section-heading">{t('friends.feed.title')}</h2>
         {visible.length === 0 ? (
@@ -278,7 +283,12 @@ export function Friends() {
                 key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
                 className="panel bg-(--color-surface)/50 px-4 py-3 text-sm"
               >
-                <span className="text-(--color-muted)">@{item.handle}</span>{' '}
+                <Link
+                  href={pathIn(`/u/${item.handle}`, locale)}
+                  className="text-(--color-muted) hover:text-(--color-volt)"
+                >
+                  @{item.handle}
+                </Link>{' '}
                 {t(`friends.item.${item.kind}`)}{' '}
                 {item.season !== undefined && item.stars !== undefined
                   ? t('friends.item.season', {

@@ -146,6 +146,11 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'face.friends': 'Friends',
   'face.lists': 'Lists',
 
+  'discover.aria': 'People to discover',
+  'discover.title': 'People to discover',
+  'discover.why':
+    'These people chose to make their profile public. Nobody else shows up here.',
+
   'year.aria': 'My year',
   'year.title': 'Your {year}',
   'year.pick': 'Pick a year',
