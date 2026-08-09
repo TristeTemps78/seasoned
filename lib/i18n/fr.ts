@@ -622,6 +622,16 @@ export const FR = {
     '{n} série suivie n’a pas pu être comptée : son instantané a expiré, ou le catalogue ignore la durée de ses épisodes. Le vrai total est plus élevé.',
   'tally.missing.other':
     '{n} séries suivies n’ont pas pu être comptées : leur instantané a expiré, ou le catalogue ignore la durée de leurs épisodes. Le vrai total est plus élevé.',
+  // 9.0 — la provenance. Ces heures-là, le produit ne les a pas vues passer : il les a
+  // lues dans un fichier importé. Le taire ferait passer un historique repris d'ailleurs
+  // pour du temps vécu ici.
+  // ⚠️ **Aucun accord ne porte sur `{commitment}`**, et c'est une contrainte, pas un
+  // style : `formatCommitment` rend « 30 heures » (féminin pluriel) comme « 2 jours et
+  // 12 h » (masculin). Le participe s'accorde donc avec « historique » et « temps », qui
+  // sont écrits ici. Même règle que la ponctuation française de 9.6 — on compose sur le
+  // modèle, jamais sur la valeur interpolée.
+  'tally.declared':
+    'Dont {commitment} d’historique repris d’un import — du temps que vous n’avez pas passé ici.',
   'tally.private': 'Calculé ici, sur cet appareil — ce chiffre ne part nulle part.',
 
   // --- Saison en cours -----------------------------------------------------

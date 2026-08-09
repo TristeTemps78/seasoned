@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { importForeign } from '../src/domain/import';
+import { buildTally } from '../src/domain/tally';
 import {
   asImported,
   EMPTY_JOURNAL,
@@ -8,6 +9,7 @@ import {
   serializeJournal,
   setPosition,
   setSeasonRating,
+  setSnapshot,
   setWanted,
   type Journal,
 } from '../src/domain/journal';
@@ -167,6 +169,37 @@ describe('la provenance', () => {
     expect(mergeJournals(olderByHand, imported).entries['tmdb:1396']?.position?.origin).toBe(
       'import',
     );
+  });
+
+  it('donne son lecteur au bilan : « dont X reprises d’ailleurs »', () => {
+    // 🔴 Ce depot a livre SIX fonctionnalites mort-nees — un champ ecrit que personne ne
+    // lit (`ordering.ts`, `episodeMinutes`, `unfollow`…). La marque n'en sera pas la
+    // septieme : `buildTally` sait desormais dire quelle part du total vient d'ailleurs.
+    const shape = {
+      title: 'Breaking Bad',
+      episodeMinutes: 40,
+      seasonSizes: [
+        { seasonNumber: 1, episodeCount: 10 },
+        { seasonNumber: 2, episodeCount: 10 },
+      ],
+    };
+    const withShape = (journal: Journal): Journal =>
+      setSnapshot(journal, 'tmdb:1396', shape, IMPORT_AT);
+
+    const imported = withShape(importForeign(FOREIGN, EMPTY_JOURNAL, IMPORT_AT).journal);
+    const byHand = withShape(setPosition(EMPTY_JOURNAL, 'tmdb:1396', 2, 4, IMPORT_AT));
+
+    // Ancrage : les deux journaux comptent la MEME chose, sans quoi la comparaison
+    // ci-dessous opposerait deux fois rien.
+    expect(buildTally(imported, IMPORT_AT).minutes).toBe(buildTally(byHand, IMPORT_AT).minutes);
+    expect(buildTally(imported, IMPORT_AT).minutes).toBeGreaterThan(0);
+
+    // La position reprise d'un fichier : tout est declare.
+    expect(buildTally(imported, IMPORT_AT).declaredMinutes).toBe(
+      buildTally(imported, IMPORT_AT).minutes,
+    );
+    // La meme position posee ici : rien ne l'est.
+    expect(buildTally(byHand, IMPORT_AT).declaredMinutes).toBe(0);
   });
 
   it('laisse intact le seau des champs inconnus', () => {

@@ -549,6 +549,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
     '{n} show you follow could not be counted: its snapshot has expired, or the catalogue does not know how long its episodes are. The real total is higher.',
   'tally.missing.other':
     '{n} shows you follow could not be counted: their snapshots have expired, or the catalogue does not know how long their episodes are. The real total is higher.',
+  'tally.declared':
+    'Including {commitment} of history carried over from an import — time you did not spend here.',
   'tally.private': 'Worked out right here, on this device — this figure goes nowhere.',
 
   'season.aired.one': '{n} episode out',

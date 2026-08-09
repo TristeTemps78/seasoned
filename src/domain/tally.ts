@@ -78,6 +78,20 @@ export interface Tally {
   readonly episodes: number;
   /** Minutes correspondantes. Zero n'est pas une absence : c'est zero. */
   readonly minutes: number;
+  /**
+   * Part de {@link minutes} qui vient de faits **repris d'ailleurs** (9.0).
+   *
+   * « Au moins 537 h, dont 120 declarees » dit ce que « au moins 537 h » cache : ces
+   * heures-la, le produit ne les a pas vues passer, il les a lues dans un fichier. C'est
+   * le meme genre d'honnetete que le « au moins » lui-meme, applique a la provenance
+   * plutot qu'a la couverture.
+   *
+   * ⚠️ **Ce que ce chiffre ne peut pas savoir.** Reprendre le pointeur a la main efface
+   * la provenance du fait (elle est portee par le fait, pas par la serie) : une serie
+   * importee puis reprise recompte donc son arriere-catalogue comme vecu. On ne peut pas
+   * faire mieux sans inventer — le journal ne dit pas quels episodes ont ete vus ou.
+   */
+  readonly declaredMinutes: number;
   /** Series qui ont contribue au total. */
   readonly counted: number;
   /**
@@ -184,11 +198,12 @@ function episodesOf(
   entry: JournalEntry,
   sizes: readonly SeasonSize[],
   marks: readonly EpisodeMark[],
-): number {
+): { readonly episodes: number; readonly declared: number } {
   const total = sizes.reduce((sum, s) => sum + s.episodeCount, 0);
   const passes = passesOf(entry);
 
   let episodes = passes * total;
+  let declared = 0;
   if (positionIsNewPass(entry, passes)) {
     const position = stoppedAt(entry);
     // ⚠️ Sans marques : le restant brut, exactement comme avant.
@@ -196,10 +211,16 @@ function episodesOf(
     if (left !== undefined) {
       const { aheadAfter, skippedBefore } = classifyMarks(marks, position);
       const seen = total - left.episodes + aheadAfter.length - skippedBefore.length;
-      episodes += Math.max(0, Math.min(total, seen));
+      const bounded = Math.max(0, Math.min(total, seen));
+      episodes += bounded;
+      // 9.0 — seule la part **deduite du pointeur** peut etre declaree, et seulement si
+      // c'est un import qui l'a pose. Les passages acheves (`passes * total`) ne le sont
+      // jamais : aucun import n'ecrit de `completions`, et une decision « terminee » est
+      // un geste pose ici. Les marques sont comptees avec le pointeur qu'elles corrigent.
+      if (entry.position?.origin === 'import') declared = bounded;
     }
   }
-  return episodes;
+  return { episodes, declared };
 }
 
 /**
@@ -213,6 +234,7 @@ function episodesOf(
 export function buildTally(journal: Journal, now: Date = new Date()): Tally {
   let episodes = 0;
   let minutes = 0;
+  let declaredMinutes = 0;
   let counted = 0;
   let uncounted = 0;
   let heaviest: HeaviestSeries | undefined;
@@ -231,7 +253,7 @@ export function buildTally(journal: Journal, now: Date = new Date()): Tally {
       continue;
     }
 
-    const seen = episodesOf(entry, sizes, marksOf(entry));
+    const { episodes: seen, declared } = episodesOf(entry, sizes, marksOf(entry));
     if (seen === 0) {
       // Vue, mais rien de comptable : une decision « abandonnee » sans position connue.
       // Elle n'est pas un manque de donnees — la compter comme tel ferait chuter la
@@ -243,6 +265,7 @@ export function buildTally(journal: Journal, now: Date = new Date()): Tally {
     const spent = seen * perEpisode;
     episodes += seen;
     minutes += spent;
+    declaredMinutes += declared * perEpisode;
     counted += 1;
 
     if (heaviest === undefined || spent > heaviest.minutes) {
@@ -261,6 +284,7 @@ export function buildTally(journal: Journal, now: Date = new Date()): Tally {
   return {
     episodes,
     minutes: Math.round(minutes),
+    declaredMinutes: Math.round(declaredMinutes),
     counted,
     uncounted,
     coverage,

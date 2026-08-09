@@ -51,6 +51,22 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
         })}
       </p>
 
+      {/* D'ou vient une partie du chiffre (9.0) — meme honnetete que le « au moins »,
+          appliquee a la provenance plutot qu'a la couverture. Silencieux quand rien n'a
+          ete importe.
+
+          🔴 **Cette ligne etait sous « Surtout », et l'ecran l'a montree fausse** : elle
+          y suivait immediatement « Dexter : 30 heures », donc « dont 30 heures » se
+          lisait comme portant sur Dexter — la seule serie que l'import n'avait PAS
+          ecrite. Un qualificatif du total se place avec le total. */}
+      {tally.declaredMinutes > 0 ? (
+        <p className="text-xs text-(--color-muted)">
+          {t('tally.declared', {
+            commitment: formatCommitment(tally.declaredMinutes, locale),
+          })}
+        </p>
+      ) : null}
+
       {heaviest !== undefined ? (
         <div>
           <p className="label">
