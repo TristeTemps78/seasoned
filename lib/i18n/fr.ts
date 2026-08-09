@@ -176,6 +176,10 @@ export const FR = {
   // ressemblerait à un annuaire — ce que ce produit s'interdit.
   'discover.why':
     'Ces personnes ont choisi de rendre leur profil public. Personne d’autre n’apparaît ici.',
+  // Ce qu'il y a à lire chez quelqu'un — critiques et listes confondues. Absent quand il
+  // n'y a rien : on ne compte pas zéro.
+  'discover.wrote.one': '{n} à lire',
+  'discover.wrote.other': '{n} à lire',
 
   'year.aria': 'Mon année',
   'year.title': 'Votre {year}',

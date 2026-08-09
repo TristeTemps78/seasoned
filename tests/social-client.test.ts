@@ -163,6 +163,25 @@ describe('SocialClient.followers', () => {
     expect(fil.asked[0]).not.toContain('subject=eq.');
   });
 
+  it('discoverable trie par ce qu il y a a lire, et n ecarte personne', async () => {
+    // 🔴 **Le reflexe aurait ete de filtrer, et il aurait tue le composant** : `Discover`
+    // repond au demarrage a froid, c'est-a-dire au moment ou personne n'a rien ecrit. Un
+    // filtre l'aurait rendu muet precisement le jour ou il sert. Ce test dit les deux
+    // choses a la fois — l'ordre change, la liste ne raccourcit pas.
+    const { client } = recording([
+      [
+        { user_id: 'u1', handle: 'vide', visibility: 'public', reviews: [], lists: [] },
+        { user_id: 'u2', handle: 'prolixe', visibility: 'public', reviews: [{ count: 3 }], lists: [{ count: 2 }] },
+        { user_id: 'u3', handle: 'discret', visibility: 'public', reviews: [{ count: 1 }], lists: [] },
+      ],
+    ]);
+
+    const found = await client.discoverable();
+
+    expect(found.map((p) => p.handle)).toEqual(['prolixe', 'discret', 'vide']);
+    expect(found.map((p) => p.wrote)).toEqual([5, 1, 0]);
+  });
+
   it('personne ne me suit : aucun second appel', async () => {
     // ⚠️ Sans le garde, la seconde requete part avec `in.()` — une demande vide envoyee au
     // reseau, sur une page que tout le monde ouvre.

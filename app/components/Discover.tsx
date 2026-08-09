@@ -6,7 +6,7 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { pathIn } from '@/lib/routes';
-import { SocialClient, type Profile } from '@/src/social/client';
+import { SocialClient, type Discoverable } from '@/src/social/client';
 
 /**
  * « Des gens a decouvrir » — la reponse au demarrage a froid du social.
@@ -37,10 +37,10 @@ import { SocialClient, type Profile } from '@/src/social/client';
  * (*mieux vaut se taire que compter zero*).
  */
 export function Discover() {
-  const { t, locale } = useT();
+  const { t, tn, locale } = useT();
   const { configured, account } = useAuth();
 
-  const [people, setPeople] = useState<readonly Profile[]>([]);
+  const [people, setPeople] = useState<readonly Discoverable[]>([]);
 
   const accessToken = account?.accessToken;
   const myId = account?.userId;
@@ -74,10 +74,16 @@ export function Discover() {
       <p className="text-sm text-(--color-muted)">{t('discover.why')}</p>
       <ul className="flex flex-wrap gap-2">
         {others.map((person) => (
-          <li key={person.userId}>
+          <li key={person.userId} className="flex items-center gap-1">
             <Link className="btn" href={pathIn(`/u/${person.handle}`, locale)}>
               @{person.handle}
             </Link>
+            {/* La raison de cliquer, dite a cote du nom. ⚠️ **Rien pour ceux qui n'ont rien
+                publie** : « 0 à lire » annoncerait le vide au lieu de se taire, et ce sont
+                justement eux que le tri a deja renvoyes en fin de liste. */}
+            {person.wrote > 0 ? (
+              <span className="text-xs text-(--color-muted)">{tn('discover.wrote', person.wrote)}</span>
+            ) : null}
           </li>
         ))}
       </ul>

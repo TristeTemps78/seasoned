@@ -150,6 +150,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'discover.title': 'People to discover',
   'discover.why':
     'These people chose to make their profile public. Nobody else shows up here.',
+  'discover.wrote.one': '{n} to read',
+  'discover.wrote.other': '{n} to read',
 
   'year.aria': 'My year',
   'year.title': 'Your {year}',

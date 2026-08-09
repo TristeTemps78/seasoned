@@ -55,6 +55,17 @@ export interface PublishedReview {
   readonly authorId: string;
 }
 
+/**
+ * Un profil public, augmente de **ce qu'il y a a lire chez lui**.
+ *
+ * Un seul nombre pour les critiques et les listes : ce qu'on veut dire a quelqu'un qui
+ * hesite a cliquer n'est pas « 3 critiques et 2 listes », c'est « il y a quelque chose
+ * ici ». Deux compteurs cote a cote se liraient comme un tableau de bord.
+ */
+export interface Discoverable extends Profile {
+  readonly wrote: number;
+}
+
 /** Une liste, telle qu'une page de profil la montre — sans son contenu. */
 export interface SeriesList {
   /** L'identifiant d'URL, derive du titre par `src/domain/lists.ts`. */
@@ -576,12 +587,34 @@ export class SocialClient {
    * ⚠️ Le filtre est ecrit ici **et** applique par RLS (`profiles_select_visible`) : le
    * retirer ne montrerait rien de plus, la base rendrait la meme liste. La base decide, le
    * client demande.
+   *
+   * ## Trier, jamais filtrer — et la nuance est toute la feature
+   *
+   * Cette methode rendait les 24 derniers **inscrits**, par date : on ouvrait donc des
+   * profils vides. Elle rend desormais les memes gens **ordonnes par ce qu'il y a a lire
+   * chez eux**.
+   *
+   * 🔴 **Filtrer sur « a ecrit quelque chose » aurait ete le reflexe, et il aurait detruit
+   * ce composant** : `Discover` existe pour repondre au demarrage a froid, c'est-a-dire
+   * exactement au moment ou personne n'a encore rien ecrit. Il se serait tu precisement le
+   * jour ou il sert. Le tri, lui, ne retire personne.
    */
-  async discoverable(limit = 24): Promise<readonly Profile[]> {
+  async discoverable(limit = 24): Promise<readonly Discoverable[]> {
+    // ⚠️ Le vivier est **borne, et deliberement plus large que ce qu'on affiche**. On ne peut
+    // pas demander a PostgREST de trier par un compte imbrique ; trier ici suppose donc
+    // d'avoir sous la main plus de monde qu'on n'en montre. Tout demander serait le cout non
+    // borne que ce produit refuse partout — quelqu'un d'inscrit tres tot et tres bavard peut
+    // donc rester hors du vivier, et c'est le prix assume.
     const rows = await this.#rows<Record<string, unknown>>(
-      `profiles?visibility=eq.public&select=*&order=created_at.desc&limit=${limit}`,
+      `profiles?visibility=eq.public&select=*,reviews(count),lists(count)&order=created_at.desc&limit=${limit * 2}`,
     );
-    return rows.map(rowToProfile);
+    return rows
+      .map((row) => ({
+        ...rowToProfile(row),
+        wrote: countOf(row['reviews']) + countOf(row['lists']),
+      }))
+      .sort((a, b) => b.wrote - a.wrote)
+      .slice(0, limit);
   }
 
   // -------------------------------------------------------------------------
