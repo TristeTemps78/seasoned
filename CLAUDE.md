@@ -28,11 +28,22 @@ Réponds en **français**. Dates absolues.
 
 ## État
 
-Le social existe : comptes, synchronisation, profils publics `/u/<nom>`, abonnements, fil
-d'activité, critiques par série et par saison, signalements, et **listes**. Six faces :
-accueil, `/moi`, `/calendrier`, `/bilan`, `/amis`, `/listes`.
+Le social est complet et **réciproque** : comptes, synchronisation, profils publics
+`/u/<nom>`, abonnements **dans les deux sens**, fil d'activité, critiques par série et par
+saison, listes, signalements, bilan annuel. Trois portes de découverte : « qui d'autre l'a
+vue » sur une fiche série, « des gens à découvrir » trié par ce qu'ils ont écrit, et les
+noms qu'on croise dans le fil. Six faces : accueil, `/moi`, `/calendrier`, `/bilan`,
+`/amis`, `/listes`.
 
-Manquent surtout le **bilan annuel** et de quoi **découvrir des gens**.
+Et le produit a une **identité qui se calcule** : les trois faces (`src/domain/face.ts`).
+On ne la choisit pas, on la découvre — le logo la porte sur toutes les pages.
+
+🔴 **Ce qui manque n'est plus une fonctionnalité, c'est une preuve.** La base de production
+porte **1 compte et 0 profil** : tout le social a été bâti sans qu'une seule ligne y passe.
+Le 2026-08-10 l'a payé — le fil et les critiques n'avaient **jamais rien pu lire** (une
+relation non déclarée, un 400 avalé en liste vide), et rien ne pouvait le signaler puisque
+l'écran d'un défaut est identique à celui d'un démarrage à froid. **La prochaine session
+ouvre deux comptes avant d'écrire une ligne.**
 
 ---
 
