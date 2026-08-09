@@ -1,3 +1,5 @@
+import type { FaceId } from '@/src/domain/face';
+
 /**
  * Le cube — la marque, portee a l'ecran.
  *
@@ -45,14 +47,34 @@
  *
  * Ils sont **toujours visibles** : c'est l'identite du produit, pas un effet de survol.
  * Ce qui change au survol, c'est leur intensite.
+ *
+ * ## La marque porte la face (9.2)
+ *
+ * Quand la face est connue, sa facette devient vive et les deux autres reculent. La marque
+ * cesse alors d'etre un logo pour devenir un **miroir** — et comme elle est sur toutes les
+ * pages, l'integration est faite partout d'un coup, sans un ecran a modifier.
+ *
+ * ⚠️ Le composant ne **decide** rien : il recoit une face deja calculee et pose un attribut.
+ * Toute la logique vit dans `src/domain/face.ts`, sans quoi il faudrait la reecrire en Swift
+ * et en Kotlin le jour du natif — et les trois versions divergeraient.
+ *
+ * ⚠️ Sans `face`, aucun attribut n'est pose et le rendu est **exactement** celui d'avant :
+ * c'est ce qui permet au logo de rester neutre pour qui n'a pas encore de face.
  */
-export function Mark({ className = '' }: { readonly className?: string }) {
+export function Mark({
+  className = '',
+  face,
+}: {
+  readonly className?: string;
+  readonly face?: FaceId;
+}) {
   return (
     <svg
       viewBox="0 0 32 32"
       aria-hidden="true"
       focusable="false"
       className={`mark ${className}`}
+      {...(face !== undefined ? { 'data-face': face } : {})}
     >
       {/* Le cube : trois losanges, du plus lointain au plus proche. Il est retreci par
           rapport au cadre pour laisser respirer les arcs — sans cette marge, les eclairs

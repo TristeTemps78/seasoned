@@ -7,6 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { ReportButton } from '@/app/components/ReportButton';
+import { FaceDot } from '@/app/components/FaceDot';
 import { journalKey } from '@/src/domain/journal';
 import { redactReviews } from '@/src/domain/spoiler';
 import { SocialClient, type PublishedReview } from '@/src/social/client';
@@ -93,12 +94,19 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                     profil. La fiche serie est pourtant le premier endroit ou l'on croise
                     un inconnu dont l'avis nous interesse — c'est LA porte de decouverte,
                     et elle etait fermee. */}
-                <Link
-                  href={pathIn(`/u/${review.handle}`, locale)}
-                  className="text-sm font-medium hover:text-(--color-volt)"
-                >
-                  @{review.handle}
-                </Link>
+                <span className="flex items-center gap-1.5">
+                  {/* La face de l'auteur (9.4) : sur une fiche serie, savoir que l'avis vient
+                      de quelqu'un qui coupe tot ou de quelqu'un qui va au bout **change la
+                      lecture de l'avis**. C'est le seul endroit ou la pastille informe le
+                      contenu au lieu de decorer un nom. */}
+                  <FaceDot face={review.face} />
+                  <Link
+                    href={pathIn(`/u/${review.handle}`, locale)}
+                    className="text-sm font-medium hover:text-(--color-volt)"
+                  >
+                    @{review.handle}
+                  </Link>
+                </span>
                 {/* Signaler exige un compte : c'est l'auteur du signalement que la base
                     enregistre, et un signalement anonyme n'est pas examinable. */}
                 {account !== undefined ? (

@@ -457,6 +457,20 @@ export const FR = {
   'profile.self': 'C’est vous.',
   'profile.followsYou': 'vous suit',
   'profile.needName': 'Prenez un nom pour suivre',
+  // Les trois faces (9.1). ⚠️ Ce sont des LIBELLÉS, pas des noms de baptême : les vrais
+  // noms des trois équipes sont un choix de Tristan. Ils décrivent le comportement observé,
+  // ce qui est au moins vrai en attendant.
+  'face.finisher': 'Va au bout',
+  'face.cutter': 'Coupe net',
+  'face.rewatcher': 'Revient toujours',
+  'face.title': 'Votre face',
+  'face.why.finisher': 'Vous menez au bout ce que vous commencez.',
+  'face.why.cutter': 'Vous coupez tôt, et sans regret.',
+  'face.why.rewatcher': 'Vous revenez à celles que vous aimez.',
+  // ⚠️ Ce texte est le seul écran de la face au démarrage à froid, et il doit dire « pas
+  // encore », jamais « rien ». Une identité ne se refuse pas, elle se mérite.
+  'face.pending':
+    'Votre face se découvre. Elle apparaîtra quand vous aurez mené assez de séries jusqu’à une décision — terminée, abandonnée, ou revue.',
   'people.title': 'Qui d’autre l’a vue',
   'people.liked': 'l’aime',
   'people.finished': 'l’a terminée',

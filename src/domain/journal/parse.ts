@@ -148,11 +148,13 @@ function parseDecision(raw: unknown): JournalDecision | undefined {
 
   const atSeason = readPositiveInt(source, 'atSeason');
   const atEpisode = readPositiveInt(source, 'atEpisode');
+  const origin = readOrigin(source);
   return {
     kind: kind as DecisionKind,
     at: readInstant(source, 'at', UNDATED),
     ...(atSeason !== undefined ? { atSeason } : {}),
     ...(atEpisode !== undefined ? { atEpisode } : {}),
+    ...(origin !== undefined ? { origin } : {}),
   };
 }
 
@@ -299,13 +301,23 @@ function parseTombstones(raw: unknown, now: Date): JournalTombstones {
  */
 function parseCompletions(raw: unknown): readonly JournalCompletion[] {
   if (!Array.isArray(raw)) return [];
-  const days = new Set<string>();
+  // Une **carte** et non un ensemble de dates : un visionnage porte desormais sa provenance,
+  // et la lire est ce qui l'empeche d'etre effacee a la premiere sauvegarde (9.0).
+  const byInstant = new Map<string, JournalCompletion>();
   for (const item of raw) {
-    const at = readInstant(asRecord(item), 'at', '');
+    const source = asRecord(item);
+    const at = readInstant(source, 'at', '');
     if (at.length === 0) continue;
-    days.add(at);
+    const origin = readOrigin(source);
+    const kept = byInstant.get(at);
+    // A instant strictement egal, le fait **non marque** l'emporte : la marque dit « cette
+    // date n'est pas celle du visionnage », et si un geste pose a la main porte le meme
+    // instant, alors elle l'est. Meme direction que `readOrigin` — on prefere l'erreur qui
+    // compte un fait vecu a celle qui en efface un.
+    if (kept !== undefined && origin !== undefined) continue;
+    byInstant.set(at, { at, ...(origin !== undefined ? { origin } : {}) });
   }
-  return dedupeByDay([...days].map((at) => ({ at })));
+  return dedupeByDay([...byInstant.values()]);
 }
 
 

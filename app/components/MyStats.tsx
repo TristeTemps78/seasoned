@@ -5,6 +5,7 @@ import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { MyTally } from '@/app/components/MyTally';
 import { MyYear } from '@/app/components/MyYear';
+import { MyFaceCard } from '@/app/components/MyFaceCard';
 import { TasteCard } from '@/app/components/TasteCard';
 import { buildTally } from '@/src/domain/tally';
 import { buildTasteProfile } from '@/src/domain/taste';
@@ -51,6 +52,13 @@ export function MyStats() {
         <h1 className="page-title">{t('tallyPage.title')}</h1>
         <p className="text-(--color-muted)">{t('tallyPage.lede')}</p>
       </header>
+
+      {/* ⚠️ **Hors du `silent`, et c'est voulu.** Les deux autres cartes se taisent faute de
+          matiere ; la face, elle, dit « pas encore, et voila comment » — c'est la seule
+          chose que cet ecran puisse offrir a quelqu'un qui n'a encore rien. Elle est donc
+          aussi la reponse a la tache 7.6 (*« /bilan est presque vide — probleme de contenu,
+          pas de style : ne pas le decorer »*). */}
+      <MyFaceCard />
 
       {silent ? (
         <div className="empty-state">

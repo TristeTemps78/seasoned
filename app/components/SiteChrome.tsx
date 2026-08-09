@@ -5,7 +5,7 @@ import { PRODUCT_NAME, siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
 import { DataSafety } from '@/app/components/DataSafety';
 import { LanguagePicker } from '@/app/components/LanguagePicker';
-import { Mark } from '@/app/components/Mark';
+import { MyFace } from '@/app/components/MyFace';
 import { Faces } from '@/app/components/Faces';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import { AuthProvider } from '@/app/auth/AuthProvider';
@@ -79,7 +79,11 @@ export function SiteChrome({ locale, children }: {
               // d'un coup d'oeil ou l'on est.
               className="flex shrink-0 items-center gap-2 font-semibold tracking-[0.18em] uppercase text-(--color-text) transition-colors hover:text-(--color-volt)"
             >
-              <Mark />
+              {/* 🔴 `MyFace` et non `Mark` : cette enveloppe est un composant **serveur**,
+                  qui ne peut pas lire le journal (`no-journal-on-server`). La coquille
+                  cliente est ce qui permet a la marque de porter la face sans qu'un seul
+                  ecran ait a etre modifie — elle est deja sur toutes les pages. */}
+              <MyFace />
               <span className="hidden sm:inline">{PRODUCT_NAME}</span>
             </Link>
 

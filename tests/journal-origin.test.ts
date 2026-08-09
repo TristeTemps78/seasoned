@@ -202,6 +202,56 @@ describe('la provenance', () => {
     expect(buildTally(byHand, IMPORT_AT).declaredMinutes).toBe(0);
   });
 
+  it('survit a l’aller-retour sur une DECISION et un VISIONNAGE aussi', () => {
+    // 🔴 **Le trou que 9.0 a laisse ouvert, trouve le 2026-08-10 en ouvrant 9.1.**
+    // `asImported` marque par **parcours** — tout enregistrement date —, donc elle marquait
+    // deja ces deux-la. `parseDecision` et `parseCompletions`, eux, reconstruisaient champ
+    // par champ **sans relire la marque** : ecrite, puis effacee a la premiere sauvegarde,
+    // avec tous les tests verts. C'est mot pour mot le defaut que la tache 9.0 raconte avoir
+    // referme — sur les trois champs qu'un import ecrit *aujourd'hui*, et pas sur les deux
+    // dont la face a besoin.
+    //
+    // ⚠️ Le test passe par `asImported` et non par `importForeign` : l'import tiers n'ecrit
+    // ni decision ni visionnage au 2026-08-10, donc le defaut est **latent**. On le referme
+    // maintenant parce qu'il ne se rattrape pas — un fait importe sans marque ne se
+    // distinguera plus jamais d'un fait vecu.
+    const at = IMPORT_AT.toISOString();
+    const source = parseJournal(
+      JSON.stringify({
+        version: 3,
+        entries: {
+          'tmdb:1396': {
+            decision: { kind: 'abandoned', at, atSeason: 2 },
+            completions: [{ at }],
+          },
+        },
+      }),
+      IMPORT_AT,
+    );
+    const stamped = asImported(source);
+    const relu = parseJournal(serializeJournal(stamped), LATER);
+
+    expect(stamped.entries['tmdb:1396']?.decision?.origin).toBe('import');
+    expect(stamped.entries['tmdb:1396']?.completions?.[0]?.origin).toBe('import');
+    expect(relu.entries).toEqual(stamped.entries);
+  });
+
+  it('a instant egal, le visionnage vecu l’emporte sur le repris', () => {
+    // La direction est celle que `readOrigin` a deja tranchee : on prefere l'erreur qui
+    // compte un fait vecu a celle qui en efface un. Deux visionnages au meme instant sont
+    // le meme visionnage, et si l'un a ete pose a la main, la date EST la vraie.
+    const at = IMPORT_AT.toISOString();
+    const relu = parseJournal(
+      JSON.stringify({
+        version: 3,
+        entries: { 'tmdb:1396': { completions: [{ at, origin: 'import' }, { at }] } },
+      }),
+      LATER,
+    );
+
+    expect(relu.entries['tmdb:1396']?.completions).toEqual([{ at }]);
+  });
+
   it('laisse intact le seau des champs inconnus', () => {
     // Son contrat est de traverser sans etre touche (decision n°4) : y ecrire une
     // provenance serait modifier une donnee dont on ignore la forme.

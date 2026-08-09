@@ -210,6 +210,21 @@ export interface JournalDecision {
   readonly at: string;
   readonly atSeason?: number;
   readonly atEpisode?: number;
+  /**
+   * Voir {@link FactOrigin}. Absent = pose a la main.
+   *
+   * 🔴 **Ce champ manquait, et {@link asImported} le posait quand meme.** Elle marque par
+   * **parcours** — tout enregistrement qui porte une date — donc elle marquait deja une
+   * decision ; c'est `parseDecision` qui ne le relisait pas, et qui l'effacait donc a la
+   * premiere sauvegarde. Exactement le defaut que 9.0 documente, reste ouvert sur les deux
+   * seuls champs dont la face (9.1) a besoin.
+   *
+   * ⚠️ Latent au 2026-08-10 — `importForeign` n'ecrit aujourd'hui ni decision ni
+   * visionnage. C'est precisement pour ca qu'on le referme maintenant : *ce qu'on
+   * n'enregistre pas au moment du geste manque pour toujours*, et le jour ou un import
+   * apprendra a lire un abandon, la marque devra deja etre relue.
+   */
+  readonly origin?: FactOrigin;
 }
 
 /** « Je veux la voir » — le premier geste possible, et le seul qui ne suppose rien. */
@@ -356,6 +371,8 @@ export interface JournalLiked {
  */
 export interface JournalCompletion {
   readonly at: string;
+  /** Voir {@link FactOrigin} et la note de {@link JournalDecision.origin}. */
+  readonly origin?: FactOrigin;
 }
 
 /**

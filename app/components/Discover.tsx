@@ -6,6 +6,7 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { pathIn } from '@/lib/routes';
+import { FaceDot } from '@/app/components/FaceDot';
 import { SocialClient, type Discoverable } from '@/src/social/client';
 
 /**
@@ -76,6 +77,7 @@ export function Discover() {
         {others.map((person) => (
           <li key={person.userId} className="flex items-center gap-1">
             <Link className="btn" href={pathIn(`/u/${person.handle}`, locale)}>
+              <FaceDot face={person.face} />
               @{person.handle}
             </Link>
             {/* La raison de cliquer, dite a cote du nom. ⚠️ **Rien pour ceux qui n'ont rien

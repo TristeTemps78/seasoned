@@ -11,6 +11,7 @@ import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { SocialClient, type Profile, type PublishedReview } from '@/src/social/client';
 import { Lists } from '@/app/components/Lists';
+import { FaceDot } from '@/app/components/FaceDot';
 
 /**
  * La page publique de quelqu'un — `/u/<nom>`.
@@ -149,7 +150,19 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="page-title">@{profile.handle}</h1>
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="page-title">@{profile.handle}</h1>
+          {/* ⚠️ Le **mot**, pas la pastille. Ailleurs c'est l'inverse : dans le fil et dans
+              « des gens a decouvrir », une ligne par personne ne supporte pas un mot de plus.
+              Ici il y a la place, et une couleur seule n'apprend rien a qui la voit pour la
+              premiere fois. La pastille l'accompagne pour faire le lien avec les listes. */}
+          {profile.face !== undefined ? (
+            <span className="flex items-center gap-1.5 text-sm text-(--color-muted)">
+              <FaceDot face={profile.face} />
+              {t(`face.${profile.face}`)}
+            </span>
+          ) : null}
+        </div>
         {isSelf ? (
           <span className="text-sm text-(--color-muted)">{t('profile.self')}</span>
         ) : account === undefined || named === undefined ? null : (

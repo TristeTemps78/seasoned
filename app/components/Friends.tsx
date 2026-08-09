@@ -7,11 +7,13 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { projectActivity, redactActivity } from '@/src/domain/activity';
+import { faceOf } from '@/src/domain/face';
 import { checkHandle } from '@/src/domain/handles';
 import { seriesEntries, type JournalKey } from '@/src/domain/journal';
 import { SocialClient, type FeedItem, type Profile } from '@/src/social/client';
 import { ReportButton } from '@/app/components/ReportButton';
 import { Discover } from '@/app/components/Discover';
+import { FaceDot } from '@/app/components/FaceDot';
 import { pathIn } from '@/lib/routes';
 
 /**
@@ -64,6 +66,16 @@ export function Friends() {
       setProfile(mine);
       setLoaded(true);
       if (mine === undefined) return;
+
+      // La face (9.4). ⚠️ **Seulement si elle a change**, contrairement a l'activite et aux
+      // critiques juste dessous : celles-la sont des faits, dont la cle naturelle absorbe les
+      // republications ; une face est un **etat**, et le reecrire a l'identique serait une
+      // requete pour rien a chaque ouverture de page.
+      const face = faceOf(journal)?.id;
+      if (face !== mine.face) {
+        void social.setFace(id, face);
+        setProfile({ ...mine, ...(face !== undefined ? { face } : {}) });
+      }
       // ⚠️ Publier a **chaque** ouverture, et republier tout : la cle naturelle de la table
       // absorbe les doublons. Tenir la liste de ce qui a deja ete envoye serait un etat de
       // plus a synchroniser, donc un etat de plus a desynchroniser.
@@ -346,6 +358,7 @@ export function Friends() {
                 key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
                 className="panel bg-(--color-surface)/50 px-4 py-3 text-sm"
               >
+                <FaceDot face={item.face} />{' '}
                 <Link
                   href={pathIn(`/u/${item.handle}`, locale)}
                   className="text-(--color-muted) hover:text-(--color-volt)"

@@ -10,6 +10,7 @@
  */
 
 import type { ActivityItem, ActivityKind } from '../domain/activity';
+import type { FaceId } from '../domain/face';
 
 export interface SocialOptions {
   readonly url: string;
@@ -26,6 +27,13 @@ export interface Profile {
   readonly handle: string;
   readonly displayName?: string;
   readonly visibility: Visibility;
+  /**
+   * La face, si elle a ete publiee. Absente = sous le seuil, donc on se tait.
+   *
+   * ⚠️ Elle suit la visibilite du profil **sans qu'une regle de plus ait ete ecrite** :
+   * c'est une colonne de `profiles`, et `profiles_select_visible` gouverne la ligne entiere.
+   */
+  readonly face?: FaceId;
 }
 
 /** Ce qui peut arriver quand on reclame un nom. */
@@ -53,6 +61,8 @@ export interface PublishedReview {
   readonly publishedAt: string;
   readonly handle: string;
   readonly authorId: string;
+  /** La face de l'auteur, si elle en a une. Voir {@link Profile.face}. */
+  readonly face?: FaceId;
 }
 
 /**
@@ -100,6 +110,8 @@ export interface FeedItem extends ActivityItem {
   readonly handle: string;
   /** L'auteur du fait — necessaire pour pouvoir le signaler. */
   readonly authorId: string;
+  /** Sa face, si elle en a une. Voir {@link Profile.face}. */
+  readonly face?: FaceId;
 }
 
 /**
@@ -121,12 +133,34 @@ function isKnownKind(value: unknown): value is ActivityKind {
   return typeof value === 'string' && Object.hasOwn(KNOWN_KINDS, value);
 }
 
+/**
+ * Les faces que ce navigateur sait afficher.
+ *
+ * Derive du type, donc **impossible a oublier** — meme procede que {@link KNOWN_KINDS}, et
+ * pour la meme raison : le serveur est en avance sur ce navigateur des qu'un deploiement
+ * ajoute une valeur. Un `as FaceId` laisserait alors passer un mot pour lequel il n'existe
+ * ni cle de dictionnaire ni couleur, et la pastille s'afficherait **vide**.
+ */
+const KNOWN_FACES: Readonly<Record<FaceId, true>> = {
+  finisher: true,
+  cutter: true,
+  rewatcher: true,
+};
+
+function readFace(value: unknown): FaceId | undefined {
+  return typeof value === 'string' && Object.hasOwn(KNOWN_FACES, value)
+    ? (value as FaceId)
+    : undefined;
+}
+
 function rowToProfile(row: Record<string, unknown>): Profile {
+  const face = readFace(row['face']);
   return {
     userId: String(row['user_id']),
     handle: String(row['handle']),
     ...(typeof row['display_name'] === 'string' ? { displayName: row['display_name'] } : {}),
     visibility: (row['visibility'] as Visibility) ?? 'followers',
+    ...(face !== undefined ? { face } : {}),
   };
 }
 
@@ -221,6 +255,24 @@ export class SocialClient {
     } catch {
       return { kind: 'failed' };
     }
+  }
+
+  /**
+   * Publie sa face.
+   *
+   * ⚠️ **A n'appeler que quand elle a change**, contrairement a `publish()` et
+   * `publishReview()` qui renvoient tout a chaque passage. Ces deux-la poussent des **faits**,
+   * dont la cle naturelle absorbe les republications ; une face est un **etat**, donc la
+   * reecrire a l'identique est une requete pour rien a chaque ouverture de page.
+   *
+   * `undefined` efface la colonne : c'est ce qui arrive quand on repasse sous le seuil, par
+   * exemple apres avoir efface des decisions. La face doit alors se taire, pas rester figee
+   * sur ce qu'elle etait.
+   */
+  async setFace(userId: string, face: FaceId | undefined): Promise<boolean> {
+    return this.#write(`profiles?user_id=eq.${encodeURIComponent(userId)}`, 'PATCH', {
+      face: face ?? null,
+    });
   }
 
   async setVisibility(userId: string, visibility: Visibility): Promise<boolean> {
@@ -378,11 +430,14 @@ export class SocialClient {
    */
   async #activity(filter: string, limit: number): Promise<readonly FeedItem[]> {
     const rows = await this.#rows<Record<string, unknown>>(
-      `activity?${filter}select=kind,subject,season,stars,happened_on,profiles!inner(handle,user_id)&order=happened_on.desc&limit=${limit}`,
+      `activity?${filter}select=kind,subject,season,stars,happened_on,profiles!inner(handle,user_id,face)&order=happened_on.desc&limit=${limit}`,
     );
     return rows.flatMap((row) => {
-      const author = row['profiles'] as { handle?: unknown; user_id?: unknown } | undefined;
+      const author = row['profiles'] as
+        | { handle?: unknown; user_id?: unknown; face?: unknown }
+        | undefined;
       if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
+      const face = readFace(author.face);
       // ⚠️ Le genre est **valide**, pas simplement transtype. Il vient du serveur, mais
       // le serveur est en avance sur ce navigateur des qu'un deploiement ajoute un genre
       // — c'est exactement ce que fait `005_liked.sql`. Un `as` laissait alors passer une
@@ -399,6 +454,7 @@ export class SocialClient {
           happenedOn: String(row['happened_on']),
           handle: author.handle,
           authorId: author.user_id,
+          ...(face !== undefined ? { face } : {}),
           ...(typeof season === 'number' ? { season } : {}),
           ...(stars === null || stars === undefined
             ? {}
@@ -552,12 +608,15 @@ export class SocialClient {
    */
   async #reviews(filter: string, limit: number): Promise<readonly PublishedReview[]> {
     const rows = await this.#rows<Record<string, unknown>>(
-      `reviews?${filter}&select=subject,target,body,through_season,lang,published_at,profiles!inner(handle,user_id)&order=published_at.desc&limit=${limit}`,
+      `reviews?${filter}&select=subject,target,body,through_season,lang,published_at,profiles!inner(handle,user_id,face)&order=published_at.desc&limit=${limit}`,
     );
     return rows.flatMap((row) => {
-      const author = row['profiles'] as { handle?: unknown; user_id?: unknown } | undefined;
+      const author = row['profiles'] as
+        | { handle?: unknown; user_id?: unknown; face?: unknown }
+        | undefined;
       if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
       const through = row['through_season'];
+      const face = readFace(author.face);
       return [
         {
           subject: String(row['subject']),
@@ -568,6 +627,7 @@ export class SocialClient {
           publishedAt: String(row['published_at']),
           handle: author.handle,
           authorId: author.user_id,
+          ...(face !== undefined ? { face } : {}),
         },
       ];
     });
@@ -729,7 +789,7 @@ export class SocialClient {
    */
   async #write(
     path: string,
-    method: 'POST' | 'DELETE',
+    method: 'POST' | 'DELETE' | 'PATCH',
     body?: Record<string, unknown>,
     prefer = 'return=minimal',
   ): Promise<boolean> {

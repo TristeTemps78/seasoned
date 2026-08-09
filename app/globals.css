@@ -332,6 +332,52 @@ body::before {
   }
 
   /**
+   * 9.2 — la marque porte la face.
+   *
+   * Quand `data-face` est pose, les trois facettes reculent et **une seule** revient devant.
+   * Ecrit dans cet ordre — tout eteindre, puis rallumer — plutot qu'en trois regles
+   * symetriques : la seconde forme obligerait a penser aux deux autres a chaque ajout, et
+   * une quatrieme face oubliee laisserait deux facettes vives au lieu d'une.
+   *
+   * ⚠️ Sans l'attribut, **aucune** de ces regles ne s'applique : le logo neutre d'avant est
+   * intact, ce qui est exactement ce qu'il faut pour qui n'a pas encore de face.
+   */
+  .mark[data-face] :is(.mark-top, .mark-left, .mark-right) {
+    opacity: 0.22;
+    transition: opacity 220ms ease;
+  }
+  .mark[data-face='finisher'] .mark-top,
+  .mark[data-face='cutter'] .mark-left,
+  .mark[data-face='rewatcher'] .mark-right {
+    opacity: 1;
+  }
+
+  /**
+   * La face de quelqu'un d'autre, dans une liste dense.
+   *
+   * Les trois couleurs sont **celles du logo**, sans exception : c'est ce qui fait qu'une
+   * pastille bleue dans le fil et la facette bleue de la marque parlent de la meme chose.
+   * En inventer une nuance ici casserait le seul lien qui rend le systeme lisible.
+   */
+  .face-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    vertical-align: baseline;
+    background: var(--color-muted);
+  }
+  .face-dot[data-face='finisher'] {
+    background: var(--color-face-red);
+  }
+  .face-dot[data-face='cutter'] {
+    background: var(--color-face-blue);
+  }
+  .face-dot[data-face='rewatcher'] {
+    background: var(--color-face-yellow);
+  }
+
+  /**
    * Les arcs electriques — **volt**-face.
    *
    * Toujours visibles : ils sont la moitie du nom, pas un effet de survol. Le trait est
