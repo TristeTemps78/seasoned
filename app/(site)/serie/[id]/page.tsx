@@ -26,6 +26,7 @@ import { WatchOptions } from '@/app/components/WatchOptions';
 import { SeriesOrderings } from '@/app/components/SeriesOrderings';
 import { MyProgress } from '@/app/components/MyProgress';
 import { Reviews } from '@/app/components/Reviews';
+import { SeriesPeople } from '@/app/components/SeriesPeople';
 import { AddToList } from '@/app/components/AddToList';
 import { legalIsComplete } from '@/lib/legal';
 
@@ -347,6 +348,12 @@ export async function SeriesView({ id, locale }: {
       <AddToList seriesId={id} />
 
       <Reviews seriesId={id} />
+
+      {/* Apres les critiques, et non avant : on lit d'abord ce que disent les gens qu'on a
+          choisi de suivre, puis on decouvre les autres. C'est l'inverse de `/amis`, ou
+          `Discover` passe **devant** le fil — mais la, le fil est vide au demarrage et la
+          page serait blanche ; ici la page est pleine de toute facon. */}
+      <SeriesPeople seriesId={id} />
 
       <SeriesOrderings
         id={id}

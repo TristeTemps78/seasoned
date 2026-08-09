@@ -142,6 +142,27 @@ describe('SocialClient.followers', () => {
     ]);
   });
 
+  it('watchersOf ne demande que les genres qui ne portent pas de saison', async () => {
+    // 🔴 **Le defaut que ce test attrape est un spoiler, pas une erreur d'affichage.** Sans
+    // le filtre de genre, l'encart de la fiche serie recevrait des `rated_season` — donc
+    // « quelqu'un a note la saison 6 » chez un lecteur qui en est a la saison 2. Le fil, lui,
+    // a le droit de les recevoir : il passe par `redactActivity` avec la position du lecteur,
+    // ce que cet encart ne fait pas et n'a pas a faire (`AGENTS.md` regle 7).
+    const { asked, client } = recording([[]]);
+    await client.watchersOf('tmdb:1396');
+
+    expect(asked[0]).toContain('subject=eq.tmdb%3A1396');
+    expect(asked[0]).toContain('kind=in.(liked,finished)');
+
+    // L'ancrage : le fil, lui, ne doit filtrer NI par serie NI par genre — sans quoi les
+    // deux assertions ci-dessus passeraient aussi avec un filtre pose au mauvais endroit,
+    // c'est-a-dire sur les deux lectures.
+    const fil = recording([[]]);
+    await fil.client.feed();
+    expect(fil.asked[0]).not.toContain('kind=in.');
+    expect(fil.asked[0]).not.toContain('subject=eq.');
+  });
+
   it('personne ne me suit : aucun second appel', async () => {
     // ⚠️ Sans le garde, la seconde requete part avec `in.()` — une demande vide envoyee au
     // reseau, sur une page que tout le monde ouvre.

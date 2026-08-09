@@ -323,8 +323,51 @@ export class SocialClient {
    * RLS fait le filtrage : on demande tout, la base ne rend que le visible.
    */
   async feed(limit = 50): Promise<readonly FeedItem[]> {
+    return this.#activity('', limit);
+  }
+
+  /**
+   * Qui d'autre a **aime** ou **termine** cette serie.
+   *
+   * ## La porte de decouverte principale, restee fermee jusqu'ici
+   *
+   * `Discover.tsx` la nomme lui-meme : *« on croise quelqu'un parce que son avis sur une
+   * serie nous interesse, pas parce qu'on cherchait des gens »*. Le nom de l'auteur d'une
+   * critique y menait deja ; encore faut-il avoir **ecrit**. Un coeur, lui, se pose en un
+   * clic — donc cette porte s'ouvre sur une population bien plus large.
+   *
+   * **Zero table neuve, zero route serveur** : `activity_select_visible` porte
+   * `can_see(user_id)`, donc un visiteur anonyme ne voit que les profils `public` et un
+   * lecteur connecte y ajoute ceux qu'il suit. Le filtre de visibilite n'est pas ecrit ici,
+   * et ne doit pas l'etre : le refaire donnerait deux sources de verite pour une meme regle.
+   *
+   * ## ⚠️ `liked` et `finished` seulement, et la raison n'est pas le hasard
+   *
+   * `AGENTS.md` regle 7 pose la question juste : *ce fait decrit-il l'oeuvre ou quelqu'un
+   * d'autre ?* Ces deux-la ne portent **aucun numero de saison** — ils ne peuvent donc rien
+   * apprendre de l'interieur de la serie. Un `rated_season` en dirait, lui : « quelqu'un a
+   * note la saison 6 » apprend qu'il existe une saison 6. Il exigerait `redactActivity` et
+   * la position du lecteur, c'est-a-dire la mecanique du fil — pour un encart qui n'en a pas
+   * besoin. `started` et `wanted` sont ecartes pour une autre raison : ils ne disent rien de
+   * ce qu'on en a pense, donc ils ne donnent aucune envie d'ouvrir un profil.
+   */
+  async watchersOf(subject: string, limit = 12): Promise<readonly FeedItem[]> {
+    return this.#activity(
+      `subject=eq.${encodeURIComponent(subject)}&kind=in.(liked,finished)&`,
+      limit,
+    );
+  }
+
+  /**
+   * Le corps commun des deux lectures du fil — elles ne different que par leur filtre.
+   *
+   * Meme motif que {@link #reviews}, et pour la meme raison : ce parsing tolerant **ecarte**
+   * les lignes sans auteur et les genres inconnus, et deux copies de ce rejet finiraient par
+   * se repondre differemment le jour ou l'une serait corrigee.
+   */
+  async #activity(filter: string, limit: number): Promise<readonly FeedItem[]> {
     const rows = await this.#rows<Record<string, unknown>>(
-      `activity?select=kind,subject,season,stars,happened_on,profiles!inner(handle,user_id)&order=happened_on.desc&limit=${limit}`,
+      `activity?${filter}select=kind,subject,season,stars,happened_on,profiles!inner(handle,user_id)&order=happened_on.desc&limit=${limit}`,
     );
     return rows.flatMap((row) => {
       const author = row['profiles'] as { handle?: unknown; user_id?: unknown } | undefined;
