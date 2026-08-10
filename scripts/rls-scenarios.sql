@@ -1,0 +1,215 @@
+-- =============================================================================
+-- rls-scenarios.sql — ce que RLS laisse voir, prouve contre la VRAIE base
+-- =============================================================================
+--
+-- Lance par `npm run db:scenarios`. **Ne persiste rien**, jamais.
+--
+-- ## Pourquoi ce fichier existe
+--
+-- Les politiques RLS sont la seule couche d'autorisation du produit : PostgREST est
+-- expose au navigateur avec une cle publique, donc ce qu'un inconnu peut lire est
+-- **exactement** ce que ces politiques laissent passer. Rien de tout cela n'est
+-- verifiable par les tests : ils doublent `fetch` et prouvent l'URL qu'on construit,
+-- jamais qu'elle repond.
+--
+-- Les 11 scenarios du 2026-08-09 et les 7 + 4 du 2026-08-10 ont donc tourne a la main,
+-- depuis un bloc-notes, et **n'ont pas survecu a leur session**. Le procede, lui, valait
+-- d'etre garde. Il est ici.
+--
+-- ## Pourquoi ca ne peut pas laisser de trace
+--
+-- Le bloc se termine par un `raise exception`, jamais par un `commit`. Une exception
+-- annule la transaction **entiere** — y compris le semis. Ce n'est pas un `rollback`
+-- qu'on pourrait oublier d'ecrire ou ne pas atteindre : c'est le seul chemin de sortie,
+-- succes comme echec. Le rapport voyage dans le message de l'exception.
+--
+-- ⚠️ Corollaire a ne pas perdre : **ce fichier ne doit jamais contenir de `commit`.**
+--
+-- ## Le detail qui rend la mesure vraie
+--
+-- `postgres` contourne RLS (`bypassrls`). Mesurer sous ce role rendrait tous les
+-- scenarios verts sans rien prouver — c'est le piege exact de « une verification mal
+-- ancree est pire qu'aucune : elle rassure ». Chaque mesure passe donc par
+-- `set local role authenticated`, et l'identite est posee dans `request.jwt.claims`,
+-- ou `auth.uid()` la lit — comme le ferait un vrai navigateur.
+-- =============================================================================
+
+do $$
+declare
+  -- Trois comptes : A regarde, B est regarde, Z est connecte mais n'a jamais pris de nom.
+  a  uuid := gen_random_uuid();
+  b  uuid := gen_random_uuid();
+  z  uuid := gen_random_uuid();
+  -- Un identifiant de passage, pour ne heurter aucune donnee reelle si elle arrive.
+  tag text := 'rlstest' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
+
+  obtenu  text;
+  attendu text;
+  lignes  integer;
+  n       integer := 0;
+  echecs  integer := 0;
+  rapport text := '';
+
+begin
+  -- ---------------------------------------------------------------------------
+  -- Semis, en `postgres` : on fabrique la situation, on ne mesure rien encore.
+  -- ---------------------------------------------------------------------------
+  insert into auth.users (id, instance_id, aud, role, email)
+  values
+    (a, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', tag || '_a@example.test'),
+    (b, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', tag || '_b@example.test'),
+    (z, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', tag || '_z@example.test');
+
+  -- A est public, B est en `followers` — la valeur par defaut (Q1), et le cas qui compte.
+  insert into public.profiles (user_id, handle, display_name, visibility)
+  values (a, tag || 'a', 'A', 'public'),
+         (b, tag || 'b', 'B', 'followers');
+
+  -- B suit A. A ne suit PAS B : c'est toute la situation de 008.
+  insert into public.follows (follower_id, followee_id) values (b, a);
+
+  -- Du contenu chez B, pour distinguer « voir le nom » de « voir ce qu'il regarde ».
+  insert into public.activity (user_id, kind, subject, season, stars, happened_on)
+  values (b, 'rated_season', 'tmdb:1396', 1, 4.5, current_date);
+
+  -- ---------------------------------------------------------------------------
+  -- On devient A. Tout ce qui suit est mesure sous RLS.
+  -- ---------------------------------------------------------------------------
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  -- 1 — 008 : le nom de qui me suit m'est visible, meme sans reciprocite.
+  select count(*)::text into obtenu from public.profiles p where p.user_id = b;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. A voit le handle de B, qui le suit (008)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 2 — 008 decision n°2 : le nom s'ouvre, le contenu non.
+  select count(*)::text into obtenu from public.activity where user_id = b;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. mais A ne voit RIEN de ce que B regarde (008)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 3 — 010 : personne ne pose la face de quelqu'un d'autre. RLS ne VOIT pas la ligne,
+  --     donc ce n'est pas une erreur mais zero ligne mise a jour : on compte.
+  update public.profiles set face = 'finisher' where user_id = b;
+  get diagnostics lignes = row_count;
+  obtenu := lignes::text;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. A ne peut pas poser la face de B (010)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 4 — 010 : et il pose bien la sienne, sinon la feature ne marche pour personne.
+  update public.profiles set face = 'finisher' where user_id = a;
+  get diagnostics lignes = row_count;
+  obtenu := lignes::text;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. A pose sa propre face (010)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 5 — 009 : les trois cles etrangeres vers `profiles` sont **declarees**.
+  --
+  -- ⚠️ Ce scenario a d'abord teste une jointure SQL `join … on`, et c'etait faux : une
+  -- jointure explicite marche **meme sans cle etrangere**. Elle serait donc passee au
+  -- vert le 2026-08-10, le jour ou le fil ne pouvait rien lire. Ce qui manquait n'etait
+  -- pas la capacite de joindre, c'est la **declaration** — PostgREST lit le catalogue
+  -- Postgres pour deduire `profiles!inner(...)`, et ne devine rien.
+  select count(*)::text into obtenu
+  from pg_constraint c
+  where c.contype = 'f'
+    and c.confrelid = 'public.profiles'::regclass
+    and c.conrelid in ('public.activity'::regclass,
+                       'public.reviews'::regclass,
+                       'public.lists'::regclass);
+  n := n + 1; attendu := '3';
+  rapport := rapport || format(E'  %s  %s. activity/reviews/lists declarent leur FK vers profiles (009)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 6 — 003 : une date future est refusee, et c'est la seule chose qu'un client ne peut
+  --     pas forger lui-meme.
+  begin
+    insert into public.activity (user_id, kind, subject, happened_on)
+    values (a, 'finished', 'tmdb:1399', current_date + 1);
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. une activite datee du futur est refusee (003)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
+  -- On devient Z : connecte, mais sans nom. C'est le trou que 008 a referme.
+  -- ---------------------------------------------------------------------------
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', z::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  -- 7 — 008 : un compte sans handle ne suit personne. Sans cette regle, il lirait le fil
+  --     de A sans jamais apparaitre nulle part — ni visible, ni signalable.
+  begin
+    insert into public.follows (follower_id, followee_id) values (z, a);
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. un compte sans nom ne peut pas suivre (008)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 8 — 003 : Z ne suit pas B et B est en `followers` — B lui est donc invisible.
+  --     C'est le scenario qui prouve que le defaut n'est pas « tout ouvert ».
+  select count(*)::text into obtenu from public.profiles p where p.user_id = b;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. un inconnu ne voit pas un profil « followers » (003)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 9 — 003 : le profil `public` de A, lui, se voit sans rien demander.
+  select count(*)::text into obtenu from public.profiles p where p.user_id = a;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. un inconnu voit un profil « public » (003)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 10 — 003 : Z ne peut pas reclamer le nom de quelqu'un d'autre.
+  begin
+    insert into public.profiles (user_id, handle) values (z, tag || 'a');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. un handle deja pris est refuse (003)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 11 — 003 / Q7 : un handle reserve est refuse par le declencheur, pas par politesse.
+  begin
+    insert into public.profiles (user_id, handle) values (z, 'admin');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. un handle reserve est refuse (003, Q7)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
+  -- Sortie : toujours par une exception, donc toujours en annulant tout.
+  -- ---------------------------------------------------------------------------
+  perform set_config('role', 'postgres', true);
+  raise exception E'\n%  % scenario(s), % echec(s)\n  RIEN N''A ETE ECRIT : cette exception annule la transaction entiere.',
+    rapport, n, echecs
+    using errcode = 'RLSOK';
+end $$;

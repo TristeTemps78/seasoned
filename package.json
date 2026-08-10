@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run test",
     "check:supabase": "node scripts/check-supabase.mjs",
-    "db:push": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/db-push.mjs"
+    "db:push": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/db-push.mjs",
+    "db:scenarios": "node scripts/db-scenarios.mjs"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
