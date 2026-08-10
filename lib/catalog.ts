@@ -731,7 +731,7 @@ export async function alsoByCreators(
 }
 
 /** Tailles d'affiche proposees par le CDN de TMDB, avec leur largeur en pixels. */
-const POSTER_SIZES = { w185: 185, w342: 342, w500: 500 } as const;
+const POSTER_SIZES = { w154: 154, w185: 185, w342: 342, w500: 500 } as const;
 export type PosterSize = keyof typeof POSTER_SIZES;
 
 /**
@@ -757,4 +757,46 @@ export function posterUrl(
 export function posterDimensions(size: PosterSize): { width: number; height: number } {
   const width = POSTER_SIZES[size];
   return { width, height: Math.round(width * POSTER_ASPECT) };
+}
+
+/**
+ * Tailles de banniere proposees par le CDN de TMDB, avec leur largeur en pixels.
+ *
+ * ⚠️ **Ce ne sont pas celles des affiches**, et c'est la raison d'etre de ce bloc :
+ * `w342` n'existe pas pour une banniere, `w780` n'existe pas pour une affiche. Deriver
+ * l'une de l'autre servirait des URL en 404 sur le CDN.
+ */
+const BACKDROP_SIZES = { w300: 300, w780: 780, w1280: 1280 } as const;
+export type BackdropSize = keyof typeof BACKDROP_SIZES;
+
+/** Rapport hauteur/largeur d'une banniere : 9 pour 16. Constant chez TMDB, comme le 2:3. */
+const BACKDROP_ASPECT = 9 / 16;
+
+/**
+ * URL d'une banniere sur le CDN de TMDB.
+ *
+ * ⚠️ Cette URL etait fabriquee a la main dans `ChooseArtwork` — le seul endroit qui rendait
+ * une banniere — pendant que `posterUrl` existait juste ici. Une seconde facon d'ecrire la
+ * meme chose est exactement ce qui a fait diverger `SeriesCard` et `LibraryCard` jusqu'a ce
+ * que l'un affiche trois rectangles gris.
+ */
+export function backdropUrl(
+  path: string | undefined,
+  size: BackdropSize = 'w780',
+): string | undefined {
+  if (path === undefined) return undefined;
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}
+
+/**
+ * Dimensions a declarer pour une banniere.
+ *
+ * Elle devient le plus gros element de l'ecran la ou elle est rendue, donc **l'element que
+ * Google chronometre**. Sans dimensions, la page saute a son arrivee — et le travail deja
+ * fait sur le decalage de mise en page (`posterDimensions`) serait defait par l'image qui
+ * compte le plus.
+ */
+export function backdropDimensions(size: BackdropSize): { width: number; height: number } {
+  const width = BACKDROP_SIZES[size];
+  return { width, height: Math.round(width * BACKDROP_ASPECT) };
 }

@@ -77,9 +77,14 @@ export function Faces({ locale }: { readonly locale: Locale }) {
               <Link
                 href={href}
                 {...(active ? { 'aria-current': 'page' as const } : {})}
+                // ⚠️ La face active porte le **volt sur le libelle**, pas seulement sous lui.
+                // Un trait de 2 px sous un mot gris est la difference la plus faible que
+                // l'interface sache produire : sur une barre de six entrees toutes grises,
+                // il fallait chercher ou l'on etait. Le libelle passe donc au volt et le
+                // trait s'allume — deux signaux, dont un qui ne depend pas de la couleur.
                 className={`inline-block border-b-2 px-3 py-4 text-sm whitespace-nowrap transition-colors ${
                   active
-                    ? 'border-(--color-volt) text-(--color-text)'
+                    ? 'border-(--color-volt) font-medium text-(--color-volt) [text-shadow:0_0_1rem_color-mix(in_oklab,var(--color-volt)_45%,transparent)]'
                     : 'border-transparent text-(--color-muted) hover:text-(--color-text)'
                 }`}
               >

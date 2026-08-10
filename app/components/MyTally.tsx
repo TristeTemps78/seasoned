@@ -52,7 +52,10 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
 
   return (
     <section
-      className="edge-lit space-y-3 panel px-4 py-4"
+      // `panel-lit` : c'est le chiffre qui repond a la question du nom du site, sur une page
+      // qui n'a que trois cartes. Il portait deja `glow` sur son total ; la surface qui le
+      // contient restait, elle, au meme poids que les deux autres.
+      className="panel-lit space-y-3 px-4 py-4"
       aria-label={t('tally.aria')}
     >
       <h2 className="card-title">{t('tally.title')}</h2>

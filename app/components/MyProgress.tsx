@@ -165,7 +165,11 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
 
   return (
     <section
-      className="edge-lit space-y-4 panel px-4 py-4"
+      // ⚠️ `panel-lit` et non `edge-lit panel` : c'est **le seul bloc de la fiche qui vous
+      // connaisse**, donc celui vers lequel le regard doit aller une fois la decision prise.
+      // Il portait le liseré sans le halo, ce qui le laissait au meme poids que les onze
+      // autres surfaces de la page.
+      className="panel-lit space-y-4 px-4 py-4"
       aria-label={t('progress.aria')}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">

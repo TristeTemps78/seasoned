@@ -20,7 +20,11 @@ import type { LibraryItem } from '@/src/domain/library';
  * plutot que de la faire disparaitre. Perdre une vignette est un defaut d'affichage ;
  * perdre une serie suivie serait une perte de donnee.
  */
-export function LibraryCard({ item }: { readonly item: LibraryItem }) {
+export function LibraryCard({ item, lead = false }: {
+  readonly item: LibraryItem;
+  /** Rendue dans la rangee de tete : l'affiche y fait ~300 px, `w342` y serait flou. */
+  readonly lead?: boolean;
+}) {
   const { t, tn, locale } = useT();
   const parsed = parseJournalKey(item.key);
   const href =
@@ -58,6 +62,7 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
         <Poster
           path={item.entry.poster ?? item.snapshot?.posterPath}
           title={item.snapshot?.title ?? t('library.card.tracked')}
+          size={lead ? 'w500' : 'w342'}
           className="transition-opacity group-hover:opacity-85"
         />
       </div>

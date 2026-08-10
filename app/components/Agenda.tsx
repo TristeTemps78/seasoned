@@ -7,6 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { upcomingFrom, type UpcomingEpisode } from '@/src/domain/calendar';
 import { parseJournalKey } from '@/src/domain/journal';
 import { CalendarExport } from '@/app/components/CalendarExport';
+import { Poster } from '@/app/components/Poster';
 import { seriesPath } from '@/lib/routes';
 import { formatDate } from '@/lib/format';
 
@@ -65,7 +66,19 @@ export function Agenda() {
             </h2>
             <ul className="divide-y divide-(--color-edge) panel">
               {episodes.map((episode) => (
-                <Row key={episode.key} episode={episode} now={now} />
+                <Row
+                  key={episode.key}
+                  episode={episode}
+                  now={now}
+                  // ⚠️ Lu ici et **pas** ajoute a `UpcomingEpisode` : l'affiche est un
+                  // besoin d'affichage, et ce type sert aussi a fabriquer le `.ics`, ou
+                  // elle n'a rien a faire. L'affiche **choisie** passe devant celle du
+                  // catalogue, comme dans la bibliotheque.
+                  posterPath={
+                    journal.entries[episode.key]?.poster ??
+                    journal.entries[episode.key]?.snapshot?.posterPath
+                  }
+                />
               ))}
             </ul>
           </section>
@@ -77,7 +90,23 @@ export function Agenda() {
   );
 }
 
-function Row({ episode, now }: { readonly episode: UpcomingEpisode; readonly now: Date }) {
+/**
+ * Une ligne du calendrier — **avec son affiche depuis le 2026-08-10**.
+ *
+ * 🔴 C'etait l'ecran le plus litteralement lineaire du produit : une colonne de lignes de
+ * texte, sans une seule image, dans une application dont la regle fondatrice est
+ * « l'affiche est l'interface ». On y cherchait sa serie **en lisant**, alors qu'on la
+ * reconnait a son affiche partout ailleurs.
+ *
+ * ⚠️ **Et ca ne coute aucun appel** : l'affiche est deja dans l'instantane que la fiche
+ * serie a depose. `Poster` rend son monogramme quand elle manque, donc une serie sans
+ * visuel garde sa place au lieu d'ouvrir un trou dans la colonne.
+ */
+function Row({ episode, now, posterPath }: {
+  readonly episode: UpcomingEpisode;
+  readonly now: Date;
+  readonly posterPath: string | undefined;
+}) {
   const { t, tn, locale } = useT();
   const days = daysUntil(episode.airsOn, now);
   const parsed = parseJournalKey(episode.key);
@@ -104,13 +133,27 @@ function Row({ episode, now }: { readonly episode: UpcomingEpisode; readonly now
     );
 
   return (
-    <li className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3">
-      {title}
-      <span className="flex items-baseline gap-3">
-        <span className="text-sm text-(--color-muted)">{formatDate(episode.airsOn, locale)}</span>
-        {/* Le temps restant est un chiffre : il va dans la grille, comme partout ailleurs. */}
-        <span className="numeric text-sm text-(--color-volt)">{label}</span>
-      </span>
+    <li className="flex items-center gap-4 px-4 py-3">
+      {/* 2,25 rem de large : assez pour reconnaitre une affiche d'un coup d'oeil, assez peu
+          pour que la ligne reste une ligne. `w154` est la plus petite taille du CDN — on ne
+          telecharge pas 342 px pour en afficher 36. */}
+      {/* ⚠️ Un `div` et non un `span` : `Poster` rend une `div` quand l'affiche manque
+          (le monogramme), et une `div` dans un `span` est un imbriquement invalide que
+          rien ici ne signalerait. */}
+      <div className="aspect-2/3 w-9 shrink-0 overflow-hidden rounded border border-(--color-edge)">
+        <Poster path={posterPath} title={episode.title} size="w154" />
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        {title}
+        <span className="flex items-baseline gap-3">
+          <span className="text-sm text-(--color-muted)">
+            {formatDate(episode.airsOn, locale)}
+          </span>
+          {/* Le temps restant est un chiffre : il va dans la grille, comme partout ailleurs. */}
+          <span className="numeric text-sm text-(--color-volt)">{label}</span>
+        </span>
+      </div>
     </li>
   );
 }

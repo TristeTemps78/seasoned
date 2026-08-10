@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import {
   alsoByCreators,
+  backdropDimensions,
+  backdropUrl,
   episodeRatings,
   getSeriesPageData,
   posterDimensions,
@@ -175,6 +177,10 @@ export async function SeriesView({ id, locale }: {
 
   const { detail, seasons, status, episodeCount, totalRuntimeMinutes } = loaded.data;
   const poster = posterUrl(detail.posterPath, 'w342');
+  // ⚠️ Arrive dans la **meme** reponse que le reste de la fiche : la montrer ne coute pas un
+  // appel de plus. Souvent absente — le repli sur la mise en page nue est la voie courante,
+  // pas l'exception.
+  const backdrop = backdropUrl(detail.backdropPath, 'w1280');
   const started = year(detail.firstAirDate);
   // Sur la meme echelle que les notes de l'utilisateur : comparer un 8,4/10 a un
   // 4,5/5 ne veut rien dire, et la conversion doit se faire une seule fois.
@@ -202,11 +208,52 @@ export async function SeriesView({ id, locale }: {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
-      <header className="flex flex-col gap-6 sm:flex-row">
+      {/*
+        L'en-tete se pose sur la banniere, **en pleine largeur**.
+
+        ## Ce qui a change le 2026-08-10, et ce qui a ete mesure
+
+        La page empilait neuf sections du meme poids dans une colonne de 1024 px, et sa plus
+        grande image faisait 224 px. Rien ne dominait, donc rien n'attirait l'oeil. La
+        banniere etait pourtant deja recuperee et deja payee.
+
+        ## `-mt-8` n'est pas un ajustement decoratif
+
+        `<main>` porte `py-8`. Sans ce retrait, la banniere commencait 32 px sous la barre de
+        navigation et laissait une bande d'encre entre les deux — ce qui la fait lire comme
+        une image collee dans la page plutot que comme le fond de l'en-tete. Avec, elle passe
+        **sous** la barre translucide, qui la floute en defilant.
+
+        ⚠️ **Le repli est la mise en page d'avant, au pixel pres** : sans banniere, ni
+        `.bleed` ni `.art-bed` ne sont poses et l'en-tete redevient une simple rangee. C'est
+        le cas courant, et une page trouee serait pire que la page plate qu'on remplace.
+      */}
+      <header
+        className={
+          backdrop !== undefined ? 'bleed art-bed -mt-8 pt-8 pb-6 sm:pt-12 sm:pb-10' : ''
+        }
+      >
+        {backdrop !== undefined ? (
+          // ⚠️ C'est desormais le plus gros element de l'ecran, donc **celui que Google
+          // chronometre** : priorite haute et dimensions declarees, exactement pour la raison
+          // qui les a fait poser sur l'affiche. `srcSet` evite de servir 1280 px de large a
+          // un telephone qui en affiche 360.
+          // eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous.
+          <img
+            src={backdrop}
+            srcSet={`${backdropUrl(detail.backdropPath, 'w780')} 780w, ${backdrop} 1280w`}
+            sizes="100vw"
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            width={backdropDimensions('w1280').width}
+            height={backdropDimensions('w1280').height}
+          />
+        ) : null}
+
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
         {poster !== undefined ? (
-          // C'est le plus gros element visible au chargement, donc celui que Google
-          // chronometre. `fetchPriority="high"` le sort de la file d'attente ; les
-          // dimensions declarees empechent la page de sauter quand il arrive.
+          // Les dimensions declarees empechent la page de sauter quand l'affiche arrive.
           //
           // ⚠️ **`sm:w-56` et non `w-36` : l'agrandissement ne coute pas un octet.** Mesure du
           // 2026-08-07 sur la page servie : l'affiche etait rendue a **144 px de large, soit
@@ -218,20 +265,30 @@ export async function SeriesView({ id, locale }: {
           //
           // Le mobile garde `w-36` : sous 640 px la disposition passe en colonne, et cet
           // ecran-la n'a pas encore ete regarde a l'oeil. On ne change pas ce qu'on n'a pas vu.
+          //
+          // ⚠️ **`fetchPriority` est parti a la banniere** (2026-08-10) : elle est desormais
+          // le plus gros element de l'ecran, donc l'element chronometre. Deux images en
+          // priorite haute ne priorisent rien.
+          //
+          // L'ombre portee n'est pas un ornement : elle **decolle** l'affiche du visuel
+          // derriere elle. Sans elle, deux images se touchent et l'oeil ne sait plus ou l'une
+          // s'arrete — c'est le seul endroit du produit ou ce probleme se pose.
           <img
             src={poster}
             alt=""
-            fetchPriority="high"
             decoding="async"
             width={posterDimensions('w342').width}
             height={posterDimensions('w342').height}
-            className="w-36 shrink-0 self-start rounded-lg border border-(--color-edge) sm:w-56"
+            className="w-36 shrink-0 self-start rounded-lg border border-(--color-edge) shadow-[0_1.5rem_3rem_-1rem_rgba(0,0,0,0.75)] sm:w-56 sm:self-end"
           />
         ) : null}
 
         <div className="space-y-4">
           <div>
-            <h1 className="page-title">
+            {/* `.hero-title` et non `.page-title` : ce titre se pose sur une image de
+                1248 px de large, ou 1,75 rem se perd. Le cran a ete rouvert pour ce cas —
+                voir sa declaration dans `globals.css`. */}
+            <h1 className="hero-title">
               {detail.title}
               {started !== undefined ? (
                 <span className="ml-2 font-normal text-(--color-muted)">{started}</span>
@@ -253,9 +310,13 @@ export async function SeriesView({ id, locale }: {
           {/* La seule information du site qui donne une raison de revenir a une date
               precise. « Dans trois jours » laissait le lecteur calculer et ignorer de
               quel episode il s'agit. */}
+          {/* ⚠️ Le liseré vert et non le halo volt : « une couleur, un sens » — le vert parle
+              de la SERIE (elle diffuse, la date tombe), le volt parle de VOUS. Poser ici
+              l'emphase volt dirait que cette date vous concerne personnellement, ce qu'aucune
+              page partagee entre tous les visiteurs ne peut savoir. */}
           {detail.nextEpisode !== undefined ? (
-            <p className="rounded-md bg-(--color-live)/10 px-3 py-2 text-sm">
-              <strong>
+            <p className="rounded-md border-l-2 border-(--color-live) bg-(--color-live)/10 px-3 py-2 text-sm">
+              <strong className="numeric">
                 S{detail.nextEpisode.seasonNumber}E{detail.nextEpisode.episodeNumber}
               </strong>
               {detail.nextEpisode.title !== undefined
@@ -274,6 +335,7 @@ export async function SeriesView({ id, locale }: {
               {detail.overview}
             </p>
           ) : null}
+        </div>
         </div>
       </header>
 
@@ -308,6 +370,20 @@ export async function SeriesView({ id, locale }: {
           la page elle-meme reste statique et mise en cache, et **aucune donnee de
           journal ne traverse le serveur** — le HTML est partage entre tous les
           visiteurs par le cache de bord. */}
+      {/*
+        Les quatre groupes de la fiche — **ce qui remplace neuf sections de meme poids**.
+
+        La page empilait douze blocs separes par un espace identique : elle se lisait comme
+        une seule coulee, sans endroit ou l'oeil se repose. Le decoupage n'est pas
+        typographique, il est **semantique**, et il etait deja ecrit dans les commentaires
+        de ce fichier sans que rien ne le rende visible :
+
+          la serie · vous · les autres · le detail · ailleurs
+
+        Chaque groupe s'ouvre par un filet qui s'eteint (`.section-rule`). Quatre coupures,
+        pas douze : une ligne entre chaque bloc redessinerait un tableau.
+      */}
+      <div className="section-rule space-y-10 pt-10">
       <MyProgress
         canPublish={legalIsComplete()}
         seriesId={id}
@@ -354,7 +430,10 @@ export async function SeriesView({ id, locale }: {
       <SeriesArtworkChoice id={id} />
 
       <AddToList seriesId={id} />
+      </div>
 
+      {/* Les autres. */}
+      <div className="section-rule space-y-10 pt-10">
       <Reviews seriesId={id} />
 
       {/* Apres les critiques, et non avant : on lit d'abord ce que disent les gens qu'on a
@@ -362,7 +441,10 @@ export async function SeriesView({ id, locale }: {
           `Discover` passe **devant** le fil — mais la, le fil est vide au demarrage et la
           page serait blanche ; ici la page est pleine de toute facon. */}
       <SeriesPeople seriesId={id} />
+      </div>
 
+      {/* Le detail — ce qu'on vient chercher une fois la decision prise. */}
+      <div className="section-rule space-y-10 pt-10">
       <SeriesOrderings
         id={id}
         seasonCount={seasons.rateable.length}
@@ -383,8 +465,12 @@ export async function SeriesView({ id, locale }: {
       />
 
       <SeasonList seasons={seasons} locale={locale} />
+      </div>
 
-      <AlsoByCreators detail={detail} locale={locale} />
+      {/* Ailleurs — la seule sortie de la page. */}
+      <div className="section-rule pt-10">
+        <AlsoByCreators detail={detail} locale={locale} />
+      </div>
     </article>
   );
 }
@@ -415,7 +501,8 @@ async function AlsoByCreators({ detail, locale }: {
     .join(t(locale, 'join.and'));
 
   return (
-    <section className="space-y-4" aria-label={t(locale, 'series.sameCreator')}>
+    // Meme regle que partout : une grille d'affiches sort de la colonne de lecture.
+    <section className="bleed space-y-4" aria-label={t(locale, 'series.sameCreator')}>
       <div>
         <h2 className="section-heading">
           {t(locale, 'series.sameCreator')}

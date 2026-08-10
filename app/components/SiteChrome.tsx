@@ -65,7 +65,13 @@ export function SiteChrome({ locale, children }: {
               de la page commencait a 270 px du haut, sur toutes les pages. Deux rangees de
               chrome avant le moindre contenu, c'est ce qui fait qu'un produit ressemble a
               un site et pas a une application. */}
-          <div className="mx-auto flex max-w-5xl items-center gap-4 px-4">
+          {/* ⚠️ `max-w-7xl` et non `max-w-5xl` : la barre doit s'aligner sur les grilles
+              d'affiches, qui sortent desormais de la colonne de lecture (`.bleed`, 80 rem).
+              Restee a 1024 px, elle laissait la marque flotter a 128 px du bord d'une
+              rangee pleine largeur — le genre de decalage que tout le monde voit sans
+              savoir le nommer. C'est la meme valeur que `--w-bleed`, et c'est ce qui les
+              tient ensemble. */}
+          <div className="mx-auto flex max-w-7xl items-center gap-4 px-4">
             {/* Le logo ramene a l'accueil **de la langue courante** : renvoyer un
                 lecteur francais vers l'accueil anglais serait le sortir de sa langue
                 sans qu'il l'ait demande. */}
@@ -120,7 +126,8 @@ export function SiteChrome({ locale, children }: {
         </main>
 
         <footer className="border-t border-(--color-edge) mt-12">
-          <div className="mx-auto max-w-5xl px-4 py-6 text-xs text-(--color-muted) space-y-1">
+          {/* Meme largeur que l'en-tete, pour la meme raison. */}
+          <div className="mx-auto max-w-7xl px-4 py-6 text-xs text-(--color-muted) space-y-1">
             {/* Un lien depuis chaque page, et pas seulement depuis la bibliotheque :
                 ceux qui cherchent ou remettre leur historique n'ont, par definition,
                 pas encore de bibliotheque. Et un moteur ne trouve une page que si

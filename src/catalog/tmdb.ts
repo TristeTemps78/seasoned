@@ -213,6 +213,9 @@ function toSummary(raw: unknown): SeriesSummary | undefined {
   const originalTitle = readString(source, 'original_name');
   const firstAirDate = readDate(source, 'first_air_date');
   const posterPath = readString(source, 'poster_path');
+  // Presente dans **toutes** les reponses de liste comme sur la fiche : la lire ici la rend
+  // disponible partout sans un appel de plus. Voir `SeriesSummary.backdropPath`.
+  const backdropPath = readString(source, 'backdrop_path');
   const overview = readString(source, 'overview');
 
   return {
@@ -222,6 +225,7 @@ function toSummary(raw: unknown): SeriesSummary | undefined {
     ...(originalTitle !== undefined ? { originalTitle } : {}),
     ...(firstAirDate !== undefined ? { firstAirDate } : {}),
     ...(posterPath !== undefined ? { posterPath } : {}),
+    ...(backdropPath !== undefined ? { backdropPath } : {}),
     ...(overview !== undefined ? { overview } : {}),
   };
 }

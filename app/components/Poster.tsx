@@ -1,4 +1,4 @@
-import { posterDimensions, posterUrl } from '@/lib/catalog';
+import { posterDimensions, posterUrl, type PosterSize } from '@/lib/catalog';
 
 /**
  * Une affiche, ou ce qui la remplace.
@@ -30,13 +30,22 @@ export function monogram(title: string): string {
   return letters.join('').toUpperCase();
 }
 
-export function Poster({ path, title, className = '' }: {
+export function Poster({ path, title, className = '', size = 'w342' }: {
   readonly path: string | undefined;
   /** Sert au monogramme, jamais affiche tel quel : le titre est deja sous la vignette. */
   readonly title: string;
   readonly className?: string;
+  /**
+   * La taille demandee au CDN.
+   *
+   * ⚠️ **Elle etait figee a `w342` pour tout le monde**, et c'etait faux dans les deux sens
+   * a la fois : la grille dense rendait ce fichier a **150 px** — plus du double de ce
+   * qu'elle montrait — pendant que la rangee de tete, elle, l'afficherait a **300 px**,
+   * c'est-a-dire au-dela de sa resolution. Un seul reglage ne peut pas servir deux echelles.
+   */
+  readonly size?: PosterSize;
 }) {
-  const url = posterUrl(path, 'w342');
+  const url = posterUrl(path, size);
 
   if (url === undefined) {
     return (
@@ -57,8 +66,8 @@ export function Poster({ path, title, className = '' }: {
       alt=""
       loading="lazy"
       decoding="async"
-      width={posterDimensions('w342').width}
-      height={posterDimensions('w342').height}
+      width={posterDimensions(size).width}
+      height={posterDimensions(size).height}
       className={`h-full w-full object-cover ${className}`}
     />
   );

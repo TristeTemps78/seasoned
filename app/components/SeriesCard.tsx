@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { SeriesSummary } from '@/src/catalog/provider';
 import type { StatusResult } from '@/src/domain/status';
 import { Poster } from '@/app/components/Poster';
+import type { PosterSize } from '@/lib/catalog';
 import { STATUS_TONE, shortStatus, year } from '@/lib/format';
 import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 import { seriesPath } from '@/lib/routes';
@@ -53,10 +54,12 @@ const TONE_CHIP = {
  * Le `status` reste optionnel : il coute un appel par serie, donc on ne l'hydrate que sur
  * les pages mises en cache (`lib/catalog.ts`, `withStatus`).
  */
-export function SeriesCard({ series, status, locale = DEFAULT_LOCALE }: {
+export function SeriesCard({ series, status, locale = DEFAULT_LOCALE, size = 'w342' }: {
   readonly series: SeriesSummary;
   readonly status?: StatusResult;
   readonly locale?: Locale;
+  /** La taille d'affiche a demander au CDN — voir {@link Poster}. */
+  readonly size?: PosterSize;
 }) {
   const firstYear = year(series.firstAirDate);
   const badge = status !== undefined ? shortStatus(status, locale) : undefined;
@@ -72,6 +75,7 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE }: {
         <Poster
           path={series.posterPath}
           title={series.title}
+          size={size}
           className="transition-transform duration-300 group-hover:scale-[1.03]"
         />
 

@@ -83,6 +83,23 @@
 
 html {
   color-scheme: dark;
+
+  /* ⚠️ Indispensable a `.bleed`, et pas une precaution de style : `100vw` **inclut la barre
+     de defilement**, donc une section pleine largeur depasse la zone visible de ~15 px et
+     ouvre un defilement horizontal sur toutes les pages.
+
+     `clip` et non `hidden` : `hidden` sur ces deux elements se propage a la fenetre et casse
+     `position: sticky`, dont l'en-tete depend.
+
+     ⚠️ **Et il faut les DEUX, ce qui se verifie et ne se devine pas.** Mesure au navigateur
+     le 2026-08-10 : pose sur `html` seul, le defilement horizontal restait possible —
+     `overflow: clip` ne se propage pas a la fenetre comme `hidden` le ferait, donc la regle
+     etait inerte. C'est `body` qui coupe reellement. */
+  overflow-x: clip;
+}
+
+body {
+  overflow-x: clip;
 }
 
 body {
@@ -171,12 +188,14 @@ body::before {
  * seul trait lumineux, en haut, qui s'allume au survol. Rien d'autre ne bouge — pas
  * d'echelle, pas d'ombre portee, pour que le regard reste sur les affiches.
  */
-.edge-lit {
+.edge-lit,
+.panel-lit {
   position: relative;
   isolation: isolate;
 }
 
-.edge-lit::before {
+.edge-lit::before,
+.panel-lit::before {
   content: '';
   position: absolute;
   inset-inline: 0;
@@ -193,7 +212,8 @@ body::before {
   pointer-events: none;
 }
 
-.edge-lit:hover::before {
+.edge-lit:hover::before,
+.panel-lit:hover::before {
   opacity: 1;
 }
 
@@ -262,11 +282,20 @@ body::before {
    */
 
   /**
-   * L'accroche de l'accueil — au-dessus de l'echelle, et seule de son espece.
+   * Le cran qui domine une image — au-dessus de l'echelle.
    *
-   * C'est le seul `h1` du site qui soit une **phrase** et non l'etiquette d'un ecran. Il
-   * portait sa taille a la main et valait une exception dans la garde ; un cran nomme est
-   * plus simple qu'une exception justifiee, et rend la regle absolue.
+   * Il est ne pour l'accroche de l'accueil, le seul `h1` du site qui soit une **phrase** et
+   * non l'etiquette d'un ecran. Il portait sa taille a la main et valait une exception dans
+   * la garde ; un cran nomme est plus simple qu'une exception justifiee.
+   *
+   * ⚠️ **Il sert desormais aussi au titre pose sur une banniere** (2026-08-10), et ce n'est
+   * pas un elargissement de confort : `.page-title` fait 1,75 rem, ce qui se perd sur un
+   * visuel de 1248 px de large. Le critere n'est donc plus « une phrase » mais **« ce qui
+   * doit tenir tete a une image »** — l'accroche de l'accueil et le titre d'une fiche
+   * illustree sont les deux seuls cas, et ils demandent la meme chose.
+   *
+   * Aucun cran n'a ete cree pour l'occasion : en inventer un troisieme pour un usage unique
+   * serait refaire `.tile-label`, retiree pour cette raison exacte.
    */
   .hero-title {
     font-size: 1.875rem;
@@ -642,6 +671,7 @@ body::before {
    * surtout quand quelqu'un a travaille entre-temps.*
    */
   .panel,
+  .panel-lit,
   .card,
   .empty-state,
   .tile {
@@ -652,6 +682,31 @@ body::before {
 
   .card {
     padding: 1rem 1.25rem;
+  }
+
+  /**
+   * La surface qui compte — **une seule par ecran**.
+   *
+   * 🔴 Le defaut mesure le 2026-08-10 : **82 surfaces** (`panel`, `card`, `tile`) pour
+   * **5 `edge-lit`** et **2 `glow`**. Le vocabulaire d'emphase etait ecrit et pratiquement
+   * pas employe, donc tout s'affichait au meme poids — c'est la definition litterale de
+   * « rien n'attire l'oeil ». Le probleme n'etait pas la palette, c'etait qu'aucune surface
+   * ne se declarait plus importante qu'une autre.
+   *
+   * Elle porte la forme commune, le liseré superieur d'`edge-lit`, une bordure teintee de
+   * volt et **un halo diffus vers l'exterieur** — le seul endroit du produit ou une surface
+   * projette de la lumiere. C'est ce qui la detache d'un empilement de rectangles.
+   *
+   * ⚠️ **Deux `panel-lit` sur un ecran valent zero.** Meme regle que `glow` et que la tuile
+   * `emphasis` : l'emphase est un rapport, pas un ornement. Elle se pose sur ce qui repond a
+   * la question de la page — la progression sur une fiche, le total sur le bilan.
+   *
+   * Le halo est en `box-shadow` a rayon negatif : il deborde sans dessiner de contour, donc
+   * il ne se lit pas comme une seconde bordure.
+   */
+  .panel-lit {
+    border-color: color-mix(in oklab, var(--color-volt) 32%, var(--color-edge));
+    box-shadow: 0 0 2.5rem -1.25rem color-mix(in oklab, var(--color-volt) 75%, transparent);
   }
 
   /**
@@ -721,6 +776,165 @@ body::before {
   }
 
   /**
+   * Sortir de la colonne — **la classe qui casse la linearite**.
+   * =============================================================================
+   *
+   * ## Le defaut qu'elle repare, mesure au navigateur le 2026-08-10
+   *
+   * `<main>` impose `max-w-5xl` — 1024 px — a **tout** le contenu du site. Sur un ecran de
+   * 1280 px, un cinquieme de la largeur etait de la marge morte, et l'accueil rendait ses
+   * affiches a **150 px** alors que le fichier telecharge en fait 342. Le produit dont la
+   * regle fondatrice est « l'affiche est l'interface » servait donc ses affiches en
+   * vignettes, dans une colonne etroite, sur un ecran large.
+   *
+   * ## Une classe plutot qu'une refonte de la disposition
+   *
+   * Elargir `<main>` aurait elargi **le texte de lecture** avec les images, or une phrase
+   * sur 1248 px ne se lit pas — c'est la raison d'etre de `max-w-prose` et de
+   * `.prose-note`. Il fallait donc que **certaines sections** sortent, pas toutes. Une
+   * classe posee sur une section fait exactement ca, sans toucher a une seule page.
+   *
+   * `margin-inline: calc(50% - 50vw)` annule la colonne : le 50 % est celui du parent, le
+   * 50vw celui de la fenetre, et leur difference est precisement le debord de chaque cote.
+   * Le rembourrage recentre ensuite le **contenu** sur `--w-bleed`, si bien que le fond et
+   * l'image occupent toute la largeur pendant que ce qui se lit reste borne.
+   *
+   * ⚠️ Ne fonctionne qu'avec `overflow-x: clip` sur `html` — voir le commentaire la-bas.
+   */
+  .bleed {
+    --w-bleed: 80rem;
+    margin-inline: calc(50% - 50vw);
+    padding-inline: max(1rem, calc(50vw - var(--w-bleed) / 2));
+  }
+
+  /**
+   * Le lit de banniere — **ce qui donne enfin un point focal**.
+   * =============================================================================
+   *
+   * ## Ce qui existait, et que personne ne rendait
+   *
+   * TMDB sert une banniere 16:9 pour la plupart des series. Le produit la **recuperait**
+   * (`artwork()`), la **memorisait** (`entry.backdrop`) et laissait meme la choisir
+   * (`ChooseArtwork`) — sans jamais l'afficher nulle part. Le plus grand visuel disponible,
+   * deja paye, etait inutilise pendant que la plus grande image d'une fiche serie faisait
+   * 224 px de large. Mieux : `backdrop_path` voyage dans **toutes** les reponses de liste,
+   * donc la montrer ne coute pas un appel de plus (verifie sur les reponses en cache).
+   *
+   * ## Pourquoi l'image est a moitie effacee, et pourquoi c'est la regle du fichier
+   *
+   * « Le neon ne porte jamais le texte de lecture » vaut aussi pour une photo : un titre sur
+   * une image contrastee est illisible, quelle que soit l'image — et on ne sait rien de
+   * celle-ci. L'opacite, le masque vers le bas et les deux degrades d'encre ramenent donc le
+   * fond a une profondeur, pas a une illustration. Le titre reste pose sur `--color-ink`.
+   *
+   * Le masque descend vers la transparence pour que la banniere se fonde dans la page au
+   * lieu de s'y terminer par une arete — une image qui s'arrete net se lit comme une
+   * banniere publicitaire.
+   */
+  .art-bed {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .art-bed > img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    height: 100%;
+    width: 100%;
+    /* Le sujet d'une banniere est presque toujours au-dessus du centre geometrique :
+       cadrer au milieu coupe les visages a la moitie du front. */
+    object-fit: cover;
+    object-position: center 20%;
+    opacity: 0.45;
+    mask-image: linear-gradient(to bottom, black 0%, black 35%, transparent 100%);
+  }
+
+  .art-bed::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    /* Deux encres : l'une depuis la gauche, ou vit le texte ; l'autre depuis le bas, ou la
+       page reprend. Leur superposition laisse le visuel respirer en haut a droite — le seul
+       quart ou il ne gene rien. */
+    background-image:
+      linear-gradient(
+        to right,
+        var(--color-ink) 0%,
+        color-mix(in oklab, var(--color-ink) 60%, transparent) 55%,
+        transparent 100%
+      ),
+      linear-gradient(to top, var(--color-ink) 0%, transparent 60%);
+  }
+
+  /**
+   * La rangee de tete — **la variante qui donne un rythme**.
+   *
+   * L'accueil rendait trois rangees de hauteurs **348 / 664 / 664 px**, toutes en grille
+   * identique : rien n'y disait laquelle regarder en premier. Une variation de taille dit ce
+   * qu'aucun titre ne dit — la premiere rangee compte davantage.
+   *
+   * Quatre colonnes dans le cadre elargi donnent des affiches d'environ **300 px**, contre
+   * 190 pour la grille dense : le rapport est assez franc pour se voir sans lire. C'est un
+   * modificateur et non un composant — meme objet, meme gouttiere, meme comportement.
+   */
+  .poster-grid-lead {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (width >= 40rem) {
+    .poster-grid-lead {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (width >= 64rem) {
+    .poster-grid-lead {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /**
+   * Le filet qui separe deux sections.
+   *
+   * La fiche serie empile **neuf sections** du meme poids, separees par un simple espace :
+   * l'ensemble se lit comme une seule coulee, et l'oeil n'a aucun point ou se reposer. Un
+   * trait qui s'eteint vers la droite marque la coupure sans ajouter de boite — poser neuf
+   * cadres reviendrait a empiler neuf rectangles de plus.
+   *
+   * Il s'arrete a 40 % : un filet pleine largeur redessine une grille de tableau, ce que la
+   * grille de fond a deja soigneusement evite de faire.
+   */
+  .section-rule {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(
+        to right,
+        color-mix(in oklab, var(--color-edge) 100%, transparent),
+        transparent 40%
+      )
+      1;
+  }
+
+  /**
+   * ⚠️ **Un groupe qui n'a rien a montrer ne se separe de rien.**
+   *
+   * Trouve a l'ecran et non deduit : sans compte, `Reviews` et `SeriesPeople` rendent tous
+   * deux `null`, et leur groupe restait un bloc de 41 px — c'est-a-dire **un filet tire
+   * au-dessus du vide**, au milieu de la fiche. Le decoupage est semantique, donc il ne
+   * peut pas savoir a l'ecriture ce qui parlera a l'affichage : c'est au trait de
+   * disparaitre quand son groupe se tait.
+   *
+   * En CSS et non en JSX : la condition « ce composant a-t-il rendu quelque chose ? » ne se
+   * pose pas depuis le parent en React, et la recopier a chaque groupe la ferait oublier au
+   * prochain.
+   */
+  .section-rule:empty {
+    display: none;
+  }
+
+  /**
    * L'ecran vide — la premiere impression de tout le monde.
    * =============================================================================
    *
@@ -750,10 +964,38 @@ body::before {
   /* La forme (rayon, bordure, fond) est declaree une seule fois, plus haut, avec `.panel`.
      Ne restent ici que les choix propres a un ecran vide : centre, borne, aere. */
   .empty-state {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     margin-inline: auto;
     max-width: 32rem;
     padding: 2.5rem 1.5rem;
     text-align: center;
+  }
+
+  /**
+   * La lueur de l'ecran vide — **parce que c'est le premier ecran de tout le monde**.
+   *
+   * Quatre rectangles gris centres sur un fond noir : c'est ce que voyait quiconque
+   * ouvrait le produit pour la premiere fois. Le fichier le dit deja — *« les quatre ecrans
+   * vides sont, pour un arrivant, les quatre seuls ecrans qui existent »* — et il les
+   * laissait pourtant sans un gramme de la direction artistique.
+   *
+   * C'est le meme degrade que `.poster-void`, et ce n'est pas une coincidence : les deux
+   * repondent au meme probleme — occuper la place d'une chose absente sans afficher un
+   * manque. Reprendre la forme deja trouvee vaut mieux qu'en inventer une seconde.
+   */
+  .empty-state::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(
+      120% 90% at 50% 0%,
+      color-mix(in oklab, var(--color-volt) 10%, transparent),
+      transparent 70%
+    );
   }
 
   .empty-state > * + * {
@@ -930,12 +1172,24 @@ body::before {
    * est **faux**, on ne sait plus de quelle serie il s'agit. Deux lignes suffisent a la
    * quasi-totalite des titres, et le reste s'annonce comme tronque au lieu de mentir.
    */
-  .clamp-2 {
+  .clamp-2,
+  .clamp-3 {
     display: -webkit-box;
     -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .clamp-2 {
     -webkit-line-clamp: 2;
     line-clamp: 2;
-    overflow: hidden;
+  }
+
+  /* Trois lignes pour un synopsis, deux pour un titre : ce n'est pas le meme objet. Un
+     resume coupe a deux lignes ne dit rien du sujet, la ou un titre coupe a trois occupe la
+     place d'une affiche. La forme est declaree une fois, seul le nombre de lignes differe. */
+  .clamp-3 {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   /**

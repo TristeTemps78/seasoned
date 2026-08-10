@@ -52,10 +52,14 @@ export function Library() {
 
   return (
     <div className="space-y-12">
+      {/* ⚠️ La rangee de tete est « ce qui revient », et c'est la meme decision que sur
+          l'accueil : la premiere rangee repond a la question qu'on se pose en ouvrant
+          l'ecran. Quatre rangees strictement identiques ne disaient pas laquelle regarder. */}
       <Row
         title={t('library.returning.title')}
         subtitle={t('library.returning.subtitle')}
         items={library.returning}
+        lead
       />
       <Row
         title={t('library.resuming.title')}
@@ -98,20 +102,23 @@ export function Library() {
   );
 }
 
-function Row({ title, subtitle, items }: {
+function Row({ title, subtitle, items, lead = false }: {
   readonly title: string;
   readonly subtitle: string;
   readonly items: readonly LibraryItem[];
+  /** La rangee de tete : moins de colonnes, donc des affiches nettement plus grandes. */
+  readonly lead?: boolean;
 }) {
   if (items.length === 0) return null;
 
   return (
-    <section className="space-y-4" aria-label={title}>
+    // Meme regle que l'accueil : la grille sort de la colonne de lecture, jamais le texte.
+    <section className="bleed space-y-4" aria-label={title}>
       <RowHeader title={title} subtitle={subtitle} />
-      <ul className="poster-grid">
+      <ul className={`poster-grid ${lead ? 'poster-grid-lead' : ''}`}>
         {items.map((item) => (
           <li key={item.key}>
-            <LibraryCard item={item} />
+            <LibraryCard item={item} lead={lead} />
           </li>
         ))}
       </ul>

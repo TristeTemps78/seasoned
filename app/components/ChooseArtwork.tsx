@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { backdropUrl, posterUrl } from '@/lib/catalog';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { journalKey } from '@/src/domain/journal';
@@ -50,9 +51,22 @@ export function ChooseArtwork({
   const key = journalKey(seriesId);
   const entry = journal.entries[key];
 
+  // ⚠️ L'URL passe par les helpers de `lib/catalog`, jamais par une concatenation locale :
+  // les tailles d'une affiche et celles d'une banniere sont **deux jeux differents** chez
+  // TMDB, et les melanger sert un 404 depuis le CDN.
   const rows = [
-    { which: 'poster' as const, paths: posters, chosen: entry?.poster, size: 'w154' },
-    { which: 'backdrop' as const, paths: backdrops, chosen: entry?.backdrop, size: 'w300' },
+    {
+      which: 'poster' as const,
+      paths: posters,
+      chosen: entry?.poster,
+      url: (path: string) => posterUrl(path, 'w154'),
+    },
+    {
+      which: 'backdrop' as const,
+      paths: backdrops,
+      chosen: entry?.backdrop,
+      url: (path: string) => backdropUrl(path, 'w300'),
+    },
   ].filter((row) => row.paths.length >= 2);
 
   return (
@@ -95,7 +109,7 @@ export function ChooseArtwork({
                       {/* Le CDN de TMDB, comme partout ailleurs : rien n'est heberge ici.
                           eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`https://image.tmdb.org/t/p/${row.size}${path}`}
+                        src={row.url(path)}
                         alt=""
                         loading="lazy"
                         className="block h-24 w-auto"
