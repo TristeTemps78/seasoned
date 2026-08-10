@@ -19,6 +19,9 @@ Un mix entre Letterboxd, Serializd et TV Time.
 ## Pour travailler
 
 - `npm run check` vert avant tout commit.
+- `npm run db:push` applique `supabase/*.sql`. `npm run db:scenarios` rejoue 25 scénarios
+  RLS contre la vraie base, en transaction annulée — **rien ne persiste, jamais**.
+- `npm run db:round -- 2026-08-10 7` construit 7 manches de quiz d'avance depuis TMDB.
 - Pousser = déployer en public : décision de Tristan.
 - **Ce fichier est le seul.** Pas de `TASKS.md`, pas d'`AGENTS.md`, pas de `docs/` :
   supprimés le 2026-08-10, à la demande de Tristan. Ne pas les recréer. Ce qui reste à
