@@ -309,6 +309,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'tallyPage.title': 'My tally',
   'tallyPage.lede': 'What your shows say about you. Worked out here, in this browser.',
   'tallyPage.empty.title': 'Nothing to measure yet',
+  'tallyPage.empty.uncounted.one':
+    '{n} series is tracked, but the catalogue has not filled it in yet: open its page once and the hours start counting.',
+  'tallyPage.empty.uncounted.other':
+    '{n} series are tracked, but the catalogue has not filled them in yet: open their pages once and the hours start counting.',
   'tallyPage.empty.body':
     'The tally shows up once you have rated or positioned a few shows. It needs no account and never leaves this device.',
   'agenda.thisWeek': 'This week',

@@ -172,3 +172,54 @@ describe('toStars', () => {
     expect(toStars(-3)).toBeUndefined();
   });
 });
+
+/**
+ * 🔴 **Le titre etait lu, puis jete pour les series effectivement reprises.**
+ *
+ * Constate au navigateur le 2026-08-11 : sans instantane, `/moi` affiche « Tracked series »
+ * sur chaque carte, sans affiche. Un export de deux cents series produisait donc deux cents
+ * lignes anonymes — sur le premier ecran que voit quelqu'un qui vient d'arriver.
+ *
+ * Le titre servait deja a nommer les series **ecartees** (`missed`). C'etait la moitie de la
+ * regle « on signale, on ne repare pas en silence ».
+ */
+describe('l import nomme ce qu il reprend', () => {
+  it('pose le titre de l export comme instantane', () => {
+    const outcome = importForeign(
+      JSON.stringify([{ tmdb_id: 1396, title: 'Breaking Bad', season: 1, episode: 3 }]),
+      EMPTY_JOURNAL,
+      NOW,
+    );
+
+    expect(outcome.journal.entries['tmdb:1396']?.snapshot?.title).toBe('Breaking Bad');
+  });
+
+  it('et ne pose rien quand l export ne nomme rien', () => {
+    const outcome = importForeign(
+      JSON.stringify([{ tmdb_id: 1396, season: 1, episode: 3 }]),
+      EMPTY_JOURNAL,
+      NOW,
+    );
+
+    expect(outcome.journal.entries['tmdb:1396']).toBeDefined();
+    expect(outcome.journal.entries['tmdb:1396']?.snapshot).toBeUndefined();
+  });
+
+  /**
+   * ⚠️ **Rien d'autre que le titre.** L'instantane est un cache du catalogue ; inventer une
+   * affiche, un statut ou un nombre d'episodes a partir d'un fichier tiers ferait passer une
+   * supposition pour une donnee — et `deriveSnapshot` la servirait comme telle.
+   */
+  it('n invente ni affiche ni statut', () => {
+    const outcome = importForeign(
+      JSON.stringify([{ tmdb_id: 1396, title: 'Breaking Bad', season: 1 }]),
+      EMPTY_JOURNAL,
+      NOW,
+    );
+    const snapshot = outcome.journal.entries['tmdb:1396']?.snapshot;
+
+    expect(snapshot?.posterPath).toBeUndefined();
+    expect(snapshot?.status).toBeUndefined();
+    expect(snapshot?.episodeMinutes).toBeUndefined();
+  });
+})

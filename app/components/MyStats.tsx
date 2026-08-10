@@ -32,7 +32,7 @@ import { buildTasteProfile } from '@/src/domain/taste';
  */
 export function MyStats() {
   const { journal, ready } = useJournal();
-  const { t } = useT();
+  const { t, tn } = useT();
 
   const tally = useMemo(() => buildTally(journal), [journal]);
   const taste = useMemo(() => buildTasteProfile(journal), [journal]);
@@ -45,6 +45,26 @@ export function MyStats() {
   // Les deux composants se taisent independamment. S'ils se taisent tous les deux, il
   // faut dire pourquoi plutot que de laisser une page blanche.
   const silent = !tally.worthShowing && !taste.speaks;
+
+  /**
+   * 🔴 **Et « pourquoi » n'etait pas toujours la bonne raison.**
+   *
+   * Le texte du vide dit *« le bilan apparait quand vous aurez note ou situe quelques
+   * series »*. Constate au navigateur le 2026-08-11 sur un journal de six series, huit notes
+   * de saison et trois decisions : l'ecran l'affichait quand meme — donc il annoncait a
+   * quelqu'un qui a fait le geste qu'il ne l'a pas fait.
+   *
+   * La vraie cause est ailleurs : `buildTally` a besoin de `seasonSizes` et
+   * `episodeMinutes`, qui viennent de l'**instantane du catalogue**. Un journal importe n'en
+   * a aucun — l'import ne peut pas les inventer — donc `uncounted` vaut le nombre de series
+   * et la couverture tombe a zero.
+   *
+   * C'est exactement le cas de quelqu'un qui vient de reprendre son historique ailleurs,
+   * c'est-a-dire le parcours d'arrivee le plus important du produit. Lui dire « vous n'avez
+   * rien note » est faux ; lui dire ce qui manque est actionnable, et c'est la regle du
+   * depot : *on signale, on ne repare pas en silence.*
+   */
+  const missingSnapshots = tally.counted === 0 && tally.uncounted > 0;
 
   return (
     <div className="space-y-8">
@@ -63,7 +83,11 @@ export function MyStats() {
       {silent ? (
         <div className="empty-state">
           <h2 className="empty-state-title">{t('tallyPage.empty.title')}</h2>
-          <p className="empty-state-body">{t('tallyPage.empty.body')}</p>
+          <p className="empty-state-body">
+            {missingSnapshots
+              ? tn('tallyPage.empty.uncounted', tally.uncounted)
+              : t('tallyPage.empty.body')}
+          </p>
         </div>
       ) : (
         <>

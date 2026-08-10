@@ -356,6 +356,13 @@ export const FR = {
   'tallyPage.title': 'Mon bilan',
   'tallyPage.lede': 'Ce que vos séries disent de vous. Calculé ici, dans ce navigateur.',
   'tallyPage.empty.title': 'Rien à mesurer pour l’instant',
+  // ⚠️ Le texte du dessous s'adressait à quelqu'un qui n'a rien fait. Celui-ci s'adresse à
+  // quelqu'un qui a TOUT fait et à qui il manque le catalogue — le cas de l'import, donc le
+  // parcours d'arrivée le plus important. Lui dire « vous n'avez rien noté » serait faux.
+  'tallyPage.empty.uncounted.one':
+    '{n} série est suivie, mais le catalogue ne l’a pas encore renseignée : ouvrez sa fiche une fois et les heures se comptent.',
+  'tallyPage.empty.uncounted.other':
+    '{n} séries sont suivies, mais le catalogue ne les a pas encore renseignées : ouvrez leur fiche une fois et les heures se comptent.',
   'tallyPage.empty.body':
     'Le bilan apparaît dès que vous avez noté ou positionné quelques séries. Il ne demande aucun compte et ne quitte pas cet appareil.',
   'agenda.thisWeek': 'Cette semaine',

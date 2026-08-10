@@ -48,6 +48,7 @@ import {
   parseJournal,
   setPosition,
   setSeasonRating,
+  setSnapshot,
   setWanted,
   type Journal,
 } from './journal';
@@ -362,6 +363,29 @@ function toJournal(
       seen.add(item.tmdbId);
       imported += 1;
       journal = setWanted(journal, key, true, now);
+
+      // 🔴 **Le titre etait lu, puis jete pour les series effectivement reprises.**
+      //
+      // Constate au navigateur le 2026-08-11 : un journal sans instantane affiche « Tracked
+      // series » sur **chaque** carte de `/moi`, sans affiche. Un export TV Time de deux
+      // cents series produisait donc deux cents lignes identiques et anonymes — sur le
+      // premier ecran que voit quelqu'un qui vient d'arriver, c'est-a-dire au seul moment
+      // ou l'on decide si ca vaut le coup de rester.
+      //
+      // Le titre etait deja en main : il ne servait qu'a **nommer les series ecartees**
+      // ({@link ImportOutcome.missed}), ce qui etait la moitie de la regle *« on signale, on
+      // ne repare pas en silence »*. L'autre moitie est ici.
+      //
+      // ⚠️ **Le titre de l'export, pas celui du catalogue** — et c'est assume : il peut etre
+      // dans une autre langue, ou porter une variante. Il est **remplace** des l'ouverture de
+      // la fiche, ou `setSnapshot` ecrit celui du catalogue. Un nom approximatif vaut mieux
+      // que pas de nom ; c'est le meme arbitrage que le repli de traduction.
+      //
+      // Rien d'autre n'est pose : ni affiche, ni statut, ni nombre d'episodes. On n'invente
+      // pas ce que le fichier ne dit pas — l'instantane est un cache, pas une source.
+      if (item.title !== undefined && item.title.length > 0) {
+        journal = setSnapshot(journal, key, { title: item.title }, now);
+      }
     }
 
     if (item.seasonNumber !== undefined) {
