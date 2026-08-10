@@ -7,6 +7,29 @@
  *
  * **Ce module ne decide rien.** Il transporte, et **ne leve jamais** : une panne du social
  * ne doit pas interrompre un produit dont tout le reste est local.
+ *
+ * ## 🔴 {@link IDEMPOTENCE} — la regle qui manquait, et elle a coute quatre defauts
+ *
+ * `Prefer: resolution=merge-duplicates` **est** un `ON CONFLICT DO UPDATE`. Le chemin
+ * `UPDATE` exige une politique `UPDATE`, et une table qui n'a rien a mettre a jour n'en a
+ * pas — a raison. Ecrire deux fois y rend alors **42501**, silencieusement : `response.ok`
+ * devient `false`, et aucun ecran ne dit rien.
+ *
+ * Le 2026-08-11, **quatre** ecritures sur cinq etaient dans ce cas — `activity`, `follows`,
+ * `review_likes`, `list_items` — et l'une d'elles portait un commentaire promettant
+ * exactement le contraire de ce qu'elle faisait.
+ *
+ * > **La resolution se choisit sur le contenu de la ligne, pas par habitude.**
+ * >
+ * > - La ligne porte une charge qui peut changer — une note, un texte, une saison
+ * >   atteinte : `merge-duplicates`, **et la table doit avoir une politique `UPDATE`**.
+ * >   C'est le cas de `activity` (les etoiles), `reviews` (le texte), `stops` (la saison).
+ * > - La cle **est** le fait entier — je suis cette personne, j'aime cette critique, cette
+ * >   serie est dans cette liste : `ignore-duplicates`. Rien a mettre a jour, donc aucun
+ * >   droit d'`UPDATE` a accorder. Refaire le geste ne doit meme pas toucher `added_at`.
+ *
+ * Les scenarios 46 a 48 de `scripts/rls-scenarios.sql` tiennent cette regle contre la vraie
+ * base : aucun test ne peut le faire, ils doublent `fetch`.
  */
 
 import type { ActivityItem, ActivityKind } from '../domain/activity';
@@ -318,11 +341,20 @@ export class SocialClient {
     return row === undefined ? undefined : rowToProfile(row);
   }
 
+  /**
+   * 🔴 **`ignore-duplicates` et non `merge-duplicates`** — mesure du 2026-08-11 : suivre
+   * deux fois rendait **42501**.
+   *
+   * `merge-duplicates` est un `ON CONFLICT DO UPDATE`, et le chemin `UPDATE` exige une
+   * politique `UPDATE` que `follows` n'a pas — a raison, puisqu'il n'y a rien a mettre a
+   * jour. Voir {@link IDEMPOTENCE} : quand la cle **est** le fait entier, la bonne
+   * resolution est `DO NOTHING`.
+   */
   async follow(followerId: string, followeeId: string): Promise<boolean> {
     try {
       const response = await this.#fetch(this.#url('follows'), {
         method: 'POST',
-        headers: this.#headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+        headers: this.#headers({ Prefer: 'resolution=ignore-duplicates,return=minimal' }),
         body: JSON.stringify({ follower_id: followerId, followee_id: followeeId }),
       });
       return response.ok;
@@ -787,8 +819,11 @@ export class SocialClient {
       }
       const response = await this.#fetch(this.#url('review_likes'), {
         method: 'POST',
-        // `merge-duplicates` : aimer deux fois ne doit pas lever, c'est le meme etat.
-        headers: this.#headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+        // 🔴 « Aimer deux fois ne doit pas lever, c'est le meme etat » — c'est ce que cette
+        // ligne promettait, et elle rendait **42501**. `merge-duplicates` emprunte le chemin
+        // `UPDATE`, que RLS refuse ici faute de politique. La promesse etait juste, la
+        // resolution non : voir {@link IDEMPOTENCE}.
+        headers: this.#headers({ Prefer: 'resolution=ignore-duplicates,return=minimal' }),
         body: JSON.stringify({
           liker_id: userId,
           author_id: authorId,
@@ -1061,16 +1096,20 @@ export class SocialClient {
   /**
    * Ajoute une serie a une liste.
    *
-   * `merge-duplicates` ici, et pour la raison inverse de {@link createList} : ajouter deux
-   * fois la meme serie est un geste **repete**, pas un second element. Sans lui, le second
-   * clic remonterait une erreur de cle dupliquee pour un geste sans consequence.
+   * Ajouter deux fois la meme serie est un geste **repete**, pas un second element : le
+   * second clic ne doit pas remonter d'erreur pour un geste sans consequence.
+   *
+   * 🔴 **Mais `merge-duplicates` rendait 42501**, mesure le 2026-08-11 — et il aurait en
+   * plus **remonte la ligne** en reecrivant `added_at`, alors que la liste se lit dans
+   * l'ordre d'ajout. `ignore-duplicates` dit exactement ce qu'on veut : la serie y est
+   * deja, on ne touche a rien. Voir {@link IDEMPOTENCE}.
    */
   async addToList(userId: string, slug: string, subject: string): Promise<boolean> {
     return this.#write(
       'list_items',
       'POST',
       { user_id: userId, slug, subject },
-      'resolution=merge-duplicates,return=minimal',
+      'resolution=ignore-duplicates,return=minimal',
     );
   }
 

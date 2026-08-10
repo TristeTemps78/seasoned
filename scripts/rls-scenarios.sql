@@ -754,6 +754,86 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- Le geste refait — trois tables ou la cle EST le fait entier
+  -- ---------------------------------------------------------------------------
+  --
+  -- 🔴 **Le meme defaut que 017, dans trois endroits de plus.** `merge-duplicates` emprunte
+  -- le chemin `UPDATE` ; ces trois tables n'ont pas de politique `UPDATE`, et elles ont
+  -- raison de ne pas en avoir : il n'y a rien a mettre a jour. Refaire le geste rendait
+  -- donc **42501** partout, mesure le 2026-08-11 :
+  --
+  --   follows      2e suivi : 42501       review_likes 2e coeur : 42501
+  --   list_items   2e ajout : 42501
+  --
+  -- Le correctif n'est pas d'ouvrir un droit d'ecriture dont personne n'a besoin, c'est
+  -- `ignore-duplicates` — `ON CONFLICT DO NOTHING`, qui ne demande que l'`INSERT` deja
+  -- accorde. Ces trois scenarios verifient la **forme SQL que le client emet desormais**.
+
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  -- 46 — Suivre quelqu'un qu'on suit deja ne doit rien lever : c'est le meme etat.
+  begin
+    insert into public.follows (follower_id, followee_id) values (a, b) on conflict do nothing;
+    insert into public.follows (follower_id, followee_id) values (a, b) on conflict do nothing;
+    obtenu := 'ok';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'ok';
+  rapport := rapport || format(E'  %s  %s. suivre deux fois ne leve pas (008)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 47 — Aimer deux fois la meme critique non plus. Le client le promettait deja en
+  --      commentaire ; il ne le faisait pas.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.reviews (user_id, subject, target, body, through_season, lang)
+    values (b, tag || '_rev', 'series', 'Texte du scenario.', 0, 'fr');
+    perform set_config('role', 'authenticated', true);
+
+    insert into public.review_likes (liker_id, author_id, subject, target)
+    values (a, b, tag || '_rev', 'series') on conflict do nothing;
+    insert into public.review_likes (liker_id, author_id, subject, target)
+    values (a, b, tag || '_rev', 'series') on conflict do nothing;
+
+    perform set_config('role', 'postgres', true);
+    select count(*)::text into obtenu from public.review_likes where subject = tag || '_rev';
+    perform set_config('role', 'authenticated', true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. aimer deux fois laisse UN coeur, sans lever (015)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 48 — Et rajouter une serie deja presente dans une liste ne leve pas **ni ne la
+  --      remonte** : `added_at` doit rester celui du premier ajout, sans quoi le second
+  --      clic reordonnerait la liste sous les yeux de son auteur.
+  begin
+    insert into public.lists (user_id, slug, title) values (a, tag, 'Liste du scenario');
+    insert into public.list_items (user_id, slug, subject) values (a, tag, tag || '_s');
+    perform pg_sleep(0.01);
+    insert into public.list_items (user_id, slug, subject)
+    values (a, tag, tag || '_s') on conflict do nothing;
+
+    select case when count(*) = 1 and max(added_at) = min(added_at) then 'intacte'
+                else count(*)::text || ' lignes' end
+      into obtenu
+      from public.list_items where user_id = a and slug = tag;
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'intacte';
+  rapport := rapport || format(E'  %s  %s. rajouter une serie deja listee ne la remonte pas (007)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);
