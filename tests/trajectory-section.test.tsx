@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { describe, expect, it } from 'vitest';
 import { TrajectorySection } from '@/app/components/TrajectorySection';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
@@ -48,7 +49,7 @@ function renderSection(options: {
   readonly currentSeason?: CurrentSeasonVerdict;
 } = {}) {
   render(
-    <LocaleProvider locale="fr">
+    <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
       <TrajectorySection
         seriesId="1396"
         title="Breaking Bad"

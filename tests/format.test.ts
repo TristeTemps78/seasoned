@@ -6,7 +6,7 @@ import {
   year,
 } from '../lib/format';
 import { deriveStatus } from '../src/domain/status';
-import { t, tn } from '../lib/i18n';
+import { t, tn, translatorFor } from '../lib/i18n';
 
 /**
  * ## Pourquoi on compare a `t(...)` et non a une phrase recopiee
@@ -38,10 +38,10 @@ import { t, tn } from '../lib/i18n';
  * dans le bloc du bas.
  */
 const describeStatus = (status: Parameters<typeof describeStatusIn>[0]): string =>
-  describeStatusIn(status, 'fr');
+  describeStatusIn(status, translatorFor('fr'));
 const shortStatus = (status: Parameters<typeof shortStatusIn>[0]): string | undefined =>
-  shortStatusIn(status, 'fr');
-const formatCommitment = (minutes: number): string => formatCommitmentIn(minutes, 'fr');
+  shortStatusIn(status, translatorFor('fr'));
+const formatCommitment = (minutes: number): string => formatCommitmentIn(minutes, translatorFor('fr'));
 
 const NOW = new Date('2026-08-01T00:00:00Z');
 
@@ -211,21 +211,21 @@ describe('year', () => {
 describe('en — le differenciateur doit se dire aussi bien en anglais', () => {
   it('chiffre le silence d une serie declaree vivante', () => {
     const status = deriveStatus({ production: 'returning', lastAiredAt: daysAgo(760) }, NOW);
-    expect(describeStatusIn(status, 'en')).toBe(tn('en', 'say.awaiting.since', 25));
+    expect(describeStatusIn(status, translatorFor('en'))).toBe(tn('en', 'say.awaiting.since', 25));
   });
 
   it('est bien la langue par defaut : ne rien preciser rend de l anglais', () => {
     // C'est **le** test de la bascule. S'il tombe, la decision « en par defaut » a ete
     // annulee quelque part sans que personne ne le remarque.
     const status = deriveStatus({ production: 'returning', lastAiredAt: daysAgo(760) }, NOW);
-    expect(describeStatusIn(status)).toBe(describeStatusIn(status, 'en'));
+    expect(describeStatusIn(status, translatorFor())).toBe(describeStatusIn(status, translatorFor('en')));
   });
 
   it('accorde le pluriel anglais, qui n est pas le pluriel francais', () => {
     // 1 : les deux langues disent le singulier.
-    expect(formatCommitmentIn(60, 'en')).toBe(tn('en', 'commit.hours', 1));
-    expect(formatCommitmentIn(60, 'fr')).toBe(tn('fr', 'commit.hours', 1));
-    expect(formatCommitmentIn(120, 'en')).toBe(tn('en', 'commit.hours', 2));
+    expect(formatCommitmentIn(60, translatorFor('en'))).toBe(tn('en', 'commit.hours', 1));
+    expect(formatCommitmentIn(60, translatorFor('fr'))).toBe(tn('fr', 'commit.hours', 1));
+    expect(formatCommitmentIn(120, translatorFor('en'))).toBe(tn('en', 'commit.hours', 2));
   });
 
   it('accorde zero comme l anglais l accorde, et non comme le francais', () => {
@@ -237,8 +237,8 @@ describe('en — le differenciateur doit se dire aussi bien en anglais', () => {
       NOW,
     );
     // Cas nominal a zero jour : les deux langues ont une phrase dediee, verifions-la.
-    expect(describeStatusIn(status, 'en')).toBe(t('en', 'say.airing.today'));
-    expect(describeStatusIn(status, 'fr')).toBe(t('fr', 'say.airing.today'));
+    expect(describeStatusIn(status, translatorFor('en'))).toBe(t('en', 'say.airing.today'));
+    expect(describeStatusIn(status, translatorFor('fr'))).toBe(t('fr', 'say.airing.today'));
   });
 
   it('tient sur une vignette en anglais aussi', () => {
@@ -250,7 +250,7 @@ describe('en — le differenciateur doit se dire aussi bien en anglais', () => {
       deriveStatus({ production: 'returning', lastAiredAt: daysAgo(2), nextAiringAt: inDays(40) }, NOW),
     ];
     for (const status of cases) {
-      expect(shortStatusIn(status, 'en')!.length).toBeLessThanOrEqual(24);
+      expect(shortStatusIn(status, translatorFor('en'))!.length).toBeLessThanOrEqual(24);
     }
   });
 
@@ -268,11 +268,11 @@ describe('en — le differenciateur doit se dire aussi bien en anglais', () => {
     ];
     const french = /[éèêàçôûù]|\bmois\b|\bjours?\b|\bheures?\b|\bépisode\b/i;
     for (const status of statuses) {
-      expect(describeStatusIn(status, 'en')).not.toMatch(french);
-      const chip = shortStatusIn(status, 'en');
+      expect(describeStatusIn(status, translatorFor('en'))).not.toMatch(french);
+      const chip = shortStatusIn(status, translatorFor('en'));
       if (chip !== undefined) expect(chip).not.toMatch(french);
     }
-    expect(formatCommitmentIn(62 * 60, 'en')).not.toMatch(french);
-    expect(formatCommitmentIn(20, 'en')).not.toMatch(french);
+    expect(formatCommitmentIn(62 * 60, translatorFor('en'))).not.toMatch(french);
+    expect(formatCommitmentIn(20, translatorFor('en'))).not.toMatch(french);
   });
 });

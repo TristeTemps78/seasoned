@@ -1,15 +1,20 @@
 'use client';
 
 import { createContext, useContext, useMemo } from 'react';
+// 🔴 **Depuis `@/lib/i18n/engine`, jamais `@/lib/i18n`** (8.10). Ce fichier est le
+// fournisseur de TOUTES les pages : importer le module qui connait les deux dictionnaires
+// suffirait a les remettre dans le paquet du navigateur, et l'economie serait annulee sans
+// qu'aucun test de comportement ne bronche. `tests/i18n-split.test.ts` tient cette regle.
 import {
   DEFAULT_LOCALE,
   formatNumberIn,
-  t as translate,
-  tn as translateN,
+  translateIn,
+  translateNIn,
   type Locale,
   type MessageKey,
+  type Messages,
   type Params,
-} from '@/lib/i18n';
+} from '@/lib/i18n/engine';
 
 /**
  * La langue de la page, telle qu'elle descend jusqu'aux gestes.
@@ -45,24 +50,36 @@ import {
  * {@link DEFAULT_LOCALE}. Retomber sur la langue par defaut du site est le comportement
  * le moins surprenant, et il correspond a ce que verrait un visiteur de `/`.
  */
-const LocaleContext = createContext<Locale>(DEFAULT_LOCALE);
+/**
+ * ## 8.10 — le contexte porte **les phrases**, plus seulement la langue
+ *
+ * Il ne transportait qu'une chaine de deux lettres, et chaque composant allait chercher les
+ * dictionnaires par un import. C'est ce qui les mettait tous les deux dans le paquet client :
+ * un import statique ne se choisit pas a l'execution.
+ *
+ * Le dictionnaire descend donc d'un module `Messages*` — un par langue, chacun n'important
+ * que le sien. Comme `/` et `/fr` sont deux routes distinctes, chaque paquet de route ne
+ * contient plus que la langue qu'il sert.
+ *
+ * ⚠️ **Le repli sans fournisseur reste l'anglais** — dans un test isole, par exemple — mais
+ * il n'a plus de phrases : un `t()` hors fournisseur rend la cle. C'est volontaire et
+ * preferable a l'alternative, qui serait d'embarquer un dictionnaire de secours dans toutes
+ * les pages pour un cas qui n'arrive qu'en test. Le typage garantit deja qu'aucune cle ne
+ * manque a une langue reellement servie.
+ */
+const LocaleContext = createContext<{ locale: Locale; messages: Messages }>({
+  locale: DEFAULT_LOCALE,
+  messages: {} as Messages,
+});
 
-export function LocaleProvider({ locale, children }: {
+export function LocaleProvider({ locale, messages, children }: {
   readonly locale: Locale;
+  /** Le dictionnaire de **cette** page. Voir `app/i18n/MessagesEn.tsx`. */
+  readonly messages: Messages;
   readonly children: React.ReactNode;
 }) {
-  return <LocaleContext.Provider value={locale}>{children}</LocaleContext.Provider>;
-}
-
-/**
- * La langue de la page courante.
- *
- * ⚠️ **Pas exportee.** Elle l'etait sans lecteur : `useT`, juste en dessous, est le seul.
- * Deux portes pour la meme chose invitent a ecrire `t(useLocale(), 'cle')` dans un ecran
- * neuf — la forme que `useT` existe pour remplacer.
- */
-function useLocale(): Locale {
-  return useContext(LocaleContext);
+  const value = useMemo(() => ({ locale, messages }), [locale, messages]);
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }
 
 /**
@@ -79,14 +96,15 @@ export function useT(): {
   /** Un nombre ecrit comme l'ecrit la langue — la virgule francaise n'est pas universelle. */
   readonly n: (value: number, digits?: number) => string;
 } {
-  const locale = useLocale();
+  const { locale, messages } = useContext(LocaleContext);
   return useMemo(
     () => ({
       locale,
-      t: (key: MessageKey, params?: Params) => translate(locale, key, params),
-      tn: (base: string, n: number, params?: Params) => translateN(locale, base, n, params),
+      t: (key: MessageKey, params?: Params) => translateIn(messages, locale, key, params),
+      tn: (base: string, n: number, params?: Params) =>
+        translateNIn(messages, locale, base, n, params),
       n: (value: number, digits?: number) => formatNumberIn(value, locale, digits),
     }),
-    [locale],
+    [locale, messages],
   );
 }

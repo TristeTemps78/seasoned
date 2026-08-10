@@ -28,7 +28,8 @@ import type { Tally } from '@/src/domain/tally';
  * voisin. Ce n'est pas une generosite : chez nous, ce calcul ne coute a personne.
  */
 export function MyTally({ tally }: { readonly tally: Tally }) {
-  const { t, tn, locale } = useT();
+  const tr = useT();
+  const { t, tn } = tr;
   const { journal, setHideHours } = useJournal();
   if (!tally.worthShowing) return null;
 
@@ -63,7 +64,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
       {/* `glow` est reserve a ce chiffre : pose ailleurs, il perdrait son sens par
           saturation. La taille et sa justification vivent avec `.tally-figure`. */}
       <p className="tally-figure numeric glow">
-        {t('tally.atLeast', { commitment: formatCommitment(tally.minutes, locale) })}
+        {t('tally.atLeast', { commitment: formatCommitment(tally.minutes, tr) })}
       </p>
 
       <p className="text-sm text-(--color-muted)">
@@ -83,7 +84,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
       {tally.declaredMinutes > 0 ? (
         <p className="text-xs text-(--color-muted)">
           {t('tally.declared', {
-            commitment: formatCommitment(tally.declaredMinutes, locale),
+            commitment: formatCommitment(tally.declaredMinutes, tr),
           })}
         </p>
       ) : null}
@@ -97,11 +98,11 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
             {heaviest.passes > 1
               ? tn('tally.heaviestPasses', heaviest.passes, {
                   title: heaviest.title,
-                  commitment: formatCommitment(heaviest.minutes, locale),
+                  commitment: formatCommitment(heaviest.minutes, tr),
                 })
               : t('tally.heaviestOnce', {
                   title: heaviest.title,
-                  commitment: formatCommitment(heaviest.minutes, locale),
+                  commitment: formatCommitment(heaviest.minutes, tr),
                 })}
           </p>
         </div>

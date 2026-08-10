@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthCallback } from '@/app/components/AuthCallback';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
@@ -34,7 +35,7 @@ function renderCallback(outcome: CallbackOutcome, href: string) {
   mockComplete = async () => outcome;
   window.history.replaceState(null, '', href);
   return render(
-    <LocaleProvider locale="en">
+    <LocaleProvider locale="en" messages={DICTIONARIES.en}>
       <AuthCallback />
     </LocaleProvider>,
   );

@@ -83,7 +83,8 @@ export function TrajectorySection({
   readonly currentSeason: CurrentSeasonVerdict | undefined;
 }) {
   const { journal, ready } = useJournal();
-  const { t, tn, n, locale } = useT();
+  const tr = useT();
+  const { t, tn, n, locale } = tr;
   const entry = journal.entries[journalKey(seriesId)];
   const position = entry?.position;
 
@@ -204,9 +205,9 @@ export function TrajectorySection({
           {advice !== undefined ? (
             <p className="mt-5 rounded-md bg-(--color-warn)/10 px-3 py-2.5 text-sm">
               {t('traj.stop.before', { n: advice.afterSeason })}
-              <strong>~ {formatCommitment(advice.shortenedMinutes, locale)}</strong>
+              <strong>~ {formatCommitment(advice.shortenedMinutes, tr)}</strong>
               {t('traj.stop.after', {
-                full: formatCommitment(advice.fullMinutes, locale),
+                full: formatCommitment(advice.fullMinutes, tr),
               })}
             </p>
           ) : null}

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { expect, it, vi } from 'vitest';
 import { ReportButton } from '@/app/components/ReportButton';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
@@ -7,7 +8,7 @@ import { t } from '@/lib/i18n';
 
 function open(onReport: (ground: string) => Promise<boolean>) {
   render(
-    <LocaleProvider locale="fr">
+    <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
       <ReportButton onReport={onReport} />
     </LocaleProvider>,
   );

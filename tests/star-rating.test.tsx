@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { StarRating } from '@/app/components/StarRating';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
@@ -29,7 +30,7 @@ describe('StarRating', () => {
   function setup(value?: Stars, locale: Locale = 'fr') {
     const onChange = vi.fn();
     render(
-      <LocaleProvider locale={locale}>
+      <LocaleProvider locale={locale} messages={DICTIONARIES[locale]}>
         <StarRating value={value} onChange={onChange} label="la saison 3" />
       </LocaleProvider>,
     );

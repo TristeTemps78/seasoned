@@ -28,7 +28,10 @@
  * Module pur : aucun reseau, aucune horloge, aucun acces a la requete. Testable seul.
  */
 
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, localeTag, type Locale } from './i18n';
+// ⚠️ Depuis `./i18n/engine` et non `./i18n` : seize composants **client** importent ce module
+// pour construire une adresse, et `./i18n` porte les deux dictionnaires. C'etait le plus gros
+// des chemins par lesquels toutes les langues arrivaient dans le navigateur (8.10).
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, localeTag, type Locale } from './i18n/engine';
 
 /** Prefixe d'URL d'une langue. Vide pour la langue par defaut — voir en tete de module. */
 export function localePrefix(locale: Locale): string {

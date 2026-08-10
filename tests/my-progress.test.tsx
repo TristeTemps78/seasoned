@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { MyProgress } from '@/app/components/MyProgress';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
@@ -39,7 +40,7 @@ function store(journal: Journal): void {
 
 function renderAt(locale: Locale = 'fr', episodeMinutes?: number) {
   render(
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale={locale} messages={DICTIONARIES[locale]}>
       <MyProgress
         seriesId="1396"
         seasons={SEASONS}
@@ -64,7 +65,7 @@ describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
    */
   it('reserve la place du bloc tant que le stockage n’est pas lu', () => {
     const { container } = render(
-      <LocaleProvider locale="fr">
+      <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
         <MyProgress seriesId="1396" seasons={SEASONS} series={SERIES} />
       </LocaleProvider>,
     );
@@ -119,7 +120,7 @@ describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
     const soon = new Date(Date.now() + 10 * 86_400_000).toISOString();
     store(setPosition(EMPTY_JOURNAL, KEY, 2, 5));
     render(
-      <LocaleProvider locale="fr">
+      <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
         <MyProgress
           seriesId="1396"
           seasons={SEASONS}
@@ -136,7 +137,7 @@ describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
     const soon = new Date(Date.now() + 2 * 86_400_000).toISOString();
     store(setPosition(EMPTY_JOURNAL, KEY, 1, 1));
     render(
-      <LocaleProvider locale="fr">
+      <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
         <MyProgress
           seriesId="1396"
           seasons={SEASONS}

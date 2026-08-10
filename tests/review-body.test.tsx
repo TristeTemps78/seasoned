@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { describe, expect, it } from 'vitest';
 
 import { ReviewBody } from '@/app/components/ReviewBody';
@@ -15,7 +16,7 @@ import { readFileSync } from 'node:fs';
 
 function show(options: { readonly hidden: boolean; readonly throughSeason: number }) {
   render(
-    <LocaleProvider locale="fr">
+    <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
       <ReviewBody
         hidden={options.hidden}
         text="Le pere de Jon Snow est revele a la saison 6."

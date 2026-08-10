@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DataSafety } from '@/app/components/DataSafety';
 import { AuthContext } from '@/app/auth/AuthProvider';
@@ -25,7 +26,7 @@ function withOneGesture(): string {
 
 function renderIn(locale: 'fr' | 'en') {
   return render(
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale={locale} messages={DICTIONARIES[locale]}>
       <DataSafety />
     </LocaleProvider>,
   );
@@ -55,7 +56,7 @@ describe('DataSafety', () => {
   it('se tait quand il n’y a rien a perdre', async () => {
     window.localStorage.clear();
     const { getByTestId } = render(
-      <LocaleProvider locale="fr">
+      <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
         <Probe />
         <div data-testid="bandeau">
           <DataSafety />
@@ -146,7 +147,7 @@ describe('avec un compte, le bandeau se tait', () => {
   it('ancrage — sans compte, dans ce meme montage, le bandeau parle', async () => {
     window.localStorage.setItem(STORAGE_KEY, withOneGesture());
     render(
-      <LocaleProvider locale="fr">
+      <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
         <DataSafety />
       </LocaleProvider>,
     );
@@ -162,7 +163,7 @@ describe('avec un compte, le bandeau se tait', () => {
     window.localStorage.setItem(STORAGE_KEY, withOneGesture());
     render(
       signedIn(
-        <LocaleProvider locale="fr">
+        <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
           <DataSafety />
           <Probe />
         </LocaleProvider>,

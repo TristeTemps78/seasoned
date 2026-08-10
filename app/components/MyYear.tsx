@@ -27,7 +27,8 @@ import { pathIn } from '@/lib/routes';
  * n'est pas un choix.
  */
 export function MyYear() {
-  const { t, tn, locale } = useT();
+  const tr = useT();
+  const { t, tn, locale } = tr;
   const { journal } = useJournal();
 
   const years = useMemo(() => yearsWithActivity(journal), [journal]);
@@ -93,7 +94,7 @@ export function MyYear() {
       {review.minutesOfFinished > 0 && journal.hideHours !== true ? (
         <p className="numeric text-sm text-(--color-muted)">
           {t('year.weight', {
-            commitment: formatCommitment(review.minutesOfFinished, locale),
+            commitment: formatCommitment(review.minutesOfFinished, tr),
           })}
         </p>
       ) : null}

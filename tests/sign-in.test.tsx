@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { SignIn } from '@/app/components/SignIn';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
@@ -37,7 +38,7 @@ vi.mock('@/app/auth/AuthProvider', () => ({
 
 function renderIn(locale: Locale = 'en') {
   return render(
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale={locale} messages={DICTIONARIES[locale]}>
       <SignIn />
     </LocaleProvider>,
   );

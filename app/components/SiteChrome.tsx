@@ -9,7 +9,6 @@ import { LanguagePicker } from '@/app/components/LanguagePicker';
 import { MyFace } from '@/app/components/MyFace';
 import { FaceSwitch } from '@/app/components/FaceSwitch';
 import { Faces } from '@/app/components/Faces';
-import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import { AuthProvider } from '@/app/auth/AuthProvider';
 import { JournalSync } from '@/app/components/JournalSync';
 import { localeTag, t, type Locale } from '@/lib/i18n';
@@ -36,13 +35,25 @@ import { instrumentSans, plexMono } from '@/app/fonts';
  *
  * ## Le fournisseur de langue enveloppe tout, et ne coute rien
  *
- * `LocaleProvider` est un composant client, mais il recoit `children` **en prop** : Next
+ * `Messages` est un composant client, mais il recoit `children` **en prop** : Next
  * rend alors les enfants sur le serveur et les insere tels quels. Envelopper tout l'arbre
  * ne le fait donc pas basculer cote client — c'est le seul detail qui rend cette solution
  * acceptable ici, et il merite d'etre ecrit parce qu'il n'est pas evident.
  */
-export function SiteChrome({ locale, children }: {
+export function SiteChrome({ locale, Messages, children }: {
   readonly locale: Locale;
+  /**
+   * Le fournisseur de phrases de **cette** langue (8.10).
+   *
+   * ⚠️ **Une prop et pas un `import`**, et c'est tout l'objet de 8.10 : un `import` ici
+   * serait dans le paquet des deux routes, donc les deux dictionnaires y seraient aussi.
+   * Chaque disposition racine importe le sien et le passe ; cette enveloppe reste unique,
+   * et chaque route ne telecharge que sa langue.
+   *
+   * Passer un composant d'un module serveur a un autre est du JavaScript ordinaire : la
+   * reference client ne se materialise qu'a l'endroit ou elle est rendue, c'est-a-dire ici.
+   */
+  readonly Messages: (props: { readonly children: React.ReactNode }) => React.ReactNode;
   readonly children: React.ReactNode;
 }) {
   return (
@@ -52,7 +63,7 @@ export function SiteChrome({ locale, children }: {
     // declarent `--font-voltface-*`, que `@theme` branche sur `font-sans` et `font-mono`.
     <html lang={locale} className={`${instrumentSans.variable} ${plexMono.variable}`}>
       <body className="min-h-screen flex flex-col">
-      <LocaleProvider locale={locale}>
+      <Messages>
         {/* Même patron que `LocaleProvider` : composant client qui reçoit `children` en
             prop, donc l'arbre reste rendu par le serveur et les pages restent statiques.
             La session est lue dans un `useEffect`, jamais au rendu. */}
@@ -177,7 +188,7 @@ export function SiteChrome({ locale, children }: {
             `null` tant qu'il n'y a rien a arbitrer. */}
         <JournalSync />
         </AuthProvider>
-      </LocaleProvider>
+      </Messages>
       </body>
     </html>
   );

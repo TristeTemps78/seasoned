@@ -25,7 +25,8 @@ export function LibraryCard({ item, lead = false }: {
   /** Rendue dans la rangee de tete : l'affiche y fait ~300 px, `w342` y serait flou. */
   readonly lead?: boolean;
 }) {
-  const { t, tn, locale } = useT();
+  const tr = useT();
+  const { t, tn, locale } = tr;
   const parsed = parseJournalKey(item.key);
   const href =
     parsed !== undefined ? seriesPath(parsed.providerId, locale) : pathIn('/', locale);
@@ -37,7 +38,7 @@ export function LibraryCard({ item, lead = false }: {
   // bibliotheque anglaise — constate au navigateur, pas deduit.
   const snapshotStatus =
     item.snapshot?.status !== undefined
-      ? statusLabel(item.snapshot.status, locale)
+      ? statusLabel(item.snapshot.status, tr)
       : item.snapshot?.statusLabel;
 
   const decision = item.entry.decision?.kind;

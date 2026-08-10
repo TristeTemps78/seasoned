@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { describe, expect, it, vi } from 'vitest';
 import { Faces } from '@/app/components/Faces';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
@@ -19,7 +20,7 @@ vi.mock('next/navigation', () => ({ usePathname: () => pathname.current }));
 function renderFaces(locale: Locale, at: string) {
   pathname.current = at;
   render(
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale={locale} messages={DICTIONARIES[locale]}>
       <Faces locale={locale} />
     </LocaleProvider>,
   );

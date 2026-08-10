@@ -18,7 +18,6 @@ import { catchUpPlan } from '@/src/domain/catch-up';
 import { seasonToRate } from '@/src/domain/nudge';
 import { remainingAfter } from '@/src/domain/remaining';
 import { formatCommitment } from '@/lib/format';
-import { tn as translateN } from '@/lib/i18n';
 
 export interface SeasonShape {
   readonly seasonNumber: number;
@@ -80,7 +79,8 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
     setLiked,
     rememberSnapshot,
   } = useJournal();
-  const { t, tn, n, locale } = useT();
+  const tr = useT();
+  const { t, tn, n } = tr;
 
   // Jamais l'identifiant nu : les cles du journal portent leur fournisseur, pour qu'un
   // changement de catalogue reste un remappage et non une perte (`journal.ts`).
@@ -237,10 +237,10 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
       {left !== undefined && !left.done ? (
         <p className="border-t border-(--color-edge) pt-3 text-sm">
           {t('progress.remaining', {
-            episodes: translateN(locale, 'series.episodes', left.episodes),
+            episodes: tr.tn('series.episodes', left.episodes),
             time:
               left.minutes !== undefined
-                ? `~ ${formatCommitment(left.minutes, locale)}`
+                ? `~ ${formatCommitment(left.minutes, tr)}`
                 : '—',
           })}
         </p>
@@ -255,13 +255,13 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
         >
           {plan.minutesPerDay !== undefined
             ? t(plan.withinReach ? 'catchup.pace' : 'catchup.tight', {
-                episodes: translateN(locale, 'series.episodes', plan.episodes),
-                days: translateN(locale, 'catchup.days', plan.days),
-                time: formatCommitment(plan.minutesPerDay, locale),
+                episodes: tr.tn('series.episodes', plan.episodes),
+                days: tr.tn('catchup.days', plan.days),
+                time: formatCommitment(plan.minutesPerDay, tr),
               })
             : t('catchup.plain', {
-                episodes: translateN(locale, 'series.episodes', plan.episodes),
-                days: translateN(locale, 'catchup.days', plan.days),
+                episodes: tr.tn('series.episodes', plan.episodes),
+                days: tr.tn('catchup.days', plan.days),
               })}
         </p>
       ) : null}

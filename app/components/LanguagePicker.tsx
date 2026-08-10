@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, isLocale, type Locale } from '@/lib/i18n';
+// ⚠️ Le moteur, pas `@/lib/i18n` : ce selecteur est sur **toutes** les pages, donc le
+// rapatriement des deux dictionnaires y aurait ete total (8.10, `i18n-split.test.ts`).
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, isLocale, type Locale } from '@/lib/i18n/engine';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { languageLinks } from '@/lib/routes';
 

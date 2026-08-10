@@ -15,7 +15,7 @@ import {
 } from '@/lib/catalog';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { formatCommitment, formatDate, statusLabel, year } from '@/lib/format';
-import { DEFAULT_LOCALE, localeTag, t, tn, watchRegion, type Locale } from '@/lib/i18n';
+import { DEFAULT_LOCALE, localeTag, t, tn, watchRegion, type Locale, translatorFor } from '@/lib/i18n';
 import { judgeCurrentSeason } from '@/src/domain/current-season';
 import { findEntryPoint } from '@/src/domain/entry-point';
 import { stopPointAdvice } from '@/src/domain/stop-point';
@@ -113,11 +113,11 @@ export async function seriesMetadata(id: string, locale: Locale): Promise<Metada
   // immediatement aux deux questions qu'on pose a une serie — ou elle en est, et
   // combien elle coute. C'est le canal d'acquisition n°1.
   const parts = [
-    statusLabel(status.status, locale).toLowerCase(),
+    statusLabel(status.status, translatorFor(locale)).toLowerCase(),
     tn(locale, 'series.seasons', seasons.rateable.length),
     tn(locale, 'series.episodes', episodeCount),
     ...(totalRuntimeMinutes !== undefined
-      ? [formatCommitment(totalRuntimeMinutes, locale)]
+      ? [formatCommitment(totalRuntimeMinutes, translatorFor(locale))]
       : []),
   ];
 
@@ -332,7 +332,7 @@ export async function SeriesView({ id, locale }: {
             // mentir sur la seule promesse chiffree de la page d'accueil.
             <Stat
               label={t(locale, 'stat.commitment')}
-              value={`~ ${formatCommitment(totalRuntimeMinutes, locale)}`}
+              value={`~ ${formatCommitment(totalRuntimeMinutes, translatorFor(locale))}`}
               emphasis
             />
           ) : null}
@@ -372,7 +372,7 @@ export async function SeriesView({ id, locale }: {
           // ⚠️ Le libelle continue d'etre ecrit, et ce n'est pas une redondance : un
           // autre appareil peut tourner sur une version anterieure et ne lire que lui.
           // On migre ce qu'on controle ; le reste doit continuer de fonctionner.
-          statusLabel: statusLabel(status.status, locale),
+          statusLabel: statusLabel(status.status, translatorFor(locale)),
           ...(detail.nextEpisode !== undefined
             ? { nextEpisodeAt: detail.nextEpisode.airsOn.toISOString() }
             : {}),

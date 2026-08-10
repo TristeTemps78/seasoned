@@ -1,4 +1,5 @@
 import { SiteChrome, siteMetadata, siteViewport } from '@/app/components/SiteChrome';
+import { MessagesEn } from '@/app/i18n/MessagesEn';
 import { DEFAULT_LOCALE } from '@/lib/i18n';
 import '../globals.css';
 
@@ -14,5 +15,5 @@ export const metadata = siteMetadata(DEFAULT_LOCALE);
 export const viewport = siteViewport;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <SiteChrome locale={DEFAULT_LOCALE}>{children}</SiteChrome>;
+  return <SiteChrome locale={DEFAULT_LOCALE} Messages={MessagesEn}>{children}</SiteChrome>;
 }

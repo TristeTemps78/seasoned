@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { describe, expect, it } from 'vitest';
 import { LibraryCard } from '@/app/components/LibraryCard';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
@@ -31,7 +32,7 @@ function itemWith(snapshot: JournalSnapshot): LibraryItem {
 
 function renderIn(locale: Locale, snapshot: JournalSnapshot) {
   return render(
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale={locale} messages={DICTIONARIES[locale]}>
       <LibraryCard item={itemWith(snapshot)} />
     </LocaleProvider>,
   );

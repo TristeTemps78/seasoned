@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { DICTIONARIES } from '../lib/i18n';
 import { describe, expect, it } from 'vitest';
 import { MyStats } from '@/app/components/MyStats';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
@@ -53,7 +54,7 @@ function store(journal: Journal): void {
  */
 function renderLibrary(locale: 'fr' | 'en' = 'fr') {
   render(
-    <LocaleProvider locale={locale}>
+    <LocaleProvider locale={locale} messages={DICTIONARIES[locale]}>
       <MyStats />
     </LocaleProvider>,
   );

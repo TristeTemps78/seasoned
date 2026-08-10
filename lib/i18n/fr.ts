@@ -867,3 +867,14 @@ export const FR = {
   'share.legendMine': 'mes notes · le public en gris',
   'share.legendPublic': 'notes du public TMDB',
 } as const;
+
+/**
+ * Le jeu de cles du produit — **defini par le francais**, et par lui seul.
+ *
+ * ⚠️ Il vit ici et non dans `lib/i18n.ts` depuis 8.10, et le deplacement n'est pas cosmetique :
+ * le moteur (`engine.ts`) a besoin de ce type, et l'aller chercher dans `lib/i18n.ts`
+ * l'aurait fait dependre du module qui importe **les deux** dictionnaires. Un `import type`
+ * s'efface a la compilation, mais la regle qu'on veut tenir est plus simple a verifier ainsi :
+ * le moteur ne nomme aucun dictionnaire.
+ */
+export type MessageKey = keyof typeof FR;

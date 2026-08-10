@@ -4,7 +4,7 @@ import type { StatusResult } from '@/src/domain/status';
 import { Poster } from '@/app/components/Poster';
 import type { PosterSize } from '@/lib/catalog';
 import { STATUS_TONE, shortStatus, year } from '@/lib/format';
-import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
+import { DEFAULT_LOCALE, type Locale, translatorFor } from '@/lib/i18n';
 import { seriesPath } from '@/lib/routes';
 
 /**
@@ -62,7 +62,7 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE, size = 'w3
   readonly size?: PosterSize;
 }) {
   const firstYear = year(series.firstAirDate);
-  const badge = status !== undefined ? shortStatus(status, locale) : undefined;
+  const badge = status !== undefined ? shortStatus(status, translatorFor(locale)) : undefined;
 
   return (
     // Le lien reste dans la langue de la page : sans cela, chaque vignette de l'accueil

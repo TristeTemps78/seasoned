@@ -1,6 +1,6 @@
 import type { StatusResult } from '@/src/domain/status';
 import { STATUS_TONE, describeStatus, statusLabel } from '@/lib/format';
-import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
+import { DEFAULT_LOCALE, type Locale, translatorFor } from '@/lib/i18n';
 
 /**
  * Les tons de la pastille.
@@ -37,10 +37,10 @@ export function StatusBadge({ status, withDetail = false, locale = DEFAULT_LOCAL
       <span
         className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${TONE_CLASS[tone]}`}
       >
-        {statusLabel(status.status, locale)}
+        {statusLabel(status.status, translatorFor(locale))}
       </span>
       {withDetail ? (
-        <span className="text-sm text-(--color-muted)">{describeStatus(status, locale)}</span>
+        <span className="text-sm text-(--color-muted)">{describeStatus(status, translatorFor(locale))}</span>
       ) : null}
     </div>
   );
