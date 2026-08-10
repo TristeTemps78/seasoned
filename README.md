@@ -1,6 +1,4 @@
-# seasoned
-
-*Nom de code provisoire.*
+# Voltface
 
 > Ni un tracker, ni un clone de Letterboxd : **un endroit où l'on garde la trace de ce
 > qu'on a pensé d'une série dans le temps**, dont le livrable est une trajectoire et un
@@ -18,8 +16,6 @@
 
 Deux séries que toute note unique rendrait comparables, et qui ne le sont pas.
 
----
-
 ## Pourquoi
 
 Letterboxd fonctionne grâce à une coïncidence que le cinéma offre gratuitement :
@@ -27,34 +23,20 @@ l'œuvre, l'événement de visionnage et l'unité de jugement sont **le même ob
 séance de deux heures, une date, une note.
 
 La télévision détruit cette coïncidence. On juge une saison, on se souvient de trois
-épisodes sur soixante, et la série ne finit jamais. C'est pourquoi personne n'a
-proprement résolu la question — ni IMDb, qui note la série et l'épisode mais pas la
-saison et produit des incohérences publiques, ni Serializd, qui propose les trois
-niveaux sans dire lequel est la vérité.
+épisodes sur soixante, et la série ne finit jamais.
 
 La proposition ici : **la saison est le canon, l'épisode est l'exception, la série est un
-verdict et non une moyenne.** Argumentée dans [docs/RATING-MODEL.md](docs/RATING-MODEL.md).
+verdict et non une moyenne.**
 
 ## État
 
-**Phase 1 en ligne : https://seasoned-two.vercel.app**
+**En ligne : https://seasoned-two.vercel.app**
 
-Recherche, page série, statut réel, engagement en heures. 115 tests, typecheck strict,
-build vert, vérifié contre l'API TMDB réelle. Pas encore de compte ni de base — phase 2.
+Recherche, page série, statut réel, engagement en heures, calendrier avec export `.ics`,
+bilan annuel, listes. Comptes et synchronisation, profils publics `/u/<nom>`, abonnements,
+fil d'activité, critiques par série et par saison.
 
-Le premier contact avec l'API réelle a révélé deux défauts que les fixtures ne pouvaient
-pas voir, tous deux corrigés — voir [TASKS.md](TASKS.md) §1.10. La leçon vaut d'être
-retenue : *une fixture écrite de mémoire décrit l'API dont on se souvient, pas celle qui
-existe.*
-
-## Lire dans cet ordre
-
-| Document | Ce qu'il contient |
-|---|---|
-| [RESEARCH.md](RESEARCH.md) | L'état du terrain au 2026-07-31, sourcé et daté. Reverse engineering de Letterboxd, concurrence, données, **économie**. |
-| [docs/RATING-MODEL.md](docs/RATING-MODEL.md) | **La décision n°1** : comment on note une série. Alternatives rejetées avec leur motif. |
-| [ROADMAP.md](ROADMAP.md) | Le plan, les choix techniques, les arbitrages en attente. |
-| [docs/ROADMAP-AUDIT.md](docs/ROADMAP-AUDIT.md) | La contre-expertise du plan. À lire **avec** la roadmap, pas après. |
+767 tests, typecheck strict, vérifié contre l'API TMDB réelle.
 
 ## Le code
 
@@ -65,28 +47,24 @@ src/domain/     pur : aucun import, aucun réseau, aucune horloge implicite
   trajectory.ts   pic, constance, tendance, point de rupture
   status.ts       statut réel — démasque les séries déclarées vivantes et mortes
   spoiler.ts      horizon de spoiler : la trajectoire est elle-même un spoiler
+  face.ts         l'identité qui se calcule sur ce qu'on fait, pas sur ce qu'on déclare
 
 src/catalog/    le catalogue est loué, pas possédé
   provider.ts     l'interface — un seul module connaît la forme d'un fournisseur
   cache.ts        expiration, plafond contractuel de 6 mois appliqué par le code
   tmdb.ts         fournisseur TMDB, parsing tolérant
 
-lib/            la couture entre le catalogue et le domaine
-  catalog.ts      composition + cache partagé + engagement total en heures
-  format.ts       mise en mots — c'est ici que le différenciateur devient visible
+src/journal/    le journal local, et sa synchronisation
+src/social/     profils, abonnements, activité, critiques, listes
+supabase/       le schéma et les politiques RLS
 
+lib/            la couture entre le catalogue et le domaine
 app/            Next 16, App Router, rendu serveur et ISR 24 h
 ```
 
 ```bash
 npm install && npm run check
-```
-
-Pour lancer l'application, il faut un jeton TMDB v4 dans `.env`
-(voir [.env.example](.env.example)) :
-
-```bash
-npm run dev
+npm run dev      # jeton TMDB v4 dans .env — voir .env.example
 ```
 
 ## Données
