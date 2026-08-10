@@ -68,14 +68,19 @@ const before = await query(
   `select (select count(*) from public.profiles) as profiles,
           (select count(*) from public.follows)  as follows,
           (select count(*) from public.activity) as activity,
-          (select count(*) from auth.users)      as users;`,
+          (select count(*) from auth.users)      as users,
+          (select count(*) from public.quiz_questions where on_day = current_date) as today;`,
 );
 if (!before.ok) fail(`Impossible de lire l'etat initial : HTTP ${before.status}`);
 const avant = before.payload?.[0] ?? {};
 console.log(
   `${DIM}avant  : ${avant.users} compte(s), ${avant.profiles} profil(s), ` +
-    `${avant.follows} abonnement(s), ${avant.activity} activite(s)${RESET}\n`,
+    `${avant.follows} abonnement(s), ${avant.activity} activite(s)${RESET}`,
 );
+// La manche du jour se lit ici plutot que de se supposer : un ecran vide et une manche
+// absente donnent exactement le meme ecran, et c'est ce qui a masque 10.0 pendant trois
+// sessions.
+console.log(`${DIM}manche : ${avant.today} question(s) pour aujourd'hui${RESET}\n`);
 
 const result = await query(readFileSync('scripts/rls-scenarios.sql', 'utf8'));
 
