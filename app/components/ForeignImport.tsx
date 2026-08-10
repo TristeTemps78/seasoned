@@ -60,11 +60,16 @@ export function ForeignImport() {
         </button>
         <span className="text-xs text-(--color-muted)">{t('convert.local')}</span>
 
+        {/* Mecanique du bouton, pas un controle : `sr-only` le cache a l'oeil mais le
+            laisse focalisable et **sans nom** au clavier. Voir `JournalTransfer`, meme
+            defaut, et `tests/a11y-hidden-controls.test.ts` qui tient la regle. */}
         <input
           ref={fileRef}
           type="file"
           accept="application/json,text/csv,.json,.csv,.txt"
           className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file !== undefined) void upload(file);

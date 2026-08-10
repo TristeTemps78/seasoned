@@ -84,11 +84,24 @@ export function JournalTransfer({ onExport, onImport, count }: {
           {t('backup.import')}
         </button>
 
+        {/* 🔴 **Deux arrets de tabulation pour un seul geste, dont un sans nom.**
+            Mesure au navigateur le 2026-08-11 : ce champ est `sr-only`, donc invisible a
+            l'oeil mais **present dans l'arbre d'accessibilite et focalisable**. Un lecteur
+            d'ecran annoncait donc « bouton Importer un fichier », puis un second controle
+            muet juste derriere — le meme geste, sans nom, sans indication.
+
+            Il n'est pas un controle : c'est la **mecanique** du bouton au-dessus, qui
+            l'actionne par `.click()`. `tabIndex={-1}` le sort du parcours clavier, et
+            `aria-hidden` de l'arbre — les deux ensemble, sinon on cacherait un element
+            encore atteignable, ce que l'ARIA interdit. Le declenchement programmatique,
+            lui, continue de marcher : il ne passe ni par le focus ni par l'arbre. */}
         <input
           ref={fileRef}
           type="file"
           accept="application/json,.json"
           className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file !== undefined) void upload(file);
