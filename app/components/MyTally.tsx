@@ -41,7 +41,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
    */
   if (journal.hideHours === true) {
     return (
-      <section className="space-y-2 panel px-4 py-4" aria-label={t('tally.aria')}>
+      <section className="card space-y-2" aria-label={t('tally.aria')}>
         <p className="text-sm text-(--color-muted)">{t('tally.hidden')}</p>
         <button type="button" className="btn text-xs" onClick={() => setHideHours(false)}>
           {t('tally.show')}
@@ -52,10 +52,10 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
 
   return (
     <section
-      // `panel-lit` : c'est le chiffre qui repond a la question du nom du site, sur une page
-      // qui n'a que trois cartes. Il portait deja `glow` sur son total ; la surface qui le
-      // contient restait, elle, au meme poids que les deux autres.
-      className="panel-lit space-y-3 px-4 py-4"
+      // `card panel-lit` : c'est le chiffre qui repond a la question du nom du site, sur une
+      // page qui n'a que trois cartes. Il portait deja `glow` sur son total ; la surface qui
+      // le contient restait, elle, au meme poids que les deux autres.
+      className="card panel-lit space-y-3"
       aria-label={t('tally.aria')}
     >
       <h2 className="card-title">{t('tally.title')}</h2>
@@ -124,7 +124,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
           savoir qu'il existe, donc il ne sert qu'a ceux que le chiffre ne derange pas. */}
       <button
         type="button"
-        className="text-xs text-(--color-muted) underline decoration-dotted underline-offset-2 hover:text-(--color-text)"
+        className="quiet-action"
         onClick={() => setHideHours(true)}
       >
         {t('tally.hide')}

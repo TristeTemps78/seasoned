@@ -385,7 +385,7 @@ export async function SeriesView({ id, locale }: {
         Chaque groupe s'ouvre par un filet qui s'eteint (`.section-rule`). Quatre coupures,
         pas douze : une ligne entre chaque bloc redessinerait un tableau.
       */}
-      <div className="section-rule space-y-10 pt-10">
+      <div className="section-rule space-y-10">
       <MyProgress
         canPublish={legalIsComplete()}
         seriesId={id}
@@ -435,7 +435,7 @@ export async function SeriesView({ id, locale }: {
       </div>
 
       {/* Les autres. */}
-      <div className="section-rule space-y-10 pt-10">
+      <div className="section-rule space-y-10">
       <Reviews seriesId={id} />
 
       {/* Apres les critiques, et non avant : on lit d'abord ce que disent les gens qu'on a
@@ -446,7 +446,7 @@ export async function SeriesView({ id, locale }: {
       </div>
 
       {/* Le detail — ce qu'on vient chercher une fois la decision prise. */}
-      <div className="section-rule space-y-10 pt-10">
+      <div className="section-rule space-y-10">
       <SeriesOrderings
         id={id}
         seasonCount={seasons.rateable.length}
@@ -470,7 +470,7 @@ export async function SeriesView({ id, locale }: {
       </div>
 
       {/* Ailleurs — la seule sortie de la page. */}
-      <div className="section-rule pt-10">
+      <div className="section-rule">
         <AlsoByCreators detail={detail} locale={locale} />
       </div>
     </article>

@@ -3,6 +3,9 @@
 import { useMemo, useState } from 'react';
 
 import { useT } from '@/app/i18n/LocaleProvider';
+import { QuizBars } from '@/app/components/QuizBars';
+import { QuizChoices, QuizVerdictLine } from '@/app/components/QuizChoices';
+import { seedOf } from '@/src/domain/draw';
 import { buildFriendQuiz, type FriendFact } from '@/src/domain/friend-quiz';
 
 /**
@@ -31,13 +34,9 @@ export function FriendQuiz({
   const [answered, setAnswered] = useState<string | undefined>(undefined);
 
   // Meme graine que le quiz personnel : le jour. La question tient jusqu'a demain plutot
-  // que de changer a chaque rendu.
-  const seed = useMemo(() => {
-    const today = new Date();
-    return Number(
-      `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`,
-    );
-  }, []);
+  // que de changer a chaque rendu. 🔴 Elle etait recalculee ici a la main, a l'identique de
+  // `Quiz.tsx`, alors que `seedOf` existe pour ca — voir le commentaire la-bas.
+  const seed = useMemo(() => seedOf(new Date().toISOString().slice(0, 10)), []);
 
   const quiz = useMemo(
     () => buildFriendQuiz(redactedFacts, titleOf, seed),
@@ -61,48 +60,23 @@ export function FriendQuiz({
         // ⚠️ Cette courbe s'arrete ou le LECTEUR s'est arrete : elle est batie sur des
         // faits deja caviardes. Elle ne peut donc pas annoncer une saison qu'il n'a pas
         // atteinte — c'est tout le travail de `redactActivity`, fait en amont.
-        <ul className="flex items-end gap-2">
-          {quiz.curve.map((point) => (
-            <li key={point.season} className="flex flex-col items-center gap-1">
-              <span
-                className="w-6 rounded-t bg-(--color-volt)"
-                style={{ height: `${Math.max(4, point.stars * 16)}px` }}
-              />
-              <span className="text-xs text-(--color-muted)">{point.season}</span>
-            </li>
-          ))}
-        </ul>
+        <QuizBars
+          points={quiz.curve.map((point) => ({
+            label: String(point.season),
+            value: point.stars,
+          }))}
+          perUnit={16}
+        />
       ) : null}
 
-      <ul className="grid gap-2 sm:grid-cols-2">
-        {quiz.choices.map((choice) => {
-          const isRight = choice.key === quiz.answer;
-          const picked = answered === choice.key;
-          return (
-            <li key={choice.key}>
-              <button
-                type="button"
-                disabled={answered !== undefined}
-                aria-pressed={picked}
-                onClick={() => setAnswered(choice.key)}
-                className={`btn w-full justify-start ${
-                  answered === undefined
-                    ? ''
-                    : isRight
-                      ? 'border-(--color-volt) text-(--color-volt)'
-                      : picked
-                        ? 'border-(--color-warn) text-(--color-warn)'
-                        : 'opacity-50'
-                }`}
-              >
-                {choice.title}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <QuizChoices
+        choices={quiz.choices}
+        picked={answered}
+        answer={quiz.answer}
+        onPick={setAnswered}
+      />
 
-      <p aria-live="polite" className="text-sm">
+      <QuizVerdictLine>
         {answered === undefined
           ? ''
           : answered === quiz.answer
@@ -110,7 +84,7 @@ export function FriendQuiz({
             : t('quiz.wrong', {
                 title: quiz.choices.find((choice) => choice.key === quiz.answer)?.title ?? '',
               })}
-      </p>
+      </QuizVerdictLine>
     </section>
   );
 }

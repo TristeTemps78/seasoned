@@ -788,6 +788,29 @@ body::before {
    */
 
   /**
+   * La page qui n'est que du texte — **quatre fois, au caractere pres**.
+   *
+   * `/mentions`, `/confidentialite`, `/regles` et `/convertir` : les quatre pages que le
+   * produit ecrit en prose plutot qu'en donnees. Elles portaient toutes
+   * `mx-auto max-w-2xl space-y-8 py-6`, et une cinquieme page legale l'aurait recopie —
+   * ou pas tout a fait, ce qui est la vraie facon dont ces choses divergent.
+   *
+   * ⚠️ La largeur est celle de `.prose-note`, a dessein : ces pages **sont** de la prose,
+   * et une obligation legale qu'on ne peut pas lire n'est pas remplie.
+   */
+  .text-page {
+    margin-inline: auto;
+    max-width: 42rem;
+    padding-block: 1.5rem;
+  }
+
+  /* Meme idiome que `.empty-state` : l'espacement vertical appartient a la forme, pas a un
+     utilitaire recopie a cote d'elle. */
+  .text-page > * + * {
+    margin-top: 2rem;
+  }
+
+  /**
    * Le paragraphe de commentaire — **cinq fois**, au mot pres.
    *
    * Ce que le produit dit *a cote* d'une donnee : l'explication sous un reglage, la phrase
@@ -964,6 +987,9 @@ body::before {
    * Il s'arrete a 40 % : un filet pleine largeur redessine une grille de tableau, ce que la
    * grille de fond a deja soigneusement evite de faire.
    */
+  /* Le retrait fait partie du filet, il n'est pas un utilitaire a cote : `section-rule
+     pt-10` etait ecrit **trois fois dans le meme fichier**, et un quatrieme groupe l'aurait
+     recopie une fois de plus — ou oublie, laissant un trait colle a son contenu. */
   .section-rule {
     border-top: 1px solid transparent;
     border-image: linear-gradient(
@@ -972,6 +998,7 @@ body::before {
         transparent 40%
       )
       1;
+    padding-top: 2.5rem;
   }
 
   /**
@@ -1115,6 +1142,31 @@ body::before {
     font-size: 1.125rem;
     line-height: 1.4;
     text-wrap: balance;
+  }
+
+  /**
+   * Le geste qu'on propose sans l'imposer — **quatre fois, au caractere pres**.
+   *
+   * `text-xs text-(--color-muted) underline decoration-dotted underline-offset-2
+   * hover:text-(--color-text)` etait recopie dans `Friends` (deux fois), `MyProgress` et
+   * `MyTally` : ne plus suivre quelqu'un, annuler une marque, masquer ses heures. Toujours
+   * le meme objet — une action reelle qui ne doit pas peser autant qu'un `.btn`, parce
+   * qu'elle defait plutot qu'elle ne fait.
+   *
+   * ⚠️ **Un `<button>` et non un lien**, partout ou elle sert : le pointille dit « ceci se
+   * clique » sans emprunter l'apparence d'une navigation.
+   */
+  .quiet-action {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    transition: color 160ms ease;
+  }
+
+  .quiet-action:hover {
+    color: var(--color-text);
   }
 
   /** Le champ de saisie. ⚠️ L'anneau de focus est **volt** : il etait vert par endroits,

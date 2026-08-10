@@ -6,6 +6,8 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { FaceDot } from '@/app/components/FaceDot';
+import { QuizBars } from '@/app/components/QuizBars';
+import { QuizChoices, QuizVerdictLine } from '@/app/components/QuizChoices';
 import {
   SocialClient,
   type QuizScore,
@@ -62,6 +64,10 @@ export function DailyRound() {
   const [ordinal, setOrdinal] = useState(1);
   const [question, setQuestion] = useState<QuizServed | undefined>(undefined);
   const [verdict, setVerdict] = useState<QuizVerdict | undefined>(undefined);
+  // ⚠️ Le choix est tenu **ici** et non deduit du verdict : `QuizVerdict` ne dit que juste
+  // ou faux, jamais lequel. C'est lui qui condamne les boutons des le clic — sans quoi on
+  // pourrait repondre deux fois pendant l'aller-retour reseau.
+  const [picked, setPicked] = useState<string | undefined>(undefined);
   const [board, setBoard] = useState<readonly QuizScore[]>([]);
   const [over, setOver] = useState(false);
 
@@ -93,6 +99,9 @@ export function DailyRound() {
       }
       setQuestion(served);
       setVerdict(undefined);
+      // Sans cette remise a zero, la question suivante arrivait avec ses boutons deja
+      // condamnes par le choix de la precedente.
+      setPicked(undefined);
     },
     [today],
   );
@@ -152,28 +161,27 @@ export function DailyRound() {
           proprement si le champ attendu manque — parsing tolerant, comme partout. */}
       <QuestionPrompt kind={question.kind} prompt={question.prompt} />
 
-      <ul className="grid gap-2 sm:grid-cols-2">
-        {question.choices.map((title, index) => (
-          <li key={`${title}-${index}`}>
-            <button
-              type="button"
-              disabled={verdict !== undefined}
-              onClick={() => void answer(index)}
-              className="btn w-full justify-start"
-            >
-              {title}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {/* ⚠️ **Aucun `answer` transmis, et c'est le point.** Ici c'est Postgres qui juge :
+          envoyer la bonne reponse au navigateur pour la colorer la rendrait lisible dans la
+          page, donc gratuite — alors que tout l'interet de la manche est que chercher
+          ailleurs coute des secondes. Le champ absent est ce qui rend la fuite impossible a
+          ecrire par distraction. */}
+      <QuizChoices
+        choices={question.choices.map((title, index) => ({ key: String(index), title }))}
+        picked={picked}
+        onPick={(key) => {
+          setPicked(key);
+          void answer(Number(key));
+        }}
+      />
 
-      <p aria-live="polite" className="text-sm">
+      <QuizVerdictLine>
         {verdict === undefined
           ? ''
           : verdict.correct
             ? t('round.right', { points: String(verdict.points) })
             : t('round.wrong')}
-      </p>
+      </QuizVerdictLine>
 
       {/* ⚠️ Pas de total cumule ici, et c'est une suppression volontaire : il etait tenu
           en memoire du composant, donc il repartait a zero au rechargement pendant que le
@@ -217,22 +225,24 @@ function QuestionPrompt({
   if ((kind === 'seasons' || kind === 'episodes') && Array.isArray(prompt['scores'])) {
     const scores = (prompt['scores'] as unknown[]).filter((one) => typeof one === 'number');
     return (
-      <ul className="flex items-end gap-2">
-        {scores.map((score, index) => (
-          <li key={index} className="flex flex-col items-center gap-1">
-            <span
-              className="w-6 rounded-t bg-(--color-volt)"
-              style={{ height: `${Math.max(4, Number(score) * 12)}px` }}
-            />
-            <span className="text-xs text-(--color-muted)">{index + 1}</span>
-          </li>
-        ))}
-      </ul>
+      <QuizBars
+        points={scores.map((score, index) => ({
+          label: String(index + 1),
+          value: Number(score),
+        }))}
+        // 12 et non 16 : un score de manche va jusqu'a 10 la ou une note d'etoiles
+        // s'arrete a 5. C'est la seule chose qui differait entre les trois graphiques.
+        perUnit={12}
+      />
     );
   }
 
   if (kind === 'rating' && typeof prompt['score'] === 'number') {
-    return <p className="text-3xl font-medium">{Number(prompt['score']).toFixed(1)}</p>;
+    // ⚠️ `.tally-figure` et non `text-3xl`. La taille etait ecrite en dur, et
+    // `no-adhoc-typography` ne pouvait pas la voir : elle n'inspecte que les `<h1..h6>`,
+    // or c'est un `<p>`. C'est le seul chiffre que cet ecran met en avant, exactement le
+    // role de ce cran.
+    return <p className="tally-figure numeric">{Number(prompt['score']).toFixed(1)}</p>;
   }
 
   if (kind === 'dates' && Array.isArray(prompt['dates'])) {

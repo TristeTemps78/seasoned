@@ -36,7 +36,7 @@ export function LegalView({ locale }: { readonly locale: Locale }) {
   const complete = legalIsComplete();
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 py-6">
+    <div className="text-page">
       <h1 className="page-title">{t(locale, 'legal.title')}</h1>
 
       {!complete ? (

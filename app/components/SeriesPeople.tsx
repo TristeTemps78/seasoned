@@ -84,7 +84,7 @@ export function SeriesPeople({ seriesId }: { readonly seriesId: string }) {
   if (!configured || shown.length === 0) return null;
 
   return (
-    <section className="panel space-y-3 px-4 py-4" aria-label={t('people.title')}>
+    <section className="card space-y-3" aria-label={t('people.title')}>
       <h2 className="card-title">{t('people.title')}</h2>
       <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
         {shown.map((item) => (

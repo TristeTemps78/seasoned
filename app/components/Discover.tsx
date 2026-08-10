@@ -70,7 +70,7 @@ export function Discover() {
   if (!configured || others.length === 0) return null;
 
   return (
-    <section className="panel space-y-3 px-4 py-4" aria-label={t('discover.aria')}>
+    <section className="card space-y-3" aria-label={t('discover.aria')}>
       <h2 className="card-title">{t('discover.title')}</h2>
       <p className="text-sm text-(--color-muted)">{t('discover.why')}</p>
       <ul className="flex flex-wrap gap-2">

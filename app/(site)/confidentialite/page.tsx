@@ -31,7 +31,7 @@ export const metadata: Metadata = privacyMetadata(DEFAULT_LOCALE);
 
 export function PrivacyView({ locale }: { readonly locale: Locale }) {
   return (
-    <div className="mx-auto max-w-2xl space-y-8 py-6">
+    <div className="text-page">
       <header className="space-y-2">
         <h1 className="page-title">{t(locale, 'privacy.title')}</h1>
         <p className="text-sm text-(--color-muted)">{t(locale, 'privacy.updated')}</p>
@@ -71,7 +71,7 @@ function Section({ title, body, highlight = false }: {
   // de surface pour deux intentions — le liseré seul n'etait ni la surface neutre ni celle
   // qui compte, et personne n'aurait su quand le choisir.
   return (
-    <section className={highlight ? 'panel-lit px-4 py-4' : ''}>
+    <section className={highlight ? 'card panel-lit' : ''}>
       {/* `.section-heading` et non `.card-title` : ce composant rend les **sections de
           contenu** de la page, pas des encarts dans une section. */}
       <h2 className="section-heading">{title}</h2>

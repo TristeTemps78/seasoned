@@ -51,7 +51,7 @@ export function MyPlatforms() {
 
   return (
     <section
-      className="space-y-3 panel px-4 py-4"
+      className="card space-y-3"
       aria-label={t('platforms.aria')}
     >
       <div>

@@ -4,7 +4,10 @@ import { useMemo, useState } from 'react';
 
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
-import { buildQuiz, type QuizChoice } from '@/src/domain/quiz';
+import { QuizBars } from '@/app/components/QuizBars';
+import { QuizChoices, QuizVerdictLine } from '@/app/components/QuizChoices';
+import { seedOf } from '@/src/domain/draw';
+import { buildQuiz } from '@/src/domain/quiz';
 
 /**
  * La question du jour.
@@ -37,9 +40,12 @@ export function Quiz() {
   // neuve a chaque frappe, donc une dependance de `useMemo` toujours differente — le memo
   // ne memoriserait rien et la question serait retiree a chaque etat.
   const today = useMemo(() => new Date(), []);
-  const seed = Number(
-    `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`,
-  );
+  // 🔴 `seedOf` et non un `Number(\`${annee}${mois}${jour}\`)` recopie a la main. Ce module
+  // existe **precisement** pour ca — son en-tete raconte les trois copies du meme tirage
+  // qu'il a fallu reunir — et sa fonction est documentee « une graine numerique a partir
+  // d'un texte : **un jour, par exemple** ». Elle n'etait pourtant lue que par les tests,
+  // pendant que ce fichier et `FriendQuiz` en refaisaient chacun une version.
+  const seed = seedOf(today.toISOString().slice(0, 10));
 
   const quiz = useMemo(
     () => (ready ? buildQuiz(journal, today, seed) : undefined),
@@ -70,56 +76,26 @@ export function Quiz() {
           <p className="prose-note">
             {quiz.kind === 'byCurve' ? t('quiz.byCurve') : t('quiz.byEpisodes')}
           </p>
-          {/* La forme, sans titre ni numero de serie — c'est tout le jeu. Les barres sont
-              numerotees parce qu'une forme seule ne dit pas ou elle commence. */}
-          <ul
-            className="flex items-end gap-2"
-            aria-label={quiz.kind === 'byCurve' ? t('quiz.byCurve') : t('quiz.byEpisodes')}
-          >
-            {(quiz.kind === 'byCurve' ? quiz.curve : quiz.episodes).map((point) => (
-              <li key={point.season} className="flex flex-col items-center gap-1">
-                <span
-                  className="w-6 rounded-t bg-(--color-volt)"
-                  style={{ height: `${Math.max(4, point.stars * 16)}px` }}
-                />
-                <span className="text-xs text-(--color-muted)">{point.season}</span>
-              </li>
-            ))}
-          </ul>
+          {/* La forme, sans titre ni numero de serie — c'est tout le jeu. */}
+          <QuizBars
+            points={(quiz.kind === 'byCurve' ? quiz.curve : quiz.episodes).map((point) => ({
+              label: String(point.season),
+              value: point.stars,
+            }))}
+            perUnit={16}
+            label={quiz.kind === 'byCurve' ? t('quiz.byCurve') : t('quiz.byEpisodes')}
+          />
         </div>
       )}
 
-      <ul className="grid gap-2 sm:grid-cols-2">
-        {quiz.choices.map((choice: QuizChoice) => {
-          const isRight = choice.key === rightAnswer;
-          const picked = chosen === choice.key;
-          return (
-            <li key={choice.key}>
-              <button
-                type="button"
-                disabled={chosen !== undefined}
-                aria-pressed={picked}
-                onClick={() => setAnswered(choice.key)}
-                className={`btn w-full justify-start ${
-                  chosen === undefined
-                    ? ''
-                    : isRight
-                      ? 'border-(--color-volt) text-(--color-volt)'
-                      : picked
-                        ? 'border-(--color-warn) text-(--color-warn)'
-                        : 'opacity-50'
-                }`}
-              >
-                {choice.title}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <QuizChoices
+        choices={quiz.choices}
+        picked={chosen}
+        answer={rightAnswer}
+        onPick={setAnswered}
+      />
 
-      {/* ⚠️ Le verdict n'apparait qu'apres la reponse, et il est **annonce** : sans
-          `aria-live`, quelqu'un qui navigue au clavier clique et n'apprend rien. */}
-      <p aria-live="polite" className="text-sm">
+      <QuizVerdictLine>
         {chosen === undefined
           ? ''
           : chosen === rightAnswer
@@ -127,7 +103,7 @@ export function Quiz() {
             : t('quiz.wrong', {
                 title: quiz.choices.find((choice) => choice.key === rightAnswer)?.title ?? '',
               })}
-      </p>
+      </QuizVerdictLine>
     </section>
   );
 }

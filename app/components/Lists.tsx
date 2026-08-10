@@ -156,7 +156,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
   return (
     <div className="space-y-6">
       {editable ? (
-        <section className="panel space-y-3 px-4 py-4" aria-label={t('lists.newAria')}>
+        <section className="card space-y-3" aria-label={t('lists.newAria')}>
           <h2 className="card-title">{t('lists.new')}</h2>
           <input
             className="field w-full"
@@ -190,7 +190,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
             const isOpen = open === list.slug;
 
             return (
-              <li key={list.slug} className="panel space-y-3 px-4 py-4">
+              <li key={list.slug} className="card space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="card-title">{list.title}</h3>
                   <span className="text-xs text-(--color-muted)">

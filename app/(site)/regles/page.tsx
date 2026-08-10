@@ -57,7 +57,7 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
   const contact = publisher().email;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 py-6">
+    <div className="text-page">
       <h1 className="page-title">{t(locale, 'rules.title')}</h1>
       <p className="text-(--color-muted)">{t(locale, 'rules.intro')}</p>
 

@@ -51,7 +51,7 @@ export function MyYear() {
   const parsed = best === undefined ? undefined : parseJournalKey(best.key);
 
   return (
-    <section className="panel space-y-3 px-4 py-4" aria-label={t('year.aria')}>
+    <section className="card space-y-3" aria-label={t('year.aria')}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="card-title">{t('year.title', { year: String(review.year) })}</h2>
         {years.length > 1 ? (

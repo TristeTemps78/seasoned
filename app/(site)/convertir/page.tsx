@@ -34,7 +34,7 @@ export const metadata: Metadata = convertMetadata(DEFAULT_LOCALE);
 
 export function ConvertView({ locale }: { readonly locale: Locale }) {
   return (
-    <div className="mx-auto max-w-2xl space-y-8 py-6">
+    <div className="text-page">
       <header className="space-y-3">
         <h1 className="page-title">{t(locale, 'convert.title')}</h1>
         <p className="leading-relaxed text-(--color-muted)">{t(locale, 'convert.lede')}</p>
@@ -42,7 +42,7 @@ export function ConvertView({ locale }: { readonly locale: Locale }) {
 
       <ForeignImport />
 
-      <section className="space-y-2 panel px-4 py-4">
+      <section className="card space-y-2">
         <h2 className="card-title">{t(locale, 'convert.honestTitle')}</h2>
         <p className="text-xs leading-relaxed text-(--color-muted)">
           {t(locale, 'convert.honestBody')}

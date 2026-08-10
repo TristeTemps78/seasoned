@@ -132,7 +132,7 @@ export function TrajectorySection({
       ) : null}
 
       {showsMine && redacted !== undefined ? (
-        <div className="mb-4 panel px-4 py-4">
+        <div className="card mb-4">
           <h3 className="card-title mb-3">
             {t('traj.yours')}
             <span className="ml-2 font-normal text-(--color-muted)">

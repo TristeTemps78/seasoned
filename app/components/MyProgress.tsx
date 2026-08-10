@@ -165,11 +165,12 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
 
   return (
     <section
-      // ⚠️ `panel-lit` et non `edge-lit panel` : c'est **le seul bloc de la fiche qui vous
-      // connaisse**, donc celui vers lequel le regard doit aller une fois la decision prise.
-      // Il portait le liseré sans le halo, ce qui le laissait au meme poids que les onze
-      // autres surfaces de la page.
-      className="panel-lit space-y-4 px-4 py-4"
+      // ⚠️ `card panel-lit` : c'est **le seul bloc de la fiche qui vous connaisse**, donc
+      // celui vers lequel le regard doit aller une fois la decision prise. Il portait
+      // `edge-lit` — le liseré sans le halo — ce qui le laissait au meme poids que les onze
+      // autres surfaces de la page. `card` porte la forme et le rembourrage, `panel-lit`
+      // n'ajoute que l'emphase : deux formes nommees qui se composent, aucun utilitaire.
+      className="card panel-lit space-y-4"
       aria-label={t('progress.aria')}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -359,7 +360,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
                       <button
                         type="button"
                         onClick={() => setSeasonRating(key, s.seasonNumber, suggestion)}
-                        className="text-xs text-(--color-muted) underline decoration-dotted underline-offset-2 hover:text-(--color-text)"
+                        className="quiet-action"
                       >
                         {t('progress.suggest', { v: n(suggestion, 1) })}
                       </button>

@@ -277,7 +277,7 @@ export function Friends() {
                         void refresh(client, userId);
                       });
                     }}
-                    className="text-xs text-(--color-muted) underline decoration-dotted underline-offset-2 hover:text-(--color-text)"
+                    className="quiet-action"
                   >
                     {t('friends.unfollow')}
                   </button>
@@ -320,7 +320,7 @@ export function Friends() {
                             void refresh(client, userId);
                           });
                         }}
-                        className="text-xs text-(--color-muted) underline decoration-dotted underline-offset-2 hover:text-(--color-text)"
+                        className="quiet-action"
                       >
                         {t('friends.followBack')}
                       </button>

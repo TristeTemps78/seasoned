@@ -42,7 +42,7 @@ export function MyRegions() {
   };
 
   return (
-    <section className="space-y-3 panel px-4 py-4" aria-label={t('regions.aria')}>
+    <section className="card space-y-3" aria-label={t('regions.aria')}>
       <div>
         <h2 className="card-title">{t('regions.title')}</h2>
         <p className="text-xs text-(--color-muted)">{t('regions.subtitle')}</p>

@@ -53,7 +53,7 @@ export function JournalTransfer({ onExport, onImport, count }: {
 
   return (
     <section
-      className="space-y-3 panel px-4 py-4"
+      className="card space-y-3"
       aria-label={t('backup.aria')}
     >
       <h2 className="card-title">{t('backup.title')}</h2>
