@@ -22,6 +22,7 @@ import { ReportButton } from '@/app/components/ReportButton';
 import { ReviewBody } from '@/app/components/ReviewBody';
 import { Discover } from '@/app/components/Discover';
 import { DailyRound } from '@/app/components/DailyRound';
+import { FriendQuiz } from '@/app/components/FriendQuiz';
 import { FaceDot } from '@/app/components/FaceDot';
 import { pathIn } from '@/lib/routes';
 
@@ -382,6 +383,13 @@ export function Friends() {
           ajouter une pour un jeu quotidien couterait plus a la navigation qu'elle ne
           rapporte. Elle est sociale — un classement — donc elle est chez les amis. */}
       <DailyRound />
+
+      {/* ⚠️ On lui passe `visible`, c'est-a-dire le fil **deja caviarde** — jamais `feed`.
+          Lui donner la matiere brute ferait tomber la regle du spoiler ici, en silence. */}
+      <FriendQuiz
+        redactedFacts={visible}
+        titleOf={(subject) => journal.entries[subject as JournalKey]?.snapshot?.title}
+      />
 
       <section className="space-y-3">
         <h2 className="section-heading">{t('friends.feed.title')}</h2>

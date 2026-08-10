@@ -273,6 +273,9 @@ export const FR = {
   'quiz.byCurve': 'Quelle série a cette trajectoire ?',
   'quiz.byEpisodes': 'Quelle série est-ce, épisode par épisode ?',
   // La manche du jour — les mêmes questions pour tout le monde, chronométrées.
+  'friendQuiz.title': 'Votre monde',
+  'friendQuiz.liked': 'Quelle série @{handle} a-t-il aimée ?',
+  'friendQuiz.curve': 'Quelle série @{handle} a-t-il notée ainsi ?',
   'round.title': 'La manche du jour',
   'round.progress': 'Question {n}',
   'round.board': 'Le classement du jour',
