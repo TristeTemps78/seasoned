@@ -51,6 +51,16 @@ export interface WatchOption {
 }
 
 /**
+ * Ou regarder une serie, pays par pays.
+ *
+ * ⚠️ **Un `Record` et non une liste a plat** : la disponibilite est nationale, donc chaque
+ * option doit rester attachee a son pays. Une liste aplatie dirait « c'est sur Netflix »
+ * sans dire ou, ce qui est exactement le renseignement faux qu'un voyageur ou un
+ * expatrie ne pardonne pas.
+ */
+export type WatchByRegion = Readonly<Record<string, readonly WatchOption[]>>;
+
+/**
  * Un decoupage **alternatif** d'une serie en saisons et episodes.
  *
  * ## Pourquoi ce type existe, avec des chiffres
@@ -205,15 +215,26 @@ export interface CatalogProvider {
   ): Promise<readonly SeriesSummary[]>;
 
   /**
-   * Ou regarder une serie, pour un pays donne.
+   * Ou regarder une serie, dans **chacun** des pays demandes.
    *
-   * @param region code ISO 3166-1 a deux lettres. La disponibilite est **toujours**
-   *   nationale : afficher celle d'un autre pays serait pire que ne rien afficher.
+   * ## Pourquoi plusieurs pays, et pourquoi ca ne coute rien
+   *
+   * L'appel TMDB `/tv/{id}/watch/providers` ne prend **aucun pays** : il renvoie le monde
+   * entier dans une seule reponse. La version precedente en gardait un et jetait tout le
+   * reste — « sur Netflix 🇬🇧, pas 🇫🇷 » etait donc a portee sans un appel de plus, et
+   * c'est ce qui a decide la forme.
+   *
+   * ⚠️ La disponibilite reste **nationale** : on ne fusionne jamais deux pays en une
+   * liste. Melanger les catalogues dirait qu'une serie est disponible la ou elle ne l'est
+   * pas, ce qui est pire que de ne rien afficher. Chaque pays garde sa liste, et l'ecran
+   * dit lequel est lequel.
+   *
+   * @param regions codes ISO 3166-1 a deux lettres, ceux que la personne a choisis.
    */
   watchOptions(
     providerId: string,
-    region: string,
-  ): Promise<readonly WatchOption[]>;
+    regions: readonly string[],
+  ): Promise<WatchByRegion>;
 
   /**
    * Les decoupages alternatifs connus pour une serie. Voir {@link EpisodeGrouping}.

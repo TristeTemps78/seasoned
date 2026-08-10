@@ -8,6 +8,7 @@ import {
   posterUrl,
   publicTrajectory,
   watchOptions,
+  SERVED_WATCH_REGIONS,
 } from '@/lib/catalog';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { formatCommitment, formatDate, statusLabel, year } from '@/lib/format';
@@ -430,18 +431,26 @@ async function AlsoByCreators({ detail, locale }: {
 /**
  * Ou regarder la serie — le dernier maillon de la decision.
  *
- * ⚠️ **La region suit la langue, faute de mieux.** Un francophone belge n'a pas le
- * catalogue francais (`lib/i18n.ts`, {@link watchRegion}) : c'est un repli assume, pas
- * une verite. Ce qui ne l'etait pas, en revanche : la region reelle etait la France pour
- * tout le monde, tandis que la mention affichee disait « en France » a un lecteur
- * americain. Les deux sont desormais la meme valeur, et elle est affichee.
+ * ⚠️ **La region suit la langue, faute de mieux — et ce n'est plus qu'un repli.** Un
+ * francophone belge n'a pas le catalogue francais (`lib/i18n.ts`, {@link watchRegion}).
+ * Depuis le 2026-08-10, on ne le devine plus : on sert {@link SERVED_WATCH_REGIONS} et le
+ * navigateur garde les pays que la personne a choisis. La langue ne decide que du repli,
+ * pour qui n'a rien choisi.
+ *
+ * ⚠️ **Le serveur ne peut PAS lire les pays choisis** : ils vivent dans le journal, donc
+ * dans le navigateur. Les lire ici rendrait la page personnelle, c'est-a-dire une
+ * invocation par visite — le cout que ce depot refuse partout.
  */
 async function WatchHere({ id, locale }: {
   readonly id: string;
   readonly locale: Locale;
 }) {
-  const region = watchRegion(locale);
-  return <WatchOptions options={await watchOptions(id, region)} region={region} />;
+  return (
+    <WatchOptions
+      byRegion={await watchOptions(id, SERVED_WATCH_REGIONS)}
+      fallbackRegion={watchRegion(locale)}
+    />
+  );
 }
 
 /**

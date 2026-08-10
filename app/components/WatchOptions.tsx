@@ -3,7 +3,7 @@
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import type { MessageKey } from '@/lib/i18n';
-import type { WatchOption } from '@/src/catalog/provider';
+import type { WatchByRegion, WatchOption } from '@/src/catalog/provider';
 import { JUSTWATCH_ATTRIBUTION } from '@/src/catalog/provider';
 
 const KIND_KEY: Readonly<Record<WatchOption['kind'], MessageKey>> = {
@@ -45,16 +45,75 @@ function regionName(region: string, locale: string): string {
  * Les logos viennent du CDN de TMDB, jamais de chez nous — meme regle que les
  * affiches.
  */
-export function WatchOptions({ options, region }: {
-  readonly options: readonly WatchOption[];
-  /** Code ISO du pays interroge — la disponibilite n'a aucun sens sans lui. */
-  readonly region: string;
+export function WatchOptions({ byRegion, fallbackRegion }: {
+  /** La disponibilite pays par pays, telle que le serveur l'a servie. */
+  readonly byRegion: WatchByRegion;
+  /** Le pays deduit de la langue, pour qui n'a choisi aucun pays. */
+  readonly fallbackRegion: string;
 }) {
   const { journal, ready } = useJournal();
   const { t, locale } = useT();
-  if (options.length === 0) return null;
+
+  // ⚠️ Les pays choisis vivent dans le journal, donc **ici** et pas sur le serveur : la
+  // page est mise en cache et partagee entre tous les visiteurs. Tant que le journal n'est
+  // pas lu, on s'en tient au repli — afficher tous les pays servis puis en retirer serait
+  // un clignotement, et montrer la disponibilite d'un pays qui n'est pas le sien est
+  // exactement le renseignement faux qu'on cherche a eviter.
+  const chosen = ready && (journal.regions?.length ?? 0) > 0 ? journal.regions! : [fallbackRegion];
+
+  const shown = chosen
+    .map((region) => ({ region: region.toUpperCase(), options: byRegion[region.toUpperCase()] ?? [] }))
+    .filter((one) => one.options.length > 0);
+
+  // Muet quand la serie n'est disponible dans aucun des pays choisis : c'est le cas
+  // courant, pas une erreur.
+  if (shown.length === 0) return null;
 
   const mine = new Set(journal.platforms ?? []);
+
+  return (
+    <section className="space-y-3" aria-label={t('watch.aria')}>
+      <h2 className="section-heading">{t('watch.title')}</h2>
+
+      {shown.map(({ region, options }) => (
+        <WatchInRegion
+          key={region}
+          region={region}
+          options={options}
+          mine={mine}
+          ready={ready}
+          named={shown.length > 1}
+        />
+      ))}
+
+      {/* Obligation contractuelle : TMDB agrege ces donnees depuis JustWatch et impose de
+          le citer partout ou elles apparaissent. */}
+      <p className="text-xs text-(--color-muted)">
+        {JUSTWATCH_ATTRIBUTION}
+        {shown.length === 1
+          ? ` ${t('watch.region', { region: regionName(shown[0]!.region, locale) })}`
+          : ''}
+      </p>
+    </section>
+  );
+}
+
+/**
+ * La disponibilite dans **un** pays.
+ *
+ * ⚠️ Le nom du pays n'est affiche que s'il y en a plusieurs (`named`). Avec un seul pays,
+ * l'attribution le dit deja en bas — l'ecrire deux fois est du bruit, et ce composant
+ * servait exactement ainsi avant qu'on sache en montrer plusieurs.
+ */
+function WatchInRegion({ region, options, mine, ready, named }: {
+  readonly region: string;
+  readonly options: readonly WatchOption[];
+  readonly mine: ReadonlySet<string>;
+  readonly ready: boolean;
+  readonly named: boolean;
+}) {
+  const { t, locale } = useT();
+
   const available = ready
     ? options.filter((o) => o.kind === 'flatrate' && mine.has(o.providerName))
     : [];
@@ -65,8 +124,10 @@ export function WatchOptions({ options, region }: {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <section className="space-y-3" aria-label={t('watch.aria')}>
-      <h2 className="section-heading">{t('watch.title')}</h2>
+    <div className="space-y-2">
+      {named ? (
+        <h3 className="label text-(--color-text)">{regionName(region, locale)}</h3>
+      ) : null}
 
       {available.length > 0 ? (
         <p className="rounded-md bg-(--color-live)/10 px-3 py-2 text-sm text-(--color-live)">
@@ -111,17 +172,6 @@ export function WatchOptions({ options, region }: {
           </div>
         ))}
       </dl>
-
-      {/* Obligation contractuelle : TMDB agrege ces donnees depuis JustWatch et
-          impose de le citer partout ou elles apparaissent. */}
-      {/* ⚠️ La region etait ecrite « en France » en dur, sur un site desormais servi en
-          anglais : on annoncait la disponibilite francaise a des lecteurs americains,
-          qui n'ont pas le meme catalogue. Le nom du pays passe par `Intl.DisplayNames`
-          plutot que par le dictionnaire — traduire 249 pays a la main n'aurait aucun
-          sens quand le navigateur sait deja le faire. */}
-      <p className="text-xs text-(--color-muted)">
-        {JUSTWATCH_ATTRIBUTION} {t('watch.region', { region: regionName(region, locale) })}
-      </p>
-    </section>
+    </div>
   );
 }

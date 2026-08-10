@@ -347,7 +347,7 @@ const KNOWN_ENTRY_FIELDS = [
 ] as const;
 
 /** Idem au niveau du document. */
-const KNOWN_JOURNAL_FIELDS = ['version', 'deviceId', 'platforms', 'entries'] as const;
+const KNOWN_JOURNAL_FIELDS = ['version', 'deviceId', 'platforms', 'regions', 'entries'] as const;
 
 /**
  * Le filet qui empeche les deux listes ci-dessus de deriver de leurs interfaces.
@@ -532,6 +532,20 @@ function readJournal(
     ? rawPlatforms.filter((p): p is string => typeof p === 'string' && p.length > 0)
     : [];
 
+  // ⚠️ Relu ici, sinon le champ serait **ecrit puis efface a la premiere sauvegarde** —
+  // le defaut de 10.4bis, mot pour mot. Les codes pays sont normalises en majuscules a la
+  // lecture : deux ecritures du meme pays ne doivent pas donner deux entrees.
+  const rawRegions = source['regions'];
+  const regions = Array.isArray(rawRegions)
+    ? [
+        ...new Set(
+          rawRegions
+            .filter((r): r is string => typeof r === 'string' && /^[A-Za-z]{2}$/.test(r))
+            .map((r) => r.toUpperCase()),
+        ),
+      ]
+    : [];
+
   const unknownFields = unknownFieldsOf(source, KNOWN_JOURNAL_FIELDS);
 
   return {
@@ -540,6 +554,7 @@ function readJournal(
     entries,
     ...(deviceId !== undefined ? { deviceId } : {}),
     ...(platforms.length > 0 ? { platforms } : {}),
+    ...(regions.length > 0 ? { regions } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
 }
@@ -568,6 +583,9 @@ export function serializeJournal(journal: Journal): string {
     ...(journal.deviceId !== undefined ? { deviceId: journal.deviceId } : {}),
     ...(journal.platforms !== undefined && journal.platforms.length > 0
       ? { platforms: journal.platforms }
+      : {}),
+    ...(journal.regions !== undefined && journal.regions.length > 0
+      ? { regions: journal.regions }
       : {}),
     entries,
   });

@@ -11,6 +11,7 @@ import {
   setDecision as setDecisionIn,
   setEpisodeRating as setEpisodeRatingIn,
   setPlatforms as setPlatformsIn,
+  setRegions as setRegionsIn,
   setPosition as setPositionIn,
   setSeasonRating as setSeasonRatingIn,
   setSnapshot as setSnapshotIn,
@@ -216,6 +217,10 @@ export function useJournal() {
     ),
     setPlatforms: useCallback(
       (platforms: readonly string[]) => mutate((j) => setPlatformsIn(j, platforms)),
+      [mutate],
+    ),
+    setRegions: useCallback(
+      (regions: readonly string[]) => mutate((j) => setRegionsIn(j, regions)),
       [mutate],
     ),
 

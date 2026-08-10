@@ -21,6 +21,7 @@ import type {
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
+  WatchByRegion,
   WatchOption,
 } from './provider';
 import type { RawSeason } from '../domain/seasons';
@@ -457,13 +458,22 @@ export class TmdbProvider implements CatalogProvider {
 
   async watchOptions(
     providerId: string,
-    region: string,
-  ): Promise<readonly WatchOption[]> {
+    regions: readonly string[],
+  ): Promise<WatchByRegion> {
+    // ⚠️ **Un seul appel, quel que soit le nombre de pays.** L'endpoint n'en prend aucun :
+    // il rend le monde entier. Boucler dessus par pays serait payer N fois la meme reponse.
     const raw = await this.#get(
       `/tv/${encodeURIComponent(providerId)}/watch/providers`,
       {},
     );
-    return mapWatchOptions(raw, region);
+    const out: Record<string, readonly WatchOption[]> = {};
+    for (const region of regions) {
+      const options = mapWatchOptions(raw, region);
+      // Un pays sans aucune offre ne merite pas une ligne vide a l'ecran : on l'omet, et
+      // c'est l'ecran qui decide s'il a quelque chose a dire.
+      if (options.length > 0) out[region.toUpperCase()] = options;
+    }
+    return out;
   }
 
   async episodeGroups(

@@ -232,6 +232,11 @@ export function mergeJournals(a: Journal, b: Journal): Journal {
     ...new Set([...(a.platforms ?? []), ...(b.platforms ?? [])]),
   ];
 
+  // ⚠️ Les pays suivent exactement la meme regle, et il fallait y penser **ici** : sans
+  // cette ligne, brancher un second appareil effacerait en silence les pays choisis sur le
+  // premier — une preference perdue sans qu'aucun geste ne l'ait demandee.
+  const regions = [...new Set([...(a.regions ?? []), ...(b.regions ?? [])])];
+
   const unknownFields = mergeUnknown(a.unknownFields, b.unknownFields);
 
   return {
@@ -242,6 +247,7 @@ export function mergeJournals(a: Journal, b: Journal): Journal {
     // L'appareil local garde son identite : c'est *son* journal qui accueille l'autre.
     ...(a.deviceId !== undefined ? { deviceId: a.deviceId } : {}),
     ...(platforms.length > 0 ? { platforms } : {}),
+    ...(regions.length > 0 ? { regions } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
 }

@@ -420,6 +420,20 @@ export function setPlatforms(
   return { ...journal, platforms: [...platforms] };
 }
 
+/**
+ * Declare les pays dont on veut connaitre la disponibilite.
+ *
+ * ⚠️ **Normalise et dedoublonne ici**, une fois, plutot qu'a chaque lecture : `fr` et `FR`
+ * sont le meme pays, et deux entrees pour un pays donneraient deux fois la meme ligne a
+ * l'ecran. Le domaine tranche la forme, l'ecran n'a pas a s'en occuper.
+ */
+export function setRegions(journal: Journal, regions: readonly string[]): Journal {
+  const clean = [
+    ...new Set(regions.filter((one) => /^[A-Za-z]{2}$/.test(one)).map((one) => one.toUpperCase())),
+  ];
+  return { ...journal, regions: clean };
+}
+
 // ---------------------------------------------------------------------------
 // 9.0 — marquer ce qui vient d'un import
 // ---------------------------------------------------------------------------

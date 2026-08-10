@@ -65,7 +65,7 @@ function fake(): { provider: CatalogProvider; calls: string[] } {
       return [];
     },
     async watchOptions() {
-      return [];
+      return {};
     },
     // Ajoutee avec les decoupages concurrents (4.4). Le typage a **exige** cette ligne :
     // un double incomplet ne compile plus. C'est la raison pour laquelle la methode vit

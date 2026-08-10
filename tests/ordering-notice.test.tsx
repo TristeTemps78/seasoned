@@ -133,7 +133,7 @@ describe('SeriesOrderings — le fil du fournisseur jusqu’à l’écran', () =
       async getSeason() { throw new Error('non utilise'); },
       async discover() { return []; },
       async seriesByCreator() { return []; },
-      async watchOptions() { return []; },
+      async watchOptions() { return {}; },
       async episodeGroups() { return groups; },
     } as unknown as CatalogProvider;
   }

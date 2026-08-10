@@ -591,6 +591,24 @@ export interface Journal {
   readonly deviceId?: string;
   /** Services auxquels l'utilisateur est abonne, pour « dispo chez vous ». */
   readonly platforms?: readonly string[];
+  /**
+   * Les pays dont on veut connaitre la disponibilite, codes ISO 3166-1.
+   *
+   * ## Pourquoi une preference, et pourquoi elle vit ICI
+   *
+   * ⚠️ **On ne devine pas l'utilisateur, on le laisse choisir** (tranche par Tristan le
+   * 2026-08-03). Deduire le pays de l'adresse IP demanderait de l'inspecter cote serveur —
+   * donc du tracage, ce qui casse « pas de publicite donc pas de suivi », l'argument meme
+   * qui rend le modele coherent — et ce serait **faux** derriere un VPN, precisement pour
+   * les gens que la question interesse.
+   *
+   * Elle vit dans le journal et non dans un etat d'ecran parce qu'elle doit suivre d'un
+   * appareil a l'autre, comme {@link platforms}. Champ **additif** : un client plus ancien
+   * l'ignore et le preserve.
+   *
+   * Absent ou vide = le pays de la langue servie, ce que le produit faisait deja.
+   */
+  readonly regions?: readonly string[];
   readonly entries: Readonly<Record<JournalKey, JournalEntry>>;
   /** Champs de document inconnus, preserves. Voir {@link JournalEntry.unknownFields}. */
   readonly unknownFields?: Readonly<Record<string, unknown>>;

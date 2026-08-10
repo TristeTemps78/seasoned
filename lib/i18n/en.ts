@@ -566,6 +566,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'taste.basisEpisodes.one': ' and {n} episode rating',
   'taste.basisEpisodes.other': ' and {n} episode ratings',
 
+  'regions.aria': 'My countries',
+  'regions.title': 'My countries',
+  'regions.subtitle':
+    'Where you watch. Pick several if you travel — we never guess.',
   'platforms.aria': 'My platforms',
   'platforms.title': 'My subscriptions',
   'platforms.subtitle': 'So you can spot at a glance what you can watch right now.',

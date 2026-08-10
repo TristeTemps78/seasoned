@@ -18,7 +18,7 @@ import type {
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
-  WatchOption,
+  WatchByRegion,
 } from '../src/catalog/provider';
 import { ExpiringCache, memoizeAsync } from '../src/catalog/cache';
 import {
@@ -174,7 +174,7 @@ const throughDiscover = memoizeAsync(discoverCache, SERIES_TTL_MS);
 const creatorCache = new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 1_000 });
 const throughCreator = memoizeAsync(creatorCache, SERIES_TTL_MS);
 
-const watchCache = new ExpiringCache<readonly WatchOption[]>({ maxEntries: 2_000 });
+const watchCache = new ExpiringCache<WatchByRegion>({ maxEntries: 2_000 });
 const throughWatch = memoizeAsync(watchCache, SERIES_TTL_MS);
 
 const groupingCache = new ExpiringCache<readonly EpisodeGrouping[]>({ maxEntries: 2_000 });
@@ -511,6 +511,28 @@ export async function publicTrajectory(
 const DEFAULT_WATCH_REGION = watchRegion(DEFAULT_LOCALE);
 
 /**
+ * Les pays que la page serie sert **toujours**, quels que soient les choix du lecteur.
+ *
+ * ## 🔴 Pourquoi une liste fixe, et pas les pays de la personne
+ *
+ * La page serie est rendue **cote serveur et mise en cache au bord, partagee entre tous
+ * les visiteurs**. Les pays choisis, eux, vivent dans le journal — c'est-a-dire dans le
+ * navigateur. Servir « les pays de la personne » demanderait donc de rendre la page par
+ * visiteur : une invocation par visite, exactement le cout que ce depot refuse partout et
+ * pour lequel il a deja renonce au middleware.
+ *
+ * On sert donc un ensemble fixe et **le navigateur filtre**. Le cache reste partage, la
+ * page reste statique, et le lecteur voit ses pays a lui.
+ *
+ * ⚠️ Le cout est reel mais borne : l'appel TMDB rend le monde entier de toute facon, et
+ * cette liste ne fait que decider **combien on en garde dans le HTML**. La rallonger
+ * alourdit chaque page serie ; c'est le seul arbitrage a tenir ici.
+ */
+export const SERVED_WATCH_REGIONS = [
+  'FR', 'BE', 'CH', 'CA', 'GB', 'US', 'DE', 'ES', 'IT', 'NL', 'PT', 'AU',
+] as const;
+
+/**
  * Ou regarder une serie.
  *
  * Complete la decision que le reste de la page prepare : « 62 h, decroche en saison 5,
@@ -522,16 +544,21 @@ const DEFAULT_WATCH_REGION = watchRegion(DEFAULT_LOCALE);
  */
 export async function watchOptions(
   id: string,
-  region: string = DEFAULT_WATCH_REGION,
-): Promise<readonly WatchOption[]> {
+  regions: readonly string[] = [DEFAULT_WATCH_REGION],
+): Promise<WatchByRegion> {
+  // ⚠️ Les pays sont **normalises et tries** avant d'entrer dans la cle de cache : sans
+  // cela `['FR','GB']` et `['gb','fr']` seraient deux entrees pour la meme reponse, et le
+  // cache se remplirait de doublons au lieu de servir.
+  const wanted = [...new Set(regions.map((one) => one.toUpperCase()))].sort();
+  if (wanted.length === 0) return {};
   try {
     // Pas de langue dans la cle : ce que renvoie cet appel est une liste de marques,
     // que TMDB ne traduit pas. Y ajouter la locale doublerait le cache pour rien.
-    return await throughWatch(`${id}:${region}`, () =>
-      getProvider().watchOptions(id, region),
+    return await throughWatch(`${id}:${wanted.join(',')}`, () =>
+      getProvider().watchOptions(id, wanted),
     );
   } catch {
-    return [];
+    return {};
   }
 }
 

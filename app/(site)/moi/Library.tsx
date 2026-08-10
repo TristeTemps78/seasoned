@@ -8,6 +8,7 @@ import { pathIn } from '@/lib/routes';
 import { JournalTransfer } from '@/app/components/JournalTransfer';
 import { LibraryCard } from '@/app/components/LibraryCard';
 import { MyPlatforms } from '@/app/components/MyPlatforms';
+import { MyRegions } from '@/app/components/MyRegions';
 import { buildLibrary, type LibraryItem } from '@/src/domain/library';
 import { RowHeader } from '@/app/components/RowHeader';
 
@@ -83,6 +84,10 @@ export function Library() {
           duplique dans l'en-tete. */}
 
       <MyPlatforms />
+
+      {/* Juste apres les plateformes : les deux repondent a la meme question — « puis-je
+          la voir, et ou ? » — et l'une sans l'autre donne une reponse a moitie. */}
+      <MyRegions />
 
       <JournalTransfer
         onExport={exportJournal}

@@ -80,7 +80,26 @@ console.log(
 // La manche du jour se lit ici plutot que de se supposer : un ecran vide et une manche
 // absente donnent exactement le meme ecran, et c'est ce qui a masque 10.0 pendant trois
 // sessions.
-console.log(`${DIM}manche : ${avant.today} question(s) pour aujourd'hui${RESET}\n`);
+console.log(`${DIM}manche : ${avant.today} question(s) pour aujourd'hui${RESET}`);
+
+// ⚠️ Le detail des profils, pour la meme raison : « 2 profils » ne dit pas si le fil peut
+// marcher. Deux comptes qui ne se suivent pas, ou en visibilite `private`, donnent
+// exactement le meme ecran vide qu'aucun compte du tout.
+const who = await query(
+  `select p.handle, p.visibility, coalesce(p.face, '—') as face,
+          (select count(*) from public.follows f where f.follower_id = p.user_id) as suit,
+          (select count(*) from public.follows f where f.followee_id = p.user_id) as suivi_par,
+          (select count(*) from public.activity a where a.user_id = p.user_id) as faits,
+          (select count(*) from public.reviews r where r.user_id = p.user_id) as textes
+   from public.profiles p order by p.created_at;`,
+);
+for (const row of who.payload ?? []) {
+  console.log(
+    `${DIM}   @${row.handle} · ${row.visibility} · face ${row.face} · ` +
+      `suit ${row.suit}, suivi par ${row.suivi_par} · ${row.faits} fait(s), ${row.textes} texte(s)${RESET}`,
+  );
+}
+console.log('');
 
 const result = await query(readFileSync('scripts/rls-scenarios.sql', 'utf8'));
 

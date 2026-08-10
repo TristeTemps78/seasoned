@@ -645,6 +645,11 @@ export const FR = {
   'taste.basisEpisodes.other': ' et {n} d’épisode',
 
   // --- Mes plateformes -----------------------------------------------------
+  // Mes pays. ⚠️ Le texte ne promet pas de deviner : on choisit, on n'est pas devine.
+  'regions.aria': 'Mes pays',
+  'regions.title': 'Mes pays',
+  'regions.subtitle':
+    'Où vous regardez. Choisissez-en plusieurs si vous voyagez — on ne devine rien.',
   'platforms.aria': 'Mes plateformes',
   'platforms.title': 'Mes abonnements',
   'platforms.subtitle':
