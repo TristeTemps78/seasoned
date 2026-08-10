@@ -92,12 +92,9 @@ export async function SearchView({ query, locale }: {
           <p className="text-sm text-(--color-muted)">
             {tn(locale, 'search.count', total, { q: query })}
           </p>
-          {/* ⚠️ `.poster-grid` et non une grille ecrite ici. Cette page avait la sienne
-              — `grid-cols-2 sm:grid-cols-3 md:grid-cols-5` — pendant que l'accueil et la
-              bibliotheque partageaient `.poster-grid` : **le meme objet, trois colonnes de
-              difference**, donc une affiche qui changeait de taille selon la page d'ou l'on
-              venait. C'est exactement le defaut que `.poster-grid` avait ete extraite pour
-              empecher, dans le seul fichier qu'elle n'avait pas atteint. */}
+          {/* ⚠️ Cette page avait sa propre grille (`sm:grid-cols-3 md:grid-cols-5`), donc
+              une affiche changeait de taille selon la page d'ou l'on venait — le defaut que
+              `.poster-grid` avait ete extraite pour empecher. */}
           <ul className="bleed poster-grid">
             {results.map(({ summary, status }) => (
               <li key={summary.providerId}>

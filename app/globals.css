@@ -83,29 +83,21 @@
 
 html {
   color-scheme: dark;
-
-  /* ⚠️ Indispensable a `.bleed`, et pas une precaution de style : `100vw` **inclut la barre
-     de defilement**, donc une section pleine largeur depasse la zone visible de ~15 px et
-     ouvre un defilement horizontal sur toutes les pages.
-
-     `clip` et non `hidden` : `hidden` sur ces deux elements se propage a la fenetre et casse
-     `position: sticky`, dont l'en-tete depend.
-
-     ⚠️ **Et il faut les DEUX, ce qui se verifie et ne se devine pas.** Mesure au navigateur
-     le 2026-08-10 : pose sur `html` seul, le defilement horizontal restait possible —
-     `overflow: clip` ne se propage pas a la fenetre comme `hidden` le ferait, donc la regle
-     etait inerte. C'est `body` qui coupe reellement. */
-  overflow-x: clip;
-}
-
-body {
-  overflow-x: clip;
 }
 
 body {
   background-color: var(--color-ink);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
+
+  /* ⚠️ Indispensable a `.bleed` : `100vw` **inclut la barre de defilement**, donc une section
+     pleine largeur depasse la zone visible de ~15 px. `clip` et non `hidden`, qui se
+     propagerait a la fenetre et casserait le `sticky` de l'en-tete.
+
+     ⚠️ Sur `body` et **pas** sur `html` : verifie au navigateur le 2026-08-10, `overflow:
+     clip` ne se propage pas a la fenetre comme `hidden` le ferait — pose sur `html` la regle
+     etait inerte, le defilement horizontal restait possible. */
+  overflow-x: clip;
 
   /*
    * La lueur de fond : deux halos tres dilues, fixes, qui donnent une profondeur au noir
@@ -282,20 +274,11 @@ body::before {
    */
 
   /**
-   * Le cran qui domine une image — au-dessus de l'echelle.
+   * Le cran qui domine une image — au-dessus de l'echelle. Deux emplois : l'accroche de
+   * l'accueil, et le titre pose sur une banniere. `.page-title` (1,75 rem) s'y perdrait.
    *
-   * Il est ne pour l'accroche de l'accueil, le seul `h1` du site qui soit une **phrase** et
-   * non l'etiquette d'un ecran. Il portait sa taille a la main et valait une exception dans
-   * la garde ; un cran nomme est plus simple qu'une exception justifiee.
-   *
-   * ⚠️ **Il sert desormais aussi au titre pose sur une banniere** (2026-08-10), et ce n'est
-   * pas un elargissement de confort : `.page-title` fait 1,75 rem, ce qui se perd sur un
-   * visuel de 1248 px de large. Le critere n'est donc plus « une phrase » mais **« ce qui
-   * doit tenir tete a une image »** — l'accroche de l'accueil et le titre d'une fiche
-   * illustree sont les deux seuls cas, et ils demandent la meme chose.
-   *
-   * Aucun cran n'a ete cree pour l'occasion : en inventer un troisieme pour un usage unique
-   * serait refaire `.tile-label`, retiree pour cette raison exacte.
+   * ⚠️ Aucun troisieme cran n'a ete cree pour la banniere : ce serait refaire `.tile-label`,
+   * retiree pour cause d'usage unique.
    */
   .hero-title {
     font-size: 1.875rem;
@@ -583,8 +566,7 @@ body::before {
     line-height: 1.25rem;
     font-weight: 500;
     color: var(--color-text);
-    /* La meme lumiere que les surfaces, en plus discret : un bouton est petit, et le meme
-       liseré y pese proportionnellement plus. Voir la matiere. */
+    /* La lumiere des surfaces, en plus discret : un bouton est petit. */
     box-shadow:
       inset 0 1px 0 0 color-mix(in oklab, var(--color-text) 8%, transparent),
       0 1px 2px -1px rgb(0 0 0 / 0.5);
@@ -676,41 +658,13 @@ body::before {
    * surtout quand quelqu'un a travaille entre-temps.*
    */
   /**
-   * =============================================================================
-   * LA MATIERE — une seule declaration, et c'est elle qui donne la profondeur
-   * =============================================================================
+   * La matiere de toutes les surfaces — y compris chaque affiche, qui vit deja dans un
+   * `.panel`. Sans elle, les seize surfaces d'une fiche rendaient le meme aplat sans ombre
+   * (mesure le 2026-08-10) : tout etait peint sur le meme plan.
    *
-   * ## Le defaut, mesure au navigateur le 2026-08-10
-   *
-   * Les seize surfaces d'une fiche serie rendaient **exactement la meme chose** :
-   * `rgb(17,19,28)` en aplat, `background-image: none`, et **`box-shadow: none` sur
-   * quatorze d'entre elles**. Le fond de page vaut `rgb(8,9,14)` — neuf unites d'ecart, sur
-   * un ecran ou l'oeil n'en distingue pas trois. Autrement dit : **tout etait peint sur le
-   * meme plan**, et le commentaire de `.panel` le disait deja sans le corriger — *« rien ne
-   * se detache : la page est un empilement de rectangles gris »*.
-   *
-   * ## Pourquoi ici, et nulle part ailleurs
-   *
-   * Trois declarations posees **une fois** donnent du relief a toutes les surfaces du
-   * produit — panneaux, cartes, tuiles, ecrans vides **et chaque affiche**, puisque les
-   * vignettes enveloppent deja leur image dans un `.panel`. Regler la profondeur ecran par
-   * ecran aurait produit seize profondeurs differentes : c'est le defaut qu'on repare, pas
-   * une facon de le reparer.
-   *
-   * ## Ce qui cree la profondeur sur un fond noir, et dans quel ordre
-   *
-   * 1. **Le liseré interieur en haut.** C'est le plus efficace, et de loin : un trait clair
-   *    juste sous le bord superieur simule la lumiere qui accroche une arete. Sur du sombre,
-   *    il fait plus qu'une ombre portee de 40 px.
-   * 2. **Le degrade de la surface.** Plus clair en haut, il dit d'ou vient la lumiere. Il
-   *    monte a 6 % seulement : au-dela, la surface se lit comme un bouton.
-   * 3. **L'ombre portee**, en deux temps — un contact serre qui pose l'objet, une diffusion
-   *    large qui l'eleve. Une seule ombre donne soit un autocollant, soit un nuage.
-   *
-   * ⚠️ **`--halo` est le seul point de surcharge**, et c'est ce qui garde l'ensemble simple :
-   * `.panel-lit` ajoute sa lueur volt **sans recopier** l'elevation. Sans cette variable, la
-   * surface emphatique aurait redeclare `box-shadow` en entier et perdu la matiere — ce qui
-   * l'aurait rendue *plus plate* que les surfaces ordinaires.
+   * ⚠️ **`--halo` est le seul point de surcharge**, et il n'est pas cosmetique : un
+   * utilitaire qui redeclare `box-shadow` gagne sur cette couche et efface l'elevation. La
+   * tuile ENGAGEMENT le faisait, ce qui rendait *plate* la seule tuile qui compte.
    */
   .panel,
   .panel-lit,
@@ -739,30 +693,14 @@ body::before {
   }
 
   /**
-   * La surface qui compte — **une seule par ecran**.
+   * La surface qui compte — **une seule par ecran**. Meme regle que `glow` et que la tuile
+   * `emphasis` : l'emphase est un rapport, pas un ornement. Deux valent zero.
    *
-   * 🔴 Le defaut mesure le 2026-08-10 : **82 surfaces** (`panel`, `card`, `tile`) pour
-   * **5 `edge-lit`** et **2 `glow`**. Le vocabulaire d'emphase etait ecrit et pratiquement
-   * pas employe, donc tout s'affichait au meme poids — c'est la definition litterale de
-   * « rien n'attire l'oeil ». Le probleme n'etait pas la palette, c'etait qu'aucune surface
-   * ne se declarait plus importante qu'une autre.
-   *
-   * Elle porte la forme commune, le liseré superieur d'`edge-lit`, une bordure teintee de
-   * volt et **un halo diffus vers l'exterieur** — le seul endroit du produit ou une surface
-   * projette de la lumiere. C'est ce qui la detache d'un empilement de rectangles.
-   *
-   * ⚠️ **Deux `panel-lit` sur un ecran valent zero.** Meme regle que `glow` et que la tuile
-   * `emphasis` : l'emphase est un rapport, pas un ornement. Elle se pose sur ce qui repond a
-   * la question de la page — la progression sur une fiche, le total sur le bilan.
-   *
-   * Le halo est en `box-shadow` a rayon negatif : il deborde sans dessiner de contour, donc
-   * il ne se lit pas comme une seconde bordure.
+   * Le halo est a rayon negatif : il deborde sans dessiner de contour, donc il ne se lit pas
+   * comme une seconde bordure.
    */
   .panel-lit {
     border-color: color-mix(in oklab, var(--color-volt) 32%, var(--color-edge));
-    /* ⚠️ **Une variable et non un `box-shadow` complet.** Redeclarer l'ombre effacerait
-       l'elevation partagee, et la surface la plus importante de l'ecran serait la seule a
-       etre plate. Voir la matiere, plus haut. */
     --halo: 0 0 2.5rem -1.25rem color-mix(in oklab, var(--color-volt) 75%, transparent);
   }
 
@@ -787,25 +725,14 @@ body::before {
    * definition de forme**. `.card` n'ajoute plus que son rembourrage.
    */
 
-  /**
-   * La page qui n'est que du texte — **quatre fois, au caractere pres**.
-   *
-   * `/mentions`, `/confidentialite`, `/regles` et `/convertir` : les quatre pages que le
-   * produit ecrit en prose plutot qu'en donnees. Elles portaient toutes
-   * `mx-auto max-w-2xl space-y-8 py-6`, et une cinquieme page legale l'aurait recopie —
-   * ou pas tout a fait, ce qui est la vraie facon dont ces choses divergent.
-   *
-   * ⚠️ La largeur est celle de `.prose-note`, a dessein : ces pages **sont** de la prose,
-   * et une obligation legale qu'on ne peut pas lire n'est pas remplie.
-   */
+  /** `/mentions`, `/confidentialite`, `/regles`, `/convertir` — les quatre pages de prose,
+      qui portaient `mx-auto max-w-2xl space-y-8 py-6` au caractere pres. */
   .text-page {
     margin-inline: auto;
     max-width: 42rem;
     padding-block: 1.5rem;
   }
 
-  /* Meme idiome que `.empty-state` : l'espacement vertical appartient a la forme, pas a un
-     utilitaire recopie a cote d'elle. */
   .text-page > * + * {
     margin-top: 2rem;
   }
@@ -856,30 +783,12 @@ body::before {
   }
 
   /**
-   * Sortir de la colonne — **la classe qui casse la linearite**.
-   * =============================================================================
+   * Sortir de la colonne de 1024 px imposee par `<main>` — pour les **grilles**, jamais pour
+   * le texte : une phrase sur 1248 px ne se lit pas, ce que `.prose-note` dit deja.
    *
-   * ## Le defaut qu'elle repare, mesure au navigateur le 2026-08-10
-   *
-   * `<main>` impose `max-w-5xl` — 1024 px — a **tout** le contenu du site. Sur un ecran de
-   * 1280 px, un cinquieme de la largeur etait de la marge morte, et l'accueil rendait ses
-   * affiches a **150 px** alors que le fichier telecharge en fait 342. Le produit dont la
-   * regle fondatrice est « l'affiche est l'interface » servait donc ses affiches en
-   * vignettes, dans une colonne etroite, sur un ecran large.
-   *
-   * ## Une classe plutot qu'une refonte de la disposition
-   *
-   * Elargir `<main>` aurait elargi **le texte de lecture** avec les images, or une phrase
-   * sur 1248 px ne se lit pas — c'est la raison d'etre de `max-w-prose` et de
-   * `.prose-note`. Il fallait donc que **certaines sections** sortent, pas toutes. Une
-   * classe posee sur une section fait exactement ca, sans toucher a une seule page.
-   *
-   * `margin-inline: calc(50% - 50vw)` annule la colonne : le 50 % est celui du parent, le
-   * 50vw celui de la fenetre, et leur difference est precisement le debord de chaque cote.
-   * Le rembourrage recentre ensuite le **contenu** sur `--w-bleed`, si bien que le fond et
-   * l'image occupent toute la largeur pendant que ce qui se lit reste borne.
-   *
-   * ⚠️ Ne fonctionne qu'avec `overflow-x: clip` sur `html` — voir le commentaire la-bas.
+   * `margin-inline: calc(50% - 50vw)` annule la colonne ; le rembourrage recentre ensuite le
+   * contenu sur `--w-bleed`, donc l'image occupe toute la largeur pendant que ce qui se lit
+   * reste borne. ⚠️ Ne marche qu'avec `overflow-x: clip` sur `body` — voir la-bas.
    */
   .bleed {
     --w-bleed: 80rem;
@@ -888,28 +797,9 @@ body::before {
   }
 
   /**
-   * Le lit de banniere — **ce qui donne enfin un point focal**.
-   * =============================================================================
-   *
-   * ## Ce qui existait, et que personne ne rendait
-   *
-   * TMDB sert une banniere 16:9 pour la plupart des series. Le produit la **recuperait**
-   * (`artwork()`), la **memorisait** (`entry.backdrop`) et laissait meme la choisir
-   * (`ChooseArtwork`) — sans jamais l'afficher nulle part. Le plus grand visuel disponible,
-   * deja paye, etait inutilise pendant que la plus grande image d'une fiche serie faisait
-   * 224 px de large. Mieux : `backdrop_path` voyage dans **toutes** les reponses de liste,
-   * donc la montrer ne coute pas un appel de plus (verifie sur les reponses en cache).
-   *
-   * ## Pourquoi l'image est a moitie effacee, et pourquoi c'est la regle du fichier
-   *
-   * « Le neon ne porte jamais le texte de lecture » vaut aussi pour une photo : un titre sur
-   * une image contrastee est illisible, quelle que soit l'image — et on ne sait rien de
-   * celle-ci. L'opacite, le masque vers le bas et les deux degrades d'encre ramenent donc le
-   * fond a une profondeur, pas a une illustration. Le titre reste pose sur `--color-ink`.
-   *
-   * Le masque descend vers la transparence pour que la banniere se fonde dans la page au
-   * lieu de s'y terminer par une arete — une image qui s'arrete net se lit comme une
-   * banniere publicitaire.
+   * Le lit de banniere. « Le neon ne porte jamais le texte de lecture » vaut aussi pour une
+   * photo, et on ne sait rien de celle-ci : l'opacite, le masque et les deux encres la
+   * ramenent a une profondeur, pas a une illustration. Le titre reste pose sur l'encre.
    */
   .art-bed {
     position: relative;
@@ -930,15 +820,14 @@ body::before {
     mask-image: linear-gradient(to bottom, black 0%, black 35%, transparent 100%);
   }
 
+  /* Deux encres : depuis la gauche, ou vit le texte, et depuis le bas, ou la page reprend.
+     Le visuel respire en haut a droite — le seul quart ou il ne gene rien. */
   .art-bed::after {
     content: '';
     position: absolute;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    /* Deux encres : l'une depuis la gauche, ou vit le texte ; l'autre depuis le bas, ou la
-       page reprend. Leur superposition laisse le visuel respirer en haut a droite — le seul
-       quart ou il ne gene rien. */
     background-image:
       linear-gradient(
         to right,
@@ -950,15 +839,9 @@ body::before {
   }
 
   /**
-   * La rangee de tete — **la variante qui donne un rythme**.
-   *
-   * L'accueil rendait trois rangees de hauteurs **348 / 664 / 664 px**, toutes en grille
-   * identique : rien n'y disait laquelle regarder en premier. Une variation de taille dit ce
-   * qu'aucun titre ne dit — la premiere rangee compte davantage.
-   *
-   * Quatre colonnes dans le cadre elargi donnent des affiches d'environ **300 px**, contre
-   * 190 pour la grille dense : le rapport est assez franc pour se voir sans lire. C'est un
-   * modificateur et non un composant — meme objet, meme gouttiere, meme comportement.
+   * La rangee de tete : **300 px** d'affiche contre 190 pour la grille dense. Une variation
+   * de taille dit ce qu'aucun titre ne dit — par ou commencer. L'accueil rendait trois
+   * rangees de **348 / 664 / 664 px**, identiques.
    */
   .poster-grid-lead {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -977,19 +860,10 @@ body::before {
   }
 
   /**
-   * Le filet qui separe deux sections.
-   *
-   * La fiche serie empile **neuf sections** du meme poids, separees par un simple espace :
-   * l'ensemble se lit comme une seule coulee, et l'oeil n'a aucun point ou se reposer. Un
-   * trait qui s'eteint vers la droite marque la coupure sans ajouter de boite — poser neuf
-   * cadres reviendrait a empiler neuf rectangles de plus.
-   *
-   * Il s'arrete a 40 % : un filet pleine largeur redessine une grille de tableau, ce que la
-   * grille de fond a deja soigneusement evite de faire.
+   * Le filet qui coupe une coulee de sections, sans ajouter de boite. Il s'arrete a 40 % :
+   * pleine largeur, il redessinerait une grille de tableau. Le retrait fait partie du filet
+   * — sinon un groupe neuf oublierait son `pt-10` et collerait le trait a son contenu.
    */
-  /* Le retrait fait partie du filet, il n'est pas un utilitaire a cote : `section-rule
-     pt-10` etait ecrit **trois fois dans le meme fichier**, et un quatrieme groupe l'aurait
-     recopie une fois de plus — ou oublie, laissant un trait colle a son contenu. */
   .section-rule {
     border-top: 1px solid transparent;
     border-image: linear-gradient(
@@ -1001,19 +875,9 @@ body::before {
     padding-top: 2.5rem;
   }
 
-  /**
-   * ⚠️ **Un groupe qui n'a rien a montrer ne se separe de rien.**
-   *
-   * Trouve a l'ecran et non deduit : sans compte, `Reviews` et `SeriesPeople` rendent tous
-   * deux `null`, et leur groupe restait un bloc de 41 px — c'est-a-dire **un filet tire
-   * au-dessus du vide**, au milieu de la fiche. Le decoupage est semantique, donc il ne
-   * peut pas savoir a l'ecriture ce qui parlera a l'affichage : c'est au trait de
-   * disparaitre quand son groupe se tait.
-   *
-   * En CSS et non en JSX : la condition « ce composant a-t-il rendu quelque chose ? » ne se
-   * pose pas depuis le parent en React, et la recopier a chaque groupe la ferait oublier au
-   * prochain.
-   */
+  /* ⚠️ Trouve a l'ecran : sans compte, `Reviews` et `SeriesPeople` rendent `null` tous les
+     deux, et leur groupe laissait **un filet tire au-dessus du vide**. En CSS et non en JSX
+     — un parent React ne sait pas si son enfant a rendu quelque chose. */
   .section-rule:empty {
     display: none;
   }
@@ -1057,18 +921,8 @@ body::before {
     text-align: center;
   }
 
-  /**
-   * La lueur de l'ecran vide — **parce que c'est le premier ecran de tout le monde**.
-   *
-   * Quatre rectangles gris centres sur un fond noir : c'est ce que voyait quiconque
-   * ouvrait le produit pour la premiere fois. Le fichier le dit deja — *« les quatre ecrans
-   * vides sont, pour un arrivant, les quatre seuls ecrans qui existent »* — et il les
-   * laissait pourtant sans un gramme de la direction artistique.
-   *
-   * C'est le meme degrade que `.poster-void`, et ce n'est pas une coincidence : les deux
-   * repondent au meme probleme — occuper la place d'une chose absente sans afficher un
-   * manque. Reprendre la forme deja trouvee vaut mieux qu'en inventer une seconde.
-   */
+  /* Le meme degrade que `.poster-void`, et pour le meme probleme : occuper la place d'une
+     chose absente sans afficher un manque. */
   .empty-state::before {
     content: '';
     position: absolute;
@@ -1145,16 +999,8 @@ body::before {
   }
 
   /**
-   * Le geste qu'on propose sans l'imposer — **quatre fois, au caractere pres**.
-   *
-   * `text-xs text-(--color-muted) underline decoration-dotted underline-offset-2
-   * hover:text-(--color-text)` etait recopie dans `Friends` (deux fois), `MyProgress` et
-   * `MyTally` : ne plus suivre quelqu'un, annuler une marque, masquer ses heures. Toujours
-   * le meme objet — une action reelle qui ne doit pas peser autant qu'un `.btn`, parce
-   * qu'elle defait plutot qu'elle ne fait.
-   *
-   * ⚠️ **Un `<button>` et non un lien**, partout ou elle sert : le pointille dit « ceci se
-   * clique » sans emprunter l'apparence d'une navigation.
+   * L'action qui defait — ne plus suivre, annuler une marque, masquer ses heures. Elle ne
+   * doit pas peser autant qu'un `.btn`. Recopiee quatre fois avant d'etre nommee.
    */
   .quiet-action {
     font-size: 0.75rem;
@@ -1169,15 +1015,9 @@ body::before {
     color: var(--color-text);
   }
 
-  /** Le champ de saisie. ⚠️ L'anneau de focus est **volt** : il etait vert par endroits,
-      c'est-a-dire la couleur qui signifie « en diffusion » ailleurs dans le produit. */
-  /**
-   * ⚠️ **Le champ est le seul element qui s'enfonce**, et c'est ce qui complete le systeme :
-   * les surfaces et les boutons prennent la lumiere par le haut, le champ la recoit par le
-   * haut **a l'interieur**. Une meme grammaire, deux sens — et c'est plus simple qu'un
-   * troisieme effet, parce qu'il n'y a rien de nouveau a retenir : la lumiere vient d'en
-   * haut, un creux la porte donc en dedans.
-   */
+  /** Le champ de saisie — **le seul element qui s'enfonce** : meme lumiere venue d'en haut
+      que les surfaces et les boutons, mais recue en dedans. ⚠️ L'anneau de focus est
+      **volt** : il etait vert par endroits, la couleur qui signifie « en diffusion ». */
   .field {
     width: 100%;
     border-radius: 0.5rem;

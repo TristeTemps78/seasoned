@@ -70,10 +70,8 @@ export function Agenda() {
                   key={episode.key}
                   episode={episode}
                   now={now}
-                  // ⚠️ Lu ici et **pas** ajoute a `UpcomingEpisode` : l'affiche est un
-                  // besoin d'affichage, et ce type sert aussi a fabriquer le `.ics`, ou
-                  // elle n'a rien a faire. L'affiche **choisie** passe devant celle du
-                  // catalogue, comme dans la bibliotheque.
+                  // ⚠️ Lu ici et **pas** ajoute a `UpcomingEpisode` : ce type sert aussi a
+                  // fabriquer le `.ics`, ou une affiche n'a rien a faire.
                   posterPath={
                     journal.entries[episode.key]?.poster ??
                     journal.entries[episode.key]?.snapshot?.posterPath
@@ -91,16 +89,12 @@ export function Agenda() {
 }
 
 /**
- * Une ligne du calendrier — **avec son affiche depuis le 2026-08-10**.
- *
- * 🔴 C'etait l'ecran le plus litteralement lineaire du produit : une colonne de lignes de
- * texte, sans une seule image, dans une application dont la regle fondatrice est
- * « l'affiche est l'interface ». On y cherchait sa serie **en lisant**, alors qu'on la
+ * Une ligne du calendrier — avec son affiche depuis le 2026-08-10. C'etait le seul ecran
+ * entierement textuel du produit : on y cherchait sa serie **en lisant**, alors qu'on la
  * reconnait a son affiche partout ailleurs.
  *
- * ⚠️ **Et ca ne coute aucun appel** : l'affiche est deja dans l'instantane que la fiche
- * serie a depose. `Poster` rend son monogramme quand elle manque, donc une serie sans
- * visuel garde sa place au lieu d'ouvrir un trou dans la colonne.
+ * ⚠️ Aucun appel : l'affiche est deja dans l'instantane depose par la fiche serie, et
+ * `Poster` rend son monogramme quand elle manque.
  */
 function Row({ episode, now, posterPath }: {
   readonly episode: UpcomingEpisode;

@@ -25,16 +25,11 @@ export interface SeriesSummary {
   readonly firstAirDate?: Date;
   readonly posterPath?: string;
   /**
-   * La banniere 16:9, quand le fournisseur en connait une.
+   * La banniere 16:9. **Sur le resume et pas seulement sur la fiche** : `backdrop_path`
+   * voyage deja dans `trending`, `on_the_air`, `search` et `/tv/{id}` (verifie sur les
+   * reponses en cache), donc la porter ici ne coute aucun appel.
    *
-   * ⚠️ **Elle vit sur le resume et pas seulement sur la fiche**, et ce n'est pas un
-   * confort : `backdrop_path` voyage deja dans les reponses de `trending`, `on_the_air`,
-   * `search` et `/tv/{id}` — verifie le 2026-08-10 sur les reponses reellement en cache.
-   * La porter ici la rend disponible **sans un seul appel supplementaire**, ce qui est la
-   * condition pour qu'un ecran ose la montrer en grand.
-   *
-   * Souvent absente : beaucoup de series n'ont qu'une affiche. C'est un etat normal, pas
-   * une panne — tout ce qui la rend doit avoir un repli.
+   * ⚠️ Souvent absente — un etat normal, pas une panne. Tout ce qui la rend a un repli.
    */
   readonly backdropPath?: string;
   readonly overview?: string;

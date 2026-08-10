@@ -38,10 +38,8 @@ export function Poster({ path, title, className = '', size = 'w342' }: {
   /**
    * La taille demandee au CDN.
    *
-   * ⚠️ **Elle etait figee a `w342` pour tout le monde**, et c'etait faux dans les deux sens
-   * a la fois : la grille dense rendait ce fichier a **150 px** — plus du double de ce
-   * qu'elle montrait — pendant que la rangee de tete, elle, l'afficherait a **300 px**,
-   * c'est-a-dire au-dela de sa resolution. Un seul reglage ne peut pas servir deux echelles.
+   * ⚠️ Figee a `w342`, elle etait fausse dans les deux sens : la grille dense rendait ce
+   * fichier a 150 px, la rangee de tete l'afficherait a 300.
    */
   readonly size?: PosterSize;
 }) {

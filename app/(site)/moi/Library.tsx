@@ -52,9 +52,8 @@ export function Library() {
 
   return (
     <div className="space-y-12">
-      {/* ⚠️ La rangee de tete est « ce qui revient », et c'est la meme decision que sur
-          l'accueil : la premiere rangee repond a la question qu'on se pose en ouvrant
-          l'ecran. Quatre rangees strictement identiques ne disaient pas laquelle regarder. */}
+      {/* Meme decision que sur l'accueil : la rangee de tete repond a la question qu'on se
+          pose en ouvrant l'ecran. Quatre rangees identiques ne disaient pas laquelle lire. */}
       <Row
         title={t('library.returning.title')}
         subtitle={t('library.returning.subtitle')}

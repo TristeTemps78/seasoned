@@ -51,9 +51,8 @@ export function ChooseArtwork({
   const key = journalKey(seriesId);
   const entry = journal.entries[key];
 
-  // ⚠️ L'URL passe par les helpers de `lib/catalog`, jamais par une concatenation locale :
-  // les tailles d'une affiche et celles d'une banniere sont **deux jeux differents** chez
-  // TMDB, et les melanger sert un 404 depuis le CDN.
+  // ⚠️ Par les helpers de `lib/catalog`, jamais par une concatenation locale : affiches et
+  // bannieres ont **deux jeux de tailles** chez TMDB, et les melanger sert un 404.
   const rows = [
     {
       which: 'poster' as const,

@@ -208,36 +208,19 @@ export async function SeriesView({ id, locale }: {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
-      {/*
-        L'en-tete se pose sur la banniere, **en pleine largeur**.
+      {/* ⚠️ `-mt-8` annule le `py-8` de `<main>` : sans lui, une bande d'encre separait la
+          banniere de la barre de navigation, ce qui la faisait lire comme une image collee
+          dans la page. Avec, elle passe **sous** la barre translucide, qui la floute.
 
-        ## Ce qui a change le 2026-08-10, et ce qui a ete mesure
-
-        La page empilait neuf sections du meme poids dans une colonne de 1024 px, et sa plus
-        grande image faisait 224 px. Rien ne dominait, donc rien n'attirait l'oeil. La
-        banniere etait pourtant deja recuperee et deja payee.
-
-        ## `-mt-8` n'est pas un ajustement decoratif
-
-        `<main>` porte `py-8`. Sans ce retrait, la banniere commencait 32 px sous la barre de
-        navigation et laissait une bande d'encre entre les deux — ce qui la fait lire comme
-        une image collee dans la page plutot que comme le fond de l'en-tete. Avec, elle passe
-        **sous** la barre translucide, qui la floute en defilant.
-
-        ⚠️ **Le repli est la mise en page d'avant, au pixel pres** : sans banniere, ni
-        `.bleed` ni `.art-bed` ne sont poses et l'en-tete redevient une simple rangee. C'est
-        le cas courant, et une page trouee serait pire que la page plate qu'on remplace.
-      */}
+          ⚠️ **Le repli est la mise en page d'avant, au pixel pres** : sans banniere, ni
+          `.bleed` ni `.art-bed`. C'est le cas courant, pas l'exception. */}
       <header
         className={
           backdrop !== undefined ? 'bleed art-bed -mt-8 pt-8 pb-6 sm:pt-12 sm:pb-10' : ''
         }
       >
         {backdrop !== undefined ? (
-          // ⚠️ C'est desormais le plus gros element de l'ecran, donc **celui que Google
-          // chronometre** : priorite haute et dimensions declarees, exactement pour la raison
-          // qui les a fait poser sur l'affiche. `srcSet` evite de servir 1280 px de large a
-          // un telephone qui en affiche 360.
+          // Desormais le plus gros element de l'ecran, donc celui que Google chronometre.
           // eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous.
           <img
             src={backdrop}
@@ -266,15 +249,9 @@ export async function SeriesView({ id, locale }: {
           // Le mobile garde `w-36` : sous 640 px la disposition passe en colonne, et cet
           // ecran-la n'a pas encore ete regarde a l'oeil. On ne change pas ce qu'on n'a pas vu.
           //
-          // ⚠️ **`fetchPriority` est parti a la banniere** (2026-08-10) : elle est desormais
-          // le plus gros element de l'ecran, donc l'element chronometre. Deux images en
-          // priorite haute ne priorisent rien.
-          //
-          // ⚠️ `panel` et non `rounded-lg border … shadow-[…]` : c'est **la meme matiere que
-          // toutes les surfaces du produit**, elevation comprise, et c'est elle qui decolle
-          // l'affiche du visuel derriere elle. La valeur d'ombre etait ecrite a la main ici
-          // et une seconde fois sur l'accueil, pour le meme objet — deux copies qui ne
-          // savaient pas qu'elles en etaient.
+          // ⚠️ `fetchPriority` est parti a la banniere : deux images en priorite haute ne
+          // priorisent rien. `panel` porte la matiere commune, elevation comprise — c'est
+          // elle qui decolle l'affiche du visuel derriere.
           <img
             src={poster}
             alt=""
@@ -287,9 +264,8 @@ export async function SeriesView({ id, locale }: {
 
         <div className="space-y-4">
           <div>
-            {/* `.hero-title` et non `.page-title` : ce titre se pose sur une image de
-                1248 px de large, ou 1,75 rem se perd. Le cran a ete rouvert pour ce cas —
-                voir sa declaration dans `globals.css`. */}
+            {/* `.hero-title` : sur une image de 1248 px, les 1,75 rem de `.page-title` se
+                perdent. */}
             <h1 className="hero-title">
               {detail.title}
               {started !== undefined ? (
@@ -372,19 +348,10 @@ export async function SeriesView({ id, locale }: {
           la page elle-meme reste statique et mise en cache, et **aucune donnee de
           journal ne traverse le serveur** — le HTML est partage entre tous les
           visiteurs par le cache de bord. */}
-      {/*
-        Les quatre groupes de la fiche — **ce qui remplace neuf sections de meme poids**.
-
-        La page empilait douze blocs separes par un espace identique : elle se lisait comme
-        une seule coulee, sans endroit ou l'oeil se repose. Le decoupage n'est pas
-        typographique, il est **semantique**, et il etait deja ecrit dans les commentaires
-        de ce fichier sans que rien ne le rende visible :
-
-          la serie · vous · les autres · le detail · ailleurs
-
-        Chaque groupe s'ouvre par un filet qui s'eteint (`.section-rule`). Quatre coupures,
-        pas douze : une ligne entre chaque bloc redessinerait un tableau.
-      */}
+      {/* Les douze blocs de la page se lisaient comme une seule coulee. Le decoupage qui
+          suit est **semantique** — la serie · vous · les autres · le detail · ailleurs — et
+          il etait deja ecrit dans les commentaires de ce fichier sans rien rendre visible.
+          Quatre coupures, pas douze : une ligne entre chaque bloc redessinerait un tableau. */}
       <div className="section-rule space-y-10">
       <MyProgress
         canPublish={legalIsComplete()}

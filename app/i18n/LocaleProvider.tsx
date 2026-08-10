@@ -57,11 +57,9 @@ export function LocaleProvider({ locale, children }: {
 /**
  * La langue de la page courante.
  *
- * ⚠️ **Volontairement pas exportee.** Elle l'etait, et **aucun fichier ne s'en servait** :
- * `useT` — juste en dessous, dans ce meme module — est son unique lecteur. Deux portes
- * d'entree pour la meme chose, dont une que personne n'avait jamais poussee, c'est une
- * invitation a ecrire `t(useLocale(), 'cle')` dans un ecran neuf — c'est-a-dire exactement
- * la forme que `useT` existe pour remplacer.
+ * ⚠️ **Pas exportee.** Elle l'etait sans lecteur : `useT`, juste en dessous, est le seul.
+ * Deux portes pour la meme chose invitent a ecrire `t(useLocale(), 'cle')` dans un ecran
+ * neuf — la forme que `useT` existe pour remplacer.
  */
 function useLocale(): Locale {
   return useContext(LocaleContext);

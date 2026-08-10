@@ -51,16 +51,13 @@ export async function Home({ locale }: { readonly locale: Locale }) {
     waitingSeries(12, new Date(), locale),
   ]);
 
-  // La mise en avant demande une banniere : on prend la premiere serie en attente qui en
-  // ait une, et non simplement la premiere. ⚠️ **Aucun appel supplementaire** —
-  // `backdrop_path` voyage deja dans la reponse de `discover` (verifie sur les reponses en
-  // cache le 2026-08-10). Sans aucune banniere disponible, `featured` reste indefini et
-  // l'accueil retrouve exactement sa forme d'avant : c'est un repli, pas un trou.
+  // La premiere serie en attente **qui ait une banniere**, pas simplement la premiere.
+  // ⚠️ Aucun appel de plus : `backdrop_path` voyage deja dans la reponse de `discover`.
+  // Sans banniere nulle part, `featured` reste indefini et l'accueil retrouve sa forme
+  // d'avant — un repli, pas un trou.
   const featured = waiting.find((item) => item.summary.backdropPath !== undefined);
-  // Huit et non onze : la rangee de tete rend quatre colonnes, donc onze vignettes y
-  // laissent une derniere ligne de trois — un trou d'une affiche sur deux, en plein milieu
-  // de la page. Huit remplissent exactement deux lignes. Les rangees denses, elles, en
-  // rendent six par ligne et gardent leurs douze.
+  // Huit, parce que la rangee de tete a quatre colonnes : onze y laisseraient une derniere
+  // ligne de trois. Les rangees denses en rendent six et gardent leurs douze.
   const rest = waiting.filter((item) => item !== featured).slice(0, 8);
 
   return (
@@ -93,17 +90,9 @@ export async function Home({ locale }: { readonly locale: Locale }) {
         <ResumeStrip />
       </section>
 
-      {/* La preuve, avant la liste.
-
-          🔴 Mesure du 2026-08-10 : l'accueil rendait quatre blocs empiles de 183, **348, 664
-          et 664 px** — trois rangees strictement identiques sous un chapeau de texte. Rien
-          n'y disait par quoi commencer, et la seule chose que ce produit sache faire et
-          qu'aucun autre n'affiche — « en attente, depuis 14 mois » — etait une pastille de
-          11 px collee au bas d'une affiche de 150 px.
-
-          On promeut donc **une** serie en attente : sa banniere en pleine largeur, son
-          statut en toutes lettres. Elle sort de la rangee (`rest`) au lieu de s'y ajouter —
-          la montrer deux fois sur le meme ecran ferait douter qu'il s'agisse de la meme. */}
+      {/* La preuve, avant la liste. ⚠️ Elle **sort** de la rangee (`rest`) au lieu de s'y
+          ajouter : la montrer deux fois sur le meme ecran ferait douter qu'il s'agisse de
+          la meme serie. */}
       {featured !== undefined ? (
         <Featured
           item={featured}
@@ -114,9 +103,8 @@ export async function Home({ locale }: { readonly locale: Locale }) {
 
       {/* Cette rangee passe en premier a dessein : c'est la seule qui montre ce que
           fait le produit. Les deux autres ne contiennent, par construction, que des
-          series actives — verifie en ligne le 2026-08-01. */}
-      {/* ⚠️ `lead` : affiches d'environ 300 px contre 190 pour les suivantes. La difference
-          de taille dit ce qu'aucun sous-titre ne disait — par ou commencer. */}
+          series actives — verifie en ligne le 2026-08-01. `lead` lui donne des affiches
+          de 300 px contre 190, ce qui dit par ou commencer sans l'ecrire. */}
       <Row
         title={t(locale, 'home.waiting.title')}
         subtitle={t(locale, 'home.waiting.subtitle')}
@@ -147,24 +135,14 @@ export async function Home({ locale }: { readonly locale: Locale }) {
 }
 
 /**
- * La serie mise en avant — **le point focal que l'accueil n'avait pas**.
+ * La serie mise en avant — une serie *en attente*, donc celle qui porte le differenciateur
+ * du produit. Une « tendance » montrerait ce que tout le monde montre deja.
  *
- * ## Pourquoi celle-ci et pas une autre
+ * Aucune chaine nouvelle : l'etiquette vient de la rangee dont elle sort, le statut de
+ * `StatusBadge`, comme sur la fiche serie.
  *
- * C'est une serie *en attente*, donc celle qui porte le differenciateur du produit : le
- * temps ecoule depuis le dernier episode, chiffre. Mettre en avant une serie « tendance »
- * montrerait ce que tout le monde montre deja.
- *
- * ## Ce qu'elle ne fait pas
- *
- * **Aucune chaine nouvelle.** L'etiquette est celle de la rangee dont elle sort, le statut
- * est rendu par `StatusBadge` — le meme composant que la fiche serie, dans les memes mots.
- * Un bloc de mise en avant qui inventerait son vocabulaire dirait la meme chose deux
- * facons, et c'est exactement ce que `no-hardcoded-strings` existe pour empecher.
- *
- * ⚠️ **Le lien enveloppe le titre seul, pas le bloc.** Un `<a>` qui contient une image, un
- * badge et un synopsis annonce au lecteur d'ecran une seule cible dont le nom fait trois
- * phrases. Le titre est la cible, et il est assez grand pour etre vise.
+ * ⚠️ **Le lien enveloppe le titre seul, pas le bloc** : un `<a>` contenant image, badge et
+ * synopsis annonce au lecteur d'ecran une cible dont le nom fait trois phrases.
  */
 function Featured({ item, label, locale }: {
   readonly item: SeriesWithStatus;
@@ -242,9 +220,7 @@ function Row({ title, subtitle, series, locale, lead = false }: {
   if (series.length === 0) return null;
 
   return (
-    // ⚠️ `.bleed` : la grille sort de la colonne de lecture, le texte n'en sort jamais.
-    // C'est la regle, et elle vaut mieux qu'un elargissement general — une phrase rendue
-    // sur 1248 px ne se lit pas, ce que `.prose-note` dit deja.
+    // `.bleed` : la grille sort de la colonne de lecture, le texte n'en sort jamais.
     <section className="bleed space-y-4" aria-label={title}>
       <RowHeader title={title} subtitle={subtitle} />
       <ul className={`poster-grid ${lead ? 'poster-grid-lead' : ''}`}>
@@ -253,8 +229,8 @@ function Row({ title, subtitle, series, locale, lead = false }: {
             <SeriesCard
               series={summary}
               locale={locale}
-              // Une affiche de 300 px rendue depuis un fichier de 342 est a la limite du
-              // flou ; la grille dense, elle, n'a aucune raison de telecharger 500.
+              // 300 px rendus depuis un fichier de 342 seraient a la limite du flou ; la
+              // grille dense n'a aucune raison de telecharger 500.
               size={lead ? 'w500' : 'w342'}
               {...(status !== undefined ? { status } : {})}
             />

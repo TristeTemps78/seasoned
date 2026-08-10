@@ -64,9 +64,8 @@ export function DailyRound() {
   const [ordinal, setOrdinal] = useState(1);
   const [question, setQuestion] = useState<QuizServed | undefined>(undefined);
   const [verdict, setVerdict] = useState<QuizVerdict | undefined>(undefined);
-  // ⚠️ Le choix est tenu **ici** et non deduit du verdict : `QuizVerdict` ne dit que juste
-  // ou faux, jamais lequel. C'est lui qui condamne les boutons des le clic — sans quoi on
-  // pourrait repondre deux fois pendant l'aller-retour reseau.
+  // ⚠️ Tenu ici et non deduit du verdict, qui ne dit que juste ou faux : c'est lui qui
+  // condamne les boutons des le clic, sinon on repond deux fois pendant l'aller-retour.
   const [picked, setPicked] = useState<string | undefined>(undefined);
   const [board, setBoard] = useState<readonly QuizScore[]>([]);
   const [over, setOver] = useState(false);
@@ -161,11 +160,8 @@ export function DailyRound() {
           proprement si le champ attendu manque — parsing tolerant, comme partout. */}
       <QuestionPrompt kind={question.kind} prompt={question.prompt} />
 
-      {/* ⚠️ **Aucun `answer` transmis, et c'est le point.** Ici c'est Postgres qui juge :
-          envoyer la bonne reponse au navigateur pour la colorer la rendrait lisible dans la
-          page, donc gratuite — alors que tout l'interet de la manche est que chercher
-          ailleurs coute des secondes. Le champ absent est ce qui rend la fuite impossible a
-          ecrire par distraction. */}
+      {/* ⚠️ **Aucun `answer`** : ici c'est Postgres qui juge, et l'envoyer pour colorer la
+          bonne reponse la rendrait lisible dans la page. */}
       <QuizChoices
         choices={question.choices.map((title, index) => ({ key: String(index), title }))}
         picked={picked}
@@ -230,18 +226,15 @@ function QuestionPrompt({
           label: String(index + 1),
           value: Number(score),
         }))}
-        // 12 et non 16 : un score de manche va jusqu'a 10 la ou une note d'etoiles
-        // s'arrete a 5. C'est la seule chose qui differait entre les trois graphiques.
+        // 12 et non 16 : un score va jusqu'a 10, une note d'etoiles s'arrete a 5.
         perUnit={12}
       />
     );
   }
 
   if (kind === 'rating' && typeof prompt['score'] === 'number') {
-    // ⚠️ `.tally-figure` et non `text-3xl`. La taille etait ecrite en dur, et
-    // `no-adhoc-typography` ne pouvait pas la voir : elle n'inspecte que les `<h1..h6>`,
-    // or c'est un `<p>`. C'est le seul chiffre que cet ecran met en avant, exactement le
-    // role de ce cran.
+    // ⚠️ La taille etait en dur (`text-3xl`) et `no-adhoc-typography` ne pouvait pas la
+    // voir : elle n'inspecte que les `<h1..h6>`, or c'est un `<p>`.
     return <p className="tally-figure numeric">{Number(prompt['score']).toFixed(1)}</p>;
   }
 

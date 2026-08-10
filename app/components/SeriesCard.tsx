@@ -71,9 +71,8 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE, size = 'w3
       href={seriesPath(series.providerId, locale)}
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-volt)"
     >
-      {/* `--halo` est le point de surcharge de la matiere commune : au survol, la vignette
-          gagne la meme lueur volt que la surface emphatique, **sans recopier son
-          elevation**. Un changement de bordure seul ne dit pas qu'un objet se souleve. */}
+      {/* `--halo` : au survol la vignette gagne la lueur volt **sans recopier** l'elevation
+          de la matiere. Un changement de bordure seul ne dit pas qu'un objet se souleve. */}
       <div className="relative aspect-2/3 overflow-hidden panel transition-[border-color,box-shadow] duration-200 group-hover:border-(--color-volt)/50 group-hover:[--halo:0_0_2rem_-0.75rem_var(--color-volt)]">
         <Poster
           path={series.posterPath}
