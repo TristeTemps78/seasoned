@@ -600,6 +600,28 @@ export class SocialClient {
   }
 
   /**
+   * Les critiques recentes de tout ce que je peux lire — la seconde moitie du fil.
+   *
+   * ## Pourquoi une lecture de plus, et pas un genre d'activite
+   *
+   * `activity` est **derivee du journal**, et une critique n'y vit pas : elle a sa table et
+   * sa moderation. L'y projeter donnerait un second etat a tenir d'accord avec le premier,
+   * et une critique retiree resterait annoncee dans le fil. `src/domain/feed.ts` range les
+   * deux listes ensemble ; c'est le seul endroit qui decide de l'ordre.
+   *
+   * ⚠️ **Aucun filtre de visibilite ici**, comme {@link reviewsBy} : `reviews_select` porte
+   * `can_see(user_id)` **et** ecarte ce qui est masque. On demande tout, la base ne rend que
+   * le lisible. Le refaire ici donnerait deux sources de verite pour une meme regle.
+   *
+   * ⚠️ Le cout est **borne** : un appel, quel que soit le nombre de personnes suivies. C'est
+   * la meme raison qui a fait choisir la jointure PostgREST pour {@link feed} — une requete
+   * par ami est exactement le cout marginal par utilisateur que ce produit refuse.
+   */
+  async feedReviews(limit = 30): Promise<readonly PublishedReview[]> {
+    return this.#reviews('', limit);
+  }
+
+  /**
    * Le corps commun des deux lectures de critiques — elles ne different que par leur filtre.
    *
    * Les ecrire deux fois aurait duplique le parsing tolerant et son
@@ -607,8 +629,11 @@ export class SocialClient {
    * ou l'une aurait ete corrigee.
    */
   async #reviews(filter: string, limit: number): Promise<readonly PublishedReview[]> {
+    // ⚠️ Le `&` est porte ici et non par les appelants : `feedReviews` ne filtre sur rien,
+    // et `reviews?&select=` est une URL que PostgREST accepte aujourd'hui sans qu'on ait
+    // demande son avis. On ne construit pas une URL douteuse en pariant sur sa tolerance.
     const rows = await this.#rows<Record<string, unknown>>(
-      `reviews?${filter}&select=subject,target,body,through_season,lang,published_at,profiles!inner(handle,user_id,face)&order=published_at.desc&limit=${limit}`,
+      `reviews?${filter === '' ? '' : `${filter}&`}select=subject,target,body,through_season,lang,published_at,profiles!inner(handle,user_id,face)&order=published_at.desc&limit=${limit}`,
     );
     return rows.flatMap((row) => {
       const author = row['profiles'] as

@@ -261,6 +261,10 @@ export const FR = {
   'friends.item.started': 'a commencé une série',
   'friends.item.wanted': 'veut voir une série',
   'friends.item.liked': 'aime une série',
+  // ⚠️ Le seul fait du fil qui nomme l'œuvre, parce que c'est le seul qui la porte : le
+  // titre vient de l'instantané local du lecteur, sans un appel de plus. Les autres disent
+  // « une série » faute de pouvoir le payer.
+  'friends.item.reviewed': 'a écrit sur',
   'friends.followingLabel': 'Vous suivez',
   'friends.unfollow': 'ne plus suivre',
   'friends.followersLabel': 'Vous suivent',

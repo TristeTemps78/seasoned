@@ -8,10 +8,18 @@ import { useJournal } from '@/app/journal/useJournal';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { projectActivity, redactActivity } from '@/src/domain/activity';
 import { faceOf } from '@/src/domain/face';
+import { mergeFeed } from '@/src/domain/feed';
 import { checkHandle } from '@/src/domain/handles';
-import { seriesEntries, type JournalKey } from '@/src/domain/journal';
-import { SocialClient, type FeedItem, type Profile } from '@/src/social/client';
+import { parseJournalKey, seriesEntries, type JournalKey } from '@/src/domain/journal';
+import { redactReviewsAcross } from '@/src/domain/spoiler';
+import {
+  SocialClient,
+  type FeedItem,
+  type Profile,
+  type PublishedReview,
+} from '@/src/social/client';
 import { ReportButton } from '@/app/components/ReportButton';
+import { ReviewBody } from '@/app/components/ReviewBody';
 import { Discover } from '@/app/components/Discover';
 import { FaceDot } from '@/app/components/FaceDot';
 import { pathIn } from '@/lib/routes';
@@ -46,6 +54,7 @@ export function Friends() {
   const [friends, setFriends] = useState<readonly Profile[]>([]);
   const [fans, setFans] = useState<readonly Profile[]>([]);
   const [feed, setFeed] = useState<readonly FeedItem[]>([]);
+  const [written, setWritten] = useState<readonly PublishedReview[]>([]);
   const [lookup, setLookup] = useState('');
   const [notFound, setNotFound] = useState(false);
 
@@ -108,7 +117,11 @@ export function Friends() {
       ]);
       setFriends(followed);
       setFans(following);
-      setFeed(await social.feed());
+      // Les deux moities du fil, en parallele : ce sont deux tables, donc deux lectures, et
+      // les enchainer doublerait l'attente pour rien.
+      const [facts, texts] = await Promise.all([social.feed(), social.feedReviews()]);
+      setFeed(facts);
+      setWritten(texts);
     },
     [journal],
   );
@@ -192,6 +205,27 @@ export function Friends() {
     journal.entries[subject]?.position?.seasonNumber;
 
   const visible = redactActivity(feed, reachedIn);
+
+  // ⚠️ Les critiques se caviardent avec **une position par oeuvre**, pas avec une seule :
+  // un fil parle de vingt series a la fois. C'est exactement ce pour quoi
+  // `redactReviewsAcross` a ete ecrite (page de profil, meme situation) — la refaire ici
+  // donnerait deux regles de spoiler, et c'est la copie qui se perime qui spoile.
+  const readable = redactReviewsAcross(written, (subject) => {
+    const position = journal.entries[subject]?.position;
+    const parsed = parseJournalKey(subject);
+    if (position === undefined || parsed === undefined) return undefined;
+    return {
+      at: {
+        seriesId: parsed.providerId,
+        seasonNumber: position.seasonNumber,
+        episodeNumber: position.episodeNumber,
+      },
+      declaredAt: new Date(position.declaredAt),
+    };
+  });
+
+  // Le domaine range les deux sources ; ce composant ne decide d'aucun ordre.
+  const timeline = mergeFeed(visible, readable);
 
   return (
     <div className="space-y-8">
@@ -345,7 +379,7 @@ export function Friends() {
 
       <section className="space-y-3">
         <h2 className="section-heading">{t('friends.feed.title')}</h2>
-        {visible.length === 0 ? (
+        {timeline.length === 0 ? (
           // ⚠️ Mieux vaut se taire que compter zero : un fil vide dit quoi faire, il
           // n'affiche pas « 0 activite ».
           <div className="empty-state">
@@ -353,38 +387,91 @@ export function Friends() {
           </div>
         ) : (
           <ul className="space-y-2">
-            {visible.map((item, index) => (
-              <li
-                key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
-                className="panel bg-(--color-surface)/50 px-4 py-3 text-sm"
-              >
-                <FaceDot face={item.face} />{' '}
-                <Link
-                  href={pathIn(`/u/${item.handle}`, locale)}
-                  className="text-(--color-muted) hover:text-(--color-volt)"
+            {timeline.map((entry, index) => {
+              if (entry.of === 'review') {
+                const review = entry.review;
+                const parsed = parseJournalKey(review.subject);
+                // Le titre vient de **mon** instantane local, jamais d'un appel catalogue :
+                // une requete par ligne de fil est le cout par utilisateur que ce produit
+                // refuse. Sans instantane on montre la cle — le lien, lui, marche toujours.
+                const title = journal.entries[review.subject]?.snapshot?.title;
+
+                return (
+                  <li
+                    key={`review-${review.authorId}-${review.subject}-${review.target}-${index}`}
+                    className="panel space-y-2 bg-(--color-surface)/50 px-4 py-3 text-sm"
+                  >
+                    <div>
+                      <FaceDot face={review.face} />{' '}
+                      <Link
+                        href={pathIn(`/u/${review.handle}`, locale)}
+                        className="text-(--color-muted) hover:text-(--color-volt)"
+                      >
+                        @{review.handle}
+                      </Link>{' '}
+                      {t('friends.item.reviewed')}{' '}
+                      {parsed === undefined ? (
+                        <span className="font-medium">{title ?? review.subject}</span>
+                      ) : (
+                        <Link
+                          href={pathIn(`/serie/${parsed.providerId}`, locale)}
+                          className="font-medium hover:text-(--color-volt)"
+                        >
+                          {title ?? review.subject}
+                        </Link>
+                      )}
+                      <ReportButton
+                        onReport={(ground) =>
+                          client === undefined || userId === undefined
+                            ? Promise.resolve(false)
+                            : client.report(userId, review.authorId, ground)
+                        }
+                      />
+                    </div>
+                    <ReviewBody
+                      hidden={review.hidden === true}
+                      text={review.text}
+                      hiddenText={review.hiddenText ?? ''}
+                      throughSeason={review.throughSeason}
+                    />
+                  </li>
+                );
+              }
+
+              const item = entry.fact;
+              return (
+                <li
+                  key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
+                  className="panel bg-(--color-surface)/50 px-4 py-3 text-sm"
                 >
-                  @{item.handle}
-                </Link>{' '}
-                {t(`friends.item.${item.kind}`)}{' '}
-                {item.season !== undefined && item.stars !== undefined
-                  ? t('friends.item.season', {
-                      season: String(item.season),
-                      stars: item.stars.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-GB'),
-                    })
-                  : null}
-                {/* ⚠️ Sur chaque ligne, et non dans un menu de profil : on signale ce qu'on
-                    vient de lire, au moment ou on le lit. Une voie de signalement qui
-                    demande de retrouver la personne ailleurs n'en est pas une — c'est le
-                    meme raisonnement qui a mis `/regles` en pied de page de tout le site. */}
-                <ReportButton
-                  onReport={(ground) =>
-                    client === undefined || userId === undefined
-                      ? Promise.resolve(false)
-                      : client.report(userId, item.authorId, ground)
-                  }
-                />
-              </li>
-            ))}
+                  <FaceDot face={item.face} />{' '}
+                  <Link
+                    href={pathIn(`/u/${item.handle}`, locale)}
+                    className="text-(--color-muted) hover:text-(--color-volt)"
+                  >
+                    @{item.handle}
+                  </Link>{' '}
+                  {t(`friends.item.${item.kind}`)}{' '}
+                  {item.season !== undefined && item.stars !== undefined
+                    ? t('friends.item.season', {
+                        season: String(item.season),
+                        stars: item.stars.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-GB'),
+                      })
+                    : null}
+                  {/* ⚠️ Sur chaque ligne, et non dans un menu de profil : on signale ce qu'on
+                      vient de lire, au moment ou on le lit. Une voie de signalement qui
+                      demande de retrouver la personne ailleurs n'en est pas une — c'est le
+                      meme raisonnement qui a mis `/regles` en pied de page de tout le site. */}
+                  <ReportButton
+                    onReport={(ground) =>
+                      client === undefined || userId === undefined
+                        ? Promise.resolve(false)
+                        : client.report(userId, item.authorId, ground)
+                    }
+                  />
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

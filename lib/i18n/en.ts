@@ -227,6 +227,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'friends.item.started': 'started a series',
   'friends.item.wanted': 'wants to watch a series',
   'friends.item.liked': 'loves a series',
+  'friends.item.reviewed': 'wrote about',
   'friends.followingLabel': 'You follow',
   'friends.unfollow': 'unfollow',
   'friends.followersLabel': 'Following you',

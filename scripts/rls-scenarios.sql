@@ -72,6 +72,13 @@ begin
   insert into public.activity (user_id, kind, subject, season, stars, happened_on)
   values (b, 'rated_season', 'tmdb:1396', 1, 4.5, current_date);
 
+  -- Un texte de chaque cote : le fil lit `reviews` **sans aucun filtre de visibilite**
+  -- (`SocialClient.feedReviews`), en s'en remettant entierement a `reviews_select`. Cette
+  -- confiance doit etre mesuree, pas supposee.
+  insert into public.reviews (user_id, subject, target, body, through_season, lang)
+  values (a, 'tmdb:1396', 'series', 'Ce que A en pense.', 0, 'fr'),
+         (b, 'tmdb:1399', 'series', 'Ce que B en pense.', 0, 'fr');
+
   -- ---------------------------------------------------------------------------
   -- On devient A. Tout ce qui suit est mesure sous RLS.
   -- ---------------------------------------------------------------------------
@@ -145,6 +152,14 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
+  -- 6bis — le fil des textes : A demande TOUTES les critiques, sans filtre, et n'obtient
+  --        que les lisibles. B est en `followers` et A ne le suit pas.
+  select count(*)::text into obtenu from public.reviews;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. « toutes les critiques » n''en rend qu''une a A (006)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
   -- ---------------------------------------------------------------------------
   -- On devient Z : connecte, mais sans nom. C'est le trou que 008 a referme.
   -- ---------------------------------------------------------------------------
@@ -178,6 +193,13 @@ begin
   select count(*)::text into obtenu from public.profiles p where p.user_id = a;
   n := n + 1; attendu := '1';
   rapport := rapport || format(E'  %s  %s. un inconnu voit un profil « public » (003)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 9bis — et un inconnu ne lit que le texte du profil public, jamais celui de B.
+  select count(*)::text into obtenu from public.reviews where user_id = b;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. un inconnu ne lit pas la critique d''un profil « followers » (006)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 

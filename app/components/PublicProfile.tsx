@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
+import { ReviewBody } from '@/app/components/ReviewBody';
 import { useJournal } from '@/app/journal/useJournal';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { redactReviewsAcross } from '@/src/domain/spoiler';
@@ -70,7 +71,6 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
    * c'est-a-dire reprocherait a quelqu'un un manque qu'il n'a pas.
    */
   const [named, setNamed] = useState<boolean | undefined>(undefined);
-  const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
 
   const accessToken = account?.accessToken;
   const userId = account?.userId;
@@ -209,7 +209,6 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
               const review = shown;
               const parsed = parseJournalKey(review.subject);
               const id = `${review.subject}:${review.target}`;
-              const open = revealed.has(id);
               const title = journal.entries[review.subject]?.snapshot?.title;
 
               return (
@@ -225,26 +224,12 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
                     </Link>
                   )}
 
-                  {shown.hidden === true && !open ? (
-                    <div className="space-y-2">
-                      <p className="text-sm text-(--color-muted)">
-                        {shown.throughSeason > 0
-                          ? t('review.hidden', { n: shown.throughSeason })
-                          : t('review.hiddenSeries')}
-                      </p>
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => setRevealed(new Set([...revealed, id]))}
-                      >
-                        {t('review.reveal')}
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap text-sm">
-                      {shown.hidden === true ? shown.hiddenText : shown.text}
-                    </p>
-                  )}
+                  <ReviewBody
+                    hidden={shown.hidden === true}
+                    text={shown.text}
+                    hiddenText={shown.hiddenText ?? ''}
+                    throughSeason={shown.throughSeason}
+                  />
                 </li>
               );
             })}
