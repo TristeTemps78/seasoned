@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { Library } from './Library';
+import { Quiz } from '@/app/components/Quiz';
 
 /**
  * Ma bibliotheque.
@@ -48,6 +49,10 @@ export function LibraryView({ locale }: { readonly locale: Locale }) {
         <h1 className="page-title">{t(locale, 'library.title')}</h1>
         <p className="text-(--color-muted)">{t(locale, 'library.lede')}</p>
       </header>
+
+      {/* Avant la bibliotheque : c'est le rendez-vous, et il doit se voir en arrivant. Se
+          tait tout seul tant qu'il n'y a pas assez d'histoire pour poser une question. */}
+      <Quiz />
 
       <Library />
     </div>
