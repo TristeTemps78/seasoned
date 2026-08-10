@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { journalKey } from '@/src/domain/journal';
-import { SocialClient, type FeedItem } from '@/src/social/client';
+import { type SocialClient, type FeedItem } from '@/src/social/client';
 import { pathIn } from '@/lib/routes';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * Qui d'autre a aime ou termine cette serie.
@@ -48,13 +48,8 @@ export function SeriesPeople({ seriesId }: { readonly seriesId: string }) {
     // Construit meme sans compte : l'activite d'un profil `public` se lit par un visiteur
     // anonyme, et c'est RLS qui tranche. Exiger une session fermerait cet encart a
     // exactement l'audience qui arrive par un moteur de recherche.
-    const config = authConfigFromEnv();
-    if (config === undefined) return;
-    const social = new SocialClient({
-      url: config.url,
-      anonKey: config.anonKey,
-      accessToken: () => accessToken,
-    });
+    const social = socialFrom(accessToken);
+    if (social === undefined) return;
 
     let alive = true;
     void social.watchersOf(key).then((rows) => {

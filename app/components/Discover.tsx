@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { pathIn } from '@/lib/routes';
 import { FaceDot } from '@/app/components/FaceDot';
-import { SocialClient, type Discoverable } from '@/src/social/client';
+import { type Discoverable } from '@/src/social/client';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * « Des gens a decouvrir » — la reponse au demarrage a froid du social.
@@ -48,15 +48,10 @@ export function Discover() {
 
   useEffect(() => {
     let alive = true;
-    const config = authConfigFromEnv();
-    if (config === undefined) return;
     // Construit meme sans compte : un profil `public` se lit par un visiteur anonyme, et
     // c'est RLS qui tranche.
-    const social = new SocialClient({
-      url: config.url,
-      anonKey: config.anonKey,
-      accessToken: () => accessToken,
-    });
+    const social = socialFrom(accessToken);
+    if (social === undefined) return;
     void social.discoverable().then((rows) => {
       if (alive) setPeople(rows);
     });

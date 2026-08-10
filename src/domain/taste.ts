@@ -20,6 +20,7 @@
  */
 
 import { freshSnapshot, seriesEntries, type Journal, type JournalEntry } from './journal';
+import { median } from './stats';
 
 /**
  * Nombre de series notees en dessous duquel aucun trait n'est enonce.
@@ -75,17 +76,6 @@ export interface TasteProfile {
 function average(values: readonly number[]): number | undefined {
   if (values.length === 0) return undefined;
   return values.reduce((sum, v) => sum + v, 0) / values.length;
-}
-
-function median(values: readonly number[]): number | undefined {
-  if (values.length === 0) return undefined;
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  if (sorted.length % 2 === 1) return sorted[middle];
-  const lower = sorted[middle - 1];
-  const upper = sorted[middle];
-  if (lower === undefined || upper === undefined) return undefined;
-  return (lower + upper) / 2;
 }
 
 function starsOf(entry: JournalEntry): readonly number[] {

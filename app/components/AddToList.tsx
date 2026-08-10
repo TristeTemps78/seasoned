@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { journalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
-import { SocialClient, type SeriesList } from '@/src/social/client';
+import { type SeriesList } from '@/src/social/client';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * « Ajouter a une liste », depuis la fiche serie.
@@ -41,16 +41,12 @@ export function AddToList({ seriesId }: { readonly seriesId: string }) {
 
   useEffect(() => {
     let alive = true;
-    const config = authConfigFromEnv();
-    if (config === undefined || userId === undefined) {
+    if (userId === undefined) {
       setLoaded(true);
       return;
     }
-    const social = new SocialClient({
-      url: config.url,
-      anonKey: config.anonKey,
-      accessToken: () => accessToken,
-    });
+    const social = socialFrom(accessToken);
+    if (social === undefined) return;
     void social.listsBy(userId).then((rows) => {
       if (!alive) return;
       setLists(rows);
@@ -63,13 +59,9 @@ export function AddToList({ seriesId }: { readonly seriesId: string }) {
 
   const add = useCallback(
     async (slug: string) => {
-      const config = authConfigFromEnv();
-      if (config === undefined || userId === undefined) return;
-      const social = new SocialClient({
-        url: config.url,
-        anonKey: config.anonKey,
-        accessToken: () => accessToken,
-      });
+      if (userId === undefined) return;
+      const social = socialFrom(accessToken);
+      if (social === undefined) return;
       // ⚠️ L'ajout est **idempotent** cote base (`merge-duplicates`) : cliquer deux fois ne
       // remonte pas une erreur de cle dupliquee pour un geste sans consequence.
       if (await social.addToList(userId, slug, subject)) {

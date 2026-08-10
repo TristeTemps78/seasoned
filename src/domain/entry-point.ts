@@ -67,6 +67,7 @@
  */
 
 import { MIN_VOTES_FOR_TRUST } from './rating-scale';
+import { median } from './stats';
 
 /** Une note d'episode du public, telle que le catalogue la rend. */
 export interface RatedEpisode {
@@ -132,14 +133,6 @@ export const MAX_SKIPPED_EPISODES = 25;
  * severe que genereux sans raison.
  */
 export const MIN_ENTRY_LIFT = 0.5;
-
-function median(values: readonly number[]): number | undefined {
-  if (values.length === 0) return undefined;
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  if (sorted.length % 2 === 1) return sorted[middle];
-  return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
-}
 
 /**
  * Le point ou la serie decolle, s'il y en a un.

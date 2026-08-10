@@ -7,13 +7,13 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { ReviewBody } from '@/app/components/ReviewBody';
 import { ShareReview } from '@/app/components/ShareReview';
 import { useJournal } from '@/app/journal/useJournal';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { redactReviewsAcross } from '@/src/domain/spoiler';
 import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
-import { SocialClient, type Profile, type PublishedReview } from '@/src/social/client';
+import { type Profile, type PublishedReview } from '@/src/social/client';
 import { Lists } from '@/app/components/Lists';
 import { FaceDot } from '@/app/components/FaceDot';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * La page publique de quelqu'un — `/u/<nom>`.
@@ -77,16 +77,11 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   const userId = account?.userId;
 
   const load = useCallback(async () => {
-    const config = authConfigFromEnv();
-    if (config === undefined) return;
     // ⚠️ Le client est construit **meme sans compte** : un profil `public` se lit par un
     // visiteur anonyme, et c'est RLS qui tranche. Exiger une session ici fermerait la page
     // a exactement les gens qu'un lien de partage amene.
-    const social = new SocialClient({
-      url: config.url,
-      anonKey: config.anonKey,
-      accessToken: () => accessToken,
-    });
+    const social = socialFrom(accessToken);
+    if (social === undefined) return;
     const found = await social.findByHandle(handle.toLowerCase());
     setProfile(found);
     setLoaded(true);
@@ -111,13 +106,9 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   }, [load]);
 
   const toggleFollow = useCallback(async () => {
-    const config = authConfigFromEnv();
-    if (config === undefined || userId === undefined || profile === undefined) return;
-    const social = new SocialClient({
-      url: config.url,
-      anonKey: config.anonKey,
-      accessToken: () => accessToken,
-    });
+    if (userId === undefined || profile === undefined) return;
+    const social = socialFrom(accessToken);
+    if (social === undefined) return;
     const ok = following
       ? await social.unfollow(userId, profile.userId)
       : await social.follow(userId, profile.userId);

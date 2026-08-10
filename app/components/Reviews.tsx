@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useAuth } from '@/app/auth/AuthProvider';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { ReportButton } from '@/app/components/ReportButton';
 import { FaceDot } from '@/app/components/FaceDot';
 import { journalKey } from '@/src/domain/journal';
 import { redactReviews } from '@/src/domain/spoiler';
-import { SocialClient, type PublishedReview, type ReviewLikes } from '@/src/social/client';
+import { type PublishedReview, type ReviewLikes } from '@/src/social/client';
 import { pathIn } from '@/lib/routes';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * Ce que les autres ont ecrit — caviarde par la position du lecteur.
@@ -47,14 +47,9 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
     // ⚠️ Aucun compte n'est requis pour LIRE : c'est RLS qui decide, et un profil `public`
     // est lisible par un visiteur anonyme. Exiger une session ici fermerait les critiques a
     // l'audience qui vient du moteur de recherche — celle pour qui elles sont ecrites.
-    const config = authConfigFromEnv();
-    if (config === undefined) return;
 
-    const social = new SocialClient({
-      url: config.url,
-      anonKey: config.anonKey,
-      accessToken: () => accessToken,
-    });
+    const social = socialFrom(accessToken);
+    if (social === undefined) return;
 
     let alive = true;
     void social.reviewsFor(key).then((rows) => {
@@ -119,13 +114,8 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                 {account !== undefined ? (
                   <ReportButton
                     onReport={async (ground) => {
-                      const config = authConfigFromEnv();
-                      if (config === undefined) return false;
-                      const social = new SocialClient({
-                        url: config.url,
-                        anonKey: config.anonKey,
-                        accessToken: () => accessToken,
-                      });
+                      const social = socialFrom(accessToken);
+                      if (social === undefined) return false;
                       return social.report(account.userId, review.authorId, ground);
                     }}
                   />
@@ -168,13 +158,8 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                   count={likes[id]?.likes ?? 0}
                   mine={likes[id]?.mine ?? false}
                   onToggle={async (next) => {
-                    const config = authConfigFromEnv();
-                    if (config === undefined) return false;
-                    const social = new SocialClient({
-                      url: config.url,
-                      anonKey: config.anonKey,
-                      accessToken: () => accessToken,
-                    });
+                    const social = socialFrom(accessToken);
+                    if (social === undefined) return false;
                     const ok = await social.likeReview(
                       account.userId,
                       review.authorId,

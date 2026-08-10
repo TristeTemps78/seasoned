@@ -4,10 +4,9 @@ import { useEffect, useRef } from 'react';
 
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useJournal } from '@/app/journal/useJournal';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { projectActivity } from '@/src/domain/activity';
 import { projectStops } from '@/src/domain/attrition';
-import { SocialClient } from '@/src/social/client';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * Pousse l'activite publiable, **depuis n'importe quelle page**.
@@ -58,8 +57,10 @@ export function PublishActivity() {
 
   useEffect(() => {
     if (!configured || !ready || userId === undefined) return;
-    const config = authConfigFromEnv();
-    if (config === undefined) return;
+    // ⚠️ **Avant le minuteur, pas dedans.** Sans configuration il n'y a rien a envoyer, et
+    // programmer un envoi qui ne partira pas ferait vivre un minuteur par frappe pour rien.
+    const social = socialFrom(accessToken);
+    if (social === undefined) return;
 
     const items = projectActivity(journal, new Date());
     // ⚠️ La carte se calcule meme quand on n'y contribue pas : c'est le **refus** qui
@@ -81,12 +82,6 @@ export function PublishActivity() {
     if (!sendActivity && !sendStops && !forget) return;
 
     const timer = setTimeout(() => {
-      const social = new SocialClient({
-        url: config.url,
-        anonKey: config.anonKey,
-        accessToken: () => accessToken,
-      });
-
       if (sendActivity) {
         void social.publish(userId, items).then((ok) => {
           // On ne memorise que ce qui est **parti** : sinon un echec reseau serait pris

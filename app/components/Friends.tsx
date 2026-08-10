@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { projectActivity, redactActivity } from '@/src/domain/activity';
 import { faceOf } from '@/src/domain/face';
 import { mergeFeed } from '@/src/domain/feed';
@@ -13,7 +12,7 @@ import { checkHandle } from '@/src/domain/handles';
 import { parseJournalKey, seriesEntries, type JournalKey } from '@/src/domain/journal';
 import { redactReviewsAcross } from '@/src/domain/spoiler';
 import {
-  SocialClient,
+  type SocialClient,
   type FeedItem,
   type Profile,
   type PublishedReview,
@@ -25,6 +24,7 @@ import { DailyRound } from '@/app/components/DailyRound';
 import { FriendQuiz } from '@/app/components/FriendQuiz';
 import { FaceDot } from '@/app/components/FaceDot';
 import { pathIn } from '@/lib/routes';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * La face « Mes amis » : reclamer un nom, suivre quelqu'un, lire le fil.
@@ -71,17 +71,8 @@ export function Friends() {
   const accessToken = account?.accessToken;
 
   useEffect(() => {
-    const config = authConfigFromEnv();
-    if (config === undefined || userId === undefined) return;
-    setClient(
-      new SocialClient({
-        url: config.url,
-        anonKey: config.anonKey,
-        accessToken: () => accessToken,
-        // Une panne suffit : on ne compte pas les echecs, on dit qu'il y en a eu un.
-        onFailure: () => setUnreadable(true),
-      }),
-    );
+    if (userId === undefined) return;
+    setClient(socialFrom(accessToken, () => setUnreadable(true)));
   }, [userId, accessToken]);
 
   const refresh = useCallback(

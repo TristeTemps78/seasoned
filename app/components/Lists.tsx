@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { checkList, uniqueSlug, type ListRejection } from '@/src/domain/lists';
 import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
-import { SocialClient, type SeriesList } from '@/src/social/client';
+import { type SeriesList } from '@/src/social/client';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * Les listes — les miennes quand `ownerId` est absent, celles de quelqu'un sinon.
@@ -52,16 +52,10 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
   const editable = ownerId === undefined || ownerId === myId;
 
   const clientFor = useCallback(() => {
-    const config = authConfigFromEnv();
-    if (config === undefined) return undefined;
     // ⚠️ Construit **meme sans compte** : une liste d'un profil `public` se lit par un
     // visiteur anonyme, et c'est RLS qui tranche. Exiger une session fermerait la page a
     // exactement les gens qu'un lien de partage amene.
-    return new SocialClient({
-      url: config.url,
-      anonKey: config.anonKey,
-      accessToken: () => accessToken,
-    });
+    return socialFrom(accessToken);
   }, [accessToken]);
 
   const load = useCallback(async () => {

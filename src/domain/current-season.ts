@@ -44,6 +44,7 @@
 
 import { MIN_VOTES_FOR_TRUST, PUBLIC_BREAK_POINT_MIN_DROP } from './rating-scale';
 import type { RatedEpisode } from './entry-point';
+import { median } from './stats';
 
 /** Episodes diffuses en deca desquels une saison en cours ne dit rien. */
 export const MIN_EPISODES_AIRED = 3;
@@ -71,14 +72,6 @@ export interface CurrentSeasonVerdict {
   readonly reference: number;
   /** Positif : la saison fait mieux que d'habitude. */
   readonly gap: number;
-}
-
-function median(values: readonly number[]): number | undefined {
-  if (values.length === 0) return undefined;
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  if (sorted.length % 2 === 1) return sorted[middle];
-  return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 }
 
 /**

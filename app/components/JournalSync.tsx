@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { connectJournal, disconnectJournal, flushJournal } from '@/app/journal/journalStore';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { adopt, adoptionFor, decline } from '@/src/journal/account';
+import { authConfigFromEnv } from '@/src/auth/client';
 
 /**
  * Ce qui relie un compte a son journal — et la seule question qu'on pose en le faisant.

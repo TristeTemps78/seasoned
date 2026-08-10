@@ -4,16 +4,16 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { FaceDot } from '@/app/components/FaceDot';
 import { QuizBars } from '@/app/components/QuizBars';
 import { QuizChoices, QuizVerdictLine } from '@/app/components/QuizChoices';
 import {
-  SocialClient,
+  type SocialClient,
   type QuizScore,
   type QuizServed,
   type QuizVerdict,
 } from '@/src/social/client';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * La manche du jour : les memes questions pour tout le monde, chronometrees.
@@ -74,15 +74,7 @@ export function DailyRound() {
   const accessToken = account?.accessToken;
 
   useEffect(() => {
-    const config = authConfigFromEnv();
-    if (config === undefined) return;
-    setClient(
-      new SocialClient({
-        url: config.url,
-        anonKey: config.anonKey,
-        accessToken: () => accessToken,
-      }),
-    );
+    setClient(socialFrom(accessToken));
   }, [accessToken]);
 
   const load = useCallback(

@@ -5,11 +5,10 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { authConfigFromEnv } from '@/src/auth/client';
 import { readAttrition, type StopBucket } from '@/src/domain/attrition';
 import { journalKey } from '@/src/domain/journal';
 import type { SeasonSize } from '@/src/domain/remaining';
-import { SocialClient } from '@/src/social/client';
+import { socialFrom } from '@/app/social/socialFrom';
 
 /**
  * Ou la foule decroche — et sur quel effectif.
@@ -64,13 +63,8 @@ export function StopMap({
     // Lue sans compte : `stop_map` est executable par `anon`, et le lecteur qu'elle sert le
     // mieux est justement celui qui hesite a commencer — souvent quelqu'un qui arrive d'un
     // moteur de recherche. Exiger une session la fermerait a son meilleur public.
-    const config = authConfigFromEnv();
-    if (config === undefined) return;
-    const social = new SocialClient({
-      url: config.url,
-      anonKey: config.anonKey,
-      accessToken: () => accessToken,
-    });
+    const social = socialFrom(accessToken);
+    if (social === undefined) return;
 
     let alive = true;
     void social.stopMap(key).then((rows) => {
