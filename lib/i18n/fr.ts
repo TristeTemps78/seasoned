@@ -272,6 +272,23 @@ export const FR = {
   'quiz.onDay': 'Quelle série regardiez-vous le {date} ?',
   'quiz.byCurve': 'Quelle série a cette trajectoire ?',
   'quiz.byEpisodes': 'Quelle série est-ce, épisode par épisode ?',
+  // La manche du jour — les mêmes questions pour tout le monde, chronométrées.
+  'round.title': 'La manche du jour',
+  'round.progress': 'Question {n}',
+  'round.board': 'Le classement du jour',
+  // ⚠️ Ce texte sert AUSSI quand aucune manche n'a été construite : il ne doit donc
+  // jamais promettre un classement qui existerait ailleurs.
+  'round.empty': 'Rien à afficher pour aujourd’hui.',
+  'round.right': 'Juste — {points} points.',
+  'round.wrong': 'Raté.',
+  'round.next': 'Question suivante',
+  'round.total': 'Votre total : {points}',
+  'round.ask.cast': 'Quelle série ces acteurs jouent-ils ?',
+  'round.ask.rating': 'Quelle série a cette note globale ?',
+  'round.ask.seasons': 'Quelle série a ces notes de saison ?',
+  'round.ask.episodes': 'Quelle série a ces notes d’épisode ?',
+  'round.ask.poster': 'Quelle série est-ce ?',
+  'round.ask.dates': 'Quelle série a ces dates de diffusion ?',
   'quiz.right': 'C’est bien ça.',
   'quiz.wrong': 'Non — c’était {title}.',
   'friends.followingLabel': 'Vous suivez',

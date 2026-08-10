@@ -21,6 +21,7 @@ import {
 import { ReportButton } from '@/app/components/ReportButton';
 import { ReviewBody } from '@/app/components/ReviewBody';
 import { Discover } from '@/app/components/Discover';
+import { DailyRound } from '@/app/components/DailyRound';
 import { FaceDot } from '@/app/components/FaceDot';
 import { pathIn } from '@/lib/routes';
 
@@ -376,6 +377,11 @@ export function Friends() {
       {/* Avant le fil : quand on n'a suivi personne, le fil est vide et c'est justement
           la qu'il faut proposer quelqu'un. Se tait tout seul s'il n'y a personne. */}
       <Discover />
+
+      {/* La manche du jour vit ici et non sur une septieme face : le cube en a six, et en
+          ajouter une pour un jeu quotidien couterait plus a la navigation qu'elle ne
+          rapporte. Elle est sociale — un classement — donc elle est chez les amis. */}
+      <DailyRound />
 
       <section className="space-y-3">
         <h2 className="section-heading">{t('friends.feed.title')}</h2>

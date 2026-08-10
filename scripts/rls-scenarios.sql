@@ -301,6 +301,18 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
+  -- 20 — Les extensions dont la manche nocturne depend. Mesure plutot que supposition :
+  --      si `pg_cron` ou `pg_net` manque, le corpus doit etre bati autrement, et il vaut
+  --      mieux l'apprendre ici qu'a 03:00 devant une table vide.
+  perform set_config('role', 'postgres', true);
+  select string_agg(name || '=' || case when installed_version is null then 'dispo' else 'installee' end, ' ')
+    into obtenu
+  from pg_available_extensions where name in ('pg_cron', 'pg_net');
+  n := n + 1;
+  rapport := rapport || format(E'  %s  %s. extensions du job nocturne  [%s]\n',
+                               case when obtenu is not null then 'INFO ' else 'ECHEC' end, n,
+                               coalesce(obtenu, 'AUCUNE'));
+
   -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------

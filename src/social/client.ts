@@ -43,6 +43,28 @@ export type ClaimOutcome =
   | { readonly kind: 'taken' }
   | { readonly kind: 'failed' };
 
+/** Une question de la manche, telle que le serveur accepte de la montrer. */
+export interface QuizServed {
+  readonly kind: string;
+  /** Ce qu'on affiche : acteurs, notes, chemin d'affiche… La forme depend de `kind`. */
+  readonly prompt: Record<string, unknown>;
+  readonly choices: readonly string[];
+  /** L'instant **serveur** ou le chronometre est parti. Affiche, jamais renvoye. */
+  readonly askedAt: string;
+}
+
+export interface QuizVerdict {
+  readonly correct: boolean;
+  readonly points: number;
+}
+
+export interface QuizScore {
+  readonly handle: string;
+  readonly score: number;
+  readonly rightAnswers: number;
+  readonly face?: FaceId;
+}
+
 /** Une critique publiee, telle qu'elle revient du serveur. */
 export interface PublishedReview {
   /**
@@ -619,6 +641,100 @@ export class SocialClient {
    */
   async feedReviews(limit = 30): Promise<readonly PublishedReview[]> {
     return this.#reviews('', limit);
+  }
+
+  /**
+   * Une question de la manche du jour, **sans sa reponse**.
+   *
+   * ⚠️ Passe par une fonction et non par une lecture de table, et ce n'est pas un detour :
+   * `quiz_questions` a RLS **sans aucune politique**, donc personne ne lit rien. Une
+   * politique « tout sauf la colonne answer » n'existe pas — RLS filtre des lignes, jamais
+   * des colonnes. La fonction est le seul chemin, et c'est elle qui choisit ce qu'elle
+   * projette (`013_quiz.sql`).
+   *
+   * Le chronometre part **au premier appel**, cote serveur. Rappeler la meme question ne
+   * le remet pas a zero : sinon recharger la page rendrait le temps infini.
+   */
+  async quizServe(day: string, ordinal: number): Promise<QuizServed | undefined> {
+    const rows = await this.#rpc<Record<string, unknown>>('quiz_serve', {
+      day,
+      want: ordinal,
+    });
+    const row = rows[0];
+    if (row === undefined || typeof row['kind'] !== 'string') return undefined;
+    return {
+      kind: row['kind'],
+      prompt: row['prompt'] as Record<string, unknown>,
+      choices: Array.isArray(row['choices']) ? (row['choices'] as string[]) : [],
+      askedAt: String(row['asked_at']),
+    };
+  }
+
+  /**
+   * Repond, une seule fois. Le score est calcule **par la base**, jamais envoye d'ici.
+   *
+   * ⚠️ Aucun temps n'est transmis : un temps mesure par le navigateur serait un temps
+   * falsifiable. Le serveur connait l'instant ou il a servi la question et celui ou il
+   * recoit la reponse — c'est tout ce qu'il lui faut.
+   */
+  async quizAnswer(day: string, ordinal: number, choice: number): Promise<QuizVerdict> {
+    const rows = await this.#rpc<Record<string, unknown>>('quiz_answer', {
+      day,
+      want: ordinal,
+      choice,
+    });
+    const row = rows[0];
+    return {
+      correct: row?.['correct'] === true,
+      points: typeof row?.['points'] === 'number' ? row['points'] : 0,
+    };
+  }
+
+  /**
+   * Le classement du jour.
+   *
+   * ⚠️ **Il n'est pas le meme pour deux personnes**, et c'est voulu : la vue est en
+   * `security_invoker`, donc `profiles_select_visible` s'applique — on voit les profils
+   * publics et ceux qu'on suit. Un classement general serait l'annuaire que ce produit
+   * refuse de construire.
+   */
+  async quizBoard(day: string, limit = 20): Promise<readonly QuizScore[]> {
+    const rows = await this.#rows<Record<string, unknown>>(
+      `quiz_board?on_day=eq.${encodeURIComponent(day)}&select=handle,face,score,right_answers&order=score.desc&limit=${limit}`,
+    );
+    return rows.flatMap((row) => {
+      if (typeof row['handle'] !== 'string') return [];
+      const face = readFace(row['face']);
+      return [
+        {
+          handle: row['handle'],
+          score: Number(row['score'] ?? 0),
+          rightAnswers: Number(row['right_answers'] ?? 0),
+          ...(face !== undefined ? { face } : {}),
+        },
+      ];
+    });
+  }
+
+  /**
+   * Un appel de fonction PostgREST.
+   *
+   * Meme promesse que {@link #rows} : **ne leve jamais**, rend un tableau. Une manche qui
+   * echoue doit se taire, pas casser la page.
+   */
+  async #rpc<T>(name: string, args: Record<string, unknown>): Promise<readonly T[]> {
+    try {
+      const response = await this.#fetch(this.#url(`rpc/${name}`), {
+        method: 'POST',
+        headers: this.#headers(),
+        body: JSON.stringify(args),
+      });
+      if (!response.ok) return [];
+      const body: unknown = await response.json();
+      return Array.isArray(body) ? (body as T[]) : [];
+    } catch {
+      return [];
+    }
   }
 
   /**
