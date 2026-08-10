@@ -625,6 +625,23 @@ export interface Journal {
    * Absent ou vide = le pays de la langue servie, ce que le produit faisait deja.
    */
   readonly regions?: readonly string[];
+  /**
+   * Ne plus afficher le temps passe devant les series.
+   *
+   * ## Pourquoi une option, et pourquoi elle **masque** au lieu de supprimer
+   *
+   * « Au moins 537 heures » est le chiffre le plus spectaculaire du produit, et pour une
+   * part reelle des gens c'est un chiffre **anxiogene** — l'equivalent du temps d'ecran
+   * qu'on prefere ne pas connaitre. Le rendre obligatoire, c'est faire payer a ces
+   * gens-la le prix d'une demonstration technique.
+   *
+   * ⚠️ Le calcul, lui, **continue** : il alimente le bilan annuel, la serie la plus
+   * lourde, le plan de rattrapage. On cache un affichage, on ne mutile pas un journal —
+   * et c'est ce qui rend l'option reversible sans rien perdre.
+   *
+   * Absent = le chiffre s'affiche, ce que le produit faisait deja.
+   */
+  readonly hideHours?: boolean;
   readonly entries: Readonly<Record<JournalKey, JournalEntry>>;
   /** Champs de document inconnus, preserves. Voir {@link JournalEntry.unknownFields}. */
   readonly unknownFields?: Readonly<Record<string, unknown>>;

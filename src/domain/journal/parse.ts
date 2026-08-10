@@ -349,7 +349,14 @@ const KNOWN_ENTRY_FIELDS = [
 ] as const;
 
 /** Idem au niveau du document. */
-const KNOWN_JOURNAL_FIELDS = ['version', 'deviceId', 'platforms', 'regions', 'entries'] as const;
+const KNOWN_JOURNAL_FIELDS = [
+  'version',
+  'deviceId',
+  'platforms',
+  'regions',
+  'hideHours',
+  'entries',
+] as const;
 
 /**
  * Le filet qui empeche les deux listes ci-dessus de deriver de leurs interfaces.
@@ -564,6 +571,10 @@ function readJournal(
     ...(deviceId !== undefined ? { deviceId } : {}),
     ...(platforms.length > 0 ? { platforms } : {}),
     ...(regions.length > 0 ? { regions } : {}),
+    // Relu, comme les pays : un champ que `parseJournal` ignore est efface a la premiere
+    // sauvegarde. Seul `true` est retenu — l'absence est deja le defaut, l'ecrire serait
+    // du bruit dans le document.
+    ...(source['hideHours'] === true ? { hideHours: true } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
 }
@@ -596,6 +607,7 @@ export function serializeJournal(journal: Journal): string {
     ...(journal.regions !== undefined && journal.regions.length > 0
       ? { regions: journal.regions }
       : {}),
+    ...(journal.hideHours === true ? { hideHours: true } : {}),
     entries,
   });
 }

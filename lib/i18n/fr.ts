@@ -648,6 +648,11 @@ export const FR = {
   // Mes pays. ⚠️ Le texte ne promet pas de deviner : on choisit, on n'est pas devine.
   // Choisir son affiche. ⚠️ Aucun texte ne doit suggérer qu'on peut *envoyer* une image :
   // on ne propose que ce que le catalogue porte déjà.
+  // ⚠️ « Masqué » et non « désactivé » : le calcul continue, seul l'affichage se tait.
+  'convert.missedTitle': 'Voir lesquelles',
+  'tally.hide': 'Masquer ce chiffre',
+  'tally.hidden': 'Le temps passé est masqué.',
+  'tally.show': 'L’afficher à nouveau',
   'artwork.aria': 'Choisir l’affiche',
   'artwork.open': 'Changer l’affiche',
   'artwork.close': 'Fermer',

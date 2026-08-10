@@ -13,6 +13,7 @@ import {
   setPlatforms as setPlatformsIn,
   setRegions as setRegionsIn,
   setArtwork as setArtworkIn,
+  setHideHours as setHideHoursIn,
   setPosition as setPositionIn,
   setSeasonRating as setSeasonRatingIn,
   setSnapshot as setSnapshotIn,
@@ -222,6 +223,10 @@ export function useJournal() {
     ),
     setRegions: useCallback(
       (regions: readonly string[]) => mutate((j) => setRegionsIn(j, regions)),
+      [mutate],
+    ),
+    setHideHours: useCallback(
+      (hide: boolean) => mutate((j) => setHideHoursIn(j, hide)),
       [mutate],
     ),
     setArtwork: useCallback(

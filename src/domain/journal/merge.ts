@@ -254,6 +254,12 @@ export function mergeJournals(a: Journal, b: Journal): Journal {
     ...(a.deviceId !== undefined ? { deviceId: a.deviceId } : {}),
     ...(platforms.length > 0 ? { platforms } : {}),
     ...(regions.length > 0 ? { regions } : {}),
+    // ⚠️ **Le masquage gagne des qu'un cote le demande.** Ce n'est pas symetrique, et ce
+    // n'est pas un oubli : un appareil qui affiche encore le chiffre n'a pas « choisi » de
+    // l'afficher, il n'a simplement pas ete regle. Se tromper vers le silence est
+    // rattrapable en un clic ; l'inverse remet sous les yeux un chiffre que quelqu'un
+    // avait explicitement demande a ne plus voir.
+    ...(a.hideHours === true || b.hideHours === true ? { hideHours: true } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
 }

@@ -452,6 +452,19 @@ export function setArtwork(
  * sont le meme pays, et deux entrees pour un pays donneraient deux fois la meme ligne a
  * l'ecran. Le domaine tranche la forme, l'ecran n'a pas a s'en occuper.
  */
+/**
+ * Afficher ou masquer le temps passe.
+ *
+ * ⚠️ **Le calcul continue** : seul l'affichage se tait. `buildTally` alimente aussi le
+ * bilan annuel et le plan de rattrapage, et rien de tout cela ne doit disparaitre parce
+ * qu'on ne veut plus voir un total.
+ */
+export function setHideHours(journal: Journal, hide: boolean): Journal {
+  if (hide) return { ...journal, hideHours: true };
+  const { hideHours: _drop, ...rest } = journal;
+  return rest;
+}
+
 export function setRegions(journal: Journal, regions: readonly string[]): Journal {
   const clean = [
     ...new Set(regions.filter((one) => /^[A-Za-z]{2}$/.test(one)).map((one) => one.toUpperCase())),

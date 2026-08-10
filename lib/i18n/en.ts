@@ -566,6 +566,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'taste.basisEpisodes.one': ' and {n} episode rating',
   'taste.basisEpisodes.other': ' and {n} episode ratings',
 
+  'convert.missedTitle': 'See which ones',
+  'tally.hide': 'Hide this figure',
+  'tally.hidden': 'Time spent is hidden.',
+  'tally.show': 'Show it again',
   'artwork.aria': 'Choose the poster',
   'artwork.open': 'Change the poster',
   'artwork.close': 'Close',

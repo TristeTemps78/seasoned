@@ -82,6 +82,20 @@ export interface ImportOutcome {
    * reprendre, et l'interface doit le dire.
    */
   readonly skipped: number;
+  /**
+   * **Lesquelles**, quand l'export les nommait.
+   *
+   * 🔴 Le nombre etait affiche depuis toujours, jamais les noms — or la regle du projet est
+   * *on signale, on ne repare jamais en silence*, et « 12 series n'ont pas ete reprises »
+   * est un silence poli : personne ne peut rattraper a la main ce qu'il ne sait pas nommer.
+   * Le titre etait deja lu par le parcours ({@link Found.title}) et simplement jete.
+   *
+   * ⚠️ **Bornee a cinquante et dedoublonnee.** Ces exports repetent une serie une fois par
+   * episode ; sans borne, un fichier de dix mille lignes rendrait une liste illisible qui
+   * ne servirait plus a rien. Ce qui compte est de pouvoir en retrouver quelques-unes, pas
+   * d'auditer un fichier.
+   */
+  readonly missed: readonly string[];
 }
 
 /** Les cles ou un identifiant TMDB se cache, tous exports confondus. */
@@ -319,15 +333,24 @@ function fromCsv(raw: string): readonly Found[] {
  * annuel des annees reellement vecues. Reprendre sa sauvegarde n'est pas reprendre
  * l'historique de quelqu'un d'autre.
  */
-function toJournal(found: readonly Found[], now: Date): { journal: Journal; imported: number; skipped: number } {
+function toJournal(
+  found: readonly Found[],
+  now: Date,
+): { journal: Journal; imported: number; skipped: number; missed: readonly string[] } {
   let journal = EMPTY_JOURNAL;
   let imported = 0;
   let skipped = 0;
   const seen = new Set<number>();
+  const missed = new Set<string>();
 
   for (const item of found) {
     if (item.tmdbId === undefined) {
       skipped += 1;
+      // Le titre quand l'export le donnait. `Set` : ces fichiers repetent une serie une
+      // fois par episode, et lister « Kaamelott » quarante fois n'aide personne.
+      if (item.title !== undefined && item.title.length > 0 && missed.size < 50) {
+        missed.add(item.title);
+      }
       continue;
     }
     const key = journalKey(String(item.tmdbId));
@@ -357,7 +380,7 @@ function toJournal(found: readonly Found[], now: Date): { journal: Journal; impo
     }
   }
 
-  return { journal: asImported(journal), imported, skipped };
+  return { journal: asImported(journal), imported, skipped, missed: [...missed] };
 }
 
 /**
@@ -380,6 +403,7 @@ export function importForeign(raw: string, into: Journal, now: Date): ImportOutc
       source: 'voltface',
       imported: Object.keys(native.entries).length,
       skipped: 0,
+      missed: [],
     };
   }
 
@@ -400,6 +424,7 @@ export function importForeign(raw: string, into: Journal, now: Date): ImportOutc
         source: 'json',
         imported: built.imported,
         skipped: built.skipped,
+        missed: built.missed,
       };
     }
   }
@@ -412,10 +437,11 @@ export function importForeign(raw: string, into: Journal, now: Date): ImportOutc
       source: 'csv',
       imported: built.imported,
       skipped: built.skipped,
+        missed: built.missed,
     };
   }
 
   // Rien compris : on rend le journal **inchange**. Un import rate ne doit jamais
   // laisser l'utilisateur avec moins qu'avant.
-  return { journal: into, source: 'unreadable', imported: 0, skipped: 0 };
+  return { journal: into, source: 'unreadable', imported: 0, skipped: 0, missed: [] };
 }

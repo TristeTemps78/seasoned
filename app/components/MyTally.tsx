@@ -1,6 +1,7 @@
 'use client';
 
 import { useT } from '@/app/i18n/LocaleProvider';
+import { useJournal } from '@/app/journal/useJournal';
 import { WhereItLives } from '@/app/components/WhereItLives';
 import { formatCommitment } from '@/lib/format';
 import type { Tally } from '@/src/domain/tally';
@@ -28,9 +29,26 @@ import type { Tally } from '@/src/domain/tally';
  */
 export function MyTally({ tally }: { readonly tally: Tally }) {
   const { t, tn, locale } = useT();
+  const { journal, setHideHours } = useJournal();
   if (!tally.worthShowing) return null;
 
   const heaviest = tally.heaviest;
+
+  /**
+   * ⚠️ **Masque, et le dit.** Retirer le bloc entier ferait disparaitre le moyen de le
+   * ramener : quelqu'un qui a masque par curiosite n'aurait plus aucun endroit ou revenir
+   * dessus. Un reglage qui se cache lui-meme n'est pas un reglage, c'est un piege.
+   */
+  if (journal.hideHours === true) {
+    return (
+      <section className="space-y-2 panel px-4 py-4" aria-label={t('tally.aria')}>
+        <p className="text-sm text-(--color-muted)">{t('tally.hidden')}</p>
+        <button type="button" className="btn text-xs" onClick={() => setHideHours(false)}>
+          {t('tally.show')}
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -97,6 +115,17 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
       <p className="text-xs text-(--color-muted)">
         {t('tally.private')} <WhereItLives className="" />
       </p>
+
+      {/* ⚠️ Le bouton vit **avec le chiffre**, pas dans une page de reglages : c'est en le
+          voyant qu'on decide de ne plus le voir. Un reglage range ailleurs demande de
+          savoir qu'il existe, donc il ne sert qu'a ceux que le chiffre ne derange pas. */}
+      <button
+        type="button"
+        className="text-xs text-(--color-muted) underline decoration-dotted underline-offset-2 hover:text-(--color-text)"
+        onClick={() => setHideHours(true)}
+      >
+        {t('tally.hide')}
+      </button>
     </section>
   );
 }

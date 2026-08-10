@@ -96,6 +96,20 @@ export function ForeignImport() {
                   {tn('convert.skipped', outcome.skipped)}
                 </p>
               ) : null}
+              {/* 🔴 **Lesquelles.** Le nombre seul est un silence poli : personne ne peut
+                  rattraper a la main ce qu'il ne sait pas nommer, et la regle du projet est
+                  « on signale, on ne repare jamais en silence ». Le titre etait deja lu par
+                  l'import et simplement jete. */}
+              {outcome.missed.length > 0 ? (
+                <details className="text-(--color-muted)">
+                  <summary className="cursor-pointer">{t('convert.missedTitle')}</summary>
+                  <ul className="mt-1 list-inside list-disc">
+                    {outcome.missed.map((title) => (
+                      <li key={title}>{title}</li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
             </>
           )}
         </div>
