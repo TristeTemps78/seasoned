@@ -153,35 +153,54 @@ function getProvider(locale: Locale = DEFAULT_LOCALE): CatalogProvider {
 export function setProvider(provider: CatalogProvider | undefined): void {
   providerInstance = provider;
   providersByLocale.clear();
-  seriesCache.clear();
-  searchCache.clear();
-  seasonCache.clear();
-  discoverCache.clear();
-  creatorCache.clear();
-  watchCache.clear();
-  groupingCache.clear();
+  // Le registre, jamais une liste recopiee : voir {@link CACHES}. Quatre oublis en
+  // trois semaines ont montre qu'une enumeration a la main ne se maintient pas.
+  for (const cache of CACHES) cache.clear();
 }
 
-const seriesCache = new ExpiringCache<SeriesDetail>({ maxEntries: 2_000 });
-const searchCache = new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 500 });
-const seasonCache = new ExpiringCache<SeasonDetail>({ maxEntries: 2_000 });
-const discoverCache = new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 100 });
+/**
+ * 🔴 **Tous les caches, et le seul moyen de ne plus en oublier un.**
+ *
+ * `setProvider` les vidait **un par un**, a la main. Le commentaire qui l'accompagne
+ * raconte deja deux oublis (`creatorCache`, `watchCache`), un troisieme evite de justesse
+ * (`groupingCache`), et previent : *« un cache oublie ici survit au changement de
+ * fournisseur, ce qui fait passer un test qui devrait echouer — ou echouer selon l'ordre
+ * d'execution, le pire des deux. »*
+ *
+ * Mesure du 2026-08-11 : **huit caches declares, sept vides**. `artworkCache`, ajoute avec
+ * le choix d'affiche le 2026-08-10, etait le **quatrieme** oubli — celui-la meme que le
+ * commentaire annoncait.
+ *
+ * Un avertissement ne tient pas une invariante. `enrole` la tient : un cache non inscrit
+ * n'existe pas, parce que c'est la seule facon d'en obtenir un ici.
+ */
+const CACHES: ExpiringCache<never>[] = [];
+
+function enrole<T>(cache: ExpiringCache<T>): ExpiringCache<T> {
+  CACHES.push(cache as unknown as ExpiringCache<never>);
+  return cache;
+}
+
+const seriesCache = enrole(new ExpiringCache<SeriesDetail>({ maxEntries: 2_000 }));
+const searchCache = enrole(new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 500 }));
+const seasonCache = enrole(new ExpiringCache<SeasonDetail>({ maxEntries: 2_000 }));
+const discoverCache = enrole(new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 100 }));
 
 const throughSeries = memoizeAsync(seriesCache, SERIES_TTL_MS);
 const throughSearch = memoizeAsync(searchCache, SEARCH_TTL_MS);
 const throughSeason = memoizeAsync(seasonCache, SERIES_TTL_MS);
 const throughDiscover = memoizeAsync(discoverCache, SERIES_TTL_MS);
 
-const creatorCache = new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 1_000 });
+const creatorCache = enrole(new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 1_000 }));
 const throughCreator = memoizeAsync(creatorCache, SERIES_TTL_MS);
 
-const watchCache = new ExpiringCache<WatchByRegion>({ maxEntries: 2_000 });
+const watchCache = enrole(new ExpiringCache<WatchByRegion>({ maxEntries: 2_000 }));
 const throughWatch = memoizeAsync(watchCache, SERIES_TTL_MS);
 
-const artworkCache = new ExpiringCache<SeriesArtwork>({ maxEntries: 2_000 });
+const artworkCache = enrole(new ExpiringCache<SeriesArtwork>({ maxEntries: 2_000 }));
 const throughArtwork = memoizeAsync(artworkCache, SERIES_TTL_MS);
 
-const groupingCache = new ExpiringCache<readonly EpisodeGrouping[]>({ maxEntries: 2_000 });
+const groupingCache = enrole(new ExpiringCache<readonly EpisodeGrouping[]>({ maxEntries: 2_000 }));
 const throughGroupings = memoizeAsync(groupingCache, SERIES_TTL_MS);
 
 /**
