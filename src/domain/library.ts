@@ -76,8 +76,13 @@ function instant(value: string | undefined): number {
  * tete une serie qu'on n'a fait que consulter. `removed` est une trace de suppression,
  * datee de l'effacement et non d'une action voulue. `unknownFields` appartient a une
  * version du code qui n'est pas celle-ci — elle seule sait si c'est un geste.
+ *
+ * `poster` et `backdrop` sont des gestes **volontaires**, et ils sont pourtant ici : le
+ * champ ne porte qu'un chemin, **sans date**, donc il n'y a litteralement rien a lire. Le
+ * dater serait possible ; ce serait faire remonter une serie dans « Reprendre » parce
+ * qu'on a change son affiche, c'est-a-dire confondre s'en occuper et la regarder.
  */
-const NOT_A_GESTURE = ['snapshot', 'removed', 'unknownFields'] as const;
+const NOT_A_GESTURE = ['snapshot', 'removed', 'unknownFields', 'poster', 'backdrop'] as const;
 
 /**
  * De quoi lire la date de chaque geste.

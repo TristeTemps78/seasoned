@@ -59,7 +59,13 @@ export function hasContent(entry: JournalEntry | undefined): boolean {
     // Une marque est un geste explicite : sans elle ici, `worthKeeping` supprimerait une
     // entree qui n'a que des marques, et le geste serait perdu a la relecture suivante.
     Object.keys(entry.episodeMarks ?? {}).length > 0 ||
-    Object.keys(entry.reviews ?? {}).length > 0
+    Object.keys(entry.reviews ?? {}).length > 0 ||
+    // ⚠️ **Le meme piege, une ligne plus bas, et il s'est referme sur nous** : choisir une
+    // affiche est un geste explicite, mais une entree qui n'a QUE cela etait jetee — donc
+    // le choix disparaissait aussitot pose, pour une serie qu'on n'a pas encore commencee.
+    // C'est precisement l'usage vise : preparer sa bibliotheque avant de regarder.
+    entry.poster !== undefined ||
+    entry.backdrop !== undefined
   );
 }
 

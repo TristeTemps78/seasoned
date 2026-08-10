@@ -18,6 +18,7 @@ import type {
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
+  SeriesArtwork,
   WatchByRegion,
 } from '../src/catalog/provider';
 import { ExpiringCache, memoizeAsync } from '../src/catalog/cache';
@@ -176,6 +177,9 @@ const throughCreator = memoizeAsync(creatorCache, SERIES_TTL_MS);
 
 const watchCache = new ExpiringCache<WatchByRegion>({ maxEntries: 2_000 });
 const throughWatch = memoizeAsync(watchCache, SERIES_TTL_MS);
+
+const artworkCache = new ExpiringCache<SeriesArtwork>({ maxEntries: 2_000 });
+const throughArtwork = memoizeAsync(artworkCache, SERIES_TTL_MS);
 
 const groupingCache = new ExpiringCache<readonly EpisodeGrouping[]>({ maxEntries: 2_000 });
 const throughGroupings = memoizeAsync(groupingCache, SERIES_TTL_MS);
@@ -559,6 +563,20 @@ export async function watchOptions(
     );
   } catch {
     return {};
+  }
+}
+
+/**
+ * Les visuels proposes pour une serie.
+ *
+ * Degrade en listes vides : beaucoup de series n'ont qu'une affiche, et le selecteur se
+ * tait alors tout seul — il n'y a rien a choisir.
+ */
+export async function artwork(id: string): Promise<SeriesArtwork> {
+  try {
+    return await throughArtwork(id, () => getProvider().artwork(id));
+  } catch {
+    return { posters: [], backdrops: [] };
   }
 }
 

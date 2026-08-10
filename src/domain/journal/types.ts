@@ -549,6 +549,22 @@ export interface JournalEntry {
    * eu lieu ou n'a pas eu lieu, et l'oublier serait precisement le defaut qu'on repare.
    */
   readonly completions?: readonly JournalCompletion[];
+  /**
+   * L'affiche choisie a la main, chemin TMDB (`/xyz.jpg`).
+   *
+   * ⚠️ **Un chemin, jamais une URL** : la taille se choisit a l'affichage, et le CDN peut
+   * changer de forme sans que le journal se mette a mentir. C'est la meme regle que
+   * {@link JournalSnapshot.posterPath}.
+   *
+   * ⚠️ Et **on ne stocke que le choix**, jamais l'image : elle reste chez TMDB. C'est ce
+   * qui rend la fonctionnalite gratuite — aucun envoi, aucun hebergement, aucune
+   * moderation, aucune surface de droit d'auteur (meme ruse qu'A12 pour les GIF).
+   *
+   * Absent = l'affiche par defaut du catalogue.
+   */
+  readonly poster?: string;
+  /** La banniere choisie a la main. Meme regle que {@link poster}. */
+  readonly backdrop?: string;
   readonly snapshot?: JournalSnapshot;
   readonly removed?: JournalTombstones;
   /**

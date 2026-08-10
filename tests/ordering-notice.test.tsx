@@ -134,6 +134,7 @@ describe('SeriesOrderings — le fil du fournisseur jusqu’à l’écran', () =
       async discover() { return []; },
       async seriesByCreator() { return []; },
       async watchOptions() { return {}; },
+      async artwork() { return { posters: [], backdrops: [] }; },
       async episodeGroups() { return groups; },
     } as unknown as CatalogProvider;
   }

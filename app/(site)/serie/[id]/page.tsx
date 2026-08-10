@@ -8,6 +8,7 @@ import {
   posterUrl,
   publicTrajectory,
   watchOptions,
+  artwork,
   SERVED_WATCH_REGIONS,
 } from '@/lib/catalog';
 import { SeriesCard } from '@/app/components/SeriesCard';
@@ -29,6 +30,7 @@ import { MyProgress } from '@/app/components/MyProgress';
 import { Reviews } from '@/app/components/Reviews';
 import { SeriesPeople } from '@/app/components/SeriesPeople';
 import { AddToList } from '@/app/components/AddToList';
+import { ChooseArtwork } from '@/app/components/ChooseArtwork';
 import { legalIsComplete } from '@/lib/legal';
 
 /**
@@ -346,6 +348,11 @@ export async function SeriesView({ id, locale }: {
       {/* Ranger une serie est un geste de **consultation**, pas de progression : on le fait
           avant d'avoir commence, souvent sans avoir d'avis. Il vit donc avec les critiques
           et non dans la carte de progression. Silencieux sans compte. */}
+      {/* ⚠️ Charge en parallele du reste : les visuels sont un appel de plus, et personne
+          ne doit attendre une affiche pour lire une critique. Se tait quand la serie n'a
+          qu'un visuel — un selecteur a un element est un bouton qui ne fait rien. */}
+      <SeriesArtworkChoice id={id} />
+
       <AddToList seriesId={id} />
 
       <Reviews seriesId={id} />
@@ -441,6 +448,27 @@ async function AlsoByCreators({ detail, locale }: {
  * dans le navigateur. Les lire ici rendrait la page personnelle, c'est-a-dire une
  * invocation par visite — le cout que ce depot refuse partout.
  */
+/**
+ * Les visuels proposes pour cette serie.
+ *
+ * ⚠️ La partie **asynchrone** est isolee dans son propre composant, comme
+ * `SeriesOrderings` : c'est ce qui permet a `render(await …)` de traverser fournisseur →
+ * cache → ecran dans un test, et c'est le maillon qu'`episodeMinutes` n'avait pas.
+ */
+async function SeriesArtworkChoice({ id }: { readonly id: string }) {
+  const visuals = await artwork(id);
+  return (
+    // ⚠️ On passe l'identifiant, **pas** la cle de journal : la fabriquer ici obligerait ce
+    // module serveur a importer `src/domain/journal`, ce que `no-journal-on-server`
+    // interdit — et cette garde a attrape l'import a la seconde ou il a ete ecrit.
+    <ChooseArtwork
+      seriesId={id}
+      posters={visuals.posters}
+      backdrops={visuals.backdrops}
+    />
+  );
+}
+
 async function WatchHere({ id, locale }: {
   readonly id: string;
   readonly locale: Locale;

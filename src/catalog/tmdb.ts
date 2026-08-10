@@ -21,6 +21,7 @@ import type {
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
+  SeriesArtwork,
   WatchByRegion,
   WatchOption,
 } from './provider';
@@ -476,6 +477,16 @@ export class TmdbProvider implements CatalogProvider {
     return out;
   }
 
+  async artwork(providerId: string): Promise<SeriesArtwork> {
+    // ⚠️ `include_image_language=null` ramene les visuels **sans texte**, qui sont les
+    // seuls utilisables dans une autre langue que celle ou ils ont ete faits. Sans lui on
+    // proposerait des affiches portant un titre allemand a un lecteur francais.
+    const raw = await this.#get(`/tv/${encodeURIComponent(providerId)}/images`, {
+      include_image_language: 'null,en',
+    });
+    return mapArtwork(raw);
+  }
+
   async episodeGroups(
     providerId: string,
   ): Promise<readonly EpisodeGrouping[]> {
@@ -587,6 +598,30 @@ export function mapWatchOptions(raw: unknown, region: string): readonly WatchOpt
     }
   }
   return out;
+}
+
+/**
+ * Reponse de `/tv/{id}/images`.
+ *
+ * Parsing tolerant, comme tout le reste : une entree sans `file_path` est ecartee, une
+ * liste absente devient vide. Une serie sans visuel est le cas courant, pas une erreur.
+ *
+ * ⚠️ **Bornees a douze.** TMDB en rend parfois plusieurs centaines ; les servir toutes
+ * alourdirait la page pour un choix que personne ne fait au-dela des premieres. TMDB les
+ * ordonne deja par vote, donc les douze premieres sont les meilleures.
+ */
+export function mapArtwork(raw: unknown): SeriesArtwork {
+  const source = asRecord(raw);
+  const paths = (key: string): readonly string[] => {
+    const out: string[] = [];
+    for (const entry of asArray(source[key])) {
+      const path = readString(asRecord(entry), 'file_path');
+      if (path !== undefined && !out.includes(path)) out.push(path);
+      if (out.length >= 12) break;
+    }
+    return out;
+  };
+  return { posters: paths('posters'), backdrops: paths('backdrops') };
 }
 
 /** Reponse de `/person/{id}/tv_credits` : les series sont sous `cast` et `crew`. */

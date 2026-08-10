@@ -67,6 +67,9 @@ function fake(): { provider: CatalogProvider; calls: string[] } {
     async watchOptions() {
       return {};
     },
+    async artwork() {
+      return { posters: [], backdrops: [] };
+    },
     // Ajoutee avec les decoupages concurrents (4.4). Le typage a **exige** cette ligne :
     // un double incomplet ne compile plus. C'est la raison pour laquelle la methode vit
     // sur `CatalogProvider` et pas ailleurs — un fournisseur qui

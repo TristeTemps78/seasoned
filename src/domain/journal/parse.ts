@@ -340,6 +340,8 @@ const KNOWN_ENTRY_FIELDS = [
   'episodeMarks',
   'reviews',
   'completions',
+  'poster',
+  'backdrop',
   'snapshot',
   'seasonRatings',
   'episodeRatings',
@@ -420,6 +422,11 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
   const episodeMarks = parseEpisodeMarks(source['episodeMarks']);
   const reviews = parseReviews(source['reviews']);
   const completions = parseCompletions(source['completions']);
+  // ⚠️ Relus ici, sinon ils seraient **ecrits puis effaces a la premiere sauvegarde** —
+  // le defaut de 10.4bis. Un chemin TMDB commence toujours par `/` : une valeur d'une
+  // autre forme vient d'ailleurs et ne se relit pas.
+  const poster = readText(source, 'poster');
+  const backdrop = readText(source, 'backdrop');
   const unknownFields = unknownFieldsOf(source, KNOWN_ENTRY_FIELDS);
 
   const entry: JournalEntry = {
@@ -430,6 +437,8 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
     ...(Object.keys(episodeMarks).length > 0 ? { episodeMarks } : {}),
     ...(Object.keys(reviews).length > 0 ? { reviews } : {}),
     ...(completions.length > 0 ? { completions } : {}),
+    ...(poster !== undefined && poster.startsWith('/') ? { poster } : {}),
+    ...(backdrop !== undefined && backdrop.startsWith('/') ? { backdrop } : {}),
     ...(snapshot !== undefined ? { snapshot } : {}),
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
     ...(Object.keys(episodeRatings).length > 0 ? { episodeRatings } : {}),

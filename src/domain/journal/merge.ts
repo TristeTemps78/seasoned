@@ -192,6 +192,12 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
     ...(wanted !== undefined ? { wanted } : {}),
     ...(liked !== undefined ? { liked } : {}),
     ...(completions.length > 0 ? { completions } : {}),
+    // ⚠️ Le visuel choisi n'est **pas date**, donc on ne peut pas savoir lequel est le plus
+    // recent : on garde celui qui existe, `a` d'abord — c'est *son* journal qui accueille
+    // l'autre, comme pour `deviceId`. Sans cette ligne, brancher un second appareil
+    // effacerait une affiche choisie a la main, en silence.
+    ...(a.poster ?? b.poster ? { poster: (a.poster ?? b.poster) as string } : {}),
+    ...(a.backdrop ?? b.backdrop ? { backdrop: (a.backdrop ?? b.backdrop) as string } : {}),
     ...(snapshot !== undefined ? { snapshot } : {}),
     ...(Object.keys(seasonRatings).length > 0 ? { seasonRatings } : {}),
     ...(Object.keys(episodeRatings).length > 0 ? { episodeRatings } : {}),

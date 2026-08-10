@@ -52,8 +52,11 @@ export function LibraryCard({ item }: { readonly item: LibraryItem }) {
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-live)"
     >
       <div className="aspect-2/3 overflow-hidden panel">
+        {/* ⚠️ L'affiche **choisie** passe devant celle du catalogue. C'est tout l'interet
+            de la feature : elle doit se voir dans la bibliotheque, pas seulement sur la
+            fiche ou on l'a choisie. */}
         <Poster
-          path={item.snapshot?.posterPath}
+          path={item.entry.poster ?? item.snapshot?.posterPath}
           title={item.snapshot?.title ?? t('library.card.tracked')}
           className="transition-opacity group-hover:opacity-85"
         />

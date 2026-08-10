@@ -12,6 +12,7 @@ import {
   setEpisodeRating as setEpisodeRatingIn,
   setPlatforms as setPlatformsIn,
   setRegions as setRegionsIn,
+  setArtwork as setArtworkIn,
   setPosition as setPositionIn,
   setSeasonRating as setSeasonRatingIn,
   setSnapshot as setSnapshotIn,
@@ -221,6 +222,11 @@ export function useJournal() {
     ),
     setRegions: useCallback(
       (regions: readonly string[]) => mutate((j) => setRegionsIn(j, regions)),
+      [mutate],
+    ),
+    setArtwork: useCallback(
+      (key: JournalKey, which: 'poster' | 'backdrop', path: string | undefined) =>
+        mutate((j) => setArtworkIn(j, key, which, path)),
       [mutate],
     ),
 

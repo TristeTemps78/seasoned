@@ -61,6 +61,28 @@ export interface WatchOption {
 export type WatchByRegion = Readonly<Record<string, readonly WatchOption[]>>;
 
 /**
+ * Les visuels **que TMDB porte deja** pour une serie.
+ *
+ * ## Pourquoi ce type, et ce qu'il evite
+ *
+ * Choisir son affiche est la fonctionnalite la plus aimee de Serializd. Le reflexe serait
+ * de laisser envoyer une image : ce serait ouvrir d'un coup le stockage non borne, la
+ * moderation d'images et une surface de droit d'auteur a notre charge — les trois raisons
+ * pour lesquelles A12 a ecarte l'upload pour les GIF.
+ *
+ * On ne propose donc **que ce que TMDB sert deja**. Aucun envoi, aucun hebergement,
+ * aucune moderation, aucun droit nouveau : c'est la meme ruse qu'A12, et elle rend la
+ * fonctionnalite gratuite.
+ *
+ * Les chemins sont ceux de TMDB (`/xyz.jpg`), jamais des URLs completes : la taille se
+ * choisit a l'affichage, et le CDN peut changer de forme sans que le journal mente.
+ */
+export interface SeriesArtwork {
+  readonly posters: readonly string[];
+  readonly backdrops: readonly string[];
+}
+
+/**
  * Un decoupage **alternatif** d'une serie en saisons et episodes.
  *
  * ## Pourquoi ce type existe, avec des chiffres
@@ -235,6 +257,14 @@ export interface CatalogProvider {
     providerId: string,
     regions: readonly string[],
   ): Promise<WatchByRegion>;
+
+  /**
+   * Les affiches et bannieres connues d'une serie. Voir {@link SeriesArtwork}.
+   *
+   * @returns des listes eventuellement **vides** — beaucoup de series n'ont qu'un visuel,
+   *   et ce n'est pas une erreur.
+   */
+  artwork(providerId: string): Promise<SeriesArtwork>;
 
   /**
    * Les decoupages alternatifs connus pour une serie. Voir {@link EpisodeGrouping}.

@@ -421,6 +421,31 @@ export function setPlatforms(
 }
 
 /**
+ * Choisit l'affiche ou la banniere d'une serie. `undefined` revient au visuel du catalogue.
+ *
+ * ⚠️ **Cree l'entree si elle n'existe pas**, contrairement a `setSnapshot` : choisir une
+ * affiche est un geste explicite, alors qu'un instantane n'est qu'un effet de bord d'une
+ * visite. Quelqu'un qui choisit une affiche sur une serie qu'il n'a pas commencee doit la
+ * retrouver — c'est meme un des usages : preparer sa bibliotheque avant de regarder.
+ */
+export function setArtwork(
+  journal: Journal,
+  key: JournalKey,
+  which: 'poster' | 'backdrop',
+  path: string | undefined,
+): Journal {
+  const entry = journal.entries[key] ?? {};
+  // Un chemin TMDB commence par `/`. Refuser le reste evite qu'une URL complete entre
+  // dans le journal — elle y vieillirait mal, le CDN pouvant changer de forme.
+  const clean = path !== undefined && path.startsWith('/') ? path : undefined;
+  const { [which]: _drop, ...rest } = entry;
+  return withEntry(journal, key, {
+    ...rest,
+    ...(clean !== undefined ? { [which]: clean } : {}),
+  });
+}
+
+/**
  * Declare les pays dont on veut connaitre la disponibilite.
  *
  * ⚠️ **Normalise et dedoublonne ici**, une fois, plutot qu'a chaque lecture : `fr` et `FR`

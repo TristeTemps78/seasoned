@@ -646,6 +646,14 @@ export const FR = {
 
   // --- Mes plateformes -----------------------------------------------------
   // Mes pays. ⚠️ Le texte ne promet pas de deviner : on choisit, on n'est pas devine.
+  // Choisir son affiche. ⚠️ Aucun texte ne doit suggérer qu'on peut *envoyer* une image :
+  // on ne propose que ce que le catalogue porte déjà.
+  'artwork.aria': 'Choisir l’affiche',
+  'artwork.open': 'Changer l’affiche',
+  'artwork.close': 'Fermer',
+  'artwork.poster': 'Affiche',
+  'artwork.backdrop': 'Bannière',
+  'artwork.default': 'Par défaut',
   'regions.aria': 'Mes pays',
   'regions.title': 'Mes pays',
   'regions.subtitle':
