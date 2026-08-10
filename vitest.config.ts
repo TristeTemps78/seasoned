@@ -7,7 +7,7 @@ import { defineConfig } from 'vitest/config';
  * ## Pourquoi le domaine ne tourne pas dans un DOM
  *
  * Il serait plus court de mettre `environment: 'jsdom'` partout et de n'y plus penser.
- * Ce serait renoncer a une garantie : `AGENTS.md` regle 2 pose que **le domaine est
+ * Ce serait renoncer a une garantie : pose que **le domaine est
  * pur** — il n'importe rien, ne touche ni le reseau ni l'horloge. Un `document` global
  * disponible pendant ses tests rendrait une violation de cette regle **invisible** :
  * le jour ou un module de `src/domain/` lirait `window`, le test passerait quand meme,

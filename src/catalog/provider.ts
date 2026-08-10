@@ -1,7 +1,7 @@
 /**
  * Interface de fournisseur de catalogue.
  *
- * Applique la regle structurante de `ROADMAP.md` §1.3 : **le catalogue est loue,
+ * Applique la regle structurante du projet : **le catalogue est loue,
  * pas possede.** Les formes definies ici sont **ephemeres** — elles transitent, se
  * mettent en cache avec expiration, et ne sont jamais la source de verite. Rien de
  * ce module ne doit atterrir tel quel dans une table.
@@ -74,7 +74,7 @@ export interface WatchOption {
  * conseil **faux avec assurance**, et rien ne le montrerait : aucune case n'a l'air fausse,
  * le chiffre est juste faux.
  *
- * D'ou la reponse, qui est la regle 8 d'`AGENTS.md` : **on signale, on ne repare jamais en
+ * D'ou la reponse, qui est une regle du projet : **on signale, on ne repare jamais en
  * silence.** Ce type ne sert pas a corriger un decoupage — il sert a savoir qu'il en existe
  * d'autres, et a le dire.
  */
@@ -86,7 +86,7 @@ export interface EpisodeGrouping {
    *
    * Conserve **brut**, et accompagne de {@link kindName} : le bareme est celui du
    * fournisseur, il peut s'etendre, et un module de domaine n'a pas a connaitre ses
-   * numeros (`AGENTS.md` regle 3).
+   * numeros.
    */
   readonly kind: number;
   /** Nom lisible de la nature, quand on sait la nommer. */
@@ -130,7 +130,7 @@ export interface SeriesDetail extends SeriesSummary {
    * Createurs credites.
    *
    * Un **fait de production**, pas un calcul de similarite : c'est ce qui distingue ce
-   * maillage d'une recommandation algorithmique, ecartee par `ROADMAP.md` §3. Souvent
+   * maillage d'une recommandation algorithmique, ecartee par Souvent
    * absent hors des series americaines — degrader sans bruit.
    */
   readonly creators?: readonly Creator[];

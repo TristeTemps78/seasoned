@@ -25,8 +25,7 @@
 --
 -- Le prix : **le serveur ne sait pas interroger les journaux.** C'est acceptable tant qu'on
 -- n'en a pas besoin. Le jour ou le fil d'activite arrivera, il lira une **projection**
--- derivee de ce document — reconstructible, donc sans risque (`docs/ARCHITECTURE-APP.md`
--- §3.2).
+-- derivee de ce document — reconstructible, donc sans risque.
 --
 -- ## ⚠️ RLS : ce n'est pas un durcissement, c'est LA couche d'autorisation
 --

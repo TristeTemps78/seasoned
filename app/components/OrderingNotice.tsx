@@ -20,7 +20,7 @@ import type { OrderingNotice as Notice } from '@/src/domain/ordering';
  * ## Pourquoi ce bandeau annonce une convention et ne crie pas a l'erreur
  *
  * Nos chiffres **ne sont pas faux** : ils suivent l'ordre de diffusion, et le disent. Ce qui
- * serait faux est de laisser croire qu'il n'y en a qu'un. C'est `AGENTS.md` regle 8 — **on
+ * serait faux est de laisser croire qu'il n'y en a qu'un. C'est — **on
  * signale, on ne repare jamais en silence** : proposer un decoupage a la place de
  * l'utilisateur deplacerait des notes deja posees par saison, ce qui est irrattrapable,
  * alors qu'une mise en garde ne l'est pas.

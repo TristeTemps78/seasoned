@@ -22,7 +22,7 @@ export function agendaMetadata(locale: Locale): Metadata {
     title: t(locale, 'agenda.title'),
     // Vue d'un robot, cette page est vide par construction : son contenu vit dans le
     // journal du visiteur. La faire explorer gaspillerait le budget de crawl qui doit
-    // aller sur `/serie/*` (`ROADMAP.md` §0.2).
+    // aller sur `/serie/*`.
     robots: { index: false, follow: false },
   };
 }

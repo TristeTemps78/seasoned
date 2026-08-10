@@ -9,12 +9,12 @@
 --
 -- Le droit a l'effacement (RGPD art. 17) impose de pouvoir supprimer un compte. Or
 -- supprimer une ligne d'`auth.users` par l'API d'administration exige la cle
--- `service_role` — **interdite au navigateur** (`AGENTS.md` regle 5), puisqu'elle
+-- `service_role` — **interdite au navigateur**, puisqu'elle
 -- contourne RLS et donne acces aux donnees de tout le monde.
 --
 -- La reponse habituelle est « une petite route serveur qui porte la cle ». Elle est
 -- refusee ici : ce serait la **premiere surface d'ecriture privilegiee** du projet, celle
--- qu'il faudrait defendre pour toujours, et `TASKS.md` l'a deja refusee pour les webhooks
+-- qu'il faudrait defendre pour toujours, et l'a deja refusee pour les webhooks
 -- de scrobbling. Un projet sans aucune route serveur n'a pas de cle a se faire voler.
 --
 -- ## La reponse : `security definer`, sans argument
@@ -48,8 +48,7 @@
 -- > suppression finit par etre incomplete.
 --
 -- ⚠️ La suppression est **immediate et sans delai de grace** (Q5). Un delai de grace est
--- de la retention deguisee. L'export integral est propose **avant**, dans l'interface
--- (`AGENTS.md` regle 9).
+-- de la retention deguisee. L'export integral est propose **avant**, dans l'interface.
 -- =============================================================================
 
 create or replace function public.delete_me() returns void

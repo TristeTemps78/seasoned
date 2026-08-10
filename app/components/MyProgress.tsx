@@ -42,7 +42,7 @@ export type SeriesShape = Omit<JournalSnapshot, 'cachedAt' | 'seasonSizes'>;
 /**
  * Ce que le produit retient de vous, sur une serie.
  *
- * Les gestes sont ranges par friction croissante (`docs/RATING-MODEL.md` §5), et le
+ * Les gestes sont ranges par friction croissante, et le
  * premier d'entre eux a longtemps manque :
  *
  *   0. **« je veux la voir »** — ne suppose rien, ni d'avoir commence, ni d'avoir un
@@ -64,7 +64,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
   readonly series: SeriesShape;
   /**
    * Duree mediane d'un episode. Absente sur les series dont TMDB ne dit rien — et
-   * c'est le cas courant, pas l'exception (`TASKS.md` §1.10).
+   * c'est le cas courant, pas l'exception.
    */
   readonly episodeMinutes?: number;
   /** Le verrou legal est-il leve ? Ecrire est toujours possible ; publier, non. */
@@ -343,7 +343,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
                       label={t('rating.season', { n: s.seasonNumber })}
                       onChange={(stars) => setSeasonRating(key, s.seasonNumber, stars)}
                     />
-                    {/* On signale, on ne repare pas en silence (`AGENTS.md` regle 8) :
+                    {/* On signale, on ne repare pas en silence :
                         des episodes notes suggerent une note de saison, ils ne
                         l'ecrivent pas. */}
                     <ReviewEditor

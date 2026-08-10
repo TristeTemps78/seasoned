@@ -7,7 +7,7 @@
  * personne ne revient spontanement entre-temps. La reponse evidente est la notification.
  * Elle est ecartee, et pas par gout : **son cout croit avec le nombre d'utilisateurs**
  * (serveur de push, jetons a maintenir, permission a demander), ce qui est exactement le
- * mecanisme qui a tue TV Time avec 26 millions d'installations (`ROADMAP.md` §1.4).
+ * mecanisme qui a tue TV Time avec 26 millions d'installations.
  *
  * Le contre-sens utile : **le rappel existe deja, et quelqu'un d'autre le paie.** Tout le
  * monde a un calendrier qui sonne. Un fichier `.ics` genere dans le navigateur y depose
@@ -203,7 +203,7 @@ function summaryFor(episode: UpcomingEpisode): string {
  *
  * @param episodes episodes a venir. Les dates invalides sont **ecartees** plutot que de
  *   produire un `DTSTART` illisible qui ferait rejeter le fichier entier — un episode
- *   perdu vaut mieux qu'un calendrier perdu (`AGENTS.md` regle 4).
+ *   perdu vaut mieux qu'un calendrier perdu.
  * @param now instant de generation, injecte. Il remplit `DTSTAMP`, que la RFC exige.
  * @param options `remind` a `false` retire les `VALARM`. Le defaut est `true` : sans rappel
  *   ce fichier est un pense-bete muet, et l'interet annonce du format est justement que le

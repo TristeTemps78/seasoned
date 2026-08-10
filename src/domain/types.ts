@@ -1,7 +1,7 @@
 /**
  * Types de domaine.
  *
- * Regle structurante (`ROADMAP.md` §1.3) : **le catalogue est loue, pas possede**.
+ * Regle structurante : **le catalogue est loue, pas possede**.
  * Ces types ne decrivent que ce que nous produisons (positions, notes, decisions,
  * verdicts) plus des *references* vers le catalogue externe. Aucune metadonnee
  * (titre, affiche, resume) n'a sa place ici : elle transite par `src/catalog`,
@@ -56,7 +56,7 @@ export interface EpisodeRef {
  * Nature d'une saison telle que *nous* la classons, apres normalisation.
  *
  * Le fournisseur ne le dit pas : c'est `src/domain/seasons.ts` qui le derive.
- * Voir `docs/RATING-MODEL.md` §8.1 — l'instabilite du decoupage en saisons est le
+ * Voir — l'instabilite du decoupage en saisons est le
  * risque n°1 du modele de notation.
  */
 export type SeasonKind =
@@ -107,7 +107,7 @@ export type ProductionStatus =
  * Note sur l'echelle Letterboxd : 0,5 a 5,0 par pas de 0,5.
  *
  * Le type litteral rend les notes invalides inconstructibles. Le choix de
- * l'echelle est argumente dans `docs/RATING-MODEL.md` §3 (couche 1) : assez
+ * l'echelle est argumente dans (couche 1) : assez
  * grossiere pour rester stable dans le temps.
  */
 export type Stars = 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
@@ -123,8 +123,8 @@ export const MAX_STARS: Stars = 5;
 /**
  * Cible d'une note.
  *
- * Polymorphe **des le depart**, meme si l'interface v1 n'expose que `season`
- * (`docs/RATING-MODEL.md` §7.1). Le cout de le prevoir maintenant est nul ;
+ * Polymorphe **des le depart**, meme si l'interface v1 n'expose que `season`.
+ * Le cout de le prevoir maintenant est nul ;
  * celui de l'ajouter apres coup est une migration.
  */
 export type RatingTarget =
@@ -146,7 +146,7 @@ export interface Rating {
 /**
  * Ou en est un utilisateur dans une serie.
  *
- * **Un pointeur, pas une collection de booleens** (`docs/RATING-MODEL.md` §7.3).
+ * **Un pointeur, pas une collection de booleens**.
  * Tout ce qui precede est implicitement vu ; c'est ce qui permet de mettre a jour
  * une progression en un geste au lieu de quarante-sept.
  */
@@ -159,7 +159,7 @@ export interface Position {
 /**
  * Ce que l'utilisateur a decide de faire de la serie.
  *
- * Table de plein droit, pas un champ `status` (`docs/RATING-MODEL.md` §7.4).
+ * Table de plein droit, pas un champ `status`.
  * C'est la donnee propriete du produit : la carte des abandons.
  */
 export type DecisionKind =
@@ -181,8 +181,8 @@ export type DecisionKind =
  * (avec `Verdict`) et `LogEntry` — ecrites a la phase 0.2, **avant** le journal, et que
  * rien n'a jamais construites : zero reference dans tout le depot, tests compris.
  *
- * Ce n'etait pas du bruit inoffensif. `types.ts` est le **deuxieme fichier** de l'ordre
- * de lecture d'`AGENTS.md` : il decrivait donc a tout arrivant un modele qui n'est pas
+ * Ce n'etait pas du bruit inoffensif. `types.ts` est l'un des premiers fichiers qu'on
+ * ouvre en arrivant : il decrivait donc a tout arrivant un modele qui n'est pas
  * celui du code. Le journal (`journal.ts`) a construit le sien, et les deux ont vecu cote
  * a cote sans que rien ne signale lequel etait reel.
  *
@@ -192,7 +192,7 @@ export type DecisionKind =
  * - `LogEntry`      → `JournalEntry` + `JournalCompletion` (le revisionnage est une liste
  *                     de dates, pas une entree par visionnage) ;
  * - `Highlight`     → **caduque par decision** : l'arbitrage A7 (2026-08-02) a tranche la
- *                     note d'episode complete, la ou la couche 2 de `RATING-MODEL.md`
+ *                     note d'episode complete, la ou le modele de notation d'origine
  *                     disait « on ne note pas les episodes, on les distingue » ;
  * - `Verdict`       → l'idee est vivante et le type ne l'etait pas. « Arrete-toi a la
  *                     saison 4 » est **calcule**, pas saisi : `trajectory.ts` (point de

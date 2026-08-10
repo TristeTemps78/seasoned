@@ -38,7 +38,7 @@
  * pas arbitrer finement.
  *
  * `spoiler` est propre a ce produit et il fallait y penser : ailleurs c'est une impolitesse,
- * ici c'est une atteinte a la promesse centrale (`AGENTS.md` regle 7). L'omettre aurait dit
+ * ici c'est une atteinte a la promesse centrale. L'omettre aurait dit
  * qu'on ne le retire pas.
  */
 export type ReportGround = 'illegal' | 'abuse' | 'privacy' | 'spam' | 'spoiler';

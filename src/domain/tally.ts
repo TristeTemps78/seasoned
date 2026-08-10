@@ -25,7 +25,7 @@
  *    n'a **pas** pu compter, pour que la couche d'affichage puisse etre honnete au lieu de
  *    faire passer un minorant pour un total.
  *
- * Module **pur** : ni reseau, ni horloge implicite (`AGENTS.md` regle 2). L'instant de
+ * Module **pur** : ni reseau, ni horloge implicite. L'instant de
  * reference est injecte, comme pour `buildLibrary` et `buildTasteProfile`.
  */
 

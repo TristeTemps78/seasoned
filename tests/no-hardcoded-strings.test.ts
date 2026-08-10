@@ -18,7 +18,7 @@ import { ROOT, codeOf, filesUnder, pathOf } from './sources';
  * dans une langue. Le defaut n'apparait qu'a un lecteur de l'autre langue, c'est-a-dire
  * a personne dans l'equipe.
  *
- * C'est la troisieme forme du meme echec (`TASKS.md` : SEO en cul-de-sac, cache
+ * C'est la troisieme forme du meme echec ( : SEO en cul-de-sac, cache
  * inoperant, `lang` menteur). La regle du projet est **auditer le resultat, jamais
  * l'intention** ; ce fichier est cette regle rendue executable, pour que la prochaine
  * chaine en dur casse la CI au lieu d'atteindre la production.

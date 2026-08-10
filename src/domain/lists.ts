@@ -76,7 +76,7 @@ export function uniqueSlug(base: string, taken: ReadonlySet<string>): string {
 /**
  * Verifie un titre de liste, et rend sa forme canonique.
  *
- * On **signale**, on ne tronque pas en silence (`AGENTS.md` regle 8) : couper un titre a
+ * On **signale**, on ne tronque pas en silence : couper un titre a
  * quatre-vingts caracteres serait le reecrire sans le dire.
  */
 export function checkList(rawTitle: string, rawNote?: string): ListCheck {

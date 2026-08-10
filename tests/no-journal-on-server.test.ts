@@ -13,7 +13,7 @@ import { join } from 'node:path';
  *     visiteurs**. Un composant serveur qui lirait un journal servirait celui de
  *     quelqu'un a quelqu'un d'autre — et a cent mille utilisateurs, a grande echelle ;
  *   - une page qui lit un etat personnel cesse d'etre mise en cache. Le budget entier
- *     du produit repose sur l'inverse (`ROADMAP.md` §1.4).
+ *     du produit repose sur l'inverse.
  *
  * Rien dans le code d'aujourd'hui ne fait cela. Tout l'interet du test est de le
  * verifier **demain**, quand quelqu'un — humain ou agent — voudra « juste » afficher

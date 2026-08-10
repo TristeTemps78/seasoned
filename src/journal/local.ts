@@ -56,7 +56,7 @@ export const STORAGE_KEY = 'voltface.journal.v1';
  * Conserve **indefiniment** en lecture : un journal peut dormir des mois dans un navigateur
  * ferme, et il n'existe aucune tache de fond pour faire le menage. Le supprimer un jour
  * effacerait le journal de qui n'est pas revenu d'ici la — exactement ce que le produit
- * promet de ne jamais faire (`AGENTS.md` regle 9).
+ * promet de ne jamais faire.
  */
 const LEGACY_STORAGE_KEYS = ['seasoned.journal.v1'] as const;
 

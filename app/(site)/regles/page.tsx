@@ -9,7 +9,7 @@ import { REPORT_GROUNDS, REVIEW_DEADLINE_HOURS } from '@/src/domain/moderation';
  *
  * ## Pourquoi cette page existe avant qu'il y ait quoi que ce soit a moderer
  *
- * C'est `TASKS.md` 5.0a, le verrou ⛔ qui tient tout le social — profils publics, fil
+ * C'est, le verrou ⛔ qui tient tout le social — profils publics, fil
  * d'activite, listes, avatars, et jusqu'aux cosmetiques d'A6, qui n'ont de valeur que s'ils
  * sont vus.
  *
@@ -28,7 +28,7 @@ import { REPORT_GROUNDS, REVIEW_DEADLINE_HOURS } from '@/src/domain/moderation';
  *
  * Il n'y a aujourd'hui aucun profil public, aucun commentaire, aucune liste partagee. La page
  * le dit, au lieu de laisser croire a un espace social qui n'est pas ouvert — meme regle que
- * `/mentions` quand l'identite de l'editeur manque (`AGENTS.md` regle 8).
+ * `/mentions` quand l'identite de l'editeur manque.
  *
  * > ⚖️ **Textes a faire relire.** Le cadre general vient du DSA ; je ne suis pas une source
  * > juridique. Ce qui est sur, c'est qu'improviser au moment du premier signalement est pire.

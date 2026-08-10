@@ -88,7 +88,7 @@ function isFresh(
  *
  * **La page reste statique et mise en cache** : le serveur ne sait rien de cet etat,
  * il est ajoute apres coup. C'est ce qui permet d'avoir de la memoire sans renoncer au
- * budget (`ROADMAP.md` §1.4) — et sans base de donnees, donc sans compte a creer ni
+ * budget — et sans base de donnees, donc sans compte a creer ni
  * donnee personnelle a heberger.
  *
  * Tout passe par le port {@link JournalStore} : ce module ne sait pas ou les donnees

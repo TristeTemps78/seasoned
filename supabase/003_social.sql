@@ -8,7 +8,7 @@
 --
 -- Il cree les tables. Il n'ouvre **aucun ecran** : le lot suivant branche la lecture, et
 -- il est conditionne a `legalIsComplete()`. Une table qui existe ne montre rien a
--- personne ; c'est l'ordre voulu (`docs/ARCHITECTURE-APP.md` §6).
+-- personne ; c'est l'ordre voulu.
 --
 -- ## Trois decisions qui ne se rattrapent pas
 --
@@ -236,7 +236,7 @@ create trigger profiles_retire_handle
 --
 -- ⚠️ **Aucun titre d'episode ici, jamais.** Le fil ne porte que la serie, le type de fait
 -- et — pour une note de saison — le numero de saison. La position d'un lecteur n'a donc
--- rien a demander au serveur, et ne peut pas fuir par cette table (`AGENTS.md` regle 7).
+-- rien a demander au serveur, et ne peut pas fuir par cette table.
 
 create table if not exists public.activity (
   user_id uuid not null references auth.users (id) on delete cascade,

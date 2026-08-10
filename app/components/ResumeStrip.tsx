@@ -11,7 +11,7 @@ import { buildLibrary, nextToResume } from '@/src/domain/library';
 /**
  * « Reprendre » — le rappel que le produit s'interdit d'envoyer.
  *
- * Les notifications generalisees sont ecartees (`ROADMAP.md` §3) : leur cout croit
+ * Les notifications generalisees sont ecartees : leur cout croit
  * avec le nombre d'utilisateurs, ce qui est exactement le mecanisme qui a tue TV Time
  * avec 26 millions d'installations. Le contre-sens utile : **la page d'accueil peut
  * etre le rappel**. Elle ne coute rien, ne demande aucune permission, ne reveille

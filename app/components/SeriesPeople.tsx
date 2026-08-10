@@ -29,7 +29,7 @@ import { pathIn } from '@/lib/routes';
  *
  * **Pas une source de spoiler.** Les deux faits montres ne portent aucun numero de saison
  * (voir {@link SocialClient.watchersOf}) : ils ne disent rien de l'interieur de la serie.
- * C'est la question que pose `AGENTS.md` regle 7 — *ce fait decrit-il l'oeuvre ou quelqu'un
+ * C'est la question que pose — *ce fait decrit-il l'oeuvre ou quelqu'un
  * d'autre ?* — et la reponse est « quelqu'un d'autre », comme pour le fil.
  *
  * **Se tait quand il n'y a personne**, et se tait aussi quand il n'y a que soi :

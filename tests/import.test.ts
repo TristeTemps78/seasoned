@@ -37,7 +37,7 @@ describe('importForeign', () => {
 
   it('compte, sans les reprendre, les series sans identifiant TMDB', () => {
     // La partie honnete du rapport. Les resoudre demanderait un appel par titre — le
-    // cout par utilisateur que `ROADMAP.md` §1.4 interdit — et se tromperait sur les
+    // cout par utilisateur que interdit — et se tromperait sur les
     // remakes, qui portent le meme nom.
     const doc = JSON.stringify({ shows: [{ title: 'Une serie sans id' }, { title: 'X', ids: { tmdb: 7 } }] });
     const out = importForeign(doc, EMPTY_JOURNAL, NOW);
@@ -111,7 +111,7 @@ describe('importForeign', () => {
    * Le defaut qu'ils ferment n'est pas theorique : ce `&&` transforme en `ou` fait rendre
    * **une liste vide** a tout export ne portant qu'un identifiant. C'est-a-dire que
    * l'orphelin de TV Time colle son fichier, voit « 0 serie importee », et n'a aucune
-   * facon de savoir pourquoi. `AGENTS.md` regle 9 existe pour l'inverse.
+   * facon de savoir pourquoi. existe pour l'inverse.
    *
    * ⚠️ Trois tests pour une ligne de code, et c'est justifie : c'est **la** ligne qui
    * decide si un fichier est lisible ou non, et elle a trois issues.

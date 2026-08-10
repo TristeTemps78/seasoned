@@ -3,8 +3,8 @@
  *
  * ## Pourquoi ce module arrive maintenant, et pas « plus tard »
  *
- * Le SEO est **le seul canal d'acquisition qui fonctionne sans utilisateurs**
- * (`ROADMAP.md` §0.2). Or une page en francais ne capte pas *« is X worth watching »*,
+ * Le SEO est **le seul canal d'acquisition qui fonctionne sans utilisateurs**.
+ * Or une page en francais ne capte pas *« is X worth watching »*,
  * qui est un marche d'un ordre de grandeur plus grand. L'international n'est donc pas un
  * elargissement du produit : c'est le **multiplicateur du seul canal qui marche a froid**.
  *
@@ -24,7 +24,7 @@
  *
  * Il ne fait **pas** le routage par locale (`/en/serie/…`), ni les balises `hreflang`, ni
  * le sitemap par langue. Ce sont les trois choses qui transforment la traduction en trafic,
- * et elles se decident ensemble avec le choix de la langue par defaut (`TASKS.md` 1.60).
+ * et elles se decident ensemble avec le choix de la langue par defaut.
  * Ce module est le socle : sans lui, chaque nouvelle chaine ecrite en dur est une dette
  * qu'il faudra repayer une fois par composant.
  */
@@ -69,7 +69,7 @@ export function isLocale(value: string | undefined): value is Locale {
 /**
  * La locale la plus proche d'un en-tete `Accept-Language`.
  *
- * Tolerant par principe, comme tout le parsing du projet (`AGENTS.md` regle 4) : une
+ * Tolerant par principe, comme tout le parsing du projet : une
  * valeur absente, vide ou exotique rend la langue par defaut, jamais une erreur. On
  * compare sur la **sous-etiquette de langue** (`fr-CA` → `fr`), parce que ce qui nous
  * interesse est la langue, pas le pays — le pays sert a autre chose, voir
@@ -186,7 +186,7 @@ export function formatDateIn(date: Date, locale: Locale): string {
  * {@link MessageKey} vaut toujours `keyof typeof FR`, et `en.ts` declare son dictionnaire
  * comme `Record<keyof typeof FR, string>`. Une cle francaise sans equivalent anglais ne
  * compile toujours pas. Perdre cette garantie en gagnant de la lisibilite aurait ete un
- * mauvais echange — `TASKS.md` 8.10 le dit explicitement.
+ * mauvais echange — le dit explicitement.
  *
  * ⚠️ **Ce decoupage ne resout PAS la tache 8.10.** Les deux dictionnaires partent encore
  * dans le meme paquet client : separer des fichiers ne separe pas des chunks. Il la rend

@@ -25,8 +25,8 @@ import { RowHeader } from '@/app/components/RowHeader';
  * **Aucun appel reseau.** Tout vient des instantanes deposes en visitant les pages
  * serie. Ce n'est pas une optimisation : rafraichir trente series a chaque ouverture
  * couterait, a cent mille utilisateurs, plusieurs millions d'appels par jour — au-dela
- * de ce que le fournisseur autorise et de ce que le budget supporte (`ROADMAP.md`
- * §1.4). La contrepartie est assumee : une serie dont l'instantane a expire garde sa
+ * de ce que le fournisseur autorise et de ce que le budget supporte.
+ * La contrepartie est assumee : une serie dont l'instantane a expire garde sa
  * place avec moins d'ornements, elle ne disparait jamais.
  *
  * Consequence heureuse : **cette page fonctionne hors ligne**, une fois visitee. C'est

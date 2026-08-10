@@ -1,8 +1,7 @@
 /**
  * Horizon de spoiler.
  *
- * Correction issue de `docs/ROADMAP-AUDIT.md` §2 — l'angle mort du modele de
- * notation.
+ * Correction d'un angle mort du modele de notation.
  *
  * Sur Letterboxd, l'etat d'un utilisateur face a une oeuvre est **binaire** : vu ou
  * pas vu. Une case « contient des spoilers » suffit. Pour une serie, l'etat est un

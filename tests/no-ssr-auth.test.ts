@@ -69,7 +69,7 @@ describe('⛔ rien ne rend le site dynamique pour authentifier', () => {
   });
 
   it('⛔ l authentification n a introduit aucune route serveur', () => {
-    // Zero `route.ts` dans tout le projet, et c'est un fait dont `TASKS.md` se sert pour
+    // Zero `route.ts` dans tout le projet, et c'est un fait dont on se sert pour
     // chiffrer les propositions (« la premiere route serveur du projet »). Le retour du
     // lien magique n'en a pas besoin : le navigateur a le code ET le verificateur.
     const routes = FILES.filter(({ path }) => /(^|\/)route\.tsx?$/.test(path));
@@ -90,8 +90,8 @@ describe('⛔ rien ne rend le site dynamique pour authentifier', () => {
 
 describe('un seul module connait la forme de l authentification', () => {
   it('⚠️ rien hors de src/auth n importe le SDK', () => {
-    // `AGENTS.md` regle 3, appliquee a l'identite comme au catalogue : changer de
-    // fournisseur doit rester un module a reecrire.
+    // Un seul module connait la forme d'un fournisseur, appliquee a l'identite comme
+    // au catalogue : changer de fournisseur doit rester un module a reecrire.
     const guilty = FILES.filter(
       ({ path, code }) =>
         !path.startsWith('src/auth/') && /@supabase\/(auth-js|supabase-js)/.test(code),

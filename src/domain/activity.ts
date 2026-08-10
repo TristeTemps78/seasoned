@@ -20,7 +20,7 @@
  * porte.
  *
  * > Le caviardage vit donc **ici**, dans le domaine, et pas a l'affichage
- * > (`AGENTS.md` regle 7 : un filtre de rendu laisse fuir les agregats).
+ * > ( : un filtre de rendu laisse fuir les agregats).
  */
 
 import type { Journal, JournalKey } from './journal';

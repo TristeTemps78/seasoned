@@ -362,7 +362,7 @@ describe('notes d episode (A7)', () => {
   });
 
   it('la note de saison est suggeree, jamais ecrite', () => {
-    // `AGENTS.md` regle 8 : on signale, on ne repare pas en silence.
+    // On signale, on ne repare pas en silence.
     let j = setEpisodeRating(EMPTY_JOURNAL, BB, 1, 1, 4, NOW);
     j = setEpisodeRating(j, BB, 1, 2, 4.5, NOW);
     j = setEpisodeRating(j, BB, 1, 3, 5, NOW);
@@ -390,7 +390,7 @@ describe('instantane de vignette — le plafond contractuel vaut aussi dans le n
 
   it('ne cree jamais une entree', () => {
     // Sans cela, visiter des pages suffirait a constituer une base de metadonnees
-    // TMDB — ce que le contrat interdit (`AGENTS.md` regle 1).
+    // TMDB — ce que le contrat interdit.
     const j = setSnapshot(EMPTY_JOURNAL, BB, SHAPE, NOW);
     expect(j.entries[BB]).toBeUndefined();
   });
@@ -469,7 +469,7 @@ describe('instantane de vignette — le plafond contractuel vaut aussi dans le n
   });
 
   it('le plafond ne depasse jamais les six mois du contrat', () => {
-    // `AGENTS.md` regle 1 : irreparable apres coup, donc verifie plutot que commente.
+    // Le plafond contractuel est irreparable apres coup : verifie, plutot que commente.
     expect(SNAPSHOT_IDENTITY_TTL_MS).toBeLessThanOrEqual(183 * 86_400_000);
   });
 

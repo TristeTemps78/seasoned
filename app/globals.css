@@ -5,7 +5,7 @@
  *
  * ## Les deux regles qui gouvernent cette direction artistique
  *
- * 1. **« L'affiche est l'interface »** (`RESEARCH.md` §2.3). Les affiches ne decorent
+ * 1. **« L'affiche est l'interface »**. Les affiches ne decorent
  *    pas, elles *sont* la navigation. Le cyberpunk se joue donc sur le **chassis** —
  *    fond, aretes, accents, chiffres — et jamais sur les vignettes. Une page qui brille
  *    partout ne met plus rien en avant, ce qui reviendrait a defaire la seule lecon d'UX
@@ -636,7 +636,7 @@ body::before {
    *    qui a ete vu a l'ecran est que **rien ne se detache** : la page est un empilement de
    *    rectangles gris. Un fond qui se rapproche du fond va contre le seul defaut constate.
    *
-   * ⚠️ **Et le diagnostic de `TASKS.md` 9.7 etait perime** : il annoncait « 19 copies a la
+   * ⚠️ **Et le diagnostic de etait perime** : il annoncait « 19 copies a la
    * main », chiffre vrai la veille et faux le jour meme — le commit qui a extrait `.panel`
    * les avait deja absorbees. Il en restait **8**. *Une tache se remesure avant d'etre faite,
    * surtout quand quelqu'un a travaille entre-temps.*
@@ -914,7 +914,7 @@ body::before {
    *
    * ⚠️ La premisse ne vaut qu'**au-dessus de 640 px** : `.page-title` y monte a `1.75rem`,
    * mais retombe a `1.5rem` en dessous, ou ce chiffre le depasse donc de 25 % dans une carte
-   * de 360 px. Jamais vu sur telephone — `TASKS.md` 7.13.
+   * de 360 px. Jamais vu sur telephone —.
    */
   .tally-figure {
     font-size: 1.875rem;

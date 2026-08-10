@@ -25,7 +25,7 @@ export const JOURNAL_VERSION = 3;
  * Fournisseur de catalogue dont proviennent les identifiants ecrits aujourd'hui.
  *
  * Vit ici, en un seul endroit, precisement pour que le jour ou il change on sache quoi
- * remapper (`ROADMAP.md` §4.1 — le barème de TheTVDB est plus previsible).
+ * remapper ( — le barème de TheTVDB est plus previsible).
  */
 export const CURRENT_PROVIDER = 'tmdb';
 
@@ -85,8 +85,8 @@ export function parseJournalKey(
  * Suffixe qui fait d'un espace d'identifiants autre chose qu'une serie.
  *
  * Teste par **suffixe** et non par egalite avec {@link MOVIE_PROVIDER} : le jour ou le
- * fournisseur change (`ROADMAP.md` §4.1), les cles `tmdb-movie:` deja ecrites doivent
- * continuer a se lire comme des films. Parsing tolerant, `AGENTS.md` regle 4.
+ * fournisseur change, les cles `tmdb-movie:` deja ecrites doivent
+ * continuer a se lire comme des films. Parsing tolerant,.
  */
 const MOVIE_NAMESPACE_SUFFIX = '-movie';
 
@@ -171,7 +171,7 @@ export function seriesEntries(journal: Journal): readonly [JournalKey, JournalEn
 //
 // Un export porte parfois la date reelle du visionnage. La lire serait mieux ; l'inventer
 // serait pire que tout. Tant qu'on ne la lit pas, on **signale** qu'on ne la connait pas
-// (`AGENTS.md` regle 8) plutot que de laisser croire que `now` est la bonne.
+// plutot que de laisser croire que `now` est la bonne.
 
 /**
  * D'ou vient un fait — c'est-a-dire d'ou vient **sa date**.
@@ -239,10 +239,10 @@ export interface JournalWanted {
  *
  * ## Pourquoi ce n'est pas le passage aux cases a cocher
  *
- * La position reste **un pointeur** (`RATING-MODEL.md` §7.3), et tout ce qui la precede
+ * La position reste **un pointeur**, et tout ce qui la precede
  * reste implicitement vu. C'est ce qui permet de mettre a jour une progression en un geste
  * au lieu de quarante-sept — et *la saisie manuelle est la cause n°1 d'abandon des
- * trackers* (`RESEARCH.md`). Ce que le pointeur ne savait pas dire, c'est **l'exception** :
+ * trackers*. Ce que le pointeur ne savait pas dire, c'est **l'exception** :
  * « j'ai vu S03E07 mais pas S03E05 », « je saute les episodes de remplissage ».
  *
  * Donc on ajoute les exceptions, pas les regles. Un journal sans aucune marque se comporte
@@ -302,7 +302,7 @@ export type ReviewCheck = { readonly ok: true } | { readonly ok: false; readonly
 /**
  * Le texte est-il publiable ?
  *
- * On **signale**, on ne tronque pas en silence (`AGENTS.md` regle 8) : couper la fin d'une
+ * On **signale**, on ne tronque pas en silence : couper la fin d'une
  * critique a 2000 caracteres serait la reecrire sans le dire.
  */
 export function checkReview(raw: string): ReviewCheck {
@@ -379,7 +379,7 @@ export interface JournalCompletion {
  * Ce qu'il faut pour dessiner une vignette **sans un seul appel reseau**.
  *
  * ⚠️ Ce sont des **metadonnees du catalogue**, et le plafond contractuel de six mois
- * (`AGENTS.md` regle 1) ne connait pas la frontiere entre serveur et navigateur. Elles
+ * ne connait pas la frontiere entre serveur et navigateur. Elles
  * sont donc datees et **expirees a la lecture** par {@link SNAPSHOT_TTL_MS}, exactement
  * comme `src/catalog/cache.ts` le fait cote serveur : le plafond est applique **par le
  * code**, jamais par une consigne.
@@ -483,7 +483,7 @@ export const SNAPSHOT_TTL_MS = 30 * 86_400_000;
 /**
  * Duree de vie de ce qui **identifie** une serie : titre et affiche.
  *
- * Six mois — le plafond contractuel exact (`AGENTS.md` regle 1), applique par le code
+ * Six mois — le plafond contractuel exact, applique par le code
  * et non par une consigne.
  *
  * La distinction n'est pas une subtilite : elle a ete trouvee en verifiant la
@@ -523,7 +523,7 @@ export interface JournalEntry {
   /**
    * Notes d'episode, indexees par `saison:episode`.
    *
-   * Arbitrage A7 (2026-08-02), contraire a `docs/RATING-MODEL.md` §3 couche 2 et
+   * Arbitrage A7 (2026-08-02), contraire au modele de notation d'origine et
    * assume comme tel : la note d'episode est **strictement facultative**, et la saison
    * reste l'unite de trajectoire — une note d'episode ne deforme jamais la courbe.
    */

@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 /**
  * Le point important de ce fichier n'est pas la configuration : c'est le **budget**.
  *
- * `ROADMAP.md` §1.4 — le succes inattendu ne doit pas couter cher. TV Time est mort
+ * — le succes inattendu ne doit pas couter cher. TV Time est mort
  * avec 26,4 M d'installations en disant que ce n'etait soutenable ni en gratuit ni en
  * payant. On ne peut pas resoudre le revenu aujourd'hui ; on peut resoudre le cout, et
  * c'est la seule position qui ne ferme aucune option de monetisation (arbitrage A6).
@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
    * Une politique a nonce est la seule qui neutralise vraiment le script injecte. Elle
    * exige de generer une valeur differente **a chaque reponse**, donc de rendre la page
    * a chaque requete — ce qui **detruit le cache de bord**, c'est-a-dire la chose meme
-   * qui tient le budget (`ROADMAP.md` §1.4, et l'audit du 2026-08-02 qui a trouve les
+   * qui tient le budget (et l'audit du 2026-08-02 qui a trouve les
    * pages serie en `MISS`). Payer une invocation par visite pour durcir un site qui ne
    * traite aucun mot de passe et n'heberge aucune donnee serait exactement l'erreur qui
    * a tue TV Time.

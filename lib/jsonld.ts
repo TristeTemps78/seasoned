@@ -17,7 +17,7 @@
  *
  * Et ces titres ne viennent pas de nous : **TMDB est alimente par des contributeurs**. Au
  * sens de la securite, c'est une source non fiable — au meme titre qu'un champ rempli par
- * un visiteur. Le parsing tolerant du fournisseur (`AGENTS.md` regle 4) protege contre les
+ * un visiteur. Le parsing tolerant du fournisseur protege contre les
  * donnees *mal formees*, pas contre les donnees *malveillantes* : ce sont deux problemes
  * differents, et le premier a masque le second.
  *

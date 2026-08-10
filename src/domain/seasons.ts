@@ -1,7 +1,7 @@
 /**
  * Normalisation des saisons.
  *
- * C'est le risque n°1 du modele de notation (`docs/RATING-MODEL.md` §8.1) : si la
+ * C'est le risque n°1 du modele de notation : si la
  * saison est l'unite canonique, alors l'instabilite du decoupage en saisons devient
  * un probleme de **produit**, pas d'integration.
  *
@@ -136,7 +136,7 @@ function toSeason(seriesId: SeriesId, raw: RawSeason): Season {
  *
  * Sert a chiffrer ce que coute une serie **si l'on s'arrete la** : « regarde Dexter
  * mais arrete-toi a la saison 4 » est la phrase archetypale de toute conversation sur
- * les series (`docs/RATING-MODEL.md` §3, couche 3), et personne ne la chiffre.
+ * les series (couche 3), et personne ne la chiffre.
  *
  * Les speciaux et les saisons non diffusees sont exclus, comme partout ailleurs.
  */

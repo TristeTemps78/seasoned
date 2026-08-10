@@ -11,7 +11,7 @@ import type { Metadata } from 'next';
  * Regeneration quotidienne.
  *
  * Deux appels par jour au total pour toute la page d'accueil, quel que soit le
- * trafic (`ROADMAP.md` §1.4).
+ * trafic.
  */
 export const revalidate = 86_400;
 
@@ -33,7 +33,7 @@ export async function Home({ locale }: { readonly locale: Locale }) {
 
   // Hydratation du statut reel : un appel par serie, mais la page est en ISR
   // quotidien — le total reste de l'ordre de 60 appels par JOUR, quel que soit le
-  // trafic (`ROADMAP.md` §1.4). C'est ce qui rend la promesse visible **avant** le clic.
+  // trafic. C'est ce qui rend la promesse visible **avant** le clic.
   const [trending, onTheAir, waiting] = await Promise.all([
     withStatus(rawTrending.slice(0, 12), new Date(), locale),
     withStatus(rawOnTheAir.slice(0, 12), new Date(), locale),
@@ -54,7 +54,7 @@ export async function Home({ locale }: { readonly locale: Locale }) {
           {/* Formulation revue le 2026-08-01 : la verification en reel a montre que la
               valeur n'est pas le cas extreme (la serie declaree vivante et morte depuis
               deux ans) mais le **temps ecoule chiffre**, qui vaut pour toutes les series
-              en attente. Voir TASKS.md, « chasse au zombie ». */}
+              en attente. Voir, « chasse au zombie ». */}
           <p className="text-(--color-muted) leading-relaxed text-pretty">
             {t(locale, 'home.lede.before')}
             <em>{t(locale, 'home.lede.em')}</em>

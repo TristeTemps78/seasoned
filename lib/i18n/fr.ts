@@ -93,7 +93,7 @@ export const FR = {
   'nav.library': 'Ma bibliothèque',
   'nav.language.aria': 'Langue',
   // Les faces du cube. Une face existe si elle repond a une question qu'on se pose a un
-  // moment different — pas a un contenu different (`docs/ARCHITECTURE-APP.md` §2).
+  // moment different — pas a un contenu different.
   'face.discover': 'Découvrir',
   'face.library': 'Ma bibliothèque',
   'face.calendar': 'Calendrier',

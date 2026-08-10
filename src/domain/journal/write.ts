@@ -63,9 +63,8 @@ function reviseTombstone(
 /**
  * Declare ou l'on en est.
  *
- * **Un pointeur, pas quarante-sept cases a cocher** (`docs/RATING-MODEL.md` §3,
- * couche 0) : tout ce qui precede est implicitement vu. C'est le seul remede realiste
- * a la friction qui tue les trackers.
+ * **Un pointeur, pas quarante-sept cases a cocher** : tout ce qui precede est
+ * implicitement vu. C'est le seul remede realiste a la friction qui tue les trackers.
  */
 export function setPosition(
   journal: Journal,
@@ -113,7 +112,7 @@ export function setSeasonRating(
 /**
  * Note un episode. `undefined` retire la note.
  *
- * Arbitrage A7 : contraire a la recommandation de `docs/RATING-MODEL.md` §3 couche 2,
+ * Arbitrage A7 : contraire a la recommandation du modele de notation d'origine,
  * et acte. La contrepartie exigee est tenue ailleurs — le geste coute un tap depuis la
  * grille, rien ne reclame la completude, et la trajectoire continue de se calculer sur
  * les seules notes de saison.
@@ -165,7 +164,7 @@ export function setDecision(
   }
 
   // Le point exact ou la decision est prise est ce qui a de la valeur : c'est lui qui
-  // fera la carte des abandons (`docs/RATING-MODEL.md` §7.4).
+  // fera la carte des abandons.
   const at = entry.position;
   return withEntry(journal, key, {
     ...entry,

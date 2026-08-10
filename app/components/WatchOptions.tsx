@@ -21,7 +21,7 @@ const ORDER: readonly WatchOption['kind'][] = ['flatrate', 'free', 'ads', 'rent'
  * « FR » → « France » / « France » ; « US » → « États-Unis » / « United States ».
  *
  * Repli sur le code brut si le navigateur ne connait pas `DisplayNames` : deux lettres
- * restent lisibles, une exception ne l'est pas (`AGENTS.md` regle 4).
+ * restent lisibles, une exception ne l'est pas.
  */
 function regionName(region: string, locale: string): string {
   try {
@@ -43,7 +43,7 @@ function regionName(region: string, locale: string): string {
  * JustWatch ne peut pas fournir — elle est de notre cote, pas du sien.
  *
  * Les logos viennent du CDN de TMDB, jamais de chez nous — meme regle que les
- * affiches (`ROADMAP.md` §1.4).
+ * affiches.
  */
 export function WatchOptions({ options, region }: {
   readonly options: readonly WatchOption[];

@@ -66,7 +66,7 @@ describe('affiches — declarer les dimensions evite que la page saute', () => {
 
   it('sert les affiches depuis le CDN du fournisseur, jamais depuis nous', () => {
     // Une ligne du budget : optimiser des images qu'un CDN sert deja serait payer
-    // deux fois (`ROADMAP.md` §1.4).
+    // deux fois.
     expect(posterUrl('/abc.jpg', 'w342')).toBe('https://image.tmdb.org/t/p/w342/abc.jpg');
     expect(posterUrl(undefined)).toBeUndefined();
   });

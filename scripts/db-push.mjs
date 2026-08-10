@@ -114,8 +114,7 @@ async function api(method, path, body) {
   }
 
   if (!response.ok) {
-    // ⚠️ On consigne le statut et le message de l'API, jamais l'en-tete d'autorisation
-    // (`AGENTS.md` regle 6).
+    // ⚠️ On consigne le statut et le message de l'API, jamais l'en-tete d'autorisation.
     const detail = payload?.message ?? text.slice(0, 300);
     return { ok: false, status: response.status, message: detail };
   }

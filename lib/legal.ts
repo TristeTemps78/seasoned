@@ -3,7 +3,7 @@
  *
  * ## Pourquoi ce detour plutot qu'un texte en dur
  *
- * Le depot est **public** (`AGENTS.md` regle 5). Les mentions legales exigent un nom, une
+ * Le depot est **public**. Les mentions legales exigent un nom, une
  * adresse et un moyen de contact : ce sont des **donnees personnelles** de l'editeur, et
  * les committer reviendrait a les publier sur GitHub en plus du site, indefiniment et dans
  * tout l'historique — ou un `git revert` ne les enleve pas.
@@ -15,7 +15,7 @@
  *
  * Quand une valeur manque, la page le **dit** au lieu d'afficher un texte a trous qui
  * aurait l'air complet. C'est la meme regle que partout ailleurs ici : se taire ou
- * signaler, jamais remplir la case (`AGENTS.md` regle 8).
+ * signaler, jamais remplir la case.
  */
 
 function read(name: string): string | undefined {

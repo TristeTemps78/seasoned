@@ -27,7 +27,7 @@ import { formatDate } from '@/lib/format';
  *
  * Tout vient des instantanes deposes en visitant les pages serie. Une serie dont
  * l'instantane a expire n'a plus de date connue et disparait de cette liste : c'est le
- * plafond contractuel qui s'applique (`AGENTS.md` regle 1), pas un oubli.
+ * plafond contractuel qui s'applique, pas un oubli.
  *
  * L'export `.ics` reste propose **en bas** de l'ecran, et il lit exactement la meme liste
  * (`upcomingFrom`). Le rappel qui sonne reste delegue au calendrier que tout le monde a

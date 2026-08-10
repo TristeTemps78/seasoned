@@ -1,7 +1,7 @@
 /**
  * Moteur de trajectoire.
  *
- * Le fait central du domaine (`docs/RATING-MODEL.md` §2.3) : **la qualite d'une
+ * Le fait central du domaine : **la qualite d'une
  * serie est une fonction du temps, pas une constante.** Un scalaire ne peut pas la
  * representer ; toute note unique de serie est une perte d'information par
  * construction, et c'est ce qui produit les incoherences d'IMDb.
@@ -29,7 +29,7 @@ const MAX_STANDARD_DEVIATION = (MAX_STARS - MIN_STARS) / 2;
  * Nombre minimal de saisons notees pour qu'une constance ait un sens.
  *
  * En deca, on n'affiche que le pic. Publier un ecart-type calcule sur deux points
- * serait malhonnete (`docs/RATING-MODEL.md` §4).
+ * serait malhonnete.
  */
 export const MIN_SEASONS_FOR_CONSISTENCY = 3;
 
@@ -64,7 +64,7 @@ const DEFAULT_MIN_SPREAD_FOR_SHAPE = 0;
  * Une note de saison, reduite au strict necessaire pour le calcul.
  *
  * `stars` est un **nombre** sur [0,5 ; 5] et non le type `Stars` : le modele produit
- * n'emet que des demi-etoiles (`docs/RATING-MODEL.md` §3), mais le moteur, lui, est un
+ * n'emet que des demi-etoiles, mais le moteur, lui, est un
  * calcul et doit accepter des valeurs continues.
  *
  * Ce n'est pas un detail. Arrondir des notes de foule au demi-point les detruit : sur
@@ -82,8 +82,7 @@ export interface SeasonScore {
 export type Trend = 'rising' | 'falling' | 'flat' | 'unknown';
 
 /**
- * Forme de la trajectoire — la typologie lisible sans explication
- * (`docs/RATING-MODEL.md` §4).
+ * Forme de la trajectoire — la typologie lisible sans explication.
  */
 export type TrajectoryShape =
   /** Pic eleve tenu jusqu'au bout. */
@@ -148,7 +147,7 @@ export interface Trajectory {
   /**
    * Saison apres laquelle le calcul suggere d'arreter.
    *
-   * Alimente le verdict `stop_after` (`docs/RATING-MODEL.md` §3 couche 3) — mais
+   * Alimente le verdict `stop_after` — mais
    * **ne le remplace pas** : c'est une suggestion derivee de notes personnelles, pas
    * un jugement. Seul l'utilisateur emet un verdict.
    */

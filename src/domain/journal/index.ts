@@ -9,7 +9,7 @@
  * donnees et sait la lire de facon tolerante ; ou elles sont rangees ne le regarde pas
  * — c'est le role du port `src/journal/store.ts`. C'est ce qui permettra de passer du
  * stockage local a une base sans le reecrire. La forme retenue est exactement celle
- * qu'attend `docs/RATING-MODEL.md` §7 :
+ * qu'attend :
  *
  *   - la position est **un pointeur**, pas une collection de booleens ;
  *   - la cible d'une note est **polymorphe** (saison, episode, serie) ;
@@ -30,7 +30,7 @@
  * 1. **Les entrees sont indexees par une cle prefixee du fournisseur** (`tmdb:1396`).
  *    La v1 utilisait l'identifiant TMDB nu, alors que `types.ts` ecrit noir sur blanc
  *    que les donnees utilisateur ne doivent jamais pointer un identifiant fournisseur.
- *    Un changement de catalogue — probable, `ROADMAP.md` §4.1 — devient un remappage
+ *    Un changement de catalogue — probable, — devient un remappage
  *    au lieu d'une perte totale.
  * 2. **Chaque fait porte sa propre date, et la fusion se fait au niveau du champ.**
  *    Cinq appareils, c'est cinq journaux qui divergent. Fusionner document contre
@@ -57,7 +57,7 @@
  * dans ceux qu'il croit comprendre. Les trois versions passees etaient deja additives.
  *
  * ⚠️ **Corollaire** : ne jamais incrementer {@link JOURNAL_VERSION} sans avoir d'abord
- * **deploye** un lecteur qui sait faire ce pass-through. Ecrit ici et pas dans `TASKS.md`,
+ * **deploye** un lecteur qui sait faire ce pass-through. Ecrit ici et pas ailleurs,
  * parce que c'est ici qu'on le lit au moment de le faire. Ce que coutait l'inverse est
  * raconte dans {@link tryParseJournal}.
  */

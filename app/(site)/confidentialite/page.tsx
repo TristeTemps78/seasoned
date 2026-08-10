@@ -12,7 +12,7 @@ import { alternatesFor } from '@/lib/routes';
  * dans la politique de securite interdit au navigateur de contacter un autre serveur que
  * le notre, et n'importe qui peut le lire dans l'inspecteur.
  *
- * ⚠️ **Cela cessera d'etre vrai avec les comptes** (`docs/ARCHITECTURE-APP.md` §1). La
+ * ⚠️ **Cela cessera d'etre vrai avec les comptes**. La
  * derniere section l'annonce des maintenant, et la regle qui va avec : cette page se met
  * a jour **avant** que le comportement change, jamais apres. Une politique de
  * confidentialite qui decrit l'etat precedent est pire qu'une absence de politique —

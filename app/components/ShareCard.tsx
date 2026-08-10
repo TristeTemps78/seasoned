@@ -29,7 +29,7 @@ const HEIGHT = 630;
  *     dans une chaine de requete, journalisee partout ou elle passe. On ne fait pas ca.
  *   - Une image rendue par le serveur coute une invocation **par partage**. Mettre une
  *     facture sur le geste viral d'un produit gratuit, c'est le mecanisme exact qui a
- *     tue TV Time (`ROADMAP.md` §1.4).
+ *     tue TV Time.
  *
  * Un canvas ne coute rien, ne publie rien sans geste, et produit un fichier que l'on
  * envoie ou l'on veut. La contrepartie — pas d'apercu automatique dans les messageries

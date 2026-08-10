@@ -1,7 +1,7 @@
 /**
  * Les critiques : ce qu'on ecrit, et qui peut le lire.
  *
- * Le caviardage vit dans `spoiler.ts` — `AGENTS.md` regle 7 : le filtrage est dans le
+ * Le caviardage vit dans `spoiler.ts` — : le filtrage est dans le
  * domaine, jamais dans la couche de rendu, sinon les agregats fuient.
  */
 

@@ -26,7 +26,7 @@ it('publie la nature du fait, jamais la position exacte', () => {
 
 it('ignore ce qui sort de la fenetre de retention', () => {
   // Q9 : 90 jours. Sans cette borne, le fil d'un import massif remonterait des annees en
-  // arriere le jour de l'import — l'inondation decrite au §4.2.
+  // arriere le jour de l'import.
   const vieux = new Date('2026-01-01T12:00:00Z');
   const journal = setSeasonRating(EMPTY_JOURNAL, BB, 1, 4, vieux);
 

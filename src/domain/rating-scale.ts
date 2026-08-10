@@ -2,12 +2,12 @@
  * Conversion d'une note publique vers l'echelle du produit.
  *
  * Les fournisseurs notent sur 10 ; le modele de notation retient l'echelle Letterboxd,
- * 0,5 a 5 par pas de 0,5 (`docs/RATING-MODEL.md` §3). Assez grossiere pour rester
+ * 0,5 a 5 par pas de 0,5. Assez grossiere pour rester
  * stable dans le temps — un utilisateur ne sait pas distinguer 7,3 de 7,6, il sait
  * distinguer 3,5 de 4.
  *
  * **Ces notes ne sont pas celles de ce produit.** Elles servent a amorcer : une page
- * serie doit valoir le detour avec zero critique (`ROADMAP.md` §0.1). Le jour ou de
+ * serie doit valoir le detour avec zero critique. Le jour ou de
  * vraies notes existent, elles ne se melangent pas a celles-ci — l'origine doit rester
  * visible partout ou une courbe est affichee.
  *

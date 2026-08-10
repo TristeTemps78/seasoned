@@ -25,7 +25,7 @@
  * ## Les quatre garde-fous, et pourquoi aucun n'est negociable
  *
  * La lecon la plus chere du projet est qu'**un conseil exact mais sans portee ne vaut pas
- * mieux que pas de conseil** (`TASKS.md` §1.22 : *Dexter* conseillait de s'arreter avant
+ * mieux que pas de conseil** ( : *Dexter* conseillait de s'arreter avant
  * le dernier huitieme). Transposee ici, elle donne quatre refus :
  *
  * 1. **Passer moins de trois episodes n'est pas un conseil.** « Le pilote est faible » ne

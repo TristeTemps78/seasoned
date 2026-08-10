@@ -7,7 +7,7 @@ import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
  *
  * Le fond reste discret et c'est **l'arete** qui porte la couleur : sur une grille de
  * vingt vignettes, vingt pastilles pleines rivalisent avec les affiches, alors que
- * l'affiche est l'interface (`RESEARCH.md` §2.3). Un seul etat s'autorise une lueur —
+ * l'affiche est l'interface. Un seul etat s'autorise une lueur —
  * `live`, celui qui veut dire « ca se passe maintenant ».
  */
 const TONE_CLASS = {
@@ -22,7 +22,7 @@ const TONE_CLASS = {
  *
  * C'est le differenciateur immediat de la phase 1 : tous les trackers affichent
  * « running » sans distinguer « en diffusion » de « entre deux saisons » de « declaree
- * vivante et morte depuis dix-huit mois » (`RESEARCH.md` §3.4). L'utilisateur ne sait
+ * vivante et morte depuis dix-huit mois ». L'utilisateur ne sait
  * donc pas s'il attend ou s'il abandonne. Ici, on le lui dit.
  */
 export function StatusBadge({ status, withDetail = false, locale = DEFAULT_LOCALE }: {

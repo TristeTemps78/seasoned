@@ -3,8 +3,7 @@
  *
  * Ce module est la ou le differenciateur devient visible. `deriveStatus` sait deja
  * qu'une serie est declaree vivante et sans episode depuis dix-huit mois ; encore
- * faut-il le **dire**, au lieu d'afficher « running » comme tout le monde
- * (`RESEARCH.md` §3.4).
+ * faut-il le **dire**, au lieu d'afficher « running » comme tout le monde.
  *
  * Pur et sans dependance a l'horloge : tout instant vient du domaine.
  *
@@ -108,7 +107,7 @@ export function describeStatus(status: StatusResult, locale: Locale = DEFAULT_LO
 /**
  * Version courte du statut, pour une vignette.
  *
- * Porte **le chiffre**, pas seulement l'etat : c'est lui la valeur (`TASKS.md`,
+ * Porte **le chiffre**, pas seulement l'etat : c'est lui la valeur (
  * « chasse au zombie »). « en attente · 11 mois » repond a la question du spectateur
  * — j'attends ou j'abandonne ? — la ou « Returning Series » ne dit rien.
  *

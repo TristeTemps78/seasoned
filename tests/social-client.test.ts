@@ -147,7 +147,7 @@ describe('SocialClient.followers', () => {
     // le filtre de genre, l'encart de la fiche serie recevrait des `rated_season` — donc
     // « quelqu'un a note la saison 6 » chez un lecteur qui en est a la saison 2. Le fil, lui,
     // a le droit de les recevoir : il passe par `redactActivity` avec la position du lecteur,
-    // ce que cet encart ne fait pas et n'a pas a faire (`AGENTS.md` regle 7).
+    // ce que cet encart ne fait pas et n'a pas a faire.
     const { asked, client } = recording([[]]);
     await client.watchersOf('tmdb:1396');
 

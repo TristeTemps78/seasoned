@@ -3,8 +3,8 @@
  *
  * ## Le fait qui rend ce module urgent
  *
- * `RESEARCH.md` §0.4 : **la saisie manuelle est la cause n°1 d'abandon** des trackers.
- * Et §0.1 : TV Time est mort le 2026-07-15 avec 26,4 millions d'installations. Il y a
+ * **La saisie manuelle est la cause n°1 d'abandon** des trackers.
+ * Et TV Time est mort le 2026-07-15 avec 26,4 millions d'installations. Il y a
  * donc, en ce moment meme, une population qui cherche ou remettre son historique, et a
  * qui l'on demanderait sinon de ressaisir dix ans de series a la main.
  *
@@ -14,7 +14,7 @@
  * « TV Time ». C'est refuse ici, pour une raison que ce projet a deja payee :
  *
  * > **Une fixture ecrite de memoire decrit l'API dont on se souvient, pas celle qui
- * > existe** (`TASKS.md` §1.10, dette D10). C'est ce qui a fait afficher « Engagement »
+ * > existe** (dette D10). C'est ce qui a fait afficher « Engagement »
  * > sur zero serie pendant des semaines.
  *
  * Or je n'ai vu aucun de ces exports. TV Time a **ferme** — on ne peut plus en obtenir
@@ -32,7 +32,7 @@
  *
  * Une ligne sans identifiant TMDB n'est **pas** reprise. La resoudre demanderait une
  * recherche par titre, donc un appel reseau par serie : a deux cents series et cent
- * mille utilisateurs, c'est le cout par utilisateur que `ROADMAP.md` §1.4 interdit — et
+ * mille utilisateurs, c'est le cout par utilisateur que interdit — et
  * la resolution par titre se trompe (les remakes portent le meme nom). {@link
  * ImportOutcome} compte donc explicitement ce qui n'est pas passe : un import muet sur
  * la moitie du fichier serait pire qu'un refus.
@@ -365,7 +365,7 @@ function toJournal(found: readonly Found[], now: Date): { journal: Journal; impo
  *
  * **Fusionne, jamais ne remplace** : importer sur un appareil deja utilise ne doit rien
  * effacer de ce qu'on y a fait. `mergeJournals` tranche champ par champ, donc les deux
- * apports survivent (`TASKS.md` lot 0).
+ * apports survivent ( lot 0).
  *
  * @param into journal existant. `EMPTY_JOURNAL` pour un premier import.
  * @param now instant de reference, injecte : ce module n'a pas d'horloge.

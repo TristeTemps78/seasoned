@@ -18,7 +18,7 @@ import { buildTasteProfile } from '@/src/domain/taste';
  * Les deux cartes vivaient au bas de `/moi`, apres quatre rangees de vignettes. Elles
  * repondent pourtant a une **autre question, posee a un autre moment** : la bibliotheque
  * dit *ou j'en suis*, le bilan dit *qui je suis*. C'est le critere qui decide de ce qui
- * merite une face (`docs/ARCHITECTURE-APP.md` §2), et il vaut pour cette scission comme
+ * merite une face, et il vaut pour cette scission comme
  * pour les autres.
  *
  * Consequence pratique : on ne fait plus defiler sa collection entiere pour lire son

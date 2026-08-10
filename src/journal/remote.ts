@@ -19,7 +19,7 @@
  * `sync.ts`, pur et teste sans reseau. Ici, on lit et on ecrit — et **on ne leve jamais**,
  * conformement au contrat du port : une panne de reseau doit degrader le produit, pas
  * l'interrompre. C'est aussi ce qui rend vraie la promesse « si la base tombe, le produit
- * continue » (`docs/ARCHITECTURE-APP.md` Q12).
+ * continue » ( Q12).
  */
 
 import { serializeJournal, tryParseJournal, type Journal } from '../domain/journal';
@@ -133,7 +133,7 @@ export class RemoteJournalStore implements JournalStore {
       if (document === undefined) return { kind: 'absent' };
 
       // Le parsing tolerant s'applique **aussi** a ce qui vient de notre serveur
-      // (`AGENTS.md` regle 4) — mais un document qu'on ne sait pas lire n'est pas un
+      // — mais un document qu'on ne sait pas lire n'est pas un
       // document vide. C'est le **troisieme** cas, celui que la reparation d'`undefined`
       // decrite plus haut n'avait pas vu : repondre `found` avec zero entree fait conclure
       // « le compte n'a rien », et la suite est identique au scenario ci-dessus.
@@ -182,7 +182,7 @@ export class RemoteJournalStore implements JournalStore {
    * Aucun abonnement.
    *
    * Le temps reel coute **une connexion permanente par visiteur** — exactement le cout
-   * marginal par utilisateur qui a tue TV Time (`ROADMAP.md` §1.4). Les changements venus
+   * marginal par utilisateur qui a tue TV Time. Les changements venus
    * d'un autre appareil sont vus a la synchronisation suivante, c'est-a-dire a l'ouverture
    * d'une page. Personne n'a besoin de voir arriver sa propre note d'un autre appareil a
    * la seconde pres.

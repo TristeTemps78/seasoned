@@ -28,13 +28,13 @@ const SHAPE_KEY: Readonly<Record<TrajectoryShape, MessageKey>> = {
 /**
  * La trajectoire, saison par saison.
  *
- * C'est le livrable du produit : **une forme, pas un nombre** (`docs/RATING-MODEL.md`
- * §2.3). La qualite d'une serie est une fonction du temps ; un scalaire ne peut pas la
- * representer, et c'est ce qui produit les incoherences d'IMDb.
+ * C'est le livrable du produit : **une forme, pas un nombre**. La qualite d'une serie
+ * est une fonction du temps ; un scalaire ne peut pas la representer, et c'est ce qui
+ * produit les incoherences d'IMDb.
  *
- * Le composant est place derriere un geste explicite par la page appelante — voir
- * `docs/RATING-MODEL.md` §6bis. Montrer qu'une courbe s'effondre en saison 5 est une
- * information que quelqu'un en saison 2 n'a pas demandee.
+ * Le composant est place derriere un geste explicite par la page appelante. Montrer
+ * qu'une courbe s'effondre en saison 5 est une information que quelqu'un en saison 2
+ * n'a pas demandee.
  */
 export function TrajectoryChart({ trajectory, interpret = true, locale = DEFAULT_LOCALE }: {
   readonly trajectory: Trajectory;
@@ -118,7 +118,7 @@ export function TrajectoryChart({ trajectory, interpret = true, locale = DEFAULT
           </div>
         ) : null}
         {/* La constance n'est publiee qu'a partir de trois saisons notees : afficher un
-            ecart-type calcule sur deux points serait malhonnete (`RATING-MODEL.md` §4).
+            ecart-type calcule sur deux points serait malhonnete.
             Et jamais sur des notes de foule, ou sa normalisation n'a pas de sens. */}
         {interpret && consistency !== undefined ? (
           <div>

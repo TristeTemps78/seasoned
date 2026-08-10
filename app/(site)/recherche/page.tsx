@@ -25,7 +25,7 @@ export function searchMetadata(query: string | undefined, locale: Locale): Metad
         ? t(locale, 'search.titleQuery', { q: clean })
         : t(locale, 'search.title'),
     // Les pages de resultats ne sont pas du contenu : on ne les fait pas indexer.
-    // Ce sont les pages serie qui portent le SEO (`ROADMAP.md` §0.2).
+    // Ce sont les pages serie qui portent le SEO.
     robots: { index: false, follow: true },
   };
 }
@@ -60,7 +60,7 @@ export async function SearchView({ query, locale }: {
       // Le statut n'est hydrate que sur les premiers resultats : cette page est
       // dynamique, donc un appel par element serait paye a chaque requete. Les
       // suivants gardent leur vignette, sans statut — degradation choisie plutot
-      // que subie (`ROADMAP.md` §1.4).
+      // que subie.
       const [head, tail] = [found.slice(0, HYDRATED_RESULTS), found.slice(HYDRATED_RESULTS)];
       results = [
         ...(await withStatus(head, new Date(), locale)),

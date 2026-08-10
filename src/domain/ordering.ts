@@ -18,7 +18,7 @@
  * ## Pourquoi ce module signale au lieu de corriger
  *
  * Le reflexe serait de proposer un selecteur d'ordre et de recalculer. C'est faire compliqué
- * avant de savoir, et surtout ce serait **reparer en silence** — `AGENTS.md` regle 8. Un
+ * avant de savoir, et surtout ce serait **reparer en silence** —. Un
  * decoupage choisi a notre place deplacerait des notes deja posees par saison, ce qui est
  * irrattrapable ; un avertissement, non.
  *

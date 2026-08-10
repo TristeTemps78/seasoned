@@ -45,7 +45,7 @@ describe('seasonToRate', () => {
 
   it('ne reclame jamais une saison non atteinte', () => {
     // La regle de spoiler vaut aussi pour la saisie : proposer de noter la saison 3
-    // dirait a quelqu'un en saison 1 qu'elle existe (`AGENTS.md` regle 7).
+    // dirait a quelqu'un en saison 1 qu'elle existe.
     expect(seasonToRate(SEASONS, { seasonNumber: 1, episodeNumber: 10 }, new Set([1]))).toBeUndefined();
   });
 

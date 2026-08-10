@@ -6,7 +6,7 @@
  * **Il ne dit pas combien d'heures vous avez regardees en 2026.** Le journal ne le sait
  * pas : une position dit *ou* vous en etes, jamais *quand* vous avez vu chaque episode.
  * Repartir les heures sur l'annee ou la position a ete posee serait une invention — et ce
- * produit signale ce qu'il ignore au lieu de le combler (`AGENTS.md` regle 8).
+ * produit signale ce qu'il ignore au lieu de le combler.
  *
  * Ce qu'il dit, en revanche, est **exact** : chaque fait du journal porte sa date depuis la
  * v2, donc « ce que vous avez fait cette annee » se compte sans approximation.

@@ -5,7 +5,7 @@
  *
  *   1. `parseJournal(serializeJournal(j))` rend `j` — **rien ne se perd a l'aller-retour**,
  *      y compris ce que cette version du code ne sait pas lire ;
- *   2. **aucune entree ne fait lever**, quelle que soit sa forme (`AGENTS.md` regle 4).
+ *   2. **aucune entree ne fait lever**, quelle que soit sa forme.
  *
  * Tant que ces deux phrases tiennent, le detail de chaque champ est une consequence.
  */
@@ -183,7 +183,7 @@ function parseSnapshot(raw: unknown): JournalSnapshot | undefined {
     // Un instantane sans date lisible est traite comme perime, donc jete a la premiere
     // lecture. C'est volontairement severe : le considerer frais reviendrait a garder
     // une metadonnee du catalogue sans savoir depuis quand — soit exactement ce que le
-    // plafond contractuel de six mois interdit (`AGENTS.md` regle 1). Il se redepose
+    // plafond contractuel de six mois interdit. Il se redepose
     // seul a la visite suivante.
     cachedAt: readInstant(source, 'cachedAt', UNDATED),
     ...(posterPath !== undefined ? { posterPath } : {}),
@@ -200,7 +200,7 @@ function parseSnapshot(raw: unknown): JournalSnapshot | undefined {
  * Les tailles de saisons, lues sans jamais lever.
  *
  * Une saison mal formee est **ecartee seule** : perdre le decoupage entier parce qu'une
- * ligne sur douze est illisible couterait bien plus que la ligne (`AGENTS.md` regle 4).
+ * ligne sur douze est illisible couterait bien plus que la ligne.
  * Une liste qui ne contient rien d'exploitable rend `undefined` plutot qu'un tableau vide,
  * pour que « je n'ai pas l'information » reste distinct de « la serie n'a aucune saison ».
  */
@@ -295,7 +295,7 @@ function parseTombstones(raw: unknown, now: Date): JournalTombstones {
 /**
  * Lit la liste des visionnages acheves, de facon tolerante.
  *
- * Une entree illisible est **ecartee**, jamais fatale (`AGENTS.md` regle 4). Les dates
+ * Une entree illisible est **ecartee**, jamais fatale. Les dates
  * sont normalisees et dedupliquees des la lecture : un journal ecrit par une version
  * fautive ne doit pas propager ses doublons.
  */

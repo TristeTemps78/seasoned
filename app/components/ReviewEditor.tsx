@@ -21,7 +21,7 @@ import { MAX_REVIEW_CHARS, checkReview, journalKey, reviewKey } from '@/src/doma
  *
  * Elle est prerenseignee depuis la cible — une critique de la saison 3 annonce la saison 3 —
  * mais l'auteur peut dire « sans spoiler », et c'est **lui** qui tranche. La deduire de sa
- * position reviendrait a publier ou il en est sans qu'il l'ait choisi (`AGENTS.md` regle 7).
+ * position reviendrait a publier ou il en est sans qu'il l'ait choisi.
  */
 export function ReviewEditor({ seriesId, seasonNumber, canPublish }: {
   readonly seriesId: string;

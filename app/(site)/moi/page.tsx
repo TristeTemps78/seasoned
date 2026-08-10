@@ -15,8 +15,7 @@ import { Library } from './Library';
  *     de quelqu'un a quelqu'un d'autre — et a cent mille utilisateurs, a grande
  *     echelle ;
  *   - une route personnelle rendue a la demande coute une invocation par visite. Ici
- *     le cout est celui d'une page statique : **zero**, quel que soit le trafic
- *     (`ROADMAP.md` §1.4).
+ *     le cout est celui d'une page statique : **zero**, quel que soit le trafic.
  *
  * Tout le contenu arrive donc apres coup, dans le navigateur, depuis le journal.
  */
@@ -35,7 +34,7 @@ export function libraryMetadata(locale: Locale): Metadata {
     title: t(locale, 'library.title'),
     // Rien a indexer : vue d'un robot, cette page est vide par construction. La faire
     // explorer remplirait l'index de pages sans contenu et gaspillerait le budget de
-    // crawl qui doit aller sur `/serie/*` (`ROADMAP.md` §0.2).
+    // crawl qui doit aller sur `/serie/*`.
     robots: { index: false, follow: false },
   };
 }

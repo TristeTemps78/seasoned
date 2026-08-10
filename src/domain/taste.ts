@@ -129,7 +129,7 @@ export function buildTasteProfile(journal: Journal, now: Date = new Date()): Tas
     if (decision?.kind === 'abandoned') {
       abandoned += 1;
       // Le point exact de l'abandon est ce qui a de la valeur : c'est lui qui fera la
-      // carte des abandons quand il y aura plusieurs personnes (`RATING-MODEL` §7.4).
+      // carte des abandons quand il y aura plusieurs personnes.
       if (decision.atSeason !== undefined) abandonSeasons.push(decision.atSeason);
     }
   }

@@ -33,7 +33,7 @@ const KNOWN_PLATFORMS: readonly string[] = [
  * vous » devient une reponse, et non une liste de dix services a departager.
  *
  * ⚠️ Afficher n'est pas de l'affiliation. Aucun lien monetise ici : ce serait un
- * usage commercial de TMDB, qui exige un accord ecrit (`ROADMAP.md` §4.1, dette D6).
+ * usage commercial de TMDB, qui exige un accord ecrit (dette D6).
  */
 export function MyPlatforms() {
   const { journal, ready, setPlatforms } = useJournal();

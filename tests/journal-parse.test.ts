@@ -82,7 +82,7 @@ it('loi — lire est idempotent : relire ne change plus rien', () => {
 });
 
 it('loi — aucune entree ne fait lever, et il en sort toujours un journal', () => {
-  // `AGENTS.md` regle 4. Le journal vit dans `localStorage` : il est modifiable a la main,
+  // Parsing tolerant. Le journal vit dans `localStorage` : il est modifiable a la main,
   // recopie entre appareils, et rendu par un serveur qui peut tomber. Lever ici, c'est
   // une page blanche.
   for (const entree of N_IMPORTE_QUOI) {

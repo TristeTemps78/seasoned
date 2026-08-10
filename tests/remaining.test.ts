@@ -21,7 +21,7 @@ describe('remainingAfter', () => {
   });
 
   it('traite la position comme INCLUSIVE', () => {
-    // Le contrat de `RATING-MODEL.md` §7 : l'episode declare est vu. Le compter comme
+    // Le contrat du modele de notation : l'episode declare est vu. Le compter comme
     // restant decalerait tous les chiffres du produit d'une unite.
     expect(remainingAfter(SEASONS, { seasonNumber: 3, episodeNumber: 8 })?.episodes).toBe(0);
     expect(remainingAfter(SEASONS, { seasonNumber: 3, episodeNumber: 7 })?.episodes).toBe(1);
@@ -42,7 +42,7 @@ describe('remainingAfter', () => {
   });
 
   it('rend le compte sans la duree plutot qu’une duree inventee', () => {
-    // `episode_run_time` est de facto abandonne par TMDB (`TASKS.md` §1.10) : le cas
+    // `episode_run_time` est de facto abandonne par TMDB : le cas
     // « on ne sait pas » est le cas courant, pas l'exception.
     const left = remainingAfter(SEASONS, { seasonNumber: 1, episodeNumber: 1 });
     expect(left?.episodes).toBe(29);

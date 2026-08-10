@@ -19,7 +19,7 @@
  * pages serie. C'est la condition, pas une optimisation : rafraichir trente series a
  * chaque ouverture de la bibliotheque couterait, a cent mille utilisateurs, plusieurs
  * millions d'appels par jour — au-dela de ce que le fournisseur autorise et de ce que
- * le budget supporte (`ROADMAP.md` §1.4).
+ * le budget supporte.
  */
 
 import {
@@ -212,7 +212,7 @@ export function buildLibrary(journal: Journal, now: Date = new Date()): Library 
  * La serie a reprendre en priorite, s'il y en a une.
  *
  * Sert la bande de l'accueil : c'est le rappel que le produit s'interdit d'envoyer par
- * notification (`ROADMAP.md` §3 — le cout marginal par utilisateur est exactement ce
+ * notification ( — le cout marginal par utilisateur est exactement ce
  * qui a tue TV Time). La page d'accueil **est** le rappel : elle ne coute rien, ne
  * demande aucune permission, et se voit au moment ou l'on vient de toute facon.
  */

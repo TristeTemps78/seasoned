@@ -3,7 +3,7 @@
  *
  * ## Pourquoi ce fichier existe maintenant, et pas avant
  *
- * `TASKS.md` 7.17 avait recense trois copies du meme parcours de repertoire et **refuse**
+ * avait recense trois copies du meme parcours de repertoire et **refuse**
  * de les extraire : elles different (`withFileTypes` contre `statSync`, filtres et racines
  * distincts), donc un helper commun aurait touche trois gardes vertes pour zero defaut. La
  * note disait « a faire le jour ou l'une doit changer ».

@@ -48,7 +48,7 @@ export function Poster({ path, title, className = '' }: {
 
   return (
     // eslint-disable-next-line @next/next/no-img-element -- servi par le CDN TMDB, jamais
-    // par nous : c'est une ligne du budget (`ROADMAP.md` §1.4).
+    // par nous : c'est une ligne du budget.
     // `width`/`height` declares : sans eux le navigateur ne reserve pas la place et la page
     // saute a l'arrivee des affiches. Le ratio d'une affiche TMDB est constant, on peut
     // donc les donner sans rien charger.

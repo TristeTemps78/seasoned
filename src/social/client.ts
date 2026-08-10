@@ -96,7 +96,7 @@ export interface SeriesList {
  * Le compte que PostgREST renvoie pour une relation imbriquee.
  *
  * Sa forme est `[{ count: 3 }]`, et elle **change selon la version** — un tableau vide
- * quand rien ne correspond. Parsing tolerant (`AGENTS.md` regle 4) : tout ce qui n'est pas
+ * quand rien ne correspond. Parsing tolerant : tout ce qui n'est pas
  * un nombre lisible vaut zero, plutot qu'un `NaN` qui traverserait jusqu'a l'ecran.
  */
 function countOf(value: unknown): number {
@@ -406,7 +406,7 @@ export class SocialClient {
    *
    * ## ⚠️ `liked` et `finished` seulement, et la raison n'est pas le hasard
    *
-   * `AGENTS.md` regle 7 pose la question juste : *ce fait decrit-il l'oeuvre ou quelqu'un
+   * pose la question juste : *ce fait decrit-il l'oeuvre ou quelqu'un
    * d'autre ?* Ces deux-la ne portent **aucun numero de saison** — ils ne peuvent donc rien
    * apprendre de l'interieur de la serie. Un `rated_season` en dirait, lui : « quelqu'un a
    * note la saison 6 » apprend qu'il existe une saison 6. Il exigerait `redactActivity` et
@@ -565,7 +565,7 @@ export class SocialClient {
    * 🔴 **Et la garder etait pire que l'oublier.** Elle faisait un `DELETE` dur, alors que
    * `/regles` promet « on masque, on ne supprime jamais » et que `006_reviews.sql` porte
    * `hidden_at` precisement pour rendre cette promesse executable. La phrase publique sur
-   * le **retrait d'une critique par son auteur** n'est pas encore ecrite (`TASKS.md` 8.9) :
+   * le **retrait d'une critique par son auteur** n'est pas encore ecrite :
    * on avait donc du code qui supprime, et aucune regle publiee qui dise ce qu'il fait.
    *
    * *On ecrit le geste le jour ou l'on ecrit ce qu'il promet* — 8.9 tranchera masquer ou
@@ -602,7 +602,7 @@ export class SocialClient {
   /**
    * Le corps commun des deux lectures de critiques — elles ne different que par leur filtre.
    *
-   * Les ecrire deux fois aurait duplique le parsing tolerant (`AGENTS.md` regle 4) et son
+   * Les ecrire deux fois aurait duplique le parsing tolerant et son
    * rejet des lignes sans auteur : deux copies qui se seraient repondu differemment le jour
    * ou l'une aurait ete corrigee.
    */

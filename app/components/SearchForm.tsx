@@ -6,7 +6,7 @@ import { pathIn } from '@/lib/routes';
  *
  * Un `<form method="GET">` sans une ligne de JavaScript : la requete devient une URL,
  * donc une page indexable et partageable. C'est le canal d'acquisition n°1
- * (`ROADMAP.md` §0.2) et accessoirement la solution la moins chere.
+ * et accessoirement la solution la moins chere.
  *
  * ⚠️ **L'action porte la langue.** Elle pointait `/recherche` en dur : chercher depuis
  * une page francaise renvoyait donc vers la page anglaise. Le francais avait une adresse

@@ -33,8 +33,8 @@ export interface StopPoint {
  *
  * ## Pourquoi c'est mieux que de tout cacher
  *
- * La regle est « rien qui depasse la position sans un geste explicite »
- * (`AGENTS.md` regle 7). Jusqu'ici, faute de position, tout etait derriere un
+ * La regle est « rien qui depasse la position sans un geste explicite ».
+ * Jusqu'ici, faute de position, tout etait derriere un
  * `<details>` — y compris pour quelqu'un qui vient precisement chercher cette
  * information.
  *
@@ -64,7 +64,7 @@ export function TrajectorySection({
    * Le point d'entree, calcule sur le serveur.
    *
    * ⚠️ **Il s'affiche hors du geste explicite**, contrairement au point d'arret, et ce
-   * n'est pas une inattention. La regle 7 d'`AGENTS.md` interdit de montrer ce qui
+   * n'est pas une inattention. La regle du spoiler interdit de montrer ce qui
    * **depasse** la position du spectateur ; or le point d'entree est par construction
    * dans le premier tiers, donc en deca de la position de tout le monde. Il ne revele
    * rien de l'intrigue, et il s'adresse precisement a qui n'a pas commence — le cacher
@@ -74,7 +74,7 @@ export function TrajectorySection({
   /**
    * Ou en est la saison en cours de diffusion, si elle merite un commentaire.
    *
-   * ⚠️ **Son emplacement depend de la position**, et c'est la regle 7 d'`AGENTS.md`
+   * ⚠️ **Son emplacement depend de la position**, et c'est la regle du spoiler
    * appliquee : pour quelqu'un qui suit la serie chaque semaine, savoir que la saison en
    * cours est en dessous n'est pas un spoiler — c'est ce qu'il vient chercher. Pour
    * quelqu'un reste en saison 2, c'est un jugement sur son avenir. Le meme fait va donc

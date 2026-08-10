@@ -11,7 +11,7 @@ import { alternatesFor } from '@/lib/routes';
  * Un import cache dans la bibliotheque ne sert qu'a ceux qui utilisent deja le produit —
  * c'est-a-dire a personne, quand on cherche precisement a en recruter. Or il existe en
  * ce moment une population qui **tape la question dans un moteur** : TV Time a ferme le
- * 2026-07-15 avec 26,4 millions d'installations (`RESEARCH.md` §0.1).
+ * 2026-07-15 avec 26,4 millions d'installations.
  *
  * C'est le meme raisonnement que la lecon de la bascule des langues, transpose : **une
  * fonctionnalite sans adresse n'existe pas.** D'ou une page a part, statique, indexable,

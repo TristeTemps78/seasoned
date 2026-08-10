@@ -3,8 +3,8 @@
  *
  * Les fournisseurs annoncent `returning` pour des series mortes depuis trois ans.
  * Les trackers affichent « running », ce qui ne distingue pas « diffusion en cours »
- * de « entre deux saisons » de « probablement morte mais pas encore annulee »
- * (`RESEARCH.md` §3.4). L'utilisateur ne sait donc pas s'il attend ou s'il abandonne.
+ * de « entre deux saisons » de « probablement morte mais pas encore annulee ».
+ * L'utilisateur ne sait donc pas s'il attend ou s'il abandonne.
  *
  * Rien de tout cela n'exige de donnee nouvelle : c'est entierement derivable.
  * Module pur — l'instant de reference est toujours injecte.
@@ -74,7 +74,7 @@ const REAL_STATUSES: Readonly<Record<RealStatus, true>> = {
 /**
  * Lit un statut venu d'ailleurs — un journal, un autre appareil, une version future.
  *
- * Parsing tolerant (`AGENTS.md` regle 4) : une valeur inconnue rend `undefined` au lieu
+ * Parsing tolerant : une valeur inconnue rend `undefined` au lieu
  * de casser. Un journal ecrit par une version plus recente du produit, qui connaitrait un
  * huitieme statut, doit rester lisible par celle-ci.
  */

@@ -7,9 +7,9 @@ import type { Stars } from '@/src/domain/types';
 /**
  * Dix demi-etoiles, un geste.
  *
- * `docs/RATING-MODEL.md` §5 pose que la note de saison doit couter **un tap, pas un
- * formulaire** — la saisie manuelle est la cause n°1 d'abandon des trackers
- * (`RESEARCH.md`). La premiere version utilisait pourtant une liste deroulante a onze
+ * Le modele de notation pose que la note de saison doit couter **un tap, pas un
+ * formulaire** — la saisie manuelle est la cause n°1 d'abandon des trackers.
+ * La premiere version utilisait pourtant une liste deroulante a onze
  * options : ouvrir, faire defiler, choisir. La friction avait ete construite
  * exactement la ou le modele l'interdit, et sur le geste le plus frequent du produit.
  *

@@ -14,7 +14,7 @@ import { buildCalendar, upcomingFrom, type UpcomingEpisode } from '@/src/domain/
  * spontanement entre-temps. La reponse attendue serait la notification push. Elle est
  * ecartee parce que **son cout croit avec le nombre d'utilisateurs** — serveur de push,
  * jetons a maintenir, permission a demander — et c'est exactement le mecanisme qui a tue
- * TV Time avec 26 millions d'installations (`ROADMAP.md` §1.4).
+ * TV Time avec 26 millions d'installations.
  *
  * Le renversement : **le rappel existe deja, et quelqu'un d'autre le paie.** Tout le
  * monde a un calendrier qui sonne. Un fichier depose une fois continue de rappeler meme

@@ -6,7 +6,7 @@ import { afterEach, beforeEach } from 'vitest';
  *
  * La regle est **de ne combler que ce que le produit utilise vraiment**. Un bouchon
  * ecrit « au cas ou » fait passer des tests sur une plateforme qui n'existe nulle part :
- * c'est la meme faute que la fixture ecrite de memoire (`TASKS.md` §1.10), transposee au
+ * c'est la meme faute que la fixture ecrite de memoire, transposee au
  * navigateur.
  */
 

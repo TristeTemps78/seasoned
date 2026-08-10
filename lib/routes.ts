@@ -16,7 +16,7 @@
  *
  * 1. **Le cache.** Un middleware s'execute a *chaque* requete, y compris celles que le CDN
  *    servirait sans nous : une invocation facturee par visite, soit exactement le cout par
- *    utilisateur que `ROADMAP.md` §1.4 interdit.
+ *    utilisateur que interdit.
  * 2. **Le referencement.** Googlebot explore majoritairement depuis les Etats-Unis avec un
  *    `Accept-Language` anglais. Redirige, il pourrait ne **jamais** voir les pages
  *    francaises : on aurait traduit pour un moteur qui l'ignorerait.

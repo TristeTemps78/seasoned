@@ -3,7 +3,7 @@
  *
  * ## Le defaut repare
  *
- * `docs/RATING-MODEL.md` fait de la **note de saison** l'unite de jugement du produit :
+ * fait de la **note de saison** l'unite de jugement du produit :
  * c'est elle qui alimente la trajectoire, le point d'arret, le profil de gout — tout ce
  * qui distingue ce site d'un catalogue. Elle etait offerte, jamais demandee. Un
  * spectateur devait penser de lui-meme a remonter la page pour noter une saison qu'il

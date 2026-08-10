@@ -13,7 +13,7 @@ import { STORAGE_KEY } from '@/src/journal/local';
  *
  * Le calcul est deja couvert, purement, par `entry-point.test.ts` et
  * `current-season.test.ts`. Ce qui reste a prouver est ce qu'aucun des deux ne voit :
- * qu'ils sont branches, et surtout **ou** ils apparaissent — la regle 7 d'`AGENTS.md` se
+ * qu'ils sont branches, et surtout **ou** ils apparaissent — la regle du spoiler se
  * joue entierement la.
  */
 

@@ -3,7 +3,7 @@
  *
  * Le point capital de ce module n'est pas la performance : c'est le **plafond
  * contractuel**. Les conditions d'utilisation de TMDB interdisent de conserver
- * leurs donnees plus de six mois (`RESEARCH.md` §4.2).
+ * leurs donnees plus de six mois.
  *
  * Ce plafond est applique **par le code** et non par la discipline : toute duree de
  * vie demandee au-dela est silencieusement ramenee a la limite. Une regle qui
@@ -11,7 +11,7 @@
  * pas rattrapable apres coup.
  *
  * L'implementation est en memoire, deliberement : le stockage durable est un
- * arbitrage encore ouvert (`ROADMAP.md` §4), et l'interface suffit a le remplacer
+ * arbitrage encore ouvert, et l'interface suffit a le remplacer
  * sans toucher aux appelants.
  */
 
@@ -121,8 +121,7 @@ export class ExpiringCache<T> {
  *
  * Les appels concurrents portant sur la meme cle partagent une seule promesse : sans
  * cela, dix requetes simultanees sur une serie populaire declenchent dix appels
- * reseau identiques — exactement le comportement que le budget interdit
- * (`RESEARCH.md` §5.3).
+ * reseau identiques — exactement le comportement que le budget interdit.
  */
 export function memoizeAsync<T>(
   cache: ExpiringCache<T>,

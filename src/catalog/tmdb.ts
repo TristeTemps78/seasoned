@@ -3,7 +3,7 @@
  *
  * Implemente {@link CatalogProvider}. **Aucun autre module ne doit connaitre la
  * forme des reponses TMDB** — c'est ce qui rend le fournisseur remplacable
- * (`ROADMAP.md` §1.3, arbitrage A5).
+ * (arbitrage A5).
  *
  * Parsing **tolerant** : une cle inconnue est ignoree, un champ absent ou mal type
  * n'a jamais le droit de faire tomber l'application. Un catalogue tiers change sans
@@ -34,7 +34,7 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
  *
  * **Seul endroit du code ou ces identifiants existent** : le domaine raisonne sur
  * `ProgramKind`, pas sur des nombres propres a TMDB. C'est ce qui rend la regle
- * portable si le fournisseur change (`ROADMAP.md` §1.3).
+ * portable si le fournisseur change.
  *
  * Les genres absents de cette table (drame, comedie, science-fiction…) ne disent rien
  * de la nature du programme : ils decrivent son sujet.
@@ -133,8 +133,7 @@ function readDate(source: Record<string, unknown>, key: string): Date | undefine
  * qu'aucun test hors ligne ne pouvait detecter.
  *
  * D'ou une cascade sur des champs **deja presents dans la meme reponse**, donc sans
- * appel supplementaire : c'est une contrainte de budget autant que de justesse
- * (`ROADMAP.md` §1.4).
+ * appel supplementaire : c'est une contrainte de budget autant que de justesse.
  *
  * La duree du dernier episode paru est une approximation : un final est souvent plus
  * long que la moyenne. Elle vaut mieux que de ne rien afficher, puisque « combien de
@@ -514,7 +513,7 @@ const GROUP_KIND_NAMES: Readonly<Record<number, string>> = {
 /**
  * Reponse de `/tv/{id}/episode_groups`.
  *
- * Parsing tolerant (`AGENTS.md` regle 4) : une entree sans nom, sans compte ou mal typee est
+ * Parsing tolerant : une entree sans nom, sans compte ou mal typee est
  * **ecartee** plutot que de faire echouer la liste entiere. Un decoupage perdu vaut mieux
  * qu'une page perdue — et ici le cout d'une perte est nul, puisque la liste ne sert qu'a
  * **signaler**, jamais a calculer.

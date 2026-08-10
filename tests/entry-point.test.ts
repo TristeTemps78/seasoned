@@ -11,7 +11,7 @@ import {
  * Le point d'entree, teste d'abord sur ses **refus**.
  *
  * La lecon la plus chere du projet est qu'un conseil exact mais sans portee ne vaut pas
- * mieux que pas de conseil (`TASKS.md` §1.22). Sur cette feature, se taire est donc le
+ * mieux que pas de conseil. Sur cette feature, se taire est donc le
  * comportement nominal : les cas ou le module parle sont minoritaires, et ce sont les
  * refus qui font sa valeur.
  */

@@ -62,7 +62,7 @@ export interface SyncingJournalStoreOptions {
   /**
    * La minuterie, injectee.
    *
-   * Le domaine n'a pas d'horloge implicite (`AGENTS.md` regle 2) et cette couche s'en tient
+   * Le domaine n'a pas d'horloge implicite et cette couche s'en tient
    * a la meme discipline : un test qui doit **attendre deux secondes** pour verifier un
    * debat est un test qu'on finit par supprimer.
    */

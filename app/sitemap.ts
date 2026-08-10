@@ -16,7 +16,7 @@ export const revalidate = 86_400;
  * entre deux contraintes opposees :
  *
  *   - **enumerer le catalogue TMDB est interdit** par leurs conditions, en plus d'etre
- *     hors budget (`ROADMAP.md` §1.3) ;
+ *     hors budget ;
  *   - **un sitemap qui ne contient que l'accueil ne sert a rien** — c'etait le cas
  *     jusqu'a l'audit du 2026-08-01, et le canal d'acquisition n°1 en dependait.
  *

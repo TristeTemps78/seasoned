@@ -88,7 +88,7 @@ export function seasonScoresOf(
 /**
  * Moyenne des notes d'episode d'une saison, arrondie au demi-point.
  *
- * **Une suggestion, jamais une ecriture** (`AGENTS.md` regle 8 : on signale, on ne
+ * **Une suggestion, jamais une ecriture** ( : on signale, on ne
  * repare pas en silence). Quelqu'un qui note six episodes d'une saison a manifestement
  * un avis sur la saison ; le lui proposer est utile, le decider a sa place ne l'est pas.
  */

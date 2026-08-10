@@ -11,7 +11,7 @@ import type { Locale } from '@/lib/i18n';
  *
  * ## Pourquoi quatre et pas six
  *
- * Le cube en a six, et `docs/ARCHITECTURE-APP.md` §2 en nomme six. Deux d'entre elles —
+ * Le cube en a six, et en nomme six. Deux d'entre elles —
  * *Mes amis* et *Les listes* — **n'ont aucun contenu tant qu'il n'y a pas de comptes**.
  *
  * Les livrer en coquilles vides serait exactement ce que le document s'interdit : *« on ne
@@ -52,7 +52,7 @@ const FACES: readonly Face[] = [
   { path: '/amis', labelKey: 'face.friends' },
   // La sixieme, pour la meme raison et au meme moment que la cinquieme : les listes ont
   // desormais un ecran qui fait quelque chose. **Le cube est complet** — les six faces de
-  // `docs/ARCHITECTURE-APP.md` §2 existent enfin toutes.
+  // existent enfin toutes.
   { path: '/listes', labelKey: 'face.lists' },
 ];
 

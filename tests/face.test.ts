@@ -201,7 +201,7 @@ describe('ce que la face compte', () => {
 
   it('une pause ne tranche rien : elle n’est comptee nulle part', () => {
     // Quelqu'un qui met en pause n'a **pas encore** decide. Compter son indecision d'un
-    // cote ou de l'autre serait inventer une reponse (`AGENTS.md` regle 8).
+    // cote ou de l'autre serait inventer une reponse.
     const entries: Entries = {};
     for (let i = 0; i < FACE_WINDOW; i += 1) {
       entries[`tmdb:${900 + i}`] = { decision: { kind: 'paused', at: AT('08-01') } };

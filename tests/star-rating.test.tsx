@@ -9,7 +9,7 @@ import type { Stars } from '@/src/domain/types';
  * Le premier test de composant du projet.
  *
  * Il porte sur `StarRating` et pas sur un autre parce que c'est **le geste le plus
- * frequent du produit** : `docs/RATING-MODEL.md` §5 pose que noter une saison doit couter
+ * frequent du produit** : pose que noter une saison doit couter
  * un tap, la saisie manuelle etant la cause n°1 d'abandon des trackers. Un composant
  * qu'on utilise dix fois par session et qu'aucun test ne couvre est le pire rapport
  * risque / frequence du depot.
@@ -39,7 +39,7 @@ describe('StarRating', () => {
   it('offre les dix demi-crans, et pas cinq', () => {
     setup();
     // Dix et non cinq : c'est toute la difference entre une echelle en demi-etoiles et
-    // une echelle entiere. `RATING-MODEL.md` §4 fait reposer la granularite dessus.
+    // une echelle entiere. fait reposer la granularite dessus.
     expect(screen.getAllByRole('radio')).toHaveLength(10);
   });
 

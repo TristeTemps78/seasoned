@@ -135,7 +135,7 @@ export function checkHandle(raw: string, taken: ReadonlySet<string> = new Set())
  * pour un produit qui vise l'international des le depart (A9).
  *
  * ⚠️ **Ceci n'est pas un avis juridique.** A faire confirmer avant l'ouverture des
- * comptes, comme tout ce qui porte cette marque dans `docs/ARCHITECTURE-APP.md`.
+ * comptes, comme tout ce qui porte cette marque dans.
  *
  * Declaratif, et **aucune date de naissance n'est collectee** : un age exact serait une
  * donnee de plus a proteger pour un gain nul — on ne verifie pas davantage.

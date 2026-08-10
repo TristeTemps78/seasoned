@@ -33,7 +33,7 @@ import { legalIsComplete } from '@/lib/legal';
 /**
  * Regeneration toutes les 24 h.
  *
- * C'est une decision de budget, pas de fraicheur (`ROADMAP.md` §1.4) : la page est
+ * C'est une decision de budget, pas de fraicheur : la page est
  * servie depuis le cache de bord, donc le trafic ne declenche pas d'appel a TMDB. Une
  * grille de diffusion ne bouge pas plus d'une fois par jour.
  */
@@ -105,7 +105,7 @@ export async function seriesMetadata(id: string, locale: Locale): Promise<Metada
 
   // La description est ecrite pour la page de resultats d'un moteur : elle repond
   // immediatement aux deux questions qu'on pose a une serie — ou elle en est, et
-  // combien elle coute. C'est le canal d'acquisition n°1 (`ROADMAP.md` §0.2).
+  // combien elle coute. C'est le canal d'acquisition n°1.
   const parts = [
     statusLabel(status.status, locale).toLowerCase(),
     tn(locale, 'series.seasons', seasons.rateable.length),
@@ -209,7 +209,7 @@ export async function SeriesView({ id, locale }: {
           // 2026-08-07 sur la page servie : l'affiche etait rendue a **144 px de large, soit
           // 14 % de la colonne**, alors que le fichier telecharge fait deja **342 px**. On
           // payait donc une image 2,4 fois plus grande que ce qu'on montrait, sur la page dont
-          // la regle fondatrice est « l'affiche est l'interface » (`RESEARCH.md` §2.3). A
+          // la regle fondatrice est « l'affiche est l'interface ». A
           // 224 px elle occupe 22 % de la colonne — l'ordre de grandeur de Letterboxd, la
           // reference choisie — et reste **sous** la resolution du fichier, donc nette.
           //
@@ -392,7 +392,7 @@ export default async function SeriesPage({ params }: PageProps) {
  * Une page serie ne renvoyait vers aucune autre : cul-de-sac pour le visiteur comme
  * pour le crawl. « Du meme createur » est un **credit de production**, pas un calcul
  * de similarite — ce qui le distingue de la recommandation algorithmique, ecartee
- * par `ROADMAP.md` §3.
+ * par
  */
 async function AlsoByCreators({ detail, locale }: {
   readonly detail: Awaited<ReturnType<typeof getSeriesPageData>>['detail'];
@@ -447,7 +447,7 @@ async function WatchHere({ id, locale }: {
 /**
  * La trajectoire, **coupee a l'horizon du spectateur**.
  *
- * `docs/RATING-MODEL.md` §6bis pose la regle : rien qui depasse la position du
+ * La regle du spoiler : rien qui depasse la position du
  * spectateur ne s'affiche sans qu'il le demande. Or la courbe est elle-meme un
  * spoiler — montrer qu'elle s'effondre en saison 5 est une information que quelqu'un
  * en saison 2 n'a pas demandee, et le decrochage annonce en toutes lettres qu'il va

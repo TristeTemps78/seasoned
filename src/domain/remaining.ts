@@ -15,7 +15,7 @@
  * ## Trois decisions, et leurs motifs
  *
  * 1. **La position est inclusive.** « J'en suis a S3E5 » veut dire que S3E5 est vu ;
- *    le reste commence a S3E6. C'est le contrat pose par `RATING-MODEL.md` §7 (« la
+ *    le reste commence a S3E6. C'est le contrat pose par (« la
  *    position est un pointeur, tout ce qui precede est implicitement vu »), et s'en
  *    ecarter ici decalerait tous les comptes d'un episode.
  *
@@ -33,7 +33,7 @@
  * 3. **Une position hors catalogue ne fait rien exploser.** Les decoupages en saisons
  *    changent (`seasons.ts` en entier existe pour ca) : une position peut pointer une
  *    saison disparue ou un episode au-dela du compte connu. On degrade, on ne casse
- *    pas (`AGENTS.md` regle 4).
+ *    pas.
  *
  * Module pur : ni reseau, ni horloge, ni langue.
  */

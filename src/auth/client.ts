@@ -1,7 +1,7 @@
 /**
  * Le **seul** module qui connaisse la forme de l'authentification Supabase.
  *
- * Meme regle que `CatalogProvider` pour le catalogue (`AGENTS.md` regle 3) : changer de
+ * Meme regle que `CatalogProvider` pour le catalogue : changer de
  * fournisseur d'identite doit rester un module a reecrire, jamais une application a
  * reprendre. Rien d'autre dans le depot n'importe `@supabase/*` pour l'auth.
  *
@@ -352,7 +352,7 @@ export async function signOut(config: AuthConfig): Promise<void> {
  *
  * Supprimer une ligne d'`auth.users` par l'API d'administration exigerait la cle
  * `service_role`, **interdite au navigateur** (regle 5) — et un serveur qui la porterait
- * serait la premiere surface d'ecriture privilegiee du projet, ce que `TASKS.md` a
+ * serait la premiere surface d'ecriture privilegiee du projet — ce qui a ete
  * explicitement refuse pour les webhooks.
  *
  * A la place, une fonction Postgres `security definer` **sans argument**, appelee par le

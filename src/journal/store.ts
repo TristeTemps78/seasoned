@@ -1,7 +1,7 @@
 /**
  * Port de stockage du journal.
  *
- * Meme patron que `CatalogProvider` (`AGENTS.md` regle 3), et pour la meme raison :
+ * Meme patron que `CatalogProvider`, et pour la meme raison :
  * **changer d'endroit ou l'on range les donnees doit rester un module a ecrire, jamais
  * une application a reecrire.**
  *

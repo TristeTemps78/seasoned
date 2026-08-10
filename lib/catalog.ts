@@ -5,7 +5,7 @@
  * brutes, `src/domain` sait en tirer un statut reel et un decoupage en saisons
  * exploitable. Les pages ne parlent qu'a ce module.
  *
- * `ROADMAP.md` §0.1 — une page serie doit valoir le detour **avec zero critique**.
+ * — une page serie doit valoir le detour **avec zero critique**.
  * Tout ce que produit ce fichier est derive de donnees publiques : disponible le jour 1,
  * sans un seul utilisateur.
  */
@@ -231,8 +231,7 @@ export function medianRuntime(season: SeasonDetail): number | undefined {
 /**
  * Ce qu'une page serie a besoin de savoir.
  *
- * Aucun champ n'est destine a etre stocke : le catalogue est loue, pas possede
- * (`ROADMAP.md` §1.3).
+ * Aucun champ n'est destine a etre stocke : le catalogue est loue, pas possede.
  */
 export interface SeriesPageData {
   readonly detail: SeriesDetail;
@@ -244,7 +243,7 @@ export interface SeriesPageData {
    * Engagement total demande, en minutes, si la duree d'episode est connue.
    *
    * C'est la reponse chiffree a « ca vaut mes 40 heures ? » — la question qu'on pose a
-   * une serie et jamais a un film (`RESEARCH.md` §6).
+   * une serie et jamais a un film.
    *
    * Toujours une **estimation** : duree mediane d'un episode d'une saison
    * representative, multipliee par le nombre total d'episodes.
@@ -359,7 +358,7 @@ export async function getSeriesPageData(
  * Estime la duree d'un episode, en minutes.
  *
  * Un appel supplementaire par serie, mis en cache 24 h comme la page elle-meme : le
- * cout est negligeable (`ROADMAP.md` §1.4) et c'est le seul moyen d'obtenir un
+ * cout est negligeable et c'est le seul moyen d'obtenir un
  * chiffre juste. TMDB ne renseigne plus `episode_run_time`, et se contenter du
  * dernier episode paru donne un resultat faux du simple au double sur les series
  * dont le final est un long-metrage.
@@ -402,7 +401,7 @@ export interface SeriesWithStatus {
  * **Un appel par serie** — a ne faire que sur une page mise en cache. L'accueil est
  * en ISR quotidien : douze series hydratees coutent douze appels par jour, quel que
  * soit le trafic. La recherche, elle, est dynamique : l'y appliquer couterait un
- * appel par resultat et par requete, ce que le budget interdit (`ROADMAP.md` §1.4).
+ * appel par resultat et par requete, ce que le budget interdit.
  *
  * Chaque serie degrade independamment : une fiche indisponible perd son statut, pas
  * sa vignette.
@@ -442,7 +441,7 @@ export async function withStatus(
  *
  * Chaque saison coute un appel. Au-dela d'une quinzaine, la courbe n'apprend plus
  * grand-chose et la facture grimpe pour rien — le cas *Les Simpson* ne doit pas couter
- * trente-six appels (`ROADMAP.md` §1.4).
+ * trente-six appels.
  */
 const MAX_SEASONS_FOR_TRAJECTORY = 15;
 
@@ -451,7 +450,7 @@ const MAX_SEASONS_FOR_TRAJECTORY = 15;
  *
  * Ce ne sont pas les notes de ce produit, et ce module ne pretend pas le contraire :
  * l'origine remonte jusqu'a l'affichage. Elles servent a amorcer — une page serie doit
- * valoir le detour avec zero critique (`ROADMAP.md` §0.1) — et elles activent enfin
+ * valoir le detour avec zero critique — et elles activent enfin
  * `computeTrajectory`, ecrit et teste des le premier jour sans jamais servir.
  *
  * Les saisons trop peu votees sont absentes de la courbe plutot qu'inventees.
@@ -644,7 +643,7 @@ export async function waitingSeries(
  *
  * Seul maillage interne du site, et il est **factuel** : « du meme createur » est un
  * credit de production, pas un calcul de similarite — ce qui le distingue de la
- * recommandation algorithmique, ecartee par `ROADMAP.md` §3.
+ * recommandation algorithmique, ecartee par le projet.
  *
  * Repond aussi au dernier trou du canal d'acquisition : une page serie ne renvoyait
  * vers aucune autre, ce qui en faisait un cul-de-sac pour le visiteur comme pour le

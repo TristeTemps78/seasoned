@@ -6,7 +6,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 /**
  * Sortir son journal, et le remettre.
  *
- * **`AGENTS.md` regle 9 : export integral des qu'il y a une donnee a exporter. Non
+ * ** : export integral des qu'il y a une donnee a exporter. Non
  * negociable.** Il y avait une donnee depuis le 2026-08-02 et pas d'export : la regle
  * etait violee, et le suivi la classait « dette » — un euphemisme. `exportJournal()`
  * existait deja, ecrite, exportee, et appelee par rien.

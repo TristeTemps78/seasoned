@@ -20,7 +20,7 @@ import { pathIn } from '@/lib/routes';
  *
  * Le serveur envoie les critiques sans savoir ou en est celui qui les lit, et c'est
  * exactement ce qui empeche sa position de fuir : il n'a rien a demander. Le filtre est
- * `redactReviews`, dans le domaine (`AGENTS.md` regle 7 — jamais dans la couche de rendu).
+ * `redactReviews`, dans le domaine ( — jamais dans la couche de rendu).
  *
  * ⚠️ Le texte masque n'est **pas** rendu puis cache en CSS : il ne descend pas dans le DOM.
  * Un `display:none` se lit dans l'inspecteur, se copie, et se retrouve dans le presse-papier
