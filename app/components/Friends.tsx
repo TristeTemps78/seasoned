@@ -59,6 +59,13 @@ export function Friends() {
   const [written, setWritten] = useState<readonly PublishedReview[]>([]);
   const [lookup, setLookup] = useState('');
   const [notFound, setNotFound] = useState(false);
+  /**
+   * 🔴 **La distinction que ce produit n'avait pas.** `SocialClient` rend `[]` quand une
+   * lecture echoue : un fil vide et un fil qui n'a **pas pu** etre lu donnaient exactement
+   * le meme ecran. C'est ce qui a laisse 10.0 invisible pendant trois sessions — trois
+   * lectures sociales repondaient 400 depuis toujours, et l'ecran disait « rien a lire ».
+   */
+  const [unreadable, setUnreadable] = useState(false);
 
   const userId = account?.userId;
   const accessToken = account?.accessToken;
@@ -67,12 +74,21 @@ export function Friends() {
     const config = authConfigFromEnv();
     if (config === undefined || userId === undefined) return;
     setClient(
-      new SocialClient({ url: config.url, anonKey: config.anonKey, accessToken: () => accessToken }),
+      new SocialClient({
+        url: config.url,
+        anonKey: config.anonKey,
+        accessToken: () => accessToken,
+        // Une panne suffit : on ne compte pas les echecs, on dit qu'il y en a eu un.
+        onFailure: () => setUnreadable(true),
+      }),
     );
   }, [userId, accessToken]);
 
   const refresh = useCallback(
     async (social: SocialClient, id: string) => {
+      // ⚠️ Remis a zero **avant** la lecture : sans ca, une panne passagere marquerait
+      // l'ecran jusqu'au rechargement de la page, y compris apres un retour du reseau.
+      setUnreadable(false);
       const mine = await social.myProfile(id);
       setProfile(mine);
       setLoaded(true);
@@ -168,7 +184,12 @@ export function Friends() {
       setNotFound(true);
       return;
     }
-    await client.follow(userId, found.userId);
+    // 🔴 **Le resultat etait ignore, et le champ se vidait quand meme.** Un echec — et il y
+    // en avait un a chaque second suivi, en 42501 — ressemblait donc trait pour trait a un
+    // succes : le nom disparaissait, la liste se rechargeait sans la personne, et rien
+    // n'expliquait pourquoi. C'est le seul endroit du produit ou l'ecran **affirmait** le
+    // contraire de ce qui s'etait passe ; ailleurs il se contentait de ne rien faire.
+    if (!(await client.follow(userId, found.userId))) return;
     setLookup('');
     void refresh(client, userId);
   }
@@ -395,9 +416,13 @@ export function Friends() {
         <h2 className="section-heading">{t('friends.feed.title')}</h2>
         {timeline.length === 0 ? (
           // ⚠️ Mieux vaut se taire que compter zero : un fil vide dit quoi faire, il
-          // n'affiche pas « 0 activite ».
-          <div className="empty-state">
-            <p className="empty-state-body">{t('friends.feed.empty')}</p>
+          // n'affiche pas « 0 activite ». Mais il ne doit pas dire « rien a lire » quand
+          // la verite est « je n'ai pas pu lire » — c'est le defaut de 10.0, et la seule
+          // facon de ne pas le refaire est que l'ecran connaisse la difference.
+          <div className="empty-state" role={unreadable ? 'status' : undefined}>
+            <p className="empty-state-body">
+              {t(unreadable ? 'friends.feed.unreadable' : 'friends.feed.empty')}
+            </p>
           </div>
         ) : (
           <ul className="space-y-2">

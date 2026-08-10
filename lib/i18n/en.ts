@@ -222,6 +222,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'friends.feed.title': 'What they are up to',
   'friends.feed.empty':
     'Nothing yet. Follow somebody, or give them your name — the feed fills up as you go.',
+  'friends.feed.unreadable':
+    'The feed could not be loaded. It is not that it is empty — try again in a moment.',
   'friends.item.rated_season': 'rated',
   'friends.item.finished': 'finished a series',
   'friends.item.started': 'started a series',

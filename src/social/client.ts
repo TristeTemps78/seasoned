@@ -45,6 +45,27 @@ export interface SocialOptions {
   /** Relu a chaque appel : un jeton se rafraichit. */
   readonly accessToken: () => string | undefined;
   readonly fetchImpl?: typeof fetch;
+  /**
+   * 🔴 **Ce qui manquait pour qu'un echec cesse d'etre indiscernable d'un vide.**
+   *
+   * Ce module rend `[]` quand une lecture echoue, et `false` quand une ecriture echoue. La
+   * promesse « ne leve jamais » est juste — une panne du social ne doit pas interrompre un
+   * produit dont tout le reste est local — mais elle a un prix, et ce depot l'a paye deux
+   * fois : *l'ecran d'un defaut est identique a celui d'un demarrage a froid.*
+   *
+   * 10.0 : trois lectures sociales repondaient **400 depuis toujours**, pour tout le monde,
+   * et rien ne pouvait le signaler. 017 : quatre ecritures sur cinq echouaient en 42501, et
+   * rien non plus.
+   *
+   * Ce rappel ne change **aucun** comportement par defaut : sans lui, tout se passe comme
+   * avant. Il donne seulement a l'appelant de quoi distinguer « rien a montrer » de « je
+   * n'ai pas pu lire », ce qu'aucune valeur de retour ne pouvait porter sans faire mentir
+   * les vingt sites d'appel.
+   *
+   * @param where le chemin PostgREST concerne — de quoi nommer ce qui a echoue.
+   * @param status le code HTTP, absent si la panne est reseau.
+   */
+  readonly onFailure?: (where: string, status?: number) => void;
 }
 
 export type Visibility = 'private' | 'followers' | 'public';
@@ -245,13 +266,35 @@ export class SocialClient {
    * lisaient tous une liste, et « erreur » comme « aucune ligne » y menaient deja au meme
    * ecran. Le type dit maintenant ce que le module fait.
    */
+  /**
+   * Le seul endroit ou une panne est **nommee**. Voir {@link SocialOptions.onFailure} : le
+   * rappel ne doit jamais pouvoir casser ce qu'il observe, donc son propre echec est avale.
+   */
+  #failed(where: string, status?: number): void {
+    try {
+      this.#options.onFailure?.(where, status);
+    } catch {
+      /* Un observateur qui leve ne doit pas faire tomber ce qu'il observe. */
+    }
+  }
+
   async #rows<T>(path: string): Promise<readonly T[]> {
     try {
       const response = await this.#fetch(this.#url(path), { headers: this.#headers() });
-      if (!response.ok) return [];
+      if (!response.ok) {
+        this.#failed(path, response.status);
+        return [];
+      }
       const body: unknown = await response.json();
-      return Array.isArray(body) ? (body as T[]) : [];
+      // ⚠️ Une reponse 200 de la mauvaise **forme** est un echec aussi, et c'est celui qui
+      // se voit le moins : un portail captif rend du HTML en 200.
+      if (!Array.isArray(body)) {
+        this.#failed(path, response.status);
+        return [];
+      }
+      return body as T[];
     } catch {
+      this.#failed(path);
       return [];
     }
   }
@@ -320,8 +363,10 @@ export class SocialClient {
         this.#url(`profiles?user_id=eq.${encodeURIComponent(userId)}`),
         { method: 'PATCH', headers: this.#headers(), body: JSON.stringify({ visibility }) },
       );
+      if (!response.ok) this.#failed('profiles', response.status);
       return response.ok;
     } catch {
+      this.#failed('profiles');
       return false;
     }
   }
@@ -357,8 +402,10 @@ export class SocialClient {
         headers: this.#headers({ Prefer: 'resolution=ignore-duplicates,return=minimal' }),
         body: JSON.stringify({ follower_id: followerId, followee_id: followeeId }),
       });
+      if (!response.ok) this.#failed('follows', response.status);
       return response.ok;
     } catch {
+      this.#failed('follows');
       return false;
     }
   }
@@ -371,8 +418,10 @@ export class SocialClient {
         ),
         { method: 'DELETE', headers: this.#headers() },
       );
+      if (!response.ok) this.#failed('follows', response.status);
       return response.ok;
     } catch {
+      this.#failed('follows');
       return false;
     }
   }
@@ -546,8 +595,10 @@ export class SocialClient {
           ),
         },
       );
+      if (!response.ok) this.#failed('activity', response.status);
       return response.ok;
     } catch {
+      this.#failed('activity');
       return false;
     }
   }
@@ -579,8 +630,10 @@ export class SocialClient {
           })),
         ),
       });
+      if (!response.ok) this.#failed('stops', response.status);
       return response.ok;
     } catch {
+      this.#failed('stops');
       return false;
     }
   }
@@ -690,8 +743,10 @@ export class SocialClient {
           lang: review.lang,
         }),
       });
+      if (!response.ok) this.#failed('reviews', response.status);
       return response.ok;
     } catch {
+      this.#failed('reviews');
       return false;
     }
   }
@@ -815,6 +870,7 @@ export class SocialClient {
           ),
           { method: 'DELETE', headers: this.#headers() },
         );
+        if (!response.ok) this.#failed('review_likes', response.status);
         return response.ok;
       }
       const response = await this.#fetch(this.#url('review_likes'), {
@@ -831,8 +887,10 @@ export class SocialClient {
           target,
         }),
       });
+      if (!response.ok) this.#failed('review_likes', response.status);
       return response.ok;
     } catch {
+      this.#failed('review_likes');
       return false;
     }
   }
@@ -1140,8 +1198,10 @@ export class SocialClient {
         headers: this.#headers({ Prefer: prefer }),
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
+      if (!response.ok) this.#failed(path, response.status);
       return response.ok;
     } catch {
+      this.#failed(path);
       return false;
     }
   }

@@ -256,6 +256,11 @@ export const FR = {
   'friends.feed.title': 'Ce qu’ils font',
   'friends.feed.empty':
     'Rien pour l’instant. Suivez quelqu’un, ou donnez-lui votre nom — le fil se remplit à mesure.',
+  // ⚠️ Ce texte existe parce qu'un fil vide et un fil illisible donnaient le MÊME écran, et
+  // que c'est ce qui a laissé 10.0 invisible trois sessions durant. Il ne s'excuse pas et ne
+  // promet rien : il dit ce qu'on sait, c'est-à-dire qu'on ne sait pas.
+  'friends.feed.unreadable':
+    'Le fil n’a pas pu être chargé. Ce n’est pas qu’il est vide — réessayez dans un instant.',
   'friends.item.rated_season': 'a noté',
   'friends.item.finished': 'a terminé une série',
   'friends.item.started': 'a commencé une série',
