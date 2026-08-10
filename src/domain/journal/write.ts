@@ -415,11 +415,27 @@ export function setSnapshot(
 }
 
 /** Declare les services auxquels on est abonne. */
+/**
+ * Les services auxquels on est abonne.
+ *
+ * 🔴 **Dedoublonne et trie**, comme {@link setRegions} — ce qu'il ne faisait pas. Les deux
+ * champs sont des **ensembles** et se lisent partout comme tels (`new Set(journal.platforms)`
+ * chez les quatre lecteurs), mais un seul des deux setters l'appliquait. Deux voisins avec
+ * deux hygienes : la forme exacte du defaut que ce depot connait.
+ *
+ * ⚠️ Ce n'est pas cosmetique. `mergeJournals` dedoublonne, lui : un journal portant
+ * `["max","max"]` fusionne avec un journal vide rendait `["max"]` — donc **la fusion avec
+ * l'element neutre changeait le document**, ce qui casse la premiere des lois. Mesure du
+ * 2026-08-11, trouvee en faisant produire ce champ au generateur.
+ *
+ * L'ordre canonique suit la meme raison que dans `unite` : deux appareils qui aboutissent a
+ * deux serialisations du meme ensemble se les renvoient indefiniment.
+ */
 export function setPlatforms(
   journal: Journal,
   platforms: readonly string[],
 ): Journal {
-  return { ...journal, platforms: [...platforms] };
+  return { ...journal, platforms: [...new Set(platforms)].sort() };
 }
 
 /**

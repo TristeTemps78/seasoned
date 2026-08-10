@@ -272,22 +272,53 @@ const DOCUMENT_MERGE: {
   announcedFace: (a, b) => derniere(a.announcedFace, b.announcedFace),
 };
 
-/** La plus recente des deux annonces. `at` est une chaine ISO : l'ordre lexical suffit. */
+/**
+ * La plus recente des deux annonces. `at` est une chaine ISO : l'ordre lexical suffit.
+ *
+ * 🔴 **A egalite de date, on departage par le nom de la face — pas par l'ordre des
+ * arguments.** La premiere version rendait `a` quand les deux dates etaient identiques,
+ * donc `merge(x, y)` annoncait `finisher` et `merge(y, x)` `cutter` : deux appareils
+ * divergeaient, se renvoyaient leurs journaux, et le battement ne s'arretait jamais.
+ *
+ * C'est **exactement** le defaut contre lequel le commentaire de `announcedFace` met en
+ * garde — le `deviceId` de `sameJournal` — commis dans la ligne d'a cote, le jour meme ou
+ * il etait ecrit. Il n'a pas ete vu parce que les lois comparaient `shape(journal)`, qui ne
+ * regardait **que les entrees** : aucun champ de document n'etait couvert.
+ *
+ * Le departage lexical n'a aucun sens metier, et c'est sa qualite : il n'en faut pas. Il
+ * doit seulement rendre le **meme** verdict des deux cotes — meme procede que
+ * {@link mergeUnknown} et {@link laterOf}.
+ */
 function derniere(
   a: FaceAnnouncement | undefined,
   b: FaceAnnouncement | undefined,
 ): FaceAnnouncement | undefined {
   if (a === undefined) return b;
   if (b === undefined) return a;
-  return b.at.localeCompare(a.at) > 0 ? b : a;
+  const parDate = b.at.localeCompare(a.at);
+  if (parDate !== 0) return parDate > 0 ? b : a;
+  return b.id.localeCompare(a.id) < 0 ? b : a;
 }
 
-/** L'union de deux ensembles non dates, sans doublon. Vide devient `undefined`. */
+/**
+ * L'union de deux ensembles non dates, sans doublon. Vide devient `undefined`.
+ *
+ * 🔴 **Trie, et ce tri corrige un defaut mesure le 2026-08-11.** Sans lui, l'union rendait
+ * les elements de `a` puis ceux de `b` : `merge(x, y)` donnait `["netflix","max"]` et
+ * `merge(y, x)` `["max","netflix"]`. Le **contenu** convergeait, le **document** non.
+ *
+ * L'en-tete de `journal-merge.test.ts` traitait le cas comme contractuel — *« c'est un
+ * ensemble ; son ordre ne porte pas de sens »* — et c'est vrai de la lecture : les quatre
+ * lecteurs de `platforms` en font un `Set`. Ce n'est pas vrai de l'**ecriture** : deux
+ * appareils qui aboutissent a deux serialisations du meme ensemble se les renvoient
+ * indefiniment, chacun croyant avoir du neuf a pousser. Un ordre canonique coute un `sort`
+ * et **supprime** l'exception au lieu de la documenter.
+ */
 function unite(
   a: readonly string[] | undefined,
   b: readonly string[] | undefined,
 ): readonly string[] | undefined {
-  const all = [...new Set([...(a ?? []), ...(b ?? [])])];
+  const all = [...new Set([...(a ?? []), ...(b ?? [])])].sort();
   return all.length > 0 ? all : undefined;
 }
 

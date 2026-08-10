@@ -20,9 +20,12 @@ import {
   setDecision,
   setEpisodeRating,
   setPosition,
+  setPlatforms,
   setSeasonRating,
   setWanted,
+  announceFace,
 } from '../src/domain/journal';
+import type { FaceId } from '../src/domain/face';
 import type { DecisionKind, Stars } from '../src/domain/types';
 
 
@@ -37,9 +40,28 @@ export function canonical(value: unknown): string {
     .join(',')}}`;
 }
 
-/** Ce que les lois comparent : la donnee de l'utilisateur, hors identite d'appareil. */
+/**
+ * Ce que les lois comparent : la donnee de l'utilisateur, hors identite d'appareil.
+ *
+ * 🔴 **Cette fonction ne rendait que `journal.entries`, et ca a coute deux defauts.**
+ * Les champs de **document** — plateformes, pays, masquages, face annoncee — echappaient
+ * donc aux huit lois : la commutativite etait prouvee sur la moitie du journal, et cette
+ * moitie-la etait la seule qu'on regardait.
+ *
+ * Mesure du 2026-08-11 : `announcedFace` rendait `finisher` dans un sens et `cutter` dans
+ * l'autre a egalite de date ; `platforms` rendait `["netflix","max"]` contre
+ * `["max","netflix"]`. Deux appareils divergeaient et se renvoyaient leurs journaux
+ * indefiniment — exactement le battement que ces lois existent pour interdire.
+ *
+ * ⚠️ **`deviceId` reste exclu, et c'est la seule exception qui survit** : par contrat celui
+ * de `a` gagne, un appareil garde son identite en absorbant un journal venu d'ailleurs. Ce
+ * n'est pas une donnee de l'utilisateur. L'autre exception que l'en-tete de
+ * `journal-merge.test.ts` revendiquait — l'ordre des plateformes — a ete **supprimee**
+ * plutot que documentee : `unite` trie desormais.
+ */
 export function shape(journal: Journal): string {
-  return canonical(journal.entries);
+  const { deviceId: _identiteDeLAppareil, ...document } = journal;
+  return canonical(document);
 }
 
 /** Generateur congruentiel : reproductible, donc un echec se rejoue a l'identique. */
@@ -54,6 +76,9 @@ export function random(seed: number): () => number {
 export const KEYS: readonly JournalKey[] = ['tmdb:1396', 'tmdb:66732', 'tmdb:1399'];
 export const STARS: readonly Stars[] = [1, 2.5, 3, 4, 5] as readonly Stars[];
 export const KINDS: readonly DecisionKind[] = ['continuing', 'paused', 'abandoned', 'completed'];
+/** Deux suffisent : ce qu'on veut produire est le **conflit**, pas la variete. */
+export const PLATFORMS: readonly string[] = ['netflix', 'max', 'arte'];
+export const FACES: readonly FaceId[] = ['finisher', 'cutter', 'rewatcher'];
 
 /**
  * Trois dates seulement, et volontairement.
@@ -103,7 +128,20 @@ export function journalOf(seed: number): Journal {
   for (let i = 0; i < gestures; i += 1) {
     const key = pick(KEYS);
     const at = pick(DATES);
-    switch (Math.floor(next() * 6)) {
+    switch (Math.floor(next() * 8)) {
+      // ⚠️ **Les champs de DOCUMENT, ajoutes le 2026-08-11.** Sans eux, les huit lois
+      // n'exercaient que les entrees : `announcedFace` et `platforms` ont diverge sous
+      // leur nez pendant que tout etait vert. Un generateur qui ne produit pas un champ
+      // ne prouve rien de sa fusion — c'est le cinquieme faux negatif de fixture de ce
+      // depot, et le premier a avoir laisse passer un vrai defaut.
+      case 6:
+        journal = setPlatforms(journal, [...(journal.platforms ?? []), pick(PLATFORMS)]);
+        break;
+      case 7:
+        // La face annoncee : le cas interessant est l'**egalite de date** avec deux faces
+        // differentes, et le jeu de dates minuscule le rend frequent.
+        journal = announceFace(journal, pick(FACES), at);
+        break;
       case 5:
         journal = withUnknown(journal, key, pick(FUTURE_VALUES));
         break;

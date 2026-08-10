@@ -21,13 +21,18 @@
  * de dates**. C'est deliberé : les ex aequo sont le cas interessant, et c'est le cas
  * nominal d'un import, ou de nombreux faits recoivent la meme date de repli.
  *
- * ## Les deux exceptions, qui sont contractuelles et non des defauts
+ * ## La seule exception qui reste, et celle qui a disparu
  *
  * - `deviceId` : par contrat, celui de `a` gagne. Un appareil garde son identite en
  *   absorbant un journal venu d'ailleurs.
- * - `platforms` : c'est un ensemble ; son ordre ne porte pas de sens.
+ * - ⚠️ **L'exception « platforms » a disparu le 2026-08-11**, et pas par indulgence : son
+ *   ordre ne portait pas de sens a la LECTURE, mais deux serialisations differentes du meme
+ *   ensemble se renvoyaient indefiniment entre deux appareils. `unite` trie desormais, et
+ *   `shape` couvre tout le document — seul `deviceId` reste hors des lois.
  *
- * Les lois sont donc enoncees sur les **entrees**, qui sont la donnee de l'utilisateur.
+ * Les lois portent donc sur **tout le document sauf `deviceId`**. Elles ne portaient que sur
+ * les entrees jusqu'au 2026-08-11, et cette moitie manquante a laisse passer deux vrais
+ * defauts — dont un ecrit le matin meme, a cote du commentaire qui met en garde contre lui.
  */
 
 import { describe, expect, it } from 'vitest';

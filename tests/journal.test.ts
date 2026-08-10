@@ -270,14 +270,22 @@ describe('parseJournal — ne perd jamais tout', () => {
     expect(mergeJournals(b, a).entries[BB]?.position?.seasonNumber).toBe(2);
   });
 
-  it('conserve l appareil et les plateformes', () => {
+  /**
+   * ⚠️ **Les plateformes sont rendues dans un ordre canonique, pas dans l'ordre de saisie.**
+   * Ce test attendait l'ordre d'insertion, et c'est ce que `setPlatforms` faisait — mais
+   * `mergeJournals` dedoublonne et trie, donc deux appareils aboutissaient a deux
+   * serialisations du meme ensemble et se les renvoyaient. Les quatre lecteurs du champ en
+   * font un `Set` : l'ordre ne porte aucun sens a la lecture, il n'en portait qu'a
+   * l'ecriture, et c'est la qu'il faisait du bruit.
+   */
+  it('conserve l appareil, et range les plateformes en ensemble', () => {
     let j = withDeviceId(EMPTY_JOURNAL, 'appareil-1');
-    j = setPlatforms(j, ['Netflix', 'Disney Plus']);
+    j = setPlatforms(j, ['Netflix', 'Disney Plus', 'Netflix']);
     j = setPosition(j, BB, 1, 1, NOW);
 
     const round = parseJournal(serializeJournal(j), NOW);
     expect(round.deviceId).toBe('appareil-1');
-    expect(round.platforms).toEqual(['Netflix', 'Disney Plus']);
+    expect(round.platforms).toEqual(['Disney Plus', 'Netflix']);
   });
 });
 
