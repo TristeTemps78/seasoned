@@ -63,7 +63,19 @@ const FRENCH = /[éèêëàâçôöûùîïœ]|«|»/i;
  * enchainement de trois `replace` dans quatre fichiers. Celui-ci est migre parce qu'on y
  * touchait de toute facon.
  */
-const FILES = [...filesUnder('app'), ...filesUnder('lib')]
+/**
+ * 🔴 **`src/` manquait, et ca a coute une phrase francaise en production.**
+ *
+ * `JUSTWATCH_ATTRIBUTION` (`src/catalog/provider.ts`) valait *« Disponibilité fournie par
+ * JustWatch. »* et s'affichait telle quelle sur la fiche serie **anglaise**, sous « Where to
+ * watch it ». Vu a l'ecran le 2026-08-11, apres que ce test soit passe au vert.
+ *
+ * Le raisonnement qui avait exclu `src/` se tient — c'est le domaine, il ne parle aucune
+ * langue — mais il etait faux d'un cran : `src/catalog/` porte deux mentions contractuelles
+ * **destinees a l'ecran**. Une regle vraie a 95 % laisse passer les 5 % qui comptent, et une
+ * verification mal ancree est pire qu'aucune : elle rassure.
+ */
+const FILES = [...filesUnder('app'), ...filesUnder('lib'), ...filesUnder('src')]
   .filter((file) => file !== DICTIONARY && !file.startsWith(DICTIONARIES_DIR))
   .map((file) => ({ path: pathOf(file), code: codeOf(file) }));
 
@@ -99,6 +111,17 @@ it('la garde voit bien ce qu elle vise', () => {
   // Sans ce garde-fou, un chemin devenu faux rendrait le test vert pour la pire raison
   // qui soit : il n'inspecterait plus rien.
   expect(FILES.length).toBeGreaterThan(20);
+
+  // ⚠️ Et **les trois** repertoires, nommement. Le compte ci-dessus etait deja atteint par
+  // `app/` seul : il ne pouvait donc pas signaler que `src/` etait absent, ce qui est
+  // exactement ce qui a laisse passer une phrase francaise sur la fiche serie anglaise.
+  for (const dir of ['app', 'lib', 'src']) {
+    // `pathOf` rend un chemin **relatif a la racine**, donc `app/…` et jamais `/app/…`.
+    expect(
+      FILES.some(({ path }) => path.startsWith(`${dir}/`)),
+      `${dir}/ n'est pas inspecte`,
+    ).toBe(true);
+  }
 
   // Et le motif attrape bien une phrase francaise, sinon il n'examinerait que du vide.
   expect(faults({ path: 'faux.tsx', code: "const x = 'Déjà vu';" })).toHaveLength(1);

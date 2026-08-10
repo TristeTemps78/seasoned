@@ -535,7 +535,13 @@ export const FR = {
   'progress.seasonN': 'Saison {n}',
   'progress.suggest': 'vos épisodes donnent {v}',
   'progress.remaining': 'Il vous reste {episodes} · {time}',
-  'progress.rateSeason': 'Vous venez de finir la saison {n} — elle valait combien ?',
+  // 🔴 Disait « Vous venez de finir la saison {n} », et `seasonToRate` refuse explicitement
+  // de verifier ça : il rend « la saison la plus récente entièrement vue et non notée »,
+  // et son propre commentaire explique pourquoi le critère strict serait inutilisable (la
+  // fenêtre se refermerait dès l'épisode suivant). Vu à l'écran le 2026-08-11 : position
+  // S5E16, saison 5 notée, et le rappel annonçait « vous venez de finir la saison 4 ».
+  // Le texte affirmait ce que le code avait décidé de ne pas savoir.
+  'progress.rateSeason': 'Vous avez vu la saison {n} et vous ne l’avez pas notée — elle valait combien ?',
   'decision.continuing': 'Je continue',
   'decision.paused': 'En pause',
   'decision.abandoned': 'J’abandonne',

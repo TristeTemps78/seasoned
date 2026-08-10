@@ -455,7 +455,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'progress.seasonN': 'Season {n}',
   'progress.suggest': 'your episodes say {v}',
   'progress.remaining': 'You have {episodes} left · {time}',
-  'progress.rateSeason': 'You just finished season {n} — how was it?',
+  'progress.rateSeason': 'You have seen season {n} and never rated it — how was it?',
   'decision.continuing': 'Carrying on',
   'decision.paused': 'Paused',
   'decision.abandoned': 'Dropped',

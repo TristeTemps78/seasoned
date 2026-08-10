@@ -100,10 +100,17 @@ describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
     expect(screen.queryByText(/Il vous reste/)).toBeNull();
   });
 
-  it('demande de noter la saison qu’on vient de finir', async () => {
+  /**
+   * ⚠️ « vue et non notee », **pas** « qu'on vient de finir ». Le texte disait la seconde
+   * chose et `seasonToRate` refuse explicitement de la verifier : il rend la saison la plus
+   * recente entierement vue et non notee, et son commentaire explique pourquoi le critere
+   * strict serait inutilisable. Vu a l'ecran le 2026-08-11 sur une position S5E16 : le
+   * rappel annoncait « vous venez de finir la saison 4 ».
+   */
+  it('demande de noter une saison vue et non notee', async () => {
     store(setPosition(EMPTY_JOURNAL, KEY, 1, 10));
     renderAt('fr');
-    expect(await screen.findByText(/Vous venez de finir la saison 1/)).toBeDefined();
+    expect(await screen.findByText(/Vous avez vu la saison 1/)).toBeDefined();
   });
 
   it('cesse de la demander une fois notee', async () => {
@@ -111,7 +118,7 @@ describe('MyProgress — ce qu’il reste, et ce qu’on peut noter', () => {
     store(journal);
     renderAt('fr');
     expect(await screen.findByText(/Où j’en suis/)).toBeDefined();
-    expect(screen.queryByText(/Vous venez de finir/)).toBeNull();
+    expect(screen.queryByText(/Vous avez vu la saison/)).toBeNull();
   });
 
   it('affiche le plan de rattrapage quand une date de retour est connue', async () => {

@@ -301,5 +301,14 @@ export const TMDB_ATTRIBUTION =
  *
  * TMDB les agrege depuis JustWatch et impose de le citer — obligation contractuelle,
  * au meme titre que {@link TMDB_ATTRIBUTION}, et non un choix de mise en page.
+ *
+ * 🔴 **Elle etait ecrite en francais**, et s'affichait telle quelle sur la fiche serie
+ * anglaise : *« Disponibilité fournie par JustWatch. »* juste sous « Where to watch it ».
+ * Vu a l'ecran le 2026-08-11 — ni les tests ni le typage ne pouvaient le voir, et
+ * `no-hardcoded-strings` non plus : il n'inspectait que `app/` et `lib/`, jamais `src/`.
+ *
+ * Elle rejoint donc {@link TMDB_ATTRIBUTION} dans sa forme contractuelle : **en anglais et
+ * verbatim**, comme l'exige TMDB, et non traduite. Les deux mentions se comportent
+ * desormais pareil, ce qui etait deja ce que leur voisinage promettait.
  */
-export const JUSTWATCH_ATTRIBUTION = 'Disponibilité fournie par JustWatch.';
+export const JUSTWATCH_ATTRIBUTION = 'Availability data provided by JustWatch.';
