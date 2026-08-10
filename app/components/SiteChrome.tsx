@@ -4,6 +4,7 @@ import { TMDB_ATTRIBUTION } from '@/src/catalog/provider';
 import { PRODUCT_NAME, siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
 import { DataSafety } from '@/app/components/DataSafety';
+import { PublishActivity } from '@/app/components/PublishActivity';
 import { LanguagePicker } from '@/app/components/LanguagePicker';
 import { MyFace } from '@/app/components/MyFace';
 import { Faces } from '@/app/components/Faces';
@@ -110,6 +111,11 @@ export function SiteChrome({ locale, children }: {
               depend pas de l'endroit ou l'on se trouve. Ne rend rien tant qu'il n'y a
               rien a perdre, ni si l'application est deja installee. */}
           <DataSafety />
+          {/* Invisible, sans rendu : il pousse l'activite publiable depuis N'IMPORTE
+              quelle page. Avant, elle ne partait que depuis `/amis` — terminer une serie
+              sur sa fiche sans y retourner laissait le fait dans le navigateur pour
+              toujours. */}
+          <PublishActivity />
           {children}
         </main>
 
