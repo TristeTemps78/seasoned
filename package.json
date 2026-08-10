@@ -18,7 +18,7 @@
     "check:supabase": "node scripts/check-supabase.mjs",
     "db:push": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/db-push.mjs",
     "db:scenarios": "node scripts/db-scenarios.mjs",
-    "db:round": "node scripts/build-round.mjs"
+    "db:round": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/build-round.mjs"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

@@ -31,6 +31,10 @@
  */
 
 import { DIM, GREEN, RED, RESET, YELLOW, projectRefFrom, readEnv } from './env.mjs';
+// Le tirage vient du domaine, comme la liste des handles reserves vient de `handles.ts`
+// pour `db-push` : le domaine tranche, l'outillage execute. Une troisieme copie du melange
+// et du generateur vivait ici, et elle n'avait aucune raison d'exister.
+import { drawFrom, pickOne, seedOf, shuffle, takeSome } from '../src/domain/draw.ts';
 
 const env = readEnv();
 const tmdbToken = env['TMDB_ACCESS_TOKEN'];
@@ -86,23 +90,6 @@ async function query(sql) {
 
 const quote = (value) => `'${String(value).replace(/'/g, "''")}'`;
 
-/**
- * Un tirage **deterministe** a partir du jour.
- *
- * Deux lancements le meme jour doivent produire la meme manche : sinon relancer le script
- * changerait les questions sous les joueurs qui ont deja commence.
- */
-function randomFrom(text) {
-  let state = 0;
-  for (const character of text) state = (state * 31 + character.charCodeAt(0)) >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let drawn = Math.imul(state ^ (state >>> 15), 1 | state);
-    drawn = (drawn + Math.imul(drawn ^ (drawn >>> 7), 61 | drawn)) ^ drawn;
-    return ((drawn ^ (drawn >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 console.log(`\nManches a partir du ${from} (${days}) — Voltface\n`);
 
 /**
@@ -139,22 +126,15 @@ if (pool.length < 8) fail('TMDB a rendu trop peu de series pour construire une m
  * Le tirage, lui, repart du jour — deux manches consecutives ne doivent pas se ressembler.
  */
 async function buildFor(day) {
-const random = randomFrom(day);
-const pick = (list) => list[Math.floor(random() * list.length)];
+// Deux lancements le meme jour doivent produire la meme manche : sinon relancer le script
+// changerait les questions sous les joueurs qui ont deja commence.
+const draw = drawFrom(seedOf(day));
+const pick = (list) => pickOne(list, draw);
 
 /** Trois leurres pris ailleurs que sur la bonne reponse, puis melange. */
 function choicesAround(answer) {
-  const others = pool.filter((one) => one.id !== answer.id).map((one) => one.name);
-  const unique = [...new Set(others)];
-  const decoys = [];
-  while (decoys.length < 3 && unique.length > 0) {
-    decoys.push(...unique.splice(Math.floor(random() * unique.length), 1));
-  }
-  const all = [answer.name, ...decoys];
-  for (let index = all.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(random() * (index + 1));
-    [all[index], all[swap]] = [all[swap], all[index]];
-  }
+  const unique = [...new Set(pool.filter((one) => one.id !== answer.id).map((one) => one.name))];
+  const all = shuffle([answer.name, ...takeSome(unique, 3, draw)], draw);
   return { choices: all, answer: all.indexOf(answer.name) };
 }
 
@@ -216,7 +196,7 @@ for (const family of ['seasons', 'episodes', 'dates']) {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const left = untouched();
     if (left.length === 0) break;
-    const candidate = left[Math.floor(random() * left.length)];
+    const candidate = pick(left);
 
     const detail = await tmdb(`/tv/${candidate.id}`);
     const seasons = (detail.seasons ?? []).filter((one) => one.season_number > 0);

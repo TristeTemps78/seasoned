@@ -64,7 +64,6 @@ export function DailyRound() {
   const [verdict, setVerdict] = useState<QuizVerdict | undefined>(undefined);
   const [board, setBoard] = useState<readonly QuizScore[]>([]);
   const [over, setOver] = useState(false);
-  const [total, setTotal] = useState(0);
 
   const today = new Date().toISOString().slice(0, 10);
   const accessToken = account?.accessToken;
@@ -109,9 +108,7 @@ export function DailyRound() {
 
   async function answer(choice: number) {
     if (client === undefined || question === undefined || verdict !== undefined) return;
-    const given = await client.quizAnswer(today, ordinal, choice);
-    setVerdict(given);
-    setTotal((sofar) => sofar + given.points);
+    setVerdict(await client.quizAnswer(today, ordinal, choice));
   }
 
   if (over) {
@@ -178,13 +175,15 @@ export function DailyRound() {
             : t('round.wrong')}
       </p>
 
+      {/* ⚠️ Pas de total cumule ici, et c'est une suppression volontaire : il etait tenu
+          en memoire du composant, donc il repartait a zero au rechargement pendant que le
+          classement, lui, restait juste. Deux chiffres qui disent la meme chose et ne
+          s'accordent pas valent moins qu'un seul. Le score vrai est au classement. */}
       {verdict === undefined ? null : (
         <button type="button" className="btn btn-primary" onClick={() => setOrdinal(ordinal + 1)}>
           {t('round.next')}
         </button>
       )}
-
-      <p className="text-sm text-(--color-muted)">{t('round.total', { points: String(total) })}</p>
     </section>
   );
 }

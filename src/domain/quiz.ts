@@ -39,6 +39,7 @@
  * Module pur : ni reseau, ni horloge implicite — l'instant de reference est injecte.
  */
 
+import { drawFrom, pickOne, shuffle, takeSome } from './draw';
 import { seriesEntries, type Journal, type JournalKey } from './journal';
 
 /** Un choix propose : la cle sert de reponse, le titre est ce qu'on lit. */
@@ -125,22 +126,6 @@ const ENOUGH_EPISODES = 5;
 const OLD_ENOUGH_DAYS = 30;
 
 const DAY_MS = 86_400_000;
-
-/**
- * Un generateur deterministe, parce qu'un test doit pouvoir predire la question.
- *
- * Le detail des constantes importe peu — ce qui compte est qu'une meme graine rende
- * toujours la meme suite, et que deux graines voisines ne rendent pas la meme.
- */
-function randomFrom(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let drawn = Math.imul(state ^ (state >>> 15), 1 | state);
-    drawn = (drawn + Math.imul(drawn ^ (drawn >>> 7), 61 | drawn)) ^ drawn;
-    return ((drawn ^ (drawn >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 /** Le jour d'un instant ISO. Les faits du journal sont dates a la seconde ; on compare au jour. */
 function dayOf(instant: string): string {
@@ -234,7 +219,7 @@ export function buildQuiz(journal: Journal, now: Date, seed: number): QuizQuesti
     )
     .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 
-  const random = randomFrom(seed);
+  const draw = drawFrom(seed);
 
   // Les familles disponibles, dans un ordre fixe : la graine choisit, jamais l'ordre des
   // cles du journal.
@@ -245,21 +230,21 @@ export function buildQuiz(journal: Journal, now: Date, seed: number): QuizQuesti
   ];
   if (families.length === 0) return undefined;
 
-  const family = families[Math.floor(random() * families.length)] ?? families[0];
+  const family = pickOne(families, draw) ?? families[0];
 
   const held =
     family === 'onDay'
-      ? (days[Math.floor(random() * days.length)] ?? days[0])
+      ? pickOne(days, draw)
       : family === 'byCurve'
-        ? (curves[Math.floor(random() * curves.length)] ?? curves[0])
-        : (runs[Math.floor(random() * runs.length)] ?? runs[0]);
+        ? pickOne(curves, draw)
+        : pickOne(runs, draw);
   const answer = held?.key;
   if (answer === undefined) return undefined;
 
   const answerTitle = titled.get(answer);
   if (answerTitle === undefined) return undefined;
 
-  const choices = withDecoys(answer, answerTitle, titled, random);
+  const choices = withDecoys(answer, answerTitle, titled, draw);
   if (choices === undefined) return undefined;
 
   if (family === 'byCurve') {
@@ -340,27 +325,20 @@ function withDecoys(
   answer: JournalKey,
   answerTitle: string,
   titled: ReadonlyMap<JournalKey, string>,
-  random: () => number,
+  draw: () => number,
 ): readonly QuizChoice[] | undefined {
   const pool = [...titled.entries()]
     .filter(([key]) => key !== answer)
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 
-  const choices: QuizChoice[] = [{ key: answer, title: answerTitle }];
-  while (choices.length < ENOUGH_SERIES && pool.length > 0) {
-    const [key, title] = pool.splice(Math.floor(random() * pool.length), 1)[0] as [
-      JournalKey,
-      string,
-    ];
-    choices.push({ key, title });
-  }
-  if (choices.length < ENOUGH_SERIES) return undefined;
+  const decoys = takeSome(pool, ENOUGH_SERIES - 1, draw);
+  if (decoys.length < ENOUGH_SERIES - 1) return undefined;
 
-  for (let index = choices.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(random() * (index + 1));
-    const held = choices[index] as QuizChoice;
-    choices[index] = choices[swap] as QuizChoice;
-    choices[swap] = held;
-  }
-  return choices;
+  return shuffle(
+    [
+      { key: answer, title: answerTitle },
+      ...decoys.map(([key, title]) => ({ key, title })),
+    ],
+    draw,
+  );
 }

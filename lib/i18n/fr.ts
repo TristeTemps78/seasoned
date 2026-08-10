@@ -285,7 +285,6 @@ export const FR = {
   'round.right': 'Juste — {points} points.',
   'round.wrong': 'Raté.',
   'round.next': 'Question suivante',
-  'round.total': 'Votre total : {points}',
   'round.ask.cast': 'Quelle série ces acteurs jouent-ils ?',
   'round.ask.rating': 'Quelle série a cette note globale ?',
   'round.ask.seasons': 'Quelle série a ces notes de saison ?',

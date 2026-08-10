@@ -242,7 +242,6 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'round.right': 'Right — {points} points.',
   'round.wrong': 'Missed.',
   'round.next': 'Next question',
-  'round.total': 'Your total: {points}',
   'round.ask.cast': 'Which series do these actors play in?',
   'round.ask.rating': 'Which series has this overall rating?',
   'round.ask.seasons': 'Which series has these season ratings?',

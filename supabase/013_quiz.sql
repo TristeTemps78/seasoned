@@ -130,6 +130,24 @@ begin
     raise exception 'not signed in' using errcode = 'check_violation';
   end if;
 
+  -- 🔴 **On ne joue que la manche du jour.** Sans cette ligne, n'importe qui pouvait
+  -- ouvrir la manche d'hier tranquillement, chercher les reponses sans chronometre utile,
+  -- et **modifier apres coup un classement deja publie**. Les questions restent en base
+  -- une semaine (regle 1), donc « expiree » ne voulait pas dire « fermee ».
+  if day <> current_date then
+    return;
+  end if;
+
+  -- ⚠️ Le chronometre ne part que si la question EXISTE. La version precedente inserait
+  -- d'abord : demander une question inexistante ouvrait un chrono qui ne se refermait
+  -- jamais, et le joueur perdait des points sur une question qu'il n'a jamais vue.
+  if not exists (
+    select 1 from public.quiz_questions q
+    where q.on_day = day and q.ordinal = want and q.expires_at > now()
+  ) then
+    return;
+  end if;
+
   -- Le chronometre part maintenant, et une seule fois.
   insert into public.quiz_answers (user_id, on_day, ordinal)
   values (me, day, want)
@@ -158,10 +176,13 @@ language sql immutable set search_path = '' as $$ select 30 $$;
 /**
  * Enregistre une reponse et calcule ses points.
  *
- * Le barème : 100 points a la reponse instantanee, decroissant lineairement jusqu'a 10 au
- * bord de la fenetre, zero au-dela ou si la reponse est fausse. **Repondre juste tard
- * rapporte toujours quelque chose** — sinon quelqu'un qui reflechit se retrouve a egalite
- * avec quelqu'un qui n'a pas joue, et le jeu punit la reflexion plutot que la triche.
+ * Le barème : 100 points a la reponse instantanee, **decroissance continue jusqu'a zero**
+ * au bord de la fenetre, zero au-dela ou si la reponse est fausse.
+ *
+ * ⚠️ Il y avait un plancher a 10 points, et il creait une falaise : juste a 29,9 s valait
+ * 10, juste a 30,1 s valait 0. Deux joueurs separes par un dixieme de seconde etaient
+ * separes de dix points, sans que rien ne le justifie. La decroissance continue supprime
+ * la discontinuite sans changer la regle : hors delai, rien.
  *
  * ⚠️ **Une seule reponse par question, definitive.** `answered_at is null` dans le `where`
  * est ce qui le tient : la seconde tentative ne met a jour aucune ligne. Sans lui, on
@@ -185,6 +206,13 @@ begin
     raise exception 'not signed in' using errcode = 'check_violation';
   end if;
 
+  -- Le meme verrou que `quiz_serve` : on ne repond qu'a la manche du jour. Il est repete
+  -- ici et non deduit, parce qu'une reponse peut arriver sans passer par `quiz_serve`.
+  if day <> current_date then
+    return query select false, 0;
+    return;
+  end if;
+
   select q.answer, a.asked_at into right_one, started
   from public.quiz_questions q
   join public.quiz_answers a
@@ -203,8 +231,8 @@ begin
   is_right := choice = right_one;
   earned := case
     when not is_right then 0
-    when elapsed > public.quiz_window() then 0
-    else greatest(10, ceil(100 - (elapsed / public.quiz_window()) * 90)::integer)
+    when elapsed >= public.quiz_window() then 0
+    else greatest(0, ceil(100 * (1 - elapsed / public.quiz_window()))::integer)
   end;
 
   update public.quiz_answers a

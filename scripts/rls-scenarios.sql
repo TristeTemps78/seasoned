@@ -42,8 +42,12 @@ declare
   z  uuid := gen_random_uuid();
   -- Un identifiant de passage, pour ne heurter aucune donnee reelle si elle arrive.
   tag text := 'rlstest' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
-  -- Le meme principe, pour la manche : une date que la production ne portera jamais.
-  jour_test date := date '1999-01-01';
+  -- ⚠️ **La manche du jour, et pas une date inventee.** Ces scenarios ont d'abord seme sur
+  -- `1999-01-01` pour ne heurter aucune vraie manche ; depuis que `quiz_serve` refuse tout
+  -- ce qui n'est pas `current_date`, une date inventee ne mesurerait plus rien. On sepose
+  -- donc sur le jour courant, avec des **ordinaux hors de portee** (901+) : c'est le
+  -- numero qui evite la collision, pas la date.
+  jour_test date := current_date;
 
   obtenu  text;
   attendu text;
@@ -240,8 +244,8 @@ begin
   -- rencontrer des donnees reelles.
   insert into public.quiz_questions (on_day, ordinal, kind, prompt, choices, answer, expires_at)
   values
-    (jour_test, 1, 'cast', '{"cast":["Bryan Cranston"]}', '["A","B","C","D"]', 2, now() + interval '1 day'),
-    (jour_test, 2, 'poster', '{"path":"/x.jpg"}', '["A","B","C","D"]', 0, now() + interval '1 day');
+    (jour_test, 901, 'cast', '{"cast":["Bryan Cranston"]}', '["A","B","C","D"]', 2, now() + interval '1 day'),
+    (jour_test, 902, 'poster', '{"path":"/x.jpg"}', '["A","B","C","D"]', 0, now() + interval '1 day');
 
   perform set_config('request.jwt.claims',
                      json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
@@ -256,14 +260,14 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- 13 — mais la fonction lui en sert une, sans la reponse.
-  select count(*)::text into obtenu from public.quiz_serve(jour_test, 1);
+  select count(*)::text into obtenu from public.quiz_serve(jour_test, 901);
   n := n + 1; attendu := '1';
   rapport := rapport || format(E'  %s  %s. quiz_serve rend la question (sans sa reponse) (013)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- 14 — une reponse juste et rapide rapporte des points.
-  select points::text into obtenu from public.quiz_answer(jour_test, 1, 2);
+  select points::text into obtenu from public.quiz_answer(jour_test, 901, 2);
   n := n + 1;
   rapport := rapport || format(E'  %s  %s. repondre juste et vite rapporte des points (013)  [attendu > 0, obtenu %s]\n',
                                case when obtenu::integer > 0 then 'OK   ' else 'ECHEC' end, n, obtenu);
@@ -271,9 +275,9 @@ begin
 
   -- 15 — 🔴 On ne repond pas deux fois. Sans ce garde-fou, on repondrait jusqu'a tomber
   --      juste, et le classement ne vaudrait rien.
-  perform public.quiz_answer(jour_test, 1, 0);
+  perform public.quiz_answer(jour_test, 901, 0);
   select points::text into obtenu from public.quiz_answers
-    where user_id = a and on_day = jour_test and ordinal = 1;
+    where user_id = a and on_day = jour_test and ordinal = 901;
   n := n + 1;
   rapport := rapport || format(E'  %s  %s. une seconde reponse ne change RIEN (013)  [attendu > 0, obtenu %s]\n',
                                case when obtenu::integer > 0 then 'OK   ' else 'ECHEC' end, n, obtenu);
@@ -281,13 +285,13 @@ begin
 
   -- 16 — hors delai : zero. On simule en vieillissant `asked_at`, parce que `now()` est
   --      fige pour toute la transaction.
-  perform public.quiz_serve(jour_test, 2);
+  perform public.quiz_serve(jour_test, 902);
   perform set_config('role', 'postgres', true);
   update public.quiz_answers set asked_at = now() - interval '40 seconds'
-    where user_id = a and on_day = jour_test and ordinal = 2;
+    where user_id = a and on_day = jour_test and ordinal = 902;
   perform set_config('role', 'authenticated', true);
 
-  select points::text into obtenu from public.quiz_answer(jour_test, 2, 0);
+  select points::text into obtenu from public.quiz_answer(jour_test, 902, 0);
   n := n + 1; attendu := '0';
   rapport := rapport || format(E'  %s  %s. juste mais hors delai ne rapporte rien (013)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
@@ -297,13 +301,32 @@ begin
   --      d'ecriture n'existe sur `quiz_answers`.
   begin
     insert into public.quiz_answers (user_id, on_day, ordinal, answered_at, correct, points)
-    values (a, jour_test, 9, now(), true, 9999);
+    values (a, jour_test, 909, now(), true, 9999);
     obtenu := 'acceptee';
   exception when others then
     obtenu := 'refusee';
   end;
   n := n + 1; attendu := 'refusee';
   rapport := rapport || format(E'  %s  %s. on ne s''ecrit pas un score a la main (013)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 19pre — 🔴 **On ne joue pas la manche d'hier.** Les questions restent en base une
+  --         semaine (regle 1), donc « expiree » ne voulait pas dire « fermee » : on
+  --         pouvait ouvrir une manche passee sans pression, chercher les reponses, et
+  --         modifier apres coup un classement deja publie.
+  select count(*)::text into obtenu from public.quiz_serve(jour_test - 1, 901);
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. la manche d''hier ne se sert plus (013)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 19pre-bis — et repondre a une manche passee ne rapporte rien non plus. Le verrou est
+  --             repete dans `quiz_answer`, parce qu'une reponse peut arriver sans passer
+  --             par `quiz_serve`.
+  select points::text into obtenu from public.quiz_answer(jour_test - 1, 901, 2);
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. repondre a la manche d''hier ne rapporte rien (013)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
@@ -316,7 +339,7 @@ begin
   -- **rien**. C'est la question que l'audit du 2026-08-10 a posee, et elle se mesure.
   perform set_config('role', 'postgres', true);
   insert into public.quiz_answers (user_id, on_day, ordinal, asked_at, answered_at, correct, points)
-  values (b, jour_test, 1, now(), now(), true, 80);
+  values (b, jour_test, 901, now(), now(), true, 80);
   perform set_config('role', 'authenticated', true);
 
   select count(*)::text into obtenu from public.quiz_board(jour_test) where user_id = b;
@@ -359,10 +382,10 @@ begin
 
   -- 21 — Et elle fait ce qu'elle promet : une question perimee disparait.
   insert into public.quiz_questions (on_day, ordinal, kind, prompt, choices, answer, expires_at)
-  values (jour_test, 9, 'cast', '{}', '["A","B","C","D"]', 0, now() - interval '1 day');
+  values (jour_test, 909, 'cast', '{}', '["A","B","C","D"]', 0, now() - interval '1 day');
   perform public.quiz_purge();
   select count(*)::text into obtenu from public.quiz_questions
-    where on_day = jour_test and ordinal = 9;
+    where on_day = jour_test and ordinal = 909;
   n := n + 1; attendu := '0';
   rapport := rapport || format(E'  %s  %s. quiz_purge retire ce qui a expire (014)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
