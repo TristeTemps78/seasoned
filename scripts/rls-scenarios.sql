@@ -307,17 +307,29 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
-  -- 20 — Les extensions dont la manche nocturne depend. Mesure plutot que supposition :
-  --      si `pg_cron` ou `pg_net` manque, le corpus doit etre bati autrement, et il vaut
-  --      mieux l'apprendre ici qu'a 03:00 devant une table vide.
+  -- 20 — La purge nocturne est **programmee**, pas seulement ecrite.
+  --
+  -- ⚠️ C'est le seul scenario qui verifie une tache plutot qu'une politique, et il a sa
+  -- raison : `expires_at` sans tache serait une intention rangee dans une colonne que
+  -- personne n'applique. La regle 1 (le catalogue est loue) deviendrait decorative, et
+  -- rien ne le signalerait — une table qui grossit ne fait pas de bruit.
   perform set_config('role', 'postgres', true);
-  select string_agg(name || '=' || case when installed_version is null then 'dispo' else 'installee' end, ' ')
-    into obtenu
-  from pg_available_extensions where name in ('pg_cron', 'pg_net');
-  n := n + 1;
-  rapport := rapport || format(E'  %s  %s. extensions du job nocturne  [%s]\n',
-                               case when obtenu is not null then 'INFO ' else 'ECHEC' end, n,
-                               coalesce(obtenu, 'AUCUNE'));
+  select count(*)::text into obtenu from cron.job where jobname = 'voltface-quiz-purge';
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. la purge des questions expirees est programmee (014)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 21 — Et elle fait ce qu'elle promet : une question perimee disparait.
+  insert into public.quiz_questions (on_day, ordinal, kind, prompt, choices, answer, expires_at)
+  values (jour_test, 9, 'cast', '{}', '["A","B","C","D"]', 0, now() - interval '1 day');
+  perform public.quiz_purge();
+  select count(*)::text into obtenu from public.quiz_questions
+    where on_day = jour_test and ordinal = 9;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. quiz_purge retire ce qui a expire (014)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.

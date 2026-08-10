@@ -48,8 +48,21 @@ if (supabaseToken === undefined || ref === undefined) {
   fail('SUPABASE_ACCESS_TOKEN ou NEXT_PUBLIC_SUPABASE_URL manquant dans `.env`');
 }
 
-const day = process.argv[2] ?? new Date().toISOString().slice(0, 10);
-if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) fail(`Date attendue au format AAAA-MM-JJ, recu « ${day} »`);
+const from = process.argv[2] ?? new Date().toISOString().slice(0, 10);
+if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) fail(`Date attendue au format AAAA-MM-JJ, recu « ${from} »`);
+
+/**
+ * Combien de manches d'affilee.
+ *
+ * ⚠️ C'est ce qui rend le cron nocturne inutile pour la construction : on batit une
+ * semaine d'avance en une commande, et la nuit ne s'occupe plus que d'**oublier**
+ * (`014_quiz_cron.sql`). Une tache qui appelle une API tierce chaque nuit est une tache
+ * qui echoue un jour sans que personne ne regarde.
+ */
+const days = Number(process.argv[3] ?? '1');
+if (!Number.isInteger(days) || days < 1 || days > 30) {
+  fail(`Nombre de jours attendu entre 1 et 30, recu « ${process.argv[3]} »`);
+}
 
 /** Un appel TMDB. **Le jeton ne doit apparaitre dans aucune trace** (regle 6). */
 async function tmdb(path) {
@@ -90,7 +103,7 @@ function randomFrom(text) {
   };
 }
 
-console.log(`\nManche du ${day} — Voltface\n`);
+console.log(`\nManches a partir du ${from} (${days}) — Voltface\n`);
 
 /**
  * Ce que `/tv/popular` rend et qui n'est pas une serie.
@@ -118,6 +131,14 @@ for (const page of [1, 2, 3]) {
 }
 if (pool.length < 8) fail('TMDB a rendu trop peu de series pour construire une manche');
 
+/**
+ * Construit UNE manche.
+ *
+ * Le vivier (`pool`) est charge une seule fois et partage : c'est la meme liste de series
+ * populaires pour toute la plage, et il n'y a aucune raison de la redemander sept fois.
+ * Le tirage, lui, repart du jour — deux manches consecutives ne doivent pas se ressembler.
+ */
+async function buildFor(day) {
 const random = randomFrom(day);
 const pick = (list) => list[Math.floor(random() * list.length)];
 
@@ -173,8 +194,14 @@ if (typeof rated.vote_average === 'number' && rated.vote_average > 0) {
 }
 
 // 3 — l'affiche
-const postered = pool.find((one) => typeof one.poster_path === 'string');
-if (postered !== undefined) {
+//
+// ⚠️ Un tirage, pas un `find`. La premiere version prenait la premiere serie du vivier qui
+// portait une affiche : le tirage etant deterministe par jour, elle aurait pose **la meme
+// affiche tous les jours**. Le defaut ne se voit pas sur une manche — il se voit en en
+// construisant quatre.
+const withPoster = pool.filter((one) => typeof one.poster_path === 'string');
+if (withPoster.length > 0) {
+  const postered = pick(withPoster);
   add('poster', postered, { url: `https://image.tmdb.org/t/p/w342${postered.poster_path}` });
 }
 
@@ -230,15 +257,19 @@ for (const family of ['seasons', 'episodes', 'dates']) {
   }
 }
 
-if (questions.length === 0) fail('Aucune question construite — TMDB a-t-il repondu ?');
+if (questions.length === 0) fail(`Aucune question construite pour le ${day} — TMDB a-t-il repondu ?`);
 
 // ⚠️ On remplace la manche du jour plutot que d'en empiler une seconde. Les reponses
 // deja donnees, elles, ne sont pas touchees : elles sont ce que NOUS produisons.
+//
+// ⚠️ `expires_at` court a partir du JOUR DE LA MANCHE et non d'aujourd'hui : en batissant
+// une semaine d'avance, un delai calcule depuis maintenant ferait expirer la derniere
+// manche avant qu'elle ne soit jouee.
 const values = questions
   .map(
     (one, index) =>
       `(${quote(day)}, ${index + 1}, ${quote(one.kind)}, ${quote(JSON.stringify(one.prompt))}::jsonb, ` +
-      `${quote(JSON.stringify(one.choices))}::jsonb, ${one.answer}, now() + interval '7 days')`,
+      `${quote(JSON.stringify(one.choices))}::jsonb, ${one.answer}, ${quote(day)}::timestamptz + interval '8 days')`,
   )
   .join(',\n  ');
 
@@ -249,7 +280,18 @@ await query(`
   ${values};
 `);
 
-for (const [index, one] of questions.entries()) {
-  console.log(`${GREEN}✓${RESET} ${index + 1}. ${one.kind} ${DIM}→ ${one.choices[one.answer]}${RESET}`);
+// On affiche les REPONSES et pas seulement les familles : deux manches qui se ressemblent
+// se voient d'un coup d'oeil, et c'est ainsi que le `find` de l'affiche a ete attrape.
+console.log(
+  `${GREEN}✓${RESET} ${day} ${DIM}: ${questions.map((one) => one.choices[one.answer]).join(' · ')}${RESET}`,
+);
+return questions.length;
 }
-console.log(`\n${GREEN}✓${RESET} manche du ${day} : ${questions.length} question(s)\n`);
+
+let built = 0;
+for (let offset = 0; offset < days; offset += 1) {
+  const day = new Date(`${from}T12:00:00Z`);
+  day.setUTCDate(day.getUTCDate() + offset);
+  built += await buildFor(day.toISOString().slice(0, 10));
+}
+console.log(`\n${GREEN}✓${RESET} ${days} manche(s), ${built} question(s)\n`);
