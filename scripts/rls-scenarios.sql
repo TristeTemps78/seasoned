@@ -833,6 +833,29 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
+  -- 49 — 🔴 **La reserve de manches, et pourquoi elle merite un scenario.**
+  --
+  -- La purge nocturne est programmee (scenario 28) ; la **construction** ne l'est pas — elle
+  -- ne peut pas l'etre, elle interroge TMDB depuis un poste (`npm run db:round`). Le jour ou
+  -- la reserve s'epuise, `quiz_serve` ne rend rien et l'ecran affiche « Rien a afficher pour
+  -- aujourd'hui » : mot pour mot ce qu'il afficherait un jour normal sans classement.
+  --
+  -- **Le jeu s'arreterait donc sans que rien ne le dise.** C'est le motif que ce depot a
+  -- deja paye trois fois, et le seul endroit ou l'on peut le prendre de vitesse est ici :
+  -- une reserve courte doit virer au rouge **avant** de devenir une panne, pas apres.
+  --
+  -- Mesure du 2026-08-11 : des manches jusqu'au 13, soit trois jours — le jeu mourait le 14.
+  -- Le seuil est celui de `build-round.mjs` : une semaine. Rouge = `npm run db:round`.
+  perform set_config('role', 'postgres', true);
+  select count(distinct on_day)::text into obtenu
+    from public.quiz_questions
+   where on_day >= current_date;
+  perform set_config('role', 'authenticated', true);
+  n := n + 1; attendu := '7';
+  rapport := rapport || format(E'  %s  %s. il reste une semaine de manches d avance (013)  [attendu >=%s, obtenu %s]\n',
+                               case when obtenu::int >= attendu::int then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu::int < attendu::int then echecs := echecs + 1; end if;
+
   -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
