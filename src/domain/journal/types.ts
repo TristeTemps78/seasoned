@@ -642,6 +642,37 @@ export interface Journal {
    * Absent = le chiffre s'affiche, ce que le produit faisait deja.
    */
   readonly hideHours?: boolean;
+  /**
+   * Ne pas entrer dans la carte des abandons.
+   *
+   * ## Pourquoi le champ nomme le REFUS, et pas l'accord
+   *
+   * Meme forme que {@link hideHours} : on n'ecrit que l'ecart au defaut, donc `true` seul
+   * est retenu et l'absence ne coute pas un octet dans le document. Ce qui suit dit
+   * pourquoi le defaut est de contribuer.
+   *
+   * ## Pourquoi contribuer est le defaut, et ce n'est pas une facilite
+   *
+   * Trois faits, et ils vont dans le meme sens :
+   *
+   *   1. **Ce qui part est anonyme et illisible.** `supabase/016_stops.sql` ne porte
+   *      **aucune politique `select`** : personne ne peut relire ces lignes, pas meme leur
+   *      auteur. Le produit publie deja, sans rien demander, une activite qui porte le nom
+   *      de la personne (`projectActivity`). Exiger un accord explicite pour une donnee
+   *      **moins** identifiante que celle qu'on envoie deja serait incoherent.
+   *   2. **Un agregat planche a cinq contributeurs ne s'amorce pas par accord explicite.**
+   *      La feature se tairait a jamais, et son ecran serait identique a celui d'un defaut
+   *      — c'est mot pour mot 10.0, qu'on ne refait pas.
+   *   3. **Le refus reste entier et immediat**, et il vaut retroactivement : le refuser
+   *      retire la ligne au lieu de cesser d'en poser.
+   *
+   * ⚠️ Ce n'est pas la meme question que la visibilite du profil. `private` regle **qui
+   * voit mon nom** ; ici il n'y a pas de nom a voir. Les deux reglages ne se recouvrent pas,
+   * et lier l'un a l'autre reviendrait a repondre a une question qu'on n'a pas posee.
+   *
+   * Absent = on contribue.
+   */
+  readonly keepStopsPrivate?: boolean;
   readonly entries: Readonly<Record<JournalKey, JournalEntry>>;
   /** Champs de document inconnus, preserves. Voir {@link JournalEntry.unknownFields}. */
   readonly unknownFields?: Readonly<Record<string, unknown>>;

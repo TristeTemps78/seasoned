@@ -40,6 +40,11 @@ declare
   a  uuid := gen_random_uuid();
   b  uuid := gen_random_uuid();
   z  uuid := gen_random_uuid();
+  -- Deux comptes de plus, qui ne servent qu'a **atteindre le plancher** de `stop_map` (016).
+  -- Ils n'ont ni nom ni contenu : contribuer a la carte des abandons n'exige pas de profil,
+  -- et c'est precisement ce que le semis doit refleter.
+  c1 uuid := gen_random_uuid();
+  c2 uuid := gen_random_uuid();
   -- Un identifiant de passage, pour ne heurter aucune donnee reelle si elle arrive.
   tag text := 'rlstest' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
   -- ⚠️ **La manche du jour, et pas une date inventee.** Ces scenarios ont d'abord seme sur
@@ -64,7 +69,9 @@ begin
   values
     (a, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', tag || '_a@example.test'),
     (b, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', tag || '_b@example.test'),
-    (z, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', tag || '_z@example.test');
+    (z, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', tag || '_z@example.test'),
+    (c1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', tag || '_c1@example.test'),
+    (c2, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', tag || '_c2@example.test');
 
   -- A est public, B est en `followers` — la valeur par defaut (Q1), et le cas qui compte.
   insert into public.profiles (user_id, handle, display_name, visibility)
@@ -459,6 +466,146 @@ begin
     where on_day = jour_test and ordinal = 909;
   n := n + 1; attendu := '0';
   rapport := rapport || format(E'  %s  %s. quiz_purge retire ce qui a expire (014)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
+  -- 016 — la carte des abandons : une table qu'on remplit sans jamais la relire
+  -- ---------------------------------------------------------------------------
+  --
+  -- ⚠️ **Un sujet unique par execution.** Le fichier a deja casse deux fois pour avoir
+  -- suppose une base vide ; ici le risque serait pire qu'un faux echec, puisque de vraies
+  -- lignes feraient franchir le plancher et rendraient le scenario 25 vert par accident.
+  -- `tag` garantit qu'on ne mesure que ce qu'on vient de semer.
+
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  -- 22 — A contribue chez lui. Sans ca, rien de ce qui suit ne veut dire quoi que ce soit.
+  insert into public.stops (user_id, subject, reached_season, left_at_season)
+  values (a, tag || '_own', 4, 4);
+  get diagnostics lignes = row_count;
+  obtenu := lignes::text;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. A pose sa propre ligne d abandon (016)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 23 — 🔴 **LE scenario de ce lot.** La table n'a AUCUNE politique `select` : A ne relit
+  --      pas meme la ligne qu'il vient d'ecrire. C'est la garantie d'anonymat elle-meme, et
+  --      c'est la seule chose ici qu'aucun test ne peut prouver — ils doublent `fetch`.
+  select count(*)::text into obtenu from public.stops;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. A ne relit RIEN, pas meme sa propre ligne (016)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 24 — Et il n'ecrit pas chez les autres : sinon la carte se truque en un `POST`.
+  begin
+    insert into public.stops (user_id, subject, reached_season)
+    values (b, tag || '_own', 9);
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. A ne pose pas la ligne de B (016)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 25 — La contrainte de coherence, en SQL et pas seulement dans le domaine : une position
+  --      se declare a la main, donc elle peut reculer.
+  begin
+    insert into public.stops (user_id, subject, reached_season, left_at_season)
+    values (a, tag || '_bad', 2, 5);
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. un arret plus loin que le point atteint est refuse (016)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- Quatre contributeurs sur une meme serie : un de moins que le plancher.
+  perform set_config('role', 'postgres', true);
+  insert into public.stops (user_id, subject, reached_season, left_at_season)
+  values (a,  tag || '_m', 4, 4),
+         (b,  tag || '_m', 4, 4),
+         (z,  tag || '_m', 4, 4),
+         (c1, tag || '_m', 4, null);
+  perform set_config('role', 'authenticated', true);
+
+  -- 26 — Sous le plancher, la fonction **se tait**. Pas un zero : zero ligne. Un zero serait
+  --      une reponse, et sur un petit effectif une reponse redevient nominative.
+  select count(*)::text into obtenu from public.stop_map(tag || '_m');
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. stop_map se tait a 4 contributeurs (016)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- Le cinquieme entre, et le plancher est franchi.
+  perform set_config('role', 'postgres', true);
+  insert into public.stops (user_id, subject, reached_season, left_at_season)
+  values (c2, tag || '_m', 4, null);
+  perform set_config('role', 'authenticated', true);
+
+  -- 27 — Au plancher, elle parle — et elle compte juste : 5 arrives en saison 4, 3 arrets.
+  --      ⚠️ Le denominateur est mesure avec le numerateur : c'est lui qui fait une courbe de
+  --      survie plutot qu'un decompte, et un scenario qui ne verifierait que les arrets
+  --      laisserait passer une fonction qui les rend sans base de comparaison.
+  select format('%s/%s', s.left_here, s.reached) into obtenu
+  from public.stop_map(tag || '_m') s where s.season = 4;
+  n := n + 1; attendu := '3/5';
+  rapport := rapport || format(E'  %s  %s. stop_map rend 3 arrets sur 5 arrives en S4 (016)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 28 — 🔴 **LE PIEGE, et il a coute une fonctionnalite silencieusement morte.**
+  --
+  -- Postgres applique aussi les politiques `select` a un `DELETE` porteur d'une clause
+  -- `WHERE` : decider quoi effacer demande de lire. Cette table n'ayant AUCUNE politique
+  -- `select`, un `DELETE … WHERE user_id = moi` — la seule forme que PostgREST accepte,
+  -- puisqu'il exige un filtre — voit zero ligne, en efface zero, et repond **204**.
+  --
+  -- Le premier `forgetStops()` faisait exactement ca. Il compilait, il rendait `true`, et
+  -- il ne retirait personne de la carte. Ce scenario existe pour que le raccourci ne soit
+  -- pas re-ecrit un jour ou il « parait plus simple ».
+  delete from public.stops where user_id = a;
+  get diagnostics lignes = row_count;
+  obtenu := lignes::text;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. un DELETE filtre n efface RIEN, faute de politique select (016)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 29 — …d'ou la fonction. Elle efface reellement, et elle rend combien : sans ce nombre,
+  --      le retrait resterait une promesse que personne ne peut verifier.
+  select public.forget_stops()::text into obtenu;
+  n := n + 1; attendu := '2';
+  rapport := rapport || format(E'  %s  %s. forget_stops retire les 2 lignes de A (016)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 30 — …et rien d'autre. `security definer` contourne RLS : sans le `where` sur
+  --      `auth.uid()`, la fonction viderait la carte de tout le monde. Ici B, Z, C1 et C2
+  --      doivent rester — mesure en `postgres`, la seule facon de les voir.
+  perform set_config('role', 'postgres', true);
+  select count(*)::text into obtenu from public.stops where subject = tag || '_m';
+  n := n + 1; attendu := '4';
+  rapport := rapport || format(E'  %s  %s. forget_stops n emporte que les siennes (016)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+  perform set_config('role', 'authenticated', true);
+
+  -- 31 — Et la carte se tait a nouveau : le depart d'un contributeur repasse sous le
+  --      plancher. C'est la preuve que le plancher se mesure a chaque appel, et non une
+  --      fois pour toutes.
+  select count(*)::text into obtenu from public.stop_map(tag || '_m');
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. la carte se retait quand on repasse sous le plancher (016)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 

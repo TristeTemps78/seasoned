@@ -279,7 +279,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'account.callback.nothing': 'There is nothing to confirm here.',
   'account.callback.back': 'Back to my account',
   'privacy.title': 'Privacy',
-  'privacy.updated': 'Last updated 3 August 2026.',
+  'privacy.updated': 'Last updated 10 August 2026.',
   'privacy.now.title': 'Without an account, your notes never leave this browser',
   'privacy.account.title': 'If you create an account',
   'privacy.account.body':
@@ -287,6 +287,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'privacy.sync.title': 'What syncing sends',
   'privacy.sync.body':
     'With an account, a copy of your journal — positions, ratings, decisions — is sent to that same database, so you find it on your other devices. It stays readable by you alone: the database refuses any read that does not come from your account. The original stays in this browser and remains the source of truth: if our servers go down, the site keeps working.',
+  'privacy.stops.title': 'The drop-off map',
+  'privacy.stops.body':
+    'With an account, a second piece of data is sent: for each series, how far you got and, if you dropped it, at which season. It is stored separately, without your name, in a table nobody can read — not even you, not even from your own account. It only feeds a total: “of those who reach season 4, this many stop there”, and that total only appears from five people onwards. You can opt out from the Account page; opting out also removes whatever had already been put there.',
   'privacy.now.body':
     'There are no trackers, no analytics and no advertising cookies. Your positions, ratings and decisions are written to this device’s local storage. Without an account they are sent nowhere — and you can check this yourself: the site’s security policy lets the browser contact no server but ours.',
   'privacy.tmdb.title': 'What comes from elsewhere',
@@ -702,6 +705,30 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'traj.stop.after': ', instead of ~ {full}.',
   'traj.source':
     'Derived from TMDB public ratings, season by season — not from ratings on this site. Those ratings look very similar from one season to the next: the gaps matter more than the values.',
+  // --- The drop-off map ----------------------------------------------------
+  'stops.aria': 'Where people drop off',
+  'stops.title': 'Where people drop off',
+  'stops.verdict': '{rate}% of those who reach season {s} stop there.',
+  'stops.basis': 'measured on {people}',
+  'stops.people.one': '1 person',
+  'stops.people.other': '{n} people',
+  'stops.hidden': 'Something happens further on.',
+  'stops.seeAll': 'See the whole map',
+  'stops.warning': 'contains the season people drop off',
+  'stops.reached.one': '1 reached',
+  'stops.reached.other': '{n} reached',
+  'stops.left.one': '1 stops',
+  'stops.left.other': '{n} stop',
+  'stops.source':
+    'Built from drop-offs declared here, never from public ratings — those only collect the opinion of the people who kept going.',
+  'stops.opt.title': 'The drop-off map',
+  'stops.opt.body':
+    'How far you get into a series, and where you stop, go without your name into a statistic nobody can read line by line. It is what makes it possible to say where a series loses its audience — something no rating says, since only the people who stayed rate it.',
+  'stops.opt.leave': 'Do not take part',
+  'stops.opt.left':
+    'You are not in the drop-off map, and whatever had been put there has been removed.',
+  'stops.opt.rejoin': 'Take part again',
+
   'traj.youAndPublic': 'You, and the public',
   'traj.you': 'you {v}',
   'traj.publicIs': 'public {v}',

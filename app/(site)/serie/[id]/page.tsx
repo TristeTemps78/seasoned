@@ -25,6 +25,7 @@ import { TmdbError } from '@/src/catalog/tmdb';
 import { starsFromTen } from '@/src/domain/rating-scale';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { SeasonList } from '@/app/components/SeasonList';
+import { StopMap } from '@/app/components/StopMap';
 import { TrajectorySection } from '@/app/components/TrajectorySection';
 import { WatchOptions } from '@/app/components/WatchOptions';
 import { SeriesOrderings } from '@/app/components/SeriesOrderings';
@@ -581,15 +582,31 @@ async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCoun
     airingSeason !== undefined ? judgeCurrentSeason(rated, airingSeason) : undefined;
 
   return (
-    <TrajectorySection
-      seriesId={id}
-      title={title}
-      trajectory={trajectory}
-      grid={grid}
-      advice={advice}
-      entryPoint={entry}
-      currentSeason={current}
-    />
+    <>
+      <TrajectorySection
+        seriesId={id}
+        title={title}
+        trajectory={trajectory}
+        grid={grid}
+        advice={advice}
+        entryPoint={entry}
+        currentSeason={current}
+      />
+      {/* Juste sous la courbe publique, parce que c'est la **meme question** posee a une
+          autre matiere : celle-la dit ce que pensent ceux qui sont restes, celle-ci ou les
+          autres sont partis. Les separer les rendrait incomparables.
+
+          Les saisons descendent dans la forme legere que `MyProgress` recoit deja
+          (`SeasonSize`) : l'objet de catalogue ne traverse pas jusqu'au navigateur. */}
+      <StopMap
+        seriesId={id}
+        seasons={seasons.rateable.map((s) => ({
+          seasonNumber: s.ref.seasonNumber,
+          episodeCount: s.episodeCount,
+        }))}
+        episodeCount={episodeCount}
+      />
+    </>
   );
 }
 

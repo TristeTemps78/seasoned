@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/app/auth/AuthProvider';
+import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { SignIn } from '@/app/components/SignIn';
 
@@ -59,6 +60,8 @@ export function AccountPanel() {
 
       <p className="max-w-prose text-sm text-(--color-muted)">{t('account.notSynced')}</p>
 
+      <StopMapConsent />
+
       <section className="card max-w-md space-y-3 border-(--color-warn)/40">
         <h2 className="card-title">{t('account.delete.title')}</h2>
         <p className="prose-note">
@@ -86,5 +89,45 @@ export function AccountPanel() {
         </p>
       </section>
     </div>
+  );
+}
+
+/**
+ * Entrer dans la carte des abandons, ou en sortir.
+ *
+ * ## Pourquoi le reglage est ici, et pourquoi il existe
+ *
+ * Ce qui part est **anonyme et illisible** — `016_stops.sql` ne porte aucune politique de
+ * lecture — et le produit publie deja, sans rien demander, une activite qui porte le nom de
+ * la personne. Contribuer est donc le defaut, comme pour le fil.
+ *
+ * Mais contribuer sans **aucun** moyen de sortir serait un autre sujet, et celui-la n'est
+ * pas defendable. D'ou ce bloc, sur `/compte` : la contribution n'existe que pour un compte
+ * connecte, donc le reglage n'a de sens qu'ici — un bouton qui ne peut rien changer ne
+ * s'affiche pas (regle du 2026-08-09).
+ *
+ * ⚠️ **Sortir efface**, il ne se contente pas de se taire : voir
+ * {@link SocialClient.forgetStops}. Le texte doit le dire, sans quoi quelqu'un se retirerait
+ * en croyant seulement arreter — et il n'aurait aucun moyen de verifier la difference,
+ * puisque la table est illisible.
+ */
+function StopMapConsent() {
+  const { t } = useT();
+  const { journal, ready, setKeepStopsPrivate } = useJournal();
+  if (!ready) return null;
+
+  const out = journal.keepStopsPrivate === true;
+
+  return (
+    <section className="card max-w-md space-y-3">
+      <h2 className="card-title">{t('stops.opt.title')}</h2>
+      {/* ⚠️ **Le bloc reste entier une fois sorti.** Le remplacer par une phrase retirerait
+          le seul endroit ou revenir — un reglage qui se cache lui-meme n'est pas un reglage,
+          c'est un piege. Meme lecon que le masquage des heures. */}
+      <p className="prose-note">{t(out ? 'stops.opt.left' : 'stops.opt.body')}</p>
+      <button type="button" className="btn" onClick={() => setKeepStopsPrivate(!out)}>
+        {t(out ? 'stops.opt.rejoin' : 'stops.opt.leave')}
+      </button>
+    </section>
   );
 }

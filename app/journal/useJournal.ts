@@ -14,6 +14,7 @@ import {
   setRegions as setRegionsIn,
   setArtwork as setArtworkIn,
   setHideHours as setHideHoursIn,
+  setKeepStopsPrivate as setKeepStopsPrivateIn,
   setPosition as setPositionIn,
   setSeasonRating as setSeasonRatingIn,
   setSnapshot as setSnapshotIn,
@@ -227,6 +228,10 @@ export function useJournal() {
     ),
     setHideHours: useCallback(
       (hide: boolean) => mutate((j) => setHideHoursIn(j, hide)),
+      [mutate],
+    ),
+    setKeepStopsPrivate: useCallback(
+      (keepPrivate: boolean) => mutate((j) => setKeepStopsPrivateIn(j, keepPrivate)),
       [mutate],
     ),
     setArtwork: useCallback(

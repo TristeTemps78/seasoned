@@ -47,6 +47,12 @@ export function PrivacyView({ locale }: { readonly locale: Locale }) {
         body={t(locale, 'privacy.account.body')}
       />
       <Section title={t(locale, 'privacy.sync.title')} body={t(locale, 'privacy.sync.body')} />
+      {/* ⚠️ Juste apres la synchronisation, et **pas** ailleurs : c'est le seul autre chemin
+          par lequel une donnee personnelle quitte le navigateur, et la section precedente
+          promet « lisible par vous seul ». Sans celle-ci, cette promesse serait exacte et
+          incomplete — la forme de mensonge que `no-false-privacy-claim` existe pour
+          empecher, sur une page ou l'omission compte autant que l'affirmation. */}
+      <Section title={t(locale, 'privacy.stops.title')} body={t(locale, 'privacy.stops.body')} />
       <Section title={t(locale, 'privacy.tmdb.title')} body={t(locale, 'privacy.tmdb.body')} />
       <Section
         title={t(locale, 'privacy.hosting.title')}

@@ -10,6 +10,7 @@
  */
 
 import type { ActivityItem, ActivityKind } from '../domain/activity';
+import type { StopBucket, StopRecord } from '../domain/attrition';
 import type { FaceId } from '../domain/face';
 
 export interface SocialOptions {
@@ -525,6 +526,91 @@ export class SocialClient {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Pousse ma contribution a la carte des abandons.
+   *
+   * Meme mecanique que {@link publish} : `merge-duplicates` sur `(user_id, subject)`, donc
+   * on renvoie tout a chaque passage plutot que de tenir un registre de ce qui est deja
+   * parti — un etat de plus a synchroniser serait un etat de plus a desynchroniser.
+   *
+   * ⚠️ **Rien ne revient, et ce n'est pas le meme « rien » que {@link report}.** Ici la
+   * table n'a aucune politique de lecture parce que l'anonymat *est* la fonctionnalite :
+   * personne ne relit ces lignes, pas meme leur auteur. C'est pour ca qu'on republie sans
+   * jamais comparer — il n'y a rien a quoi comparer.
+   */
+  async publishStops(userId: string, records: readonly StopRecord[]): Promise<boolean> {
+    if (records.length === 0) return true;
+    try {
+      const response = await this.#fetch(this.#url('stops'), {
+        method: 'POST',
+        headers: this.#headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+        body: JSON.stringify(
+          records.map((record) => ({
+            user_id: userId,
+            subject: record.subject,
+            reached_season: record.reachedSeason,
+            left_at_season: record.leftAtSeason ?? null,
+          })),
+        ),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Sortir entierement de la carte des abandons.
+   *
+   * ⚠️ **Retroactif, et c'est la seule forme honnete.** Cesser de publier laisserait en
+   * place tout ce qui a deja ete pose : quelqu'un qui se retire resterait dans la carte
+   * pour toujours, sans aucun moyen de le verifier — la table etant illisible, il n'aurait
+   * meme pas de quoi constater le probleme. Le refus efface donc, il ne se contente pas de
+   * se taire.
+   *
+   * ## 🔴 Pourquoi une RPC et non un `DELETE` filtre, comme partout ailleurs ici
+   *
+   * Parce que le `DELETE` filtre **n'efface rien** : Postgres applique aussi les politiques
+   * `select` a un `DELETE` porteur d'une clause `WHERE`, et `stops` n'en a aucune. La
+   * requete voit zero ligne, en efface zero, et repond **204** — donc `ok`. Mesure contre
+   * la vraie base le 2026-08-10 ; aucun test ne pouvait le voir, ils doublent `fetch`.
+   *
+   * ⚠️ **Ne pas « simplifier » ceci en `DELETE stops?user_id=eq.…`.** C'est exactement le
+   * code qui a ete ecrit d'abord, il compile, il repond `true`, et il ne fait rien.
+   */
+  async forgetStops(): Promise<boolean> {
+    return this.#write('rpc/forget_stops', 'POST', {});
+  }
+
+  /**
+   * La courbe de survie d'une serie — combien atteignent chaque saison, combien s'y
+   * arretent.
+   *
+   * ⚠️ **Rend `[]` aussi bien quand la serie n'a pas assez de contributeurs que quand
+   * l'appel echoue** : `stop_map()` se tait sous son plancher, et `#rpc` ne leve jamais.
+   * Les deux silences sont indistinguables ici, et c'est assume — mais c'est exactement le
+   * mecanisme du defaut 10.0, ou un 400 ressemblait a un demarrage a froid. La distinction,
+   * si elle doit se faire un jour, se fera contre la vraie base, pas dans ce code.
+   */
+  async stopMap(subject: string): Promise<readonly StopBucket[]> {
+    const rows = await this.#rpc<Record<string, unknown>>('stop_map', {
+      for_subject: subject,
+    });
+    return rows.flatMap((row) => {
+      const season = Number(row['season']);
+      // Une saison qui n'est pas un nombre n'est pas une saison. Meme prudence que partout
+      // ici : le serveur peut etre en avance sur le navigateur.
+      if (!Number.isFinite(season)) return [];
+      return [
+        {
+          season,
+          reached: Number(row['reached'] ?? 0),
+          leftHere: Number(row['left_here'] ?? 0),
+        },
+      ];
+    });
   }
 
   /**

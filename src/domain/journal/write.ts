@@ -465,6 +465,20 @@ export function setHideHours(journal: Journal, hide: boolean): Journal {
   return rest;
 }
 
+/**
+ * Entrer dans la carte des abandons, ou en sortir.
+ *
+ * ⚠️ **Sortir ne suffit pas a effacer.** Ce champ arrete de publier ; il ne retire pas la
+ * ligne deja posee, parce qu'un journal ne sait pas ce que le serveur porte. C'est
+ * `PublishActivity` qui doit demander la suppression au moment ou le refus apparait — et
+ * c'est ecrit ici parce que c'est ici qu'on le lira.
+ */
+export function setKeepStopsPrivate(journal: Journal, keepPrivate: boolean): Journal {
+  if (keepPrivate) return { ...journal, keepStopsPrivate: true };
+  const { keepStopsPrivate: _drop, ...rest } = journal;
+  return rest;
+}
+
 export function setRegions(journal: Journal, regions: readonly string[]): Journal {
   const clean = [
     ...new Set(regions.filter((one) => /^[A-Za-z]{2}$/.test(one)).map((one) => one.toUpperCase())),

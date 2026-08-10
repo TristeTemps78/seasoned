@@ -355,6 +355,7 @@ const KNOWN_JOURNAL_FIELDS = [
   'platforms',
   'regions',
   'hideHours',
+  'keepStopsPrivate',
   'entries',
 ] as const;
 
@@ -575,6 +576,10 @@ function readJournal(
     // sauvegarde. Seul `true` est retenu — l'absence est deja le defaut, l'ecrire serait
     // du bruit dans le document.
     ...(source['hideHours'] === true ? { hideHours: true } : {}),
+    // Meme regle, et elle est ici pour la meme raison : un refus que `parseJournal`
+    // n'aurait pas relu serait efface a la premiere sauvegarde, et la personne rentrerait
+    // dans la carte sans le savoir.
+    ...(source['keepStopsPrivate'] === true ? { keepStopsPrivate: true } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
 }
@@ -608,6 +613,7 @@ export function serializeJournal(journal: Journal): string {
       ? { regions: journal.regions }
       : {}),
     ...(journal.hideHours === true ? { hideHours: true } : {}),
+    ...(journal.keepStopsPrivate === true ? { keepStopsPrivate: true } : {}),
     entries,
   });
 }

@@ -6,6 +6,7 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { projectActivity } from '@/src/domain/activity';
+import { projectStops } from '@/src/domain/attrition';
 import { SocialClient } from '@/src/social/client';
 
 /**
@@ -35,14 +36,25 @@ import { SocialClient } from '@/src/social/client';
  * ⚠️ **Debattu, et une seule fois par contenu.** Le journal change a chaque frappe ; sans
  * garde, chaque demi-etoile posee declencherait un envoi. On attend que ca se calme, et on
  * n'envoie que si la projection a **reellement** change depuis le dernier envoi.
+ *
+ * ## Deux projections, un seul temporisateur
+ *
+ * Le fil (`projectActivity`) et la carte des abandons (`projectStops`) partent d'ici, du
+ * meme journal et au meme moment. Deux effets separes feraient deux temporisateurs sur la
+ * meme frappe, pour deux envois qui se suivent d'une milliseconde ; leurs signatures
+ * restent distinctes, parce que l'une peut changer sans l'autre — noter une saison bouge le
+ * fil et pas la carte.
  */
 export function PublishActivity() {
   const { configured, account } = useAuth();
   const { journal, ready } = useJournal();
   const lastSent = useRef<string | undefined>(undefined);
+  const lastStops = useRef<string | undefined>(undefined);
+  const forgotten = useRef(false);
 
   const accessToken = account?.accessToken;
   const userId = account?.userId;
+  const keepStopsPrivate = journal.keepStopsPrivate === true;
 
   useEffect(() => {
     if (!configured || !ready || userId === undefined) return;
@@ -50,12 +62,23 @@ export function PublishActivity() {
     if (config === undefined) return;
 
     const items = projectActivity(journal, new Date());
-    if (items.length === 0) return;
+    // ⚠️ La carte se calcule meme quand on n'y contribue pas : c'est le **refus** qui
+    // decide de l'envoi, pas la projection. La calculer sous la condition inverse rendrait
+    // le code plus court et la reprise du consentement muette jusqu'au prochain geste.
+    const stops = keepStopsPrivate ? [] : projectStops(journal);
 
     // La signature de ce qu'on s'apprete a envoyer. Identique au dernier envoi = rien a
     // faire : `publish` est idempotent, mais un appel reseau inutile reste un appel.
     const shape = JSON.stringify(items);
-    if (shape === lastSent.current) return;
+    const stopShape = JSON.stringify(stops);
+
+    const sendActivity = items.length > 0 && shape !== lastSent.current;
+    const sendStops = stops.length > 0 && stopShape !== lastStops.current;
+    // Le retrait ne part qu'une fois par session : la table est illisible, donc rien ne
+    // permet de constater qu'elle est deja vide, et redemander a chaque frappe serait un
+    // `DELETE` par touche.
+    const forget = keepStopsPrivate && !forgotten.current;
+    if (!sendActivity && !sendStops && !forget) return;
 
     const timer = setTimeout(() => {
       const social = new SocialClient({
@@ -63,15 +86,39 @@ export function PublishActivity() {
         anonKey: config.anonKey,
         accessToken: () => accessToken,
       });
-      void social.publish(userId, items).then((ok) => {
-        // On ne memorise que ce qui est **parti** : sinon un echec reseau serait pris pour
-        // un envoi reussi, et le fait ne repartirait jamais.
-        if (ok) lastSent.current = shape;
-      });
+
+      if (sendActivity) {
+        void social.publish(userId, items).then((ok) => {
+          // On ne memorise que ce qui est **parti** : sinon un echec reseau serait pris
+          // pour un envoi reussi, et le fait ne repartirait jamais.
+          if (ok) lastSent.current = shape;
+        });
+      }
+      if (sendStops) {
+        void social.publishStops(userId, stops).then((ok) => {
+          if (ok) lastStops.current = stopShape;
+        });
+      }
+      if (forget) {
+        void social.forgetStops().then((ok) => {
+          if (ok) {
+            forgotten.current = true;
+            // ⚠️ Oublier la signature aussi : sans ca, reprendre le consentement ne
+            // republierait rien tant que le journal n'a pas change, et la personne
+            // resterait hors de la carte en croyant y etre rentree.
+            lastStops.current = undefined;
+          }
+        });
+      }
     }, 4_000);
 
     return () => clearTimeout(timer);
-  }, [configured, ready, journal, userId, accessToken]);
+  }, [configured, ready, journal, userId, accessToken, keepStopsPrivate]);
+
+  // Reprendre le consentement doit pouvoir redemander un retrait plus tard.
+  useEffect(() => {
+    if (!keepStopsPrivate) forgotten.current = false;
+  }, [keepStopsPrivate]);
 
   return null;
 }

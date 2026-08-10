@@ -258,6 +258,12 @@ const DOCUMENT_MERGE: {
   // rattrapable en un clic ; l'inverse remet sous les yeux un chiffre que quelqu'un
   // avait explicitement demande a ne plus voir.
   hideHours: (a, b) => (a.hideHours === true || b.hideHours === true ? true : undefined),
+  // ⚠️ **Le refus gagne**, exactement comme le masquage — et ici l'asymetrie compte plus
+  // encore : se tromper vers le retrait ne coute qu'une ligne d'agregat, se tromper vers la
+  // publication remet dans une carte quelqu'un qui en etait sorti. Le premier se repare en
+  // un clic, le second a deja eu lieu.
+  keepStopsPrivate: (a, b) =>
+    a.keepStopsPrivate === true || b.keepStopsPrivate === true ? true : undefined,
 };
 
 /** L'union de deux ensembles non dates, sans doublon. Vide devient `undefined`. */

@@ -323,7 +323,7 @@ export const FR = {
   'account.callback.nothing': 'Il n’y a rien à valider ici.',
   'account.callback.back': 'Retour à mon compte',
   'privacy.title': 'Confidentialité',
-  'privacy.updated': 'À jour du 3 août 2026.',
+  'privacy.updated': 'À jour du 10 août 2026.',
   'privacy.now.title': 'Sans compte, vos notes ne quittent pas ce navigateur',
   'privacy.now.body':
     'Il n’y a ni traceur, ni mesure d’audience, ni cookie publicitaire. Vos positions, vos notes et vos décisions sont écrites dans le stockage local de cet appareil. Sans compte, elles ne sont envoyées nulle part — et vous pouvez le vérifier : la politique de sécurité du site n’autorise le navigateur à contacter aucun serveur en dehors du nôtre.',
@@ -333,6 +333,9 @@ export const FR = {
   'privacy.sync.title': 'Ce que la synchronisation envoie',
   'privacy.sync.body':
     'Avec un compte, une copie de votre journal — positions, notes, décisions — est envoyée à cette même base, pour que vous le retrouviez sur vos autres appareils. Elle reste lisible par vous seul : la base refuse toute lecture qui ne vient pas de votre compte. L’original, lui, reste dans ce navigateur, et c’est lui qui fait foi : si nos serveurs tombent, le site continue de fonctionner.',
+  'privacy.stops.title': 'La carte des abandons',
+  'privacy.stops.body':
+    'Avec un compte, une seconde donnée part : pour chaque série, jusqu’où vous êtes allé et, si vous l’avez abandonnée, à quelle saison. Elle est enregistrée séparément, sans votre nom, dans une table que personne ne peut lire — pas même vous, pas même depuis votre propre compte. Elle ne sert qu’à un total : « sur ceux qui arrivent à la saison 4, tant s’y arrêtent », et ce total ne s’affiche qu’à partir de cinq personnes. Vous pouvez ne pas y participer depuis la page Compte ; le refus retire aussi ce qui y avait déjà été posé.',
   'privacy.tmdb.title': 'Ce qui vient d’ailleurs',
   'privacy.tmdb.body':
     'Les fiches de séries et les affiches proviennent de TMDB. Charger une affiche adresse une requête à leur serveur d’images, qui voit donc votre adresse IP — comme pour toute image sur le web. Nous ne leur transmettons rien d’autre.',
@@ -819,6 +822,35 @@ export const FR = {
   'traj.stop.after': ', au lieu de ~ {full}.',
   'traj.source':
     'Établie à partir des notes du public TMDB, saison par saison — pas des notes de ce site. Ces notes se ressemblent beaucoup d’une saison à l’autre : les écarts comptent plus que les valeurs.',
+  // --- La carte des abandons -----------------------------------------------
+  // ⚠️ Le mot « abandon » est assume : c'est ce que le geste dit, et l'adoucir
+  // (« interruption », « pause ») rendrait la mesure incomprehensible.
+  'stops.aria': 'Où l’on décroche',
+  'stops.title': 'Où l’on décroche',
+  'stops.verdict': '{rate} % de ceux qui arrivent à la saison {s} s’y arrêtent.',
+  'stops.basis': 'mesuré sur {people}',
+  'stops.people.one': '1 personne',
+  'stops.people.other': '{n} personnes',
+  'stops.hidden': 'Il se passe quelque chose plus loin.',
+  'stops.seeAll': 'Voir la carte entière',
+  'stops.warning': 'contient la saison où l’on décroche',
+  'stops.reached.one': '1 arrivé',
+  'stops.reached.other': '{n} arrivés',
+  'stops.left.one': '1 s’arrête',
+  'stops.left.other': '{n} s’arrêtent',
+  // ⚠️ Cette phrase est la raison d'etre de tout l'encart : elle dit **pourquoi** ce chiffre
+  // n'est pas le meme que celui du dessus, et sans elle les deux se contredisent sans
+  // explication.
+  'stops.source':
+    'Calculé sur les abandons déclarés ici, jamais sur les notes du public — celles-ci ne recueillent que l’avis de ceux qui ont persévéré.',
+  'stops.opt.title': 'La carte des abandons',
+  'stops.opt.body':
+    'Jusqu’où vous allez dans une série, et où vous vous arrêtez, entrent sans votre nom dans une statistique que personne ne peut relire ligne à ligne. C’est elle qui permet de dire où une série perd son public — ce qu’aucune note ne dit, puisque seuls ceux qui sont restés notent.',
+  'stops.opt.leave': 'Ne pas y participer',
+  'stops.opt.left':
+    'Vous n’entrez pas dans la carte des abandons, et ce qui y avait été posé a été retiré.',
+  'stops.opt.rejoin': 'Y participer à nouveau',
+
   'traj.youAndPublic': 'Vous, et le public',
   'traj.you': 'vous {v}',
   'traj.publicIs': 'public {v}',
