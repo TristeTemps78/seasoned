@@ -54,7 +54,11 @@
  * tel quel sur iOS et Android (A11).
  */
 
-import { isSeriesKey, type Journal, type JournalKey } from './journal';
+// ⚠️ Depuis `./journal/types` et non depuis le tonneau `./journal` : celui-ci reexporte
+// `parse.ts`, qui lit desormais {@link readFace} pour relire la face annoncee. Passer par le
+// tonneau ferait un cycle a l'execution — face → journal → parse → face. Le module de types
+// ne depend de rien, donc le graphe reste un arbre.
+import { isSeriesKey, type Journal, type JournalKey } from './journal/types';
 
 /**
  * Les trois faces.
@@ -71,6 +75,34 @@ import { isSeriesKey, type Journal, type JournalKey } from './journal';
  * en base et sur le reseau.
  */
 export type FaceId = 'finisher' | 'cutter' | 'rewatcher';
+
+/**
+ * Les trois, en table — pour pouvoir **verifier** un mot venu d'ailleurs.
+ *
+ * Derive du type, donc impossible a oublier : ajouter une face sans l'inscrire ici ne
+ * compile pas. Un `as FaceId` laisserait passer un mot pour lequel il n'existe ni cle de
+ * dictionnaire ni couleur, et la pastille s'afficherait **vide**.
+ */
+const KNOWN_FACES: Readonly<Record<FaceId, true>> = {
+  finisher: true,
+  cutter: true,
+  rewatcher: true,
+};
+
+/**
+ * Une face lue **d'ailleurs**, ou `undefined` si le mot est inconnu.
+ *
+ * ⚠️ Deux appelants, et ce n'est pas la meme methance. Le serveur est en avance sur ce
+ * navigateur des qu'un deploiement ajoute une valeur (`SocialClient`) ; un document de
+ * journal, lui, peut avoir ete ecrit par un client plus recent, ou a la main. Les deux
+ * ecartent ce qu'ils ne savent pas lire — regle 4 — et une seule copie du controle evite
+ * qu'ils se repondent differemment le jour ou l'un des deux serait corrige.
+ */
+export function readFace(value: unknown): FaceId | undefined {
+  return typeof value === 'string' && Object.hasOwn(KNOWN_FACES, value)
+    ? (value as FaceId)
+    : undefined;
+}
 
 /**
  * Combien de faits recents la face regarde.

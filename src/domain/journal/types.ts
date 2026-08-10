@@ -9,6 +9,9 @@
 import type { DecisionKind, SeriesId, Stars } from '../types';
 import type { SeasonSize } from '../remaining';
 import type { RealStatus } from '../status';
+// Type seul, donc efface a la compilation : `face.ts` importe `isSeriesKey` d'ici, et un
+// import de valeur en retour ferait un cycle a l'execution.
+import type { FaceId } from '../face';
 
 
 /**
@@ -673,9 +676,44 @@ export interface Journal {
    * Absent = on contribue.
    */
   readonly keepStopsPrivate?: boolean;
+  /**
+   * La derniere face qu'on a **annoncee** a la personne.
+   *
+   * ## Pourquoi le journal, et pas un drapeau d'ecran
+   *
+   * La face se calcule a chaque rendu ({@link faceOf}) : rien, dans le produit, ne sait si
+   * la personne a **deja vu** celle qu'elle porte. Sans memoire, l'annonce se rejouerait a
+   * chaque chargement de page — donc elle ne voudrait plus rien dire — ou ne se jouerait
+   * jamais.
+   *
+   * Elle vit ici et pas dans le stockage d'ecran pour la meme raison que {@link regions} :
+   * elle doit suivre d'un appareil a l'autre. Basculer se remarque une fois, pas une fois
+   * par appareil.
+   *
+   * ## Un fait date, comme tout le reste du journal
+   *
+   * ⚠️ `at` n'est pas decoratif : c'est **lui** qui tranche la fusion. Deux appareils
+   * peuvent avoir annonce deux faces differentes, et `mergeJournals` resout champ par champ
+   * avec les dates portees par chaque fait — jamais par l'ordre des arguments. Sans date, la
+   * fusion devrait inventer une preference, et le depot connait le prix de ca (le `deviceId`
+   * de `sameJournal`).
+   *
+   * Absent = rien n'a jamais ete annonce. La premiere face decouverte s'annonce donc, et
+   * c'est voulu : passer de *rien* a *quelque chose* est la bascule la plus importante.
+   *
+   * Champ **additif** : un client plus ancien l'ignore et le preserve.
+   */
+  readonly announcedFace?: FaceAnnouncement;
   readonly entries: Readonly<Record<JournalKey, JournalEntry>>;
   /** Champs de document inconnus, preserves. Voir {@link JournalEntry.unknownFields}. */
   readonly unknownFields?: Readonly<Record<string, unknown>>;
+}
+
+/** Une annonce de face : laquelle, et quand on l'a montree. */
+export interface FaceAnnouncement {
+  readonly id: FaceId;
+  /** ISO 8601. Voir {@link Journal.announcedFace} : c'est ce champ qui tranche la fusion. */
+  readonly at: string;
 }
 
 export const EMPTY_JOURNAL: Journal = { version: JOURNAL_VERSION, entries: {} };

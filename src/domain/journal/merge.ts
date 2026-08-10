@@ -10,6 +10,7 @@
  */
 
 import {
+  type FaceAnnouncement,
   type Journal,
   type JournalEntry,
   type JournalKey,
@@ -264,7 +265,22 @@ const DOCUMENT_MERGE: {
   // un clic, le second a deja eu lieu.
   keepStopsPrivate: (a, b) =>
     a.keepStopsPrivate === true || b.keepStopsPrivate === true ? true : undefined,
+  // ⚠️ **La plus recente gagne** — et c'est pour ca que l'annonce porte une date. Prendre
+  // « celle de `a` » trancherait par l'ordre des arguments, exactement le defaut du
+  // `deviceId` de `sameJournal`. Ici la consequence serait visible : rejouer sur le
+  // telephone une bascule deja vue sur l'ordinateur, ou pire, taire la seule qui comptait.
+  announcedFace: (a, b) => derniere(a.announcedFace, b.announcedFace),
 };
+
+/** La plus recente des deux annonces. `at` est une chaine ISO : l'ordre lexical suffit. */
+function derniere(
+  a: FaceAnnouncement | undefined,
+  b: FaceAnnouncement | undefined,
+): FaceAnnouncement | undefined {
+  if (a === undefined) return b;
+  if (b === undefined) return a;
+  return b.at.localeCompare(a.at) > 0 ? b : a;
+}
 
 /** L'union de deux ensembles non dates, sans doublon. Vide devient `undefined`. */
 function unite(

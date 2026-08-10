@@ -365,6 +365,85 @@ body::before {
   }
 
   /**
+   * 9.3 — le cube **se retourne**. C'est le nom du produit, joue une fois.
+   *
+   * Un `rotateY` et pas un fondu : une volte-face est un retournement, et le cube est le
+   * seul objet de l'interface qui ait un volume a retourner. La perspective est posee sur
+   * l'element lui-meme (`transform-style` ne sert a rien : le SVG est plat) — ce qu'on
+   * simule est un carton qui pivote, pas un solide.
+   *
+   * ⚠️ **Deux tours, pas un.** Un demi-tour laisserait le cube en miroir a l'arrivee, donc
+   * les trois losanges inverses : la facette vive changerait de cote et l'oeil lirait une
+   * autre face que celle qu'on annonce.
+   */
+  @keyframes face-turn {
+    0% {
+      transform: perspective(240px) rotateY(0deg) scale(1);
+    }
+    45% {
+      transform: perspective(240px) rotateY(360deg) scale(1.12);
+    }
+    70% {
+      transform: perspective(240px) rotateY(720deg) scale(1.04);
+    }
+    100% {
+      transform: perspective(240px) rotateY(720deg) scale(1);
+    }
+  }
+
+  .mark[data-turning] {
+    animation: face-turn 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) 1 both;
+  }
+
+  /**
+   * Le bandeau qui porte l'annonce.
+   *
+   * Il emprunte `.card` — donc la matiere du reste du produit — et n'ajoute que son
+   * arrivee. Lui inventer un fond a lui ferait un troisieme registre de surface pour une
+   * chose qui reste neuf secondes.
+   *
+   * ⚠️ Le liseré prend la couleur de la face annoncee, et **seulement** celle-la : c'est le
+   * seul endroit du produit ou une couleur de face deborde du cube, et elle le fait parce
+   * que la couleur EST le message. Les trois valeurs sont celles du logo, sans nuance
+   * inventee — voir `.face-dot`.
+   */
+  .face-switch {
+    animation: face-switch-in 320ms ease-out 1 both;
+    border-left: 3px solid var(--color-muted);
+  }
+  .face-switch:has(.mark[data-face='finisher']) {
+    border-left-color: var(--color-face-red);
+  }
+  .face-switch:has(.mark[data-face='cutter']) {
+    border-left-color: var(--color-face-blue);
+  }
+  .face-switch:has(.mark[data-face='rewatcher']) {
+    border-left-color: var(--color-face-yellow);
+  }
+
+  @keyframes face-switch-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.4rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* ⚠️ Le retournement disparait entierement pour qui refuse le mouvement : c'est un objet
+     qui tourne deux fois sur lui-meme, exactement ce que ce reglage existe pour supprimer.
+     La couleur et le texte restent — l'annonce est portee par les mots, l'animation ne fait
+     que la rendre remarquable. */
+  @media (prefers-reduced-motion: reduce) {
+    .mark[data-turning],
+    .face-switch {
+      animation: none;
+    }
+  }
+
+  /**
    * La face de quelqu'un d'autre, dans une liste dense.
    *
    * Les trois couleurs sont **celles du logo**, sans exception : c'est ce qui fait qu'une

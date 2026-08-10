@@ -435,6 +435,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'face.why.rewatcher': 'You go back to the ones you love.',
   'face.pending':
     'Your face is still forming. It shows up once you have carried enough series through to a decision — finished, dropped, or rewatched.',
+  'face.switch.first': 'Your face has emerged.',
+  'face.switch.changed': 'You have turned.',
   'people.title': 'Who else has watched it',
   'people.liked': 'loves it',
   'people.finished': 'finished it',

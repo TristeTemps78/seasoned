@@ -7,6 +7,7 @@ import { DataSafety } from '@/app/components/DataSafety';
 import { PublishActivity } from '@/app/components/PublishActivity';
 import { LanguagePicker } from '@/app/components/LanguagePicker';
 import { MyFace } from '@/app/components/MyFace';
+import { FaceSwitch } from '@/app/components/FaceSwitch';
 import { Faces } from '@/app/components/Faces';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
 import { AuthProvider } from '@/app/auth/AuthProvider';
@@ -120,6 +121,10 @@ export function SiteChrome({ locale, children }: {
               depend pas de l'endroit ou l'on se trouve. Ne rend rien tant qu'il n'y a
               rien a perdre, ni si l'application est deja installee. */}
           <DataSafety />
+          {/* 9.3 — la bascule s'annonce la ou l'on se trouve, et une seule fois : la
+              memoire est un champ de journal, donc elle suit d'un appareil a l'autre. Ne
+              rend rien hors d'un vrai changement de face. */}
+          <FaceSwitch />
           {/* Invisible, sans rendu : il pousse l'activite publiable depuis N'IMPORTE
               quelle page. Avant, elle ne partait que depuis `/amis` — terminer une serie
               sur sa fiche sans y retourner laissait le fait dans le navigateur pour

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DecisionKind, Stars } from '@/src/domain/types';
+import type { FaceId } from '@/src/domain/face';
 import {
   EMPTY_JOURNAL,
   mergeJournals,
@@ -15,6 +16,7 @@ import {
   setArtwork as setArtworkIn,
   setHideHours as setHideHoursIn,
   setKeepStopsPrivate as setKeepStopsPrivateIn,
+  announceFace as announceFaceIn,
   setPosition as setPositionIn,
   setSeasonRating as setSeasonRatingIn,
   setSnapshot as setSnapshotIn,
@@ -232,6 +234,18 @@ export function useJournal() {
     ),
     setKeepStopsPrivate: useCallback(
       (keepPrivate: boolean) => mutate((j) => setKeepStopsPrivateIn(j, keepPrivate)),
+      [mutate],
+    ),
+    /**
+     * Retenir qu'on vient de montrer cette face (9.3).
+     *
+     * ⚠️ `announceFace` rend le journal **tel quel** quand la face est deja celle annoncee :
+     * l'appel est donc sans effet hors d'une vraie bascule, y compris s'il part a chaque
+     * rendu. C'est ce qui evite qu'une annonce devienne un battement de coeur — et avec lui
+     * une sauvegarde, une synchronisation et un envoi social par page affichee.
+     */
+    announceFace: useCallback(
+      (id: FaceId) => mutate((j) => announceFaceIn(j, id)),
       [mutate],
     ),
     setArtwork: useCallback(

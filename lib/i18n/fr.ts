@@ -506,6 +506,11 @@ export const FR = {
   // encore », jamais « rien ». Une identité ne se refuse pas, elle se mérite.
   'face.pending':
     'Votre face se découvre. Elle apparaîtra quand vous aurez mené assez de séries jusqu’à une décision — terminée, abandonnée, ou revue.',
+  // 9.3 — l'annonce de la bascule. Deux phrases parce que ce ne sont pas deux moments :
+  // découvrir sa face pour la première fois n'est pas basculer, et dire « vous avez
+  // basculé » à quelqu'un qui n'avait rien serait faux.
+  'face.switch.first': 'Votre face est apparue.',
+  'face.switch.changed': 'Vous avez fait volte-face.',
   'people.title': 'Qui d’autre l’a vue',
   'people.liked': 'l’aime',
   'people.finished': 'l’a terminée',

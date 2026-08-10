@@ -64,9 +64,19 @@ import type { FaceId } from '@/src/domain/face';
 export function Mark({
   className = '',
   face,
+  turning = false,
 }: {
   readonly className?: string;
   readonly face?: FaceId;
+  /**
+   * Le cube **se retourne** — la volte-face, jouee une fois (9.3).
+   *
+   * ⚠️ Un attribut et non une classe : la regle vit dans `globals.css` avec les deux autres
+   * etats du cube, et le mouvement y est retire d'un bloc pour `prefers-reduced-motion`. Une
+   * classe utilitaire posee ici aurait echappe a ce bloc — c'est le genre d'animation que ce
+   * reglage existe precisement pour supprimer.
+   */
+  readonly turning?: boolean;
 }) {
   return (
     <svg
@@ -75,6 +85,7 @@ export function Mark({
       focusable="false"
       className={`mark ${className}`}
       {...(face !== undefined ? { 'data-face': face } : {})}
+      {...(turning ? { 'data-turning': '' } : {})}
     >
       {/* Le cube : trois losanges, du plus lointain au plus proche. Il est retreci par
           rapport au cadre pour laisser respirer les arcs — sans cette marge, les eclairs

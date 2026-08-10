@@ -11,6 +11,7 @@
  */
 
 import { parseRealStatus } from '../status';
+import { readFace } from '../face';
 import type { SeasonSize } from '../remaining';
 import type { DecisionKind, Stars } from '../types';
 import {
@@ -19,6 +20,7 @@ import {
   journalKey,
   parseJournalKey,
   TOMBSTONE_TTL_MS,
+  type FaceAnnouncement,
   type FactOrigin,
   type Journal,
   type JournalCompletion,
@@ -356,6 +358,7 @@ const KNOWN_JOURNAL_FIELDS = [
   'regions',
   'hideHours',
   'keepStopsPrivate',
+  'announcedFace',
   'entries',
 ] as const;
 
@@ -563,6 +566,8 @@ function readJournal(
       ]
     : [];
 
+  const announcedFace = parseAnnouncedFace(source['announcedFace']);
+
   const unknownFields = unknownFieldsOf(source, KNOWN_JOURNAL_FIELDS);
 
   return {
@@ -580,8 +585,27 @@ function readJournal(
     // n'aurait pas relu serait efface a la premiere sauvegarde, et la personne rentrerait
     // dans la carte sans le savoir.
     ...(source['keepStopsPrivate'] === true ? { keepStopsPrivate: true } : {}),
+    // Meme regle encore : relu, sinon efface a la premiere sauvegarde — et une annonce
+    // effacee est une annonce qui se rejoue a chaque chargement.
+    ...(announcedFace !== undefined ? { announcedFace } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
+}
+
+/**
+ * La face annoncee, ou **rien**.
+ *
+ * Les deux champs sont exiges : une annonce sans date ne pourrait pas etre fusionnee, et une
+ * face inconnue n'a ni nom ni couleur. Regle 4 — on ecarte ce qu'on ne sait pas lire, plutot
+ * que de garder une moitie d'annonce qui se comporterait comme une annonce entiere.
+ */
+function parseAnnouncedFace(value: unknown): FaceAnnouncement | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const source = value as Record<string, unknown>;
+  const id = readFace(source['id']);
+  const at = source['at'];
+  if (id === undefined || typeof at !== 'string' || at.length === 0) return undefined;
+  return { id, at };
 }
 
 /**
@@ -614,6 +638,7 @@ export function serializeJournal(journal: Journal): string {
       : {}),
     ...(journal.hideHours === true ? { hideHours: true } : {}),
     ...(journal.keepStopsPrivate === true ? { keepStopsPrivate: true } : {}),
+    ...(journal.announcedFace !== undefined ? { announcedFace: journal.announcedFace } : {}),
     entries,
   });
 }

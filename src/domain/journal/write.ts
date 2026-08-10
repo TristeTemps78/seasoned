@@ -10,6 +10,8 @@
 
 import type { DecisionKind, Stars } from '../types';
 import type { EpisodeMark } from '../remaining';
+// Type seul : voir `types.ts`, un import de valeur depuis `face.ts` ferait un cycle.
+import type { FaceId } from '../face';
 import {
   episodeKey,
   type FactOrigin,
@@ -477,6 +479,20 @@ export function setKeepStopsPrivate(journal: Journal, keepPrivate: boolean): Jou
   if (keepPrivate) return { ...journal, keepStopsPrivate: true };
   const { keepStopsPrivate: _drop, ...rest } = journal;
   return rest;
+}
+
+/**
+ * Retenir qu'on vient de montrer cette face-la.
+ *
+ * ⚠️ **Rend le journal tel quel si la face est deja celle annoncee.** Sans ce garde, chaque
+ * rendu ecrirait une date neuve : le journal changerait de reference a chaque page, ce qui
+ * relancerait la sauvegarde, la synchronisation, et — puisque `PublishActivity` se declenche
+ * sur un changement de journal — un envoi reseau. Une annonce est un evenement, pas un
+ * battement de coeur.
+ */
+export function announceFace(journal: Journal, id: FaceId, now = new Date()): Journal {
+  if (journal.announcedFace?.id === id) return journal;
+  return { ...journal, announcedFace: { id, at: now.toISOString() } };
 }
 
 export function setRegions(journal: Journal, regions: readonly string[]): Journal {

@@ -11,7 +11,10 @@
 
 import type { ActivityItem, ActivityKind } from '../domain/activity';
 import type { StopBucket, StopRecord } from '../domain/attrition';
-import type { FaceId } from '../domain/face';
+// ⚠️ `readFace` vient du domaine et n'a plus de copie ici : le controle etait le meme mot
+// pour mot, et deux copies finissent par se repondre differemment le jour ou l'une est
+// corrigee. `parseJournal` en a besoin aussi, depuis la face annoncee (9.3).
+import { readFace, type FaceId } from '../domain/face';
 
 export interface SocialOptions {
   readonly url: string;
@@ -164,26 +167,6 @@ const KNOWN_KINDS: Readonly<Record<ActivityKind, true>> = {
 
 function isKnownKind(value: unknown): value is ActivityKind {
   return typeof value === 'string' && Object.hasOwn(KNOWN_KINDS, value);
-}
-
-/**
- * Les faces que ce navigateur sait afficher.
- *
- * Derive du type, donc **impossible a oublier** — meme procede que {@link KNOWN_KINDS}, et
- * pour la meme raison : le serveur est en avance sur ce navigateur des qu'un deploiement
- * ajoute une valeur. Un `as FaceId` laisserait alors passer un mot pour lequel il n'existe
- * ni cle de dictionnaire ni couleur, et la pastille s'afficherait **vide**.
- */
-const KNOWN_FACES: Readonly<Record<FaceId, true>> = {
-  finisher: true,
-  cutter: true,
-  rewatcher: true,
-};
-
-function readFace(value: unknown): FaceId | undefined {
-  return typeof value === 'string' && Object.hasOwn(KNOWN_FACES, value)
-    ? (value as FaceId)
-    : undefined;
 }
 
 function rowToProfile(row: Record<string, unknown>): Profile {
