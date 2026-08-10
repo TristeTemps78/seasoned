@@ -3,7 +3,6 @@ import {
   compareEpisodes,
   isBeyondPosition,
   isSeasonBeyondPosition,
-  isSpoiler,
   redactTrajectory,
   visibleScores,
 } from '../src/domain/spoiler';
@@ -72,22 +71,6 @@ describe('isSeasonBeyondPosition', () => {
   it('masque la saison suivante', () => {
     const target = { seriesId: 'dexter', seasonNumber: 4 };
     expect(isSeasonBeyondPosition(target, positionAt(3, 12))).toBe(true);
-  });
-});
-
-describe('isSpoiler', () => {
-  it('traite les trois formes de cible', () => {
-    const position = positionAt(3, 5);
-
-    expect(
-      isSpoiler({ kind: 'episode', ref: { seriesId: 'dexter', seasonNumber: 4, episodeNumber: 1 } }, position),
-    ).toBe(true);
-    expect(
-      isSpoiler({ kind: 'season', ref: { seriesId: 'dexter', seasonNumber: 2 } }, position),
-    ).toBe(false);
-    // Une cible « serie » ne se spoile pas elle-meme : c'est ce qui l'accompagne
-    // (verdict, trajectoire) qui doit etre filtre.
-    expect(isSpoiler({ kind: 'series', seriesId: 'dexter' }, position)).toBe(false);
   });
 });
 

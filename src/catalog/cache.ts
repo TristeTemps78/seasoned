@@ -27,13 +27,6 @@ export interface CacheEntry<T> {
   readonly expiresAt: number;
 }
 
-export interface CacheStats {
-  readonly hits: number;
-  readonly misses: number;
-  readonly evictions: number;
-  readonly size: number;
-}
-
 /** Horloge injectable, pour rendre les tests deterministes. */
 export type Clock = () => number;
 
@@ -113,6 +106,10 @@ export class ExpiringCache<T> {
    * *Un compteur que personne ne lit n'est pas une mesure, c'est une ligne a maintenir.*
    * Et les tests qui l'exercaient ne prouvaient rien du produit : ils verifiaient qu'un
    * accesseur rend ce qu'on vient d'y mettre.
+   *
+   * ⚠️ Le **type de retour** de `stats()` lui a survecu quatre jours — `CacheStats`, exporte,
+   * sans un seul lecteur. Retirer une fonction laisse toujours sa forme derriere ; c'est ce
+   * qui explique qu'un depot puisse etre propre au niveau des appels et pas des types.
    */
 }
 

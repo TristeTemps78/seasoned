@@ -1,48 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_LOCALE,
   type MessageKey,
   SUPPORTED_LOCALES,
-  formatDateIn,
   isLocale,
   localeTag,
-  negotiateLocale,
   t,
   watchRegion,
 } from '../lib/i18n';
 import { FR } from '../lib/i18n/fr';
 import { EN } from '../lib/i18n/en';
-
-describe('negotiateLocale — tolerant par principe', () => {
-  it('rend la langue par defaut sur une entree absente ou vide', () => {
-    expect(negotiateLocale(null)).toBe(DEFAULT_LOCALE);
-    expect(negotiateLocale(undefined)).toBe(DEFAULT_LOCALE);
-    expect(negotiateLocale('')).toBe(DEFAULT_LOCALE);
-    expect(negotiateLocale('   ')).toBe(DEFAULT_LOCALE);
-  });
-
-  it('rend la langue par defaut plutot qu une erreur sur une entree exotique', () => {
-    expect(negotiateLocale('nawak;;;q=')).toBe(DEFAULT_LOCALE);
-    expect(negotiateLocale('*')).toBe(DEFAULT_LOCALE);
-  });
-
-  it('ignore le pays : ce qui compte est la langue', () => {
-    expect(negotiateLocale('fr-CA')).toBe('fr');
-    expect(negotiateLocale('en-GB,en;q=0.9')).toBe('en');
-  });
-
-  it('respecte l ordre de preference plutot que l ordre d apparition', () => {
-    expect(negotiateLocale('de;q=1.0,en;q=0.8,fr;q=0.9')).toBe('fr');
-  });
-
-  it('saute les langues qu on ne sert pas au lieu de s y arreter', () => {
-    expect(negotiateLocale('ja,ko,en')).toBe('en');
-  });
-
-  it('ignore une langue explicitement refusee (q=0)', () => {
-    expect(negotiateLocale('en;q=0,fr;q=0.5')).toBe('fr');
-  });
-});
 
 describe('les tables de langue sont completes', () => {
   it('chaque langue servie a une etiquette et une region de repli', () => {
@@ -103,18 +69,3 @@ describe('la composition francaise — une ponctuation double ne se retrouve jam
   });
 });
 
-describe('formatDateIn — la date suit la langue, jamais le fuseau du serveur', () => {
-  const DATE = new Date('2026-03-09T23:30:00Z');
-
-  it('formate dans la langue demandee', () => {
-    expect(formatDateIn(DATE, 'fr')).toContain('mars');
-    expect(formatDateIn(DATE, 'en')).toContain('March');
-  });
-
-  it('reste en UTC : la meme date ne change pas de jour selon la machine', () => {
-    // 23h30 UTC est deja le lendemain a Tokyo. Un formatage en heure locale ferait
-    // afficher deux dates differentes pour un meme fait, selon qui rend la page.
-    expect(formatDateIn(DATE, 'fr')).toContain('9');
-    expect(formatDateIn(DATE, 'en')).toContain('9');
-  });
-});

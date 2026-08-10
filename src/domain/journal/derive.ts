@@ -10,9 +10,7 @@ import type { Stars } from '../types';
 import {
   SNAPSHOT_IDENTITY_TTL_MS,
   SNAPSHOT_TTL_MS,
-  type Journal,
   type JournalEntry,
-  type JournalKey,
   type JournalSnapshot,
 } from './types';
 
@@ -72,17 +70,6 @@ export function freshSnapshot(
       : {}),
     ...(snapshot.seasonSizes !== undefined ? { seasonSizes: snapshot.seasonSizes } : {}),
   };
-}
-
-/** Les notes de saison d'une serie, sous la forme qu'attend le moteur de trajectoire. */
-export function seasonScoresOf(
-  journal: Journal,
-  key: JournalKey,
-): readonly { seasonNumber: number; stars: number }[] {
-  const ratings = journal.entries[key]?.seasonRatings ?? {};
-  return Object.entries(ratings)
-    .map(([season, rating]) => ({ seasonNumber: Number(season), stars: rating.stars }))
-    .sort((a, b) => a.seasonNumber - b.seasonNumber);
 }
 
 /**

@@ -50,38 +50,6 @@ export function isLocale(value: string | undefined): value is Locale {
 }
 
 /**
- * La locale la plus proche d'un en-tete `Accept-Language`.
- *
- * Tolerant par principe, comme tout le parsing du projet : une valeur absente, vide ou
- * exotique rend la langue par defaut, jamais une erreur. On compare sur la **sous-etiquette
- * de langue** (`fr-CA` → `fr`), parce que ce qui nous interesse est la langue, pas le pays —
- * le pays sert a autre chose, voir {@link watchRegion}.
- */
-export function negotiateLocale(header: string | null | undefined): Locale {
-  if (header === null || header === undefined) return DEFAULT_LOCALE;
-
-  const ranked = header
-    .split(',')
-    .map((part) => {
-      const [tag = '', ...params] = part.trim().split(';');
-      const q = params
-        .map((p) => p.trim())
-        .find((p) => p.startsWith('q='))
-        ?.slice(2);
-      const weight = q === undefined ? 1 : Number.parseFloat(q);
-      return { tag: tag.trim().toLowerCase(), weight: Number.isNaN(weight) ? 0 : weight };
-    })
-    .filter((entry) => entry.tag.length > 0 && entry.weight > 0)
-    .sort((a, b) => b.weight - a.weight);
-
-  for (const { tag } of ranked) {
-    const language = tag.split('-')[0];
-    if (isLocale(language)) return language;
-  }
-  return DEFAULT_LOCALE;
-}
-
-/**
  * L'etiquette BCP 47 complete, pour `Intl` et pour le catalogue.
  *
  * C'est le seul endroit du code ou une langue se voit attribuer un pays par defaut —
@@ -127,16 +95,6 @@ export function formatNumberIn(value: number, locale: Locale, digits?: number): 
   ).format(value);
 }
 
-/** Date longue, dans la langue demandee, en UTC pour rester stable d'un serveur a l'autre. */
-export function formatDateIn(date: Date, locale: Locale): string {
-  return new Intl.DateTimeFormat(localeTag(locale), {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date);
-}
-
 /** Les valeurs interpolables dans un message : `{n}`, `{d}`, `{r}`… */
 export type Params = Readonly<Record<string, string | number>>;
 
@@ -171,9 +129,8 @@ function interpolate(template: string, params: Params | undefined): string {
  * ⚠️ **U+00A0 et pas U+202F** : la fine insecable est plus juste, mais toutes les polices ne
  * la dessinent pas, et une police qui l'ignore rend un mot colle. Le risque est asymetrique.
  * ⚠️ Une URL n'est jamais touchee : son `:` n'est pas precede d'une espace.
- */
-/**
- * ⚠️ **Ecrite ` ` et non collee au clavier**, et ce n'est pas du purisme : la version
+ *
+ * ⚠️ **L'espace est ecrite ` ` et non collee au clavier**, et ce n'est pas du purisme : la version
  * d'origine portait le caractere litteral, invisible a la relecture. Il a suffi de recopier
  * la fonction dans ce fichier pour le remplacer par une espace ordinaire — la regle devenait
  * un `remplace une espace par une espace`, et **onze cles reglementaires sont passees au

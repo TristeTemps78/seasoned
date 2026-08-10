@@ -13,7 +13,6 @@ import {
   parseJournal,
   parseJournalKey,
   tryParseJournal,
-  seasonScoresOf,
   serializeJournal,
   setDecision,
   setEpisodeRating,
@@ -569,24 +568,6 @@ describe('mergeJournals — cinq appareils ne se marchent pas dessus', () => {
     j = setSeasonRating(j, BB, 1, 4, NOW);
     j = setEpisodeRating(j, BB, 2, 4, 5, NOW);
     expect(mergeJournals(j, j).entries).toEqual(j.entries);
-  });
-});
-
-describe('seasonScoresOf', () => {
-  it('rend les notes triees, pretes pour le moteur de trajectoire', () => {
-    let j = setSeasonRating(EMPTY_JOURNAL, DEXTER, 3, 3.5, NOW);
-    j = setSeasonRating(j, DEXTER, 1, 4.5, NOW);
-    j = setSeasonRating(j, DEXTER, 2, 4, NOW);
-
-    expect(seasonScoresOf(j, DEXTER)).toEqual([
-      { seasonNumber: 1, stars: 4.5 },
-      { seasonNumber: 2, stars: 4 },
-      { seasonNumber: 3, stars: 3.5 },
-    ]);
-  });
-
-  it('rend une liste vide pour une serie inconnue', () => {
-    expect(seasonScoresOf(EMPTY_JOURNAL, 'tmdb:inconnue')).toEqual([]);
   });
 });
 

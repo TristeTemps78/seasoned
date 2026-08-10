@@ -23,7 +23,7 @@
  * Module pur.
  */
 
-import type { EpisodeRef, Position, RatingTarget, SeasonRef } from './types';
+import type { EpisodeRef, Position, SeasonRef } from './types';
 import type { SeasonScore, Trajectory } from './trajectory';
 import { computeTrajectory } from './trajectory';
 
@@ -61,24 +61,6 @@ export function isSeasonBeyondPosition(
 ): boolean {
   if (position === undefined) return true;
   return target.seasonNumber > position.at.seasonNumber;
-}
-
-/**
- * Un contenu portant sur `target` doit-il etre masque a un spectateur situe en
- * `position` ?
- *
- * Une cible `series` n'est jamais masquee par elle-meme : c'est le contenu qui
- * l'accompagne (verdict, trajectoire) qui doit l'etre, via les fonctions dediees.
- */
-export function isSpoiler(target: RatingTarget, position: Position | undefined): boolean {
-  switch (target.kind) {
-    case 'episode':
-      return isBeyondPosition(target.ref, position);
-    case 'season':
-      return isSeasonBeyondPosition(target.ref, position);
-    case 'series':
-      return false;
-  }
 }
 
 /**
