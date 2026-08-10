@@ -10,7 +10,7 @@ import { ReportButton } from '@/app/components/ReportButton';
 import { FaceDot } from '@/app/components/FaceDot';
 import { journalKey } from '@/src/domain/journal';
 import { redactReviews } from '@/src/domain/spoiler';
-import { SocialClient, type PublishedReview } from '@/src/social/client';
+import { SocialClient, type PublishedReview, type ReviewLikes } from '@/src/social/client';
 import { pathIn } from '@/lib/routes';
 
 /**
@@ -38,6 +38,7 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
   const { t, locale } = useT();
   const [reviews, setReviews] = useState<readonly PublishedReview[] | undefined>(undefined);
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
+  const [likes, setLikes] = useState<Readonly<Record<string, ReviewLikes>>>({});
 
   const key = journalKey(seriesId);
   const accessToken = account?.accessToken;
@@ -58,6 +59,12 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
     let alive = true;
     void social.reviewsFor(key).then((rows) => {
       if (alive) setReviews(rows);
+    });
+    // Les coeurs en parallele : un seul appel pour toute la page, et il ne doit pas
+    // retarder l'affichage des textes.
+    void social.reviewLikes(key).then((rows) => {
+      if (!alive) return;
+      setLikes(Object.fromEntries(rows.map((one) => [`${one.authorId}:${one.target}`, one])));
     });
     return () => {
       alive = false;
@@ -148,10 +155,93 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                   {shown ? (review.hiddenText ?? review.text) : review.text}
                 </p>
               )}
+
+              {/* ⚠️ Le coeur est **sous** le texte, jamais a cote du nom : on aime ce qu'on
+                  vient de lire. Place en tete, il inviterait a aimer sans lire.
+
+                  ⚠️ Il exige un compte, et ne s'affiche pas sans — un bouton qui ne peut
+                  pas marcher ne se degrade pas, il ne s'affiche pas (regle du 2026-08-09).
+                  On ne peut pas non plus aimer sa propre critique : ce serait un compteur
+                  qu'on s'incremente soi-meme. */}
+              {account !== undefined && account.userId !== review.authorId ? (
+                <LikeButton
+                  count={likes[id]?.likes ?? 0}
+                  mine={likes[id]?.mine ?? false}
+                  onToggle={async (next) => {
+                    const config = authConfigFromEnv();
+                    if (config === undefined) return false;
+                    const social = new SocialClient({
+                      url: config.url,
+                      anonKey: config.anonKey,
+                      accessToken: () => accessToken,
+                    });
+                    const ok = await social.likeReview(
+                      account.userId,
+                      review.authorId,
+                      key,
+                      review.target,
+                      next,
+                    );
+                    if (ok) {
+                      setLikes((current) => ({
+                        ...current,
+                        [id]: {
+                          authorId: review.authorId,
+                          target: review.target,
+                          // On ajuste **localement** plutot que de relire : une lecture de
+                          // plus par clic couterait un appel pour un chiffre qu'on connait.
+                          likes: (current[id]?.likes ?? 0) + (next ? 1 : -1),
+                          mine: next,
+                        },
+                      }));
+                    }
+                    return ok;
+                  }}
+                />
+              ) : null}
             </li>
           );
         })}
       </ul>
     </section>
+  );
+}
+
+/**
+ * Le coeur d'une critique.
+ *
+ * ⚠️ **Le nombre ne s'affiche qu'a partir de un.** « 0 » annonce le vide et decourage le
+ * premier — c'est la meme doctrine que partout ici : *mieux vaut se taire que compter
+ * zero*.
+ */
+function LikeButton({
+  count,
+  mine,
+  onToggle,
+}: {
+  readonly count: number;
+  readonly mine: boolean;
+  readonly onToggle: (next: boolean) => Promise<boolean>;
+}) {
+  const { t } = useT();
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      aria-pressed={mine}
+      aria-label={t(mine ? 'review.unlike' : 'review.like')}
+      onClick={() => {
+        setBusy(true);
+        void onToggle(!mine).finally(() => setBusy(false));
+      }}
+      className={`inline-flex items-center gap-1.5 text-sm ${
+        mine ? 'text-(--color-volt)' : 'text-(--color-muted) hover:text-(--color-text)'
+      }`}
+    >
+      <span aria-hidden="true">{mine ? '♥' : '♡'}</span>
+      {count > 0 ? <span className="numeric">{count}</span> : null}
+    </button>
   );
 }

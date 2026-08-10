@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { ReviewBody } from '@/app/components/ReviewBody';
+import { ShareReview } from '@/app/components/ShareReview';
 import { useJournal } from '@/app/journal/useJournal';
 import { authConfigFromEnv } from '@/src/auth/client';
 import { redactReviewsAcross } from '@/src/domain/spoiler';
@@ -230,6 +231,20 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
                     hiddenText={shown.hiddenText ?? ''}
                     throughSeason={shown.throughSeason}
                   />
+
+                  {/* ⚠️ **Sur ses propres critiques uniquement**, et cette seule condition
+                      ferme trois pieges d'un coup : pas de texte masque qui redevient
+                      lisible en image, pas de mots d'autrui diffuses hors contexte, et pas
+                      d'image impossible a masquer alors que `/regles` promet le contraire.
+                      C'est aussi le seul geste qui ait un sens : on partage ce qu'on a
+                      ecrit. */}
+                  {isSelf ? (
+                    <ShareReview
+                      title={title ?? review.subject}
+                      handle={profile.handle}
+                      text={shown.text}
+                    />
+                  ) : null}
                 </li>
               );
             })}

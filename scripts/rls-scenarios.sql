@@ -240,6 +240,71 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- Les coeurs sur les critiques (015)
+  -- ---------------------------------------------------------------------------
+
+  -- A aime la critique de B. Il ne suit pas B, mais aimer ne demande pas de voir : c'est
+  -- `reviews_select` qui decide si on PEUT lire, et cette ligne-la a deja ete mesuree.
+  perform set_config('role', 'postgres', true);
+  insert into public.review_likes (liker_id, author_id, subject, target)
+  values (a, b, 'tmdb:1399', 'series');
+  perform set_config('role', 'authenticated', true);
+
+  -- 19a — l'auteur voit qui a aime sa critique. C'est TOUTE la feature : ce qui revient
+  --       vers celui qui a ecrit. Mesure depuis B.
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', b::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  select count(*)::text into obtenu from public.review_likes where author_id = b;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. l''auteur voit qui a aime sa critique (015)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 19b — 🔴 le compte est le MEME pour tout le monde, contrairement aux lignes. C'est ce
+  --       qui le distingue du compteur refuse en 10.2.
+  select likes::text into obtenu from public.review_like_counts('tmdb:1399') limit 1;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. le compte de coeurs est stable (015)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 19c — on n'aime pas au nom d'un autre.
+  begin
+    insert into public.review_likes (liker_id, author_id, subject, target)
+    values (a, b, 'tmdb:1396', 'series');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. on n''aime pas au nom d''un autre (015)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 19d — ⚠️ un coeur sur une critique inexistante est refuse par la cle etrangere
+  --       composite : sans elle, on compterait des coeurs dans le vide.
+  begin
+    insert into public.review_likes (liker_id, author_id, subject, target)
+    values (b, a, 'tmdb:99999', 'series');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. on n''aime pas une critique qui n''existe pas (015)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- On revient a A pour la suite.
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  -- ---------------------------------------------------------------------------
   -- La manche du jour (013) — la mecanique anti-triche, mesuree
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);

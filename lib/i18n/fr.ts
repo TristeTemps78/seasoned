@@ -649,6 +649,11 @@ export const FR = {
   // Choisir son affiche. ⚠️ Aucun texte ne doit suggérer qu'on peut *envoyer* une image :
   // on ne propose que ce que le catalogue porte déjà.
   // ⚠️ « Masqué » et non « désactivé » : le calcul continue, seul l'affichage se tait.
+  // Le cœur d'une critique. ⚠️ Libellés d'accessibilité : le symbole seul n'apprend rien
+  // à un lecteur d'écran, et « aimer » n'est pas « noter ».
+  'shareReview.save': 'Partager en image',
+  'review.like': 'J’aime cette critique',
+  'review.unlike': 'Retirer mon cœur',
   'convert.missedTitle': 'Voir lesquelles',
   'tally.hide': 'Masquer ce chiffre',
   'tally.hidden': 'Le temps passé est masqué.',

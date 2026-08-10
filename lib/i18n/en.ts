@@ -566,6 +566,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'taste.basisEpisodes.one': ' and {n} episode rating',
   'taste.basisEpisodes.other': ' and {n} episode ratings',
 
+  'shareReview.save': 'Share as image',
+  'review.like': 'I like this review',
+  'review.unlike': 'Remove my heart',
   'convert.missedTitle': 'See which ones',
   'tally.hide': 'Hide this figure',
   'tally.hidden': 'Time spent is hidden.',

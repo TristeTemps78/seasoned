@@ -43,6 +43,16 @@ export type ClaimOutcome =
   | { readonly kind: 'taken' }
   | { readonly kind: 'failed' };
 
+/** Les coeurs d'une critique, identifiee par son auteur et sa cible. */
+export interface ReviewLikes {
+  readonly authorId: string;
+  readonly target: string;
+  /** Stable pour tout le monde : compte par une fonction, pas par les lignes visibles. */
+  readonly likes: number;
+  /** Ai-je aime celle-la ? */
+  readonly mine: boolean;
+}
+
 /** Une question de la manche, telle que le serveur accepte de la montrer. */
 export interface QuizServed {
   readonly kind: string;
@@ -641,6 +651,77 @@ export class SocialClient {
    */
   async feedReviews(limit = 30): Promise<readonly PublishedReview[]> {
     return this.#reviews('', limit);
+  }
+
+  /**
+   * Les coeurs des critiques d'une serie : combien, et si j'en fais partie.
+   *
+   * ⚠️ **Un appel pour toute la page**, jamais un par critique : une fiche en affiche dix,
+   * et dix appels seraient dix fois le cout que ce produit refuse partout.
+   *
+   * ⚠️ Le compte vient d'une fonction `security definer`, donc il est **le meme pour tout
+   * le monde**. C'est ce qui le distingue du compteur refuse en 10.2 : celui-la comptait
+   * des lignes rendues par RLS, donc il variait d'un lecteur a l'autre.
+   */
+  async reviewLikes(subject: string): Promise<readonly ReviewLikes[]> {
+    const rows = await this.#rpc<Record<string, unknown>>('review_like_counts', {
+      for_subject: subject,
+    });
+    return rows.flatMap((row) =>
+      typeof row['author_id'] !== 'string' || typeof row['target'] !== 'string'
+        ? []
+        : [
+            {
+              authorId: row['author_id'],
+              target: row['target'],
+              likes: Number(row['likes'] ?? 0),
+              mine: row['mine'] === true,
+            },
+          ],
+    );
+  }
+
+  /**
+   * Aime une critique, ou retire son coeur.
+   *
+   * ⚠️ Un coeur **se reprend** — ce n'est pas un fait vecu, contrairement a un visionnage.
+   * D'ou un `delete` reel et non une pierre tombale.
+   */
+  async likeReview(
+    userId: string,
+    authorId: string,
+    subject: string,
+    target: string,
+    liked: boolean,
+  ): Promise<boolean> {
+    try {
+      if (!liked) {
+        const response = await this.#fetch(
+          this.#url(
+            `review_likes?liker_id=eq.${encodeURIComponent(userId)}` +
+              `&author_id=eq.${encodeURIComponent(authorId)}` +
+              `&subject=eq.${encodeURIComponent(subject)}` +
+              `&target=eq.${encodeURIComponent(target)}`,
+          ),
+          { method: 'DELETE', headers: this.#headers() },
+        );
+        return response.ok;
+      }
+      const response = await this.#fetch(this.#url('review_likes'), {
+        method: 'POST',
+        // `merge-duplicates` : aimer deux fois ne doit pas lever, c'est le meme etat.
+        headers: this.#headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+        body: JSON.stringify({
+          liker_id: userId,
+          author_id: authorId,
+          subject,
+          target,
+        }),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 
   /**
