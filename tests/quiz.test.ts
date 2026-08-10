@@ -14,6 +14,8 @@ function journalOf(
     readonly imported?: boolean;
     /** Les notes de saison, dans l'ordre : `[4, 3.5, 5]` = S1 a S3. */
     readonly seasons?: readonly number[];
+    /** Les notes d'episode d'UNE saison : `{ season: 2, stars: [4, 3, 5, 4, 4] }`. */
+    readonly episodes?: { readonly season: number; readonly stars: readonly number[] };
   }[],
 ): Journal {
   const entries: Record<string, unknown> = {};
@@ -26,9 +28,18 @@ function journalOf(
         ...(one.imported === true ? { origin: 'import' as const } : {}),
       };
     }
+    const episodeRatings: Record<string, unknown> = {};
+    for (const [index, stars] of (one.episodes?.stars ?? []).entries()) {
+      episodeRatings[`${one.episodes?.season}:${index + 1}`] = {
+        stars,
+        at: '2026-01-15T20:00:00Z',
+        ...(one.imported === true ? { origin: 'import' as const } : {}),
+      };
+    }
     entries[one.key] = {
       ...(one.title === undefined ? {} : { snapshot: { title: one.title } }),
       ...(one.seasons === undefined ? {} : { seasonRatings: ratings }),
+      ...(one.episodes === undefined ? {} : { episodeRatings }),
       ...(one.declaredAt === undefined
         ? {}
         : {
@@ -205,6 +216,63 @@ describe('le hasard est injecte, donc reproductible', () => {
       if (quiz?.kind === 'onDay') jours.add(quiz.on);
     }
     expect(jours.size).toBeGreaterThan(1);
+  });
+});
+
+/** A7 : la note d'episode est la granularite la plus fine du produit. */
+describe('la question « devinez la saison, episode par episode »', () => {
+  const AVEC_EPISODES = QUATRE.map((one, index) => ({
+    ...one,
+    episodes: { season: 2, stars: [4, 3.5, 5, 4.5, 3, 4].map((s) => s - index * 0.25) },
+  }));
+
+  it('ancrage — elle est bien posee quand les notes d episode existent', () => {
+    const kinds = new Set<string>();
+    for (let seed = 0; seed < 40; seed += 1) {
+      const quiz = buildQuiz(journalOf(AVEC_EPISODES), NOW, seed);
+      if (quiz !== undefined) kinds.add(quiz.kind);
+    }
+    expect(kinds).toContain('byEpisodes');
+  });
+
+  it('rend les episodes dans l ordre, numerotes a partir de 1', () => {
+    for (let seed = 0; seed < 40; seed += 1) {
+      const quiz = buildQuiz(journalOf(AVEC_EPISODES), NOW, seed);
+      if (quiz?.kind !== 'byEpisodes') continue;
+      expect(quiz.episodes.map((point) => point.season)).toEqual([1, 2, 3, 4, 5, 6]);
+      const attendu = AVEC_EPISODES.find((one) => one.key === quiz.answer);
+      expect(quiz.episodes.map((point) => point.stars)).toEqual(attendu?.episodes.stars);
+    }
+  });
+
+  it('ne se pose pas sous cinq episodes notes', () => {
+    const maigres = QUATRE.map((one) =>
+      sansDate({ ...one, episodes: { season: 1, stars: [4, 3, 5] } }),
+    );
+    expect(buildQuiz(journalOf(maigres), NOW, 1)).toBeUndefined();
+  });
+
+  /**
+   * 🔴 Les numeros d'episode repartent a 1 a chaque saison. Coller deux saisons dessinerait
+   * une courbe qui remonte au milieu sans que rien ne se soit passe.
+   */
+  it('ne melange jamais deux saisons dans la meme courbe', () => {
+    const journal = journalOf(
+      QUATRE.map((one) => sansDate({ ...one, episodes: { season: 1, stars: [4, 4, 4, 4, 4] } })),
+    );
+    for (let seed = 0; seed < 30; seed += 1) {
+      const quiz = buildQuiz(journal, NOW, seed);
+      if (quiz?.kind !== 'byEpisodes') continue;
+      const numeros = quiz.episodes.map((point) => point.season);
+      expect(new Set(numeros).size).toBe(numeros.length);
+    }
+  });
+
+  it('ecarte les notes d episode importees', () => {
+    const reprises = QUATRE.map((one) =>
+      sansDate({ ...one, episodes: { season: 1, stars: [4, 3, 5, 4, 4] }, imported: true }),
+    );
+    expect(buildQuiz(journalOf(reprises), NOW, 1)).toBeUndefined();
   });
 });
 

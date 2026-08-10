@@ -271,6 +271,7 @@ export const FR = {
   'quiz.title': 'Une question pour vous',
   'quiz.onDay': 'Quelle série regardiez-vous le {date} ?',
   'quiz.byCurve': 'Quelle série a cette trajectoire ?',
+  'quiz.byEpisodes': 'Quelle série est-ce, épisode par épisode ?',
   'quiz.right': 'C’est bien ça.',
   'quiz.wrong': 'Non — c’était {title}.',
   'friends.followingLabel': 'Vous suivez',

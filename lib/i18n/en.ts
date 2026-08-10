@@ -231,6 +231,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'quiz.title': 'A question for you',
   'quiz.onDay': 'Which series were you watching on {date}?',
   'quiz.byCurve': 'Which series has this trajectory?',
+  'quiz.byEpisodes': 'Which series is this, episode by episode?',
   'quiz.right': 'That’s the one.',
   'quiz.wrong': 'No — it was {title}.',
   'friends.followingLabel': 'You follow',

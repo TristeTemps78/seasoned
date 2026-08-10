@@ -84,6 +84,13 @@ export type QuizQuestion =
       readonly curve: readonly CurvePoint[];
       readonly answer: JournalKey;
       readonly choices: readonly QuizChoice[];
+    }
+  | {
+      readonly kind: 'byEpisodes';
+      /** Les notes d'une **seule** saison, episode par episode. */
+      readonly episodes: readonly CurvePoint[];
+      readonly answer: JournalKey;
+      readonly choices: readonly QuizChoice[];
     };
 
 /** Combien de series titrees il faut avant qu'une question ait un sens. */
@@ -98,6 +105,15 @@ const ENOUGH_SERIES = 4;
  * une forme sur deux points.
  */
 const ENOUGH_SEASONS = 3;
+
+/**
+ * Combien d'episodes notes il faut dans une **meme** saison pour la reconnaitre.
+ *
+ * Plus haut que le seuil des saisons, et pour une raison : une note d'episode est
+ * **facultative** (arbitrage A7), donc trois notes eparses ne dessinent pas une saison,
+ * elles dessinent trois humeurs. A cinq, la forme commence a dire quelque chose.
+ */
+const ENOUGH_EPISODES = 5;
 
 /**
  * L'age minimal d'un souvenir, en jours.
@@ -208,22 +224,36 @@ export function buildQuiz(journal: Journal, now: Date, seed: number): QuizQuesti
     .filter((held) => held.curve.length >= ENOUGH_SEASONS)
     .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 
+  // Les saisons notees episode par episode : la granularite la plus fine du produit (A7).
+  const runs = entries
+    .filter(([key]) => titled.has(key))
+    .flatMap(([key, entry]) =>
+      episodeRunsOf(entry)
+        .filter((run) => run.length >= ENOUGH_EPISODES)
+        .map((run) => ({ key, run })),
+    )
+    .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+
   const random = randomFrom(seed);
 
   // Les familles disponibles, dans un ordre fixe : la graine choisit, jamais l'ordre des
   // cles du journal.
-  const families: ('onDay' | 'byCurve')[] = [
+  const families: ('onDay' | 'byCurve' | 'byEpisodes')[] = [
     ...(days.length > 0 ? (['onDay'] as const) : []),
     ...(curves.length > 0 ? (['byCurve'] as const) : []),
+    ...(runs.length > 0 ? (['byEpisodes'] as const) : []),
   ];
   if (families.length === 0) return undefined;
 
   const family = families[Math.floor(random() * families.length)] ?? families[0];
 
-  const answer =
+  const held =
     family === 'onDay'
-      ? (days[Math.floor(random() * days.length)] ?? days[0])?.key
-      : (curves[Math.floor(random() * curves.length)] ?? curves[0])?.key;
+      ? (days[Math.floor(random() * days.length)] ?? days[0])
+      : family === 'byCurve'
+        ? (curves[Math.floor(random() * curves.length)] ?? curves[0])
+        : (runs[Math.floor(random() * runs.length)] ?? runs[0]);
+  const answer = held?.key;
   if (answer === undefined) return undefined;
 
   const answerTitle = titled.get(answer);
@@ -233,14 +263,51 @@ export function buildQuiz(journal: Journal, now: Date, seed: number): QuizQuesti
   if (choices === undefined) return undefined;
 
   if (family === 'byCurve') {
-    const curve = curves.find((held) => held.key === answer)?.curve;
+    const curve = curves.find((one) => one.key === answer)?.curve;
     if (curve === undefined) return undefined;
     return { kind: 'byCurve', curve, answer, choices };
   }
 
-  const on = days.find((held) => held.key === answer)?.day;
+  if (family === 'byEpisodes') {
+    const run = 'run' in (held ?? {}) ? (held as { run: readonly CurvePoint[] }).run : undefined;
+    if (run === undefined) return undefined;
+    return { kind: 'byEpisodes', episodes: run, answer, choices };
+  }
+
+  const on = days.find((one) => one.key === answer)?.day;
   if (on === undefined) return undefined;
   return { kind: 'onDay', on, answer, choices };
+}
+
+/**
+ * Les notes d'episode, regroupees **par saison**.
+ *
+ * ⚠️ Une saison par question, jamais un melange : les numeros d'episode repartent a 1 a
+ * chaque saison, donc coller S1E1..S1E8 et S2E1..S2E6 dessinerait une courbe qui remonte
+ * au milieu sans que rien ne se soit passe. C'est le meme piege que les decoupages
+ * concurrents — un axe qui ment est pire qu'un axe absent.
+ *
+ * Les notes importees sont ecartees, comme partout dans ce module.
+ */
+function episodeRunsOf(entry: {
+  readonly episodeRatings?: Readonly<
+    Record<string, { readonly stars: number; readonly at: string; readonly origin?: string }>
+  >;
+}): readonly (readonly CurvePoint[])[] {
+  const bySeason = new Map<number, CurvePoint[]>();
+
+  for (const [key, rating] of Object.entries(entry.episodeRatings ?? {})) {
+    if (rating.origin !== undefined) continue;
+    const [season, episode] = key.split(':').map(Number);
+    if (!Number.isFinite(season) || !Number.isFinite(episode)) continue;
+    const run = bySeason.get(season as number) ?? [];
+    run.push({ season: episode as number, stars: rating.stars });
+    bySeason.set(season as number, run);
+  }
+
+  return [...bySeason.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([, run]) => run.sort((a, b) => a.season - b.season));
 }
 
 /**

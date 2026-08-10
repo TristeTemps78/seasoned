@@ -67,11 +67,16 @@ export function Quiz() {
         </p>
       ) : (
         <div className="space-y-2">
-          <p className="prose-note">{t('quiz.byCurve')}</p>
-          {/* La trajectoire, sans titre ni numero de serie — c'est tout le jeu. Les
-              saisons sont numerotees parce que la forme seule ne dit pas ou elle commence. */}
-          <ul className="flex items-end gap-2" aria-label={t('quiz.byCurve')}>
-            {quiz.curve.map((point) => (
+          <p className="prose-note">
+            {quiz.kind === 'byCurve' ? t('quiz.byCurve') : t('quiz.byEpisodes')}
+          </p>
+          {/* La forme, sans titre ni numero de serie — c'est tout le jeu. Les barres sont
+              numerotees parce qu'une forme seule ne dit pas ou elle commence. */}
+          <ul
+            className="flex items-end gap-2"
+            aria-label={quiz.kind === 'byCurve' ? t('quiz.byCurve') : t('quiz.byEpisodes')}
+          >
+            {(quiz.kind === 'byCurve' ? quiz.curve : quiz.episodes).map((point) => (
               <li key={point.season} className="flex flex-col items-center gap-1">
                 <span
                   className="w-6 rounded-t bg-(--color-volt)"
