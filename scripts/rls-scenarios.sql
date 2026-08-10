@@ -307,6 +307,43 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
+  -- 19bis — 🔴 LE CLASSEMENT MONTRE-T-IL QUELQU'UN D'AUTRE QUE MOI ?
+  --
+  -- `quiz_board` est en `security_invoker`, donc evaluee avec les droits de l'appelant —
+  -- ce qui etait le but pour que `profiles_select_visible` s'applique. Mais la vue lit
+  -- AUSSI `quiz_answers`, dont la seule politique est `auth.uid() = user_id`. Si les deux
+  -- se composent, un classement ne peut montrer que ses propres lignes, c'est-a-dire
+  -- **rien**. C'est la question que l'audit du 2026-08-10 a posee, et elle se mesure.
+  perform set_config('role', 'postgres', true);
+  insert into public.quiz_answers (user_id, on_day, ordinal, asked_at, answered_at, correct, points)
+  values (b, jour_test, 1, now(), now(), true, 80);
+  perform set_config('role', 'authenticated', true);
+
+  select count(*)::text into obtenu from public.quiz_board(jour_test) where user_id = b;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. A voit au classement B, qui le suit (013)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 19ter — et l'inverse doit tenir : un inconnu ne lit pas ce classement. Sans ce
+  --         scenario, « ouvrir a tout le monde » ferait passer le precedent au vert.
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', z::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  select count(*)::text into obtenu from public.quiz_board(jour_test) where user_id = b;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. un inconnu ne voit PAS B au classement (013)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- On revient a A pour la suite.
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
   -- 20 — La purge nocturne est **programmee**, pas seulement ecrite.
   --
   -- ⚠️ C'est le seul scenario qui verifie une tache plutot qu'une politique, et il a sa

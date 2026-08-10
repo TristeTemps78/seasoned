@@ -225,31 +225,67 @@ comment on function public.quiz_answer(date, integer, integer) is
 /**
  * Le tableau du jour — **et il ne montre que des gens qu'on a le droit de voir.**
  *
- * ⚠️ Un classement est une surface de decouverte : sans filtre, il exposerait le nom de
- * tous les joueurs a tous les joueurs, c'est-a-dire l'annuaire que `Friends.tsx` refuse
- * explicitement de construire. `can_see` gouverne donc ici comme partout — on voit les
- * profils publics et ceux qu'on suit.
+ * ## 🔴 Ce fut d'abord une vue, et elle etait mort-nee
  *
- * Consequence assumee : **le classement n'est pas le meme pour deux personnes**. C'est le
- * prix de la regle, et c'est le meme choix qu'en 10.2 (aucun compteur, jamais).
+ * La premiere version etait une `view` en `security_invoker`, pour que
+ * `profiles_select_visible` s'applique. Le raisonnement etait juste et **la conclusion
+ * fausse** : evaluee avec les droits de l'appelant, la vue lit aussi `quiz_answers`, dont
+ * la seule politique est `auth.uid() = user_id`. Les deux regles se composent en « je ne
+ * vois que moi », donc le classement montrait **un seul joueur : soi**.
+ *
+ * Mesure du 2026-08-10, scenario « A voit le score de B » : attendu 1, obtenu 0.
+ *
+ * Et rien ne l'aurait signale : un classement a un joueur et un classement casse donnent
+ * le meme ecran — le defaut exact de 10.0, repete sur une autre table. *Deux politiques
+ * qui se composent ne se relisent pas ; une fonction qui declare son filtre, si.*
+ *
+ * ## D'ou une fonction, et non une vue
+ *
+ * `security definer` : elle lit `quiz_answers` sans etre bridee par la politique
+ * « own only » qui protege le detail, **et** elle applique explicitement `can_see`. Le
+ * filtre est donc ecrit noir sur blanc a l'endroit ou il s'applique, au lieu d'emerger de
+ * la rencontre de deux regles ecrites ailleurs.
+ *
+ * ⚠️ Un classement est une surface de decouverte : sans filtre il exposerait le nom de
+ * tous les joueurs a tous, c'est-a-dire l'annuaire que `Friends.tsx` refuse de construire.
+ * Consequence assumee : **le classement n'est pas le meme pour deux personnes** — le meme
+ * choix qu'en 10.2 (aucun compteur, jamais).
  */
-create or replace view public.quiz_board as
+drop view if exists public.quiz_board;
+
+create or replace function public.quiz_board(day date)
+returns table (user_id uuid, handle citext, face text, score integer, right_answers integer)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
   select
-    a.on_day,
     a.user_id,
     p.handle,
     p.face,
-    sum(a.points)::integer as score,
-    count(*) filter (where a.correct) ::integer as right_answers
+    sum(a.points)::integer,
+    count(*) filter (where a.correct)::integer
   from public.quiz_answers a
   join public.profiles p on p.user_id = a.user_id
-  where a.answered_at is not null
-  group by a.on_day, a.user_id, p.handle, p.face;
+  where a.on_day = day
+    and a.answered_at is not null
+    -- ⚠️ **Ceux dont je peux deja voir le NOM**, ce qui n'est pas la meme chose que ceux
+    -- dont je peux voir le contenu. `can_see` seul aurait exclu un abonne que je ne suis
+    -- pas en retour : il joue, je vois son pseudo partout ailleurs (008), et il serait
+    -- absent de mon classement. Un classement ne montre qu'un pseudo et un chiffre — il
+    -- ne dit rien de ce qu'on regarde, donc il suit la visibilite du nom, pas du contenu.
+    and (
+      a.user_id = auth.uid()
+      or public.can_see(a.user_id)
+      or public.follows_me(a.user_id)
+    )
+  group by a.user_id, p.handle, p.face
+  order by sum(a.points) desc;
+$$;
 
--- La vue herite des politiques de `profiles` : `security_invoker` la fait evaluer avec
--- les droits de l'appelant, donc `profiles_select_visible` s'applique. Sans cela une vue
--- appartenant au proprietaire contournerait RLS — c'est la faute classique des vues.
-alter view public.quiz_board set (security_invoker = on);
+comment on function public.quiz_board(date) is
+  'Le classement du jour, filtre par can_see. Une fonction et non une vue — voir 013_quiz.sql.';
 
 -- -----------------------------------------------------------------------------
 -- La purge — regle 1, et elle est executable

@@ -699,10 +699,12 @@ export class SocialClient {
    * refuse de construire.
    */
   async quizBoard(day: string, limit = 20): Promise<readonly QuizScore[]> {
-    const rows = await this.#rows<Record<string, unknown>>(
-      `quiz_board?on_day=eq.${encodeURIComponent(day)}&select=handle,face,score,right_answers&order=score.desc&limit=${limit}`,
-    );
-    return rows.flatMap((row) => {
+    // ⚠️ Une fonction, pas une lecture de vue. La vue existait et **ne montrait qu'un seul
+    // joueur : soi** — evaluee avec les droits de l'appelant, elle heritait de la politique
+    // « own only » de `quiz_answers`. La fonction declare son filtre au lieu de le laisser
+    // emerger de deux regles ecrites ailleurs (`013_quiz.sql`).
+    const rows = await this.#rpc<Record<string, unknown>>('quiz_board', { day });
+    return rows.slice(0, limit).flatMap((row) => {
       if (typeof row['handle'] !== 'string') return [];
       const face = readFace(row['face']);
       return [
