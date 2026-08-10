@@ -610,6 +610,150 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- 017 — l'identite d'un fait porte la saison
+  -- ---------------------------------------------------------------------------
+  --
+  -- 🔴 **Le scenario qui manquait, et son absence a coute la fonctionnalite entiere.**
+  -- Mesure du 2026-08-11 : `activity` a 0 ligne alors que deux comptes ecrivaient depuis la
+  -- veille. La cle d'origine ignorait `season`, donc deux saisons notees le meme soir
+  -- tombaient sur la meme ligne — et `publish` envoyant tout d'un bloc en
+  -- `merge-duplicates`, Postgres rejetait **l'envoi entier** :
+  --
+  --   [21000] ON CONFLICT DO UPDATE command cannot affect row a second time
+  --
+  -- Aucun test ne pouvait l'attraper : ils doublent `fetch`. Il fallait la vraie base et un
+  -- vrai `ON CONFLICT`, c'est-a-dire exactement ce fichier.
+
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  -- 32 — Deux saisons de la meme serie, le meme jour, dans UN seul envoi. C'est mot pour
+  --      mot ce que `publish` emet, et c'est ce qui rendait 21000.
+  begin
+    insert into public.activity (user_id, kind, subject, season, stars, happened_on)
+    values (a, 'rated_season', tag || '_s', 1, 4.0, current_date),
+           (a, 'rated_season', tag || '_s', 2, 3.5, current_date)
+    on conflict (user_id, kind, subject, season, happened_on) do update
+      set stars = excluded.stars;
+    get diagnostics lignes = row_count;
+    obtenu := lignes::text;
+  exception when others then
+    -- Le code d'erreur EST la mesure : c'est lui qu'on lisait avant 017.
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '2';
+  rapport := rapport || format(E'  %s  %s. deux saisons notees le meme jour passent en UN envoi (017)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 33 — 🔴 **Et republier doit passer.** `merge-duplicates` EST un `ON CONFLICT DO UPDATE` :
+  --      le second envoi emprunte le chemin `UPDATE`, qui exige une politique `UPDATE`.
+  --      `003_social.sql` n'en declarait aucune — trois politiques, jamais celle-la — donc
+  --      le premier envoi d'un compte passait et **tous les suivants echouaient en 42501**.
+  --      `PublishActivity` republiant toute la projection a chaque montage, le fil se
+  --      figeait au premier chargement et aucun fait neuf n'arrivait plus : ils voyagent
+  --      dans le meme lot que les anciens.
+  --
+  --      ⚠️ Ce scenario a d'abord ete ecrit `exception when others then null`, et il passait
+  --      au vert **sans rien prouver** : le compte de 2 venait des lignes du scenario 32.
+  --      Une verification mal ancree est pire qu'aucune — elle rassure.
+  begin
+    insert into public.activity (user_id, kind, subject, season, stars, happened_on)
+    values (a, 'rated_season', tag || '_s', 1, 4.0, current_date),
+           (a, 'rated_season', tag || '_s', 2, 3.5, current_date)
+    on conflict (user_id, kind, subject, season, happened_on) do update
+      set stars = excluded.stars;
+    perform set_config('role', 'postgres', true);
+    select count(*)::text into obtenu from public.activity where subject = tag || '_s';
+    perform set_config('role', 'authenticated', true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '2';
+  rapport := rapport || format(E'  %s  %s. le MEME envoi rejoue passe, et laisse 2 lignes (017)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 33bis — Et il **met a jour** : renoter une saison le meme jour doit changer l'etoile,
+  --         sinon `do update` serait un `do nothing` deguise et le fil mentirait.
+  begin
+    insert into public.activity (user_id, kind, subject, season, stars, happened_on)
+    values (a, 'rated_season', tag || '_s', 1, 1.5, current_date)
+    on conflict (user_id, kind, subject, season, happened_on) do update
+      set stars = excluded.stars;
+    perform set_config('role', 'postgres', true);
+    select stars::text into obtenu from public.activity
+      where subject = tag || '_s' and season = 1;
+    perform set_config('role', 'authenticated', true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1.5';
+  rapport := rapport || format(E'  %s  %s. renoter la meme saison le meme jour ecrase l etoile (017)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 33ter — Mais un `UPDATE` ne deplace pas un fait vers le futur : la borne de date est
+  --         reprise dans `with check`, sinon l'`INSERT` serait garde et l'`UPDATE` ouvert.
+  begin
+    update public.activity set happened_on = current_date + 1
+     where subject = tag || '_s' and season = 1;
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. un UPDATE ne peut pas dater un fait du futur (017)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 34 — 🔴 Le point qui interdisait une cle primaire : `season` est **nul** pour `finished`,
+  --      `liked`, `started` et `wanted`. Une PK refuse le nul ; `unique nulls not distinct`
+  --      l'accepte **et** le dedoublonne. Sans `nulls not distinct`, deux publications d'un
+  --      meme coeur feraient deux lignes, et le fil se repeterait.
+  begin
+    insert into public.activity (user_id, kind, subject, season, stars, happened_on)
+    values (a, 'liked', tag || '_c', null, null, current_date)
+    on conflict (user_id, kind, subject, season, happened_on) do update
+      set stars = excluded.stars;
+    insert into public.activity (user_id, kind, subject, season, stars, happened_on)
+    values (a, 'liked', tag || '_c', null, null, current_date)
+    on conflict (user_id, kind, subject, season, happened_on) do update
+      set stars = excluded.stars;
+    obtenu := 'ok';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  perform set_config('role', 'postgres', true);
+  if obtenu = 'ok' then
+    select count(*)::text into obtenu from public.activity where subject = tag || '_c';
+  end if;
+  perform set_config('role', 'authenticated', true);
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. un fait sans saison s ecrit et ne se dedouble pas (017)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 35 — La cle elle-meme, lue dans le catalogue. Meme motif que le scenario 5 : ce n'est
+  --      pas la capacite d'ecrire qu'on verifie ici, c'est la **declaration** — une cle
+  --      primaire encore presente sur `activity` signifie que 017 n'a pas ete applique, et
+  --      les scenarios 32-34 ne le diraient pas tous les deux si la base etait vide.
+  perform set_config('role', 'postgres', true);
+  select count(*)::text into obtenu
+  from pg_constraint c
+  where c.conrelid = 'public.activity'::regclass
+    and c.contype = 'u'
+    and c.conname = 'activity_fait'
+    and (select count(*) from unnest(c.conkey)) = 5;
+  perform set_config('role', 'authenticated', true);
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. activity_fait porte les 5 colonnes de l identite (017)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);

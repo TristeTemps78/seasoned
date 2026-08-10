@@ -504,24 +504,33 @@ export class SocialClient {
    * ce qui permet de pousser **tout** ce qui est publiable a chaque fois plutot que de
    * tenir un journal de ce qui a deja ete envoye — un etat de plus a synchroniser, et donc
    * un etat de plus a desynchroniser.
+   *
+   * ⚠️ **`on_conflict` est nomme, et il doit l'etre.** Sans lui, PostgREST vise la cle
+   * **primaire** — or `017` l'a retiree au profit de `activity_fait`, qui porte `season`.
+   * La cle d'origine confondait deux saisons notees le meme jour, ce qui faisait echouer
+   * l'envoi entier en `21000` (voir `017_activity_saison.sql`, et le dedoublonnage de
+   * `projectActivity` qui en est l'autre moitie).
    */
   async publish(userId: string, items: readonly ActivityItem[]): Promise<boolean> {
     if (items.length === 0) return true;
     try {
-      const response = await this.#fetch(this.#url('activity'), {
-        method: 'POST',
-        headers: this.#headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
-        body: JSON.stringify(
-          items.map((item) => ({
-            user_id: userId,
-            kind: item.kind,
-            subject: item.subject,
-            season: item.season ?? null,
-            stars: item.stars ?? null,
-            happened_on: item.happenedOn,
-          })),
-        ),
-      });
+      const response = await this.#fetch(
+        this.#url('activity?on_conflict=user_id,kind,subject,season,happened_on'),
+        {
+          method: 'POST',
+          headers: this.#headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+          body: JSON.stringify(
+            items.map((item) => ({
+              user_id: userId,
+              kind: item.kind,
+              subject: item.subject,
+              season: item.season ?? null,
+              stars: item.stars ?? null,
+              happened_on: item.happenedOn,
+            })),
+          ),
+        },
+      );
       return response.ok;
     } catch {
       return false;
