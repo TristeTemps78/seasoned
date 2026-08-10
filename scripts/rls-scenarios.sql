@@ -228,6 +228,80 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- La manche du jour (013) — la mecanique anti-triche, mesuree
+  -- ---------------------------------------------------------------------------
+  perform set_config('role', 'postgres', true);
+
+  insert into public.quiz_questions (on_day, ordinal, kind, prompt, choices, answer, expires_at)
+  values
+    (current_date, 1, 'cast', '{"cast":["Bryan Cranston"]}', '["A","B","C","D"]', 2, now() + interval '1 day'),
+    (current_date, 2, 'poster', '{"path":"/x.jpg"}', '["A","B","C","D"]', 0, now() + interval '1 day');
+
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  -- 12 — 🔴 La bonne reponse ne sort JAMAIS de la base. Sans politique de lecture, la
+  --      table entiere est fermee : RLS filtre des lignes, jamais des colonnes.
+  select count(*)::text into obtenu from public.quiz_questions;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. un joueur ne peut pas lire les questions ni les reponses (013)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 13 — mais la fonction lui en sert une, sans la reponse.
+  select count(*)::text into obtenu from public.quiz_serve(current_date, 1);
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. quiz_serve rend la question (sans sa reponse) (013)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 14 — une reponse juste et rapide rapporte des points.
+  select points::text into obtenu from public.quiz_answer(current_date, 1, 2);
+  n := n + 1;
+  rapport := rapport || format(E'  %s  %s. repondre juste et vite rapporte des points (013)  [attendu > 0, obtenu %s]\n',
+                               case when obtenu::integer > 0 then 'OK   ' else 'ECHEC' end, n, obtenu);
+  if obtenu::integer <= 0 then echecs := echecs + 1; end if;
+
+  -- 15 — 🔴 On ne repond pas deux fois. Sans ce garde-fou, on repondrait jusqu'a tomber
+  --      juste, et le classement ne vaudrait rien.
+  perform public.quiz_answer(current_date, 1, 0);
+  select points::text into obtenu from public.quiz_answers
+    where user_id = a and on_day = current_date and ordinal = 1;
+  n := n + 1;
+  rapport := rapport || format(E'  %s  %s. une seconde reponse ne change RIEN (013)  [attendu > 0, obtenu %s]\n',
+                               case when obtenu::integer > 0 then 'OK   ' else 'ECHEC' end, n, obtenu);
+  if obtenu::integer <= 0 then echecs := echecs + 1; end if;
+
+  -- 16 — hors delai : zero. On simule en vieillissant `asked_at`, parce que `now()` est
+  --      fige pour toute la transaction.
+  perform public.quiz_serve(current_date, 2);
+  perform set_config('role', 'postgres', true);
+  update public.quiz_answers set asked_at = now() - interval '40 seconds'
+    where user_id = a and on_day = current_date and ordinal = 2;
+  perform set_config('role', 'authenticated', true);
+
+  select points::text into obtenu from public.quiz_answer(current_date, 2, 0);
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. juste mais hors delai ne rapporte rien (013)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 17 — 🔴 Et surtout : personne ne s'ecrit un score a la main. Aucune politique
+  --      d'ecriture n'existe sur `quiz_answers`.
+  begin
+    insert into public.quiz_answers (user_id, on_day, ordinal, answered_at, correct, points)
+    values (a, current_date, 9, now(), true, 9999);
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. on ne s''ecrit pas un score a la main (013)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);
