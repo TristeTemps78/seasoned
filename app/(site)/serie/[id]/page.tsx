@@ -270,16 +270,18 @@ export async function SeriesView({ id, locale }: {
           // le plus gros element de l'ecran, donc l'element chronometre. Deux images en
           // priorite haute ne priorisent rien.
           //
-          // L'ombre portee n'est pas un ornement : elle **decolle** l'affiche du visuel
-          // derriere elle. Sans elle, deux images se touchent et l'oeil ne sait plus ou l'une
-          // s'arrete — c'est le seul endroit du produit ou ce probleme se pose.
+          // ⚠️ `panel` et non `rounded-lg border … shadow-[…]` : c'est **la meme matiere que
+          // toutes les surfaces du produit**, elevation comprise, et c'est elle qui decolle
+          // l'affiche du visuel derriere elle. La valeur d'ombre etait ecrite a la main ici
+          // et une seconde fois sur l'accueil, pour le meme objet — deux copies qui ne
+          // savaient pas qu'elles en etaient.
           <img
             src={poster}
             alt=""
             decoding="async"
             width={posterDimensions('w342').width}
             height={posterDimensions('w342').height}
-            className="w-36 shrink-0 self-start rounded-lg border border-(--color-edge) shadow-[0_1.5rem_3rem_-1rem_rgba(0,0,0,0.75)] sm:w-56 sm:self-end"
+            className="panel w-36 shrink-0 self-start sm:w-56 sm:self-end"
           />
         ) : null}
 
@@ -645,11 +647,15 @@ function Stat({ label, value, emphasis = false }: {
 }) {
   return (
     <div
-      className={`tile ${
-        emphasis
-          ? 'border-(--color-volt)/40 bg-(--color-volt)/[0.06] shadow-[0_0_24px_-12px_var(--color-volt)]'
-          : ''
-      }`}
+      // 🔴 `panel-lit` et non trois utilitaires. La version precedente ecrivait
+      // `shadow-[0_0_24px_-12px_…]`, c'est-a-dire un `box-shadow` **complet** — et un
+      // utilitaire gagne sur la couche `components`. Elle effacait donc l'elevation
+      // partagee, ce qui faisait de la seule tuile qui compte **la seule tuile plate de la
+      // page**. Exactement le defaut que `--halo` existe pour rendre impossible.
+      //
+      // Le fond volt reste un utilitaire : c'est la seule chose que `.panel-lit` ne fasse
+      // pas, et il ne se compose avec rien.
+      className={`tile ${emphasis ? 'panel-lit bg-(--color-volt)/[0.06]' : ''}`}
     >
       <dt className={`label ${emphasis ? 'text-(--color-volt)/80' : ''}`}>{label}</dt>
       <dd

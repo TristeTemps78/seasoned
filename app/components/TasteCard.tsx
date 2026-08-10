@@ -33,7 +33,11 @@ export function TasteCard({ profile, journalTitles = {} }: {
 
   return (
     <section
-      className="edge-lit space-y-3 panel px-4 py-4"
+      // ⚠️ `panel` nu. Le liseré d'`edge-lit` n'existait ici que pour donner un peu de vie a
+      // une surface plate ; la matiere commune porte desormais son propre liseré interieur,
+      // et `panel-lit` est reserve a `MyTally` — l'ecran n'a droit qu'a une surface qui
+      // compte, et c'est le total des heures, pas le profil de gout.
+      className="space-y-3 panel px-4 py-4"
       aria-label={t('taste.aria')}
     >
       <h2 className="card-title">{t('taste.title')}</h2>

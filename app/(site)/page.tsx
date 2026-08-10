@@ -204,7 +204,8 @@ function Featured({ item, label, locale }: {
             decoding="async"
             width={posterDimensions('w342').width}
             height={posterDimensions('w342').height}
-            className="hidden w-40 shrink-0 rounded-lg border border-(--color-edge) shadow-[0_1.5rem_3rem_-1rem_rgba(0,0,0,0.75)] sm:block"
+            // `panel` : la matiere commune, elevation comprise. Voir la fiche serie.
+            className="panel hidden w-40 shrink-0 sm:block"
           />
         ) : null}
 

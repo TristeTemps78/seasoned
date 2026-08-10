@@ -59,7 +59,12 @@ export function SiteChrome({ locale, children }: {
         {/* Le liseré supérieur est la seule signature permanente de la direction
             artistique : un arc électrique en haut de chaque page, et rien d'autre qui
             brille tant qu'on n'interagit pas. */}
-        <header className="border-b border-(--color-edge) bg-(--color-ink)/70 backdrop-blur-sm sticky top-0 z-20 edge-lit">
+        {/* ⚠️ L'ombre portee n'est pas un ornement : sans elle, le contenu **disparaissait**
+            sous la barre au defilement au lieu de **passer dessous**. C'est la difference
+            entre deux plans et un seul, et c'est le seul endroit du site ou deux plans se
+            croisent reellement. Le flou passe a `md` pour la meme raison — a `sm`, une
+            banniere pleine largeur restait lisible au travers et brouillait les onglets. */}
+        <header className="border-b border-(--color-edge) bg-(--color-ink)/70 backdrop-blur-md shadow-[0_0.5rem_1.5rem_-0.5rem_rgb(0_0_0/0.8)] sticky top-0 z-20 edge-lit">
           {/* ⚠️ **Une seule rangee**, depuis le 2026-08-03. La marque et les faces
               vivaient sur deux lignes empilees : avec le bandeau de sauvegarde, le titre
               de la page commencait a 270 px du haut, sur toutes les pages. Deux rangees de

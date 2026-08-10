@@ -66,14 +66,12 @@ function Section({ title, body, highlight = false }: {
   readonly body: string;
   readonly highlight?: boolean;
 }) {
+  // ⚠️ `panel-lit` et non `edge-lit panel` : `highlight` designe **la** section qui compte
+  // sur cette page, ce qui est mot pour mot le role de `panel-lit`. Il y avait trois niveaux
+  // de surface pour deux intentions — le liseré seul n'etait ni la surface neutre ni celle
+  // qui compte, et personne n'aurait su quand le choisir.
   return (
-    <section
-      className={
-        highlight
-          ? 'edge-lit panel px-4 py-4'
-          : ''
-      }
-    >
+    <section className={highlight ? 'panel-lit px-4 py-4' : ''}>
       {/* `.section-heading` et non `.card-title` : ce composant rend les **sections de
           contenu** de la page, pas des encarts dans une section. */}
       <h2 className="section-heading">{title}</h2>

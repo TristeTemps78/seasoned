@@ -583,6 +583,11 @@ body::before {
     line-height: 1.25rem;
     font-weight: 500;
     color: var(--color-text);
+    /* La meme lumiere que les surfaces, en plus discret : un bouton est petit, et le meme
+       liseré y pese proportionnellement plus. Voir la matiere. */
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--color-text) 8%, transparent),
+      0 1px 2px -1px rgb(0 0 0 / 0.5);
     transition:
       border-color 160ms ease,
       color 160ms ease,
@@ -670,14 +675,63 @@ body::before {
    * les avait deja absorbees. Il en restait **8**. *Une tache se remesure avant d'etre faite,
    * surtout quand quelqu'un a travaille entre-temps.*
    */
+  /**
+   * =============================================================================
+   * LA MATIERE — une seule declaration, et c'est elle qui donne la profondeur
+   * =============================================================================
+   *
+   * ## Le defaut, mesure au navigateur le 2026-08-10
+   *
+   * Les seize surfaces d'une fiche serie rendaient **exactement la meme chose** :
+   * `rgb(17,19,28)` en aplat, `background-image: none`, et **`box-shadow: none` sur
+   * quatorze d'entre elles**. Le fond de page vaut `rgb(8,9,14)` — neuf unites d'ecart, sur
+   * un ecran ou l'oeil n'en distingue pas trois. Autrement dit : **tout etait peint sur le
+   * meme plan**, et le commentaire de `.panel` le disait deja sans le corriger — *« rien ne
+   * se detache : la page est un empilement de rectangles gris »*.
+   *
+   * ## Pourquoi ici, et nulle part ailleurs
+   *
+   * Trois declarations posees **une fois** donnent du relief a toutes les surfaces du
+   * produit — panneaux, cartes, tuiles, ecrans vides **et chaque affiche**, puisque les
+   * vignettes enveloppent deja leur image dans un `.panel`. Regler la profondeur ecran par
+   * ecran aurait produit seize profondeurs differentes : c'est le defaut qu'on repare, pas
+   * une facon de le reparer.
+   *
+   * ## Ce qui cree la profondeur sur un fond noir, et dans quel ordre
+   *
+   * 1. **Le liseré interieur en haut.** C'est le plus efficace, et de loin : un trait clair
+   *    juste sous le bord superieur simule la lumiere qui accroche une arete. Sur du sombre,
+   *    il fait plus qu'une ombre portee de 40 px.
+   * 2. **Le degrade de la surface.** Plus clair en haut, il dit d'ou vient la lumiere. Il
+   *    monte a 6 % seulement : au-dela, la surface se lit comme un bouton.
+   * 3. **L'ombre portee**, en deux temps — un contact serre qui pose l'objet, une diffusion
+   *    large qui l'eleve. Une seule ombre donne soit un autocollant, soit un nuage.
+   *
+   * ⚠️ **`--halo` est le seul point de surcharge**, et c'est ce qui garde l'ensemble simple :
+   * `.panel-lit` ajoute sa lueur volt **sans recopier** l'elevation. Sans cette variable, la
+   * surface emphatique aurait redeclare `box-shadow` en entier et perdu la matiere — ce qui
+   * l'aurait rendue *plus plate* que les surfaces ordinaires.
+   */
   .panel,
   .panel-lit,
   .card,
   .empty-state,
   .tile {
+    --halo: 0 0 0 0 transparent;
+
     border-radius: 0.5rem;
     border: 1px solid var(--color-edge);
     background-color: var(--color-surface);
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-text) 6%, transparent),
+      transparent 40%
+    );
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--color-text) 10%, transparent),
+      0 1px 2px -1px rgb(0 0 0 / 0.6),
+      0 0.75rem 1.75rem -0.75rem rgb(0 0 0 / 0.75),
+      var(--halo);
   }
 
   .card {
@@ -706,7 +760,10 @@ body::before {
    */
   .panel-lit {
     border-color: color-mix(in oklab, var(--color-volt) 32%, var(--color-edge));
-    box-shadow: 0 0 2.5rem -1.25rem color-mix(in oklab, var(--color-volt) 75%, transparent);
+    /* ⚠️ **Une variable et non un `box-shadow` complet.** Redeclarer l'ombre effacerait
+       l'elevation partagee, et la surface la plus importante de l'ecran serait la seule a
+       etre plate. Voir la matiere, plus haut. */
+    --halo: 0 0 2.5rem -1.25rem color-mix(in oklab, var(--color-volt) 75%, transparent);
   }
 
   /**
@@ -1062,11 +1119,19 @@ body::before {
 
   /** Le champ de saisie. ⚠️ L'anneau de focus est **volt** : il etait vert par endroits,
       c'est-a-dire la couleur qui signifie « en diffusion » ailleurs dans le produit. */
+  /**
+   * ⚠️ **Le champ est le seul element qui s'enfonce**, et c'est ce qui complete le systeme :
+   * les surfaces et les boutons prennent la lumiere par le haut, le champ la recoit par le
+   * haut **a l'interieur**. Une meme grammaire, deux sens — et c'est plus simple qu'un
+   * troisieme effet, parce qu'il n'y a rien de nouveau a retenir : la lumiere vient d'en
+   * haut, un creux la porte donc en dedans.
+   */
   .field {
     width: 100%;
     border-radius: 0.5rem;
     border: 1px solid var(--color-edge);
     background-color: color-mix(in oklab, var(--color-surface) 70%, transparent);
+    box-shadow: inset 0 2px 4px -2px rgb(0 0 0 / 0.7);
     padding: 0.625rem 0.875rem;
     color: var(--color-text);
     transition: border-color 160ms ease;
