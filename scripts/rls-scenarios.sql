@@ -158,9 +158,15 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
-  -- 6bis — le fil des textes : A demande TOUTES les critiques, sans filtre, et n'obtient
-  --        que les lisibles. B est en `followers` et A ne le suit pas.
-  select count(*)::text into obtenu from public.reviews;
+  -- 6bis — le fil des textes : A demande les critiques **sans filtre de visibilite**, et
+  --        n'obtient que les lisibles. B est en `followers` et A ne le suit pas.
+  --
+  -- 🔴 Ce scenario comptait d'abord `from public.reviews` tout court, et il a casse le jour
+  -- ou de VRAIES critiques ont ete ecrites (2026-08-10, 3 textes en production) : il en
+  -- lisait 3 au lieu de 1. **Deuxieme fois qu'un scenario suppose l'absence de donnees
+  -- reelles** — apres la manche du jour. On ne compte donc que les comptes semes ici ; ce
+  -- qui est mesure reste le meme, et il ne depend plus de ce que contient la base.
+  select count(*)::text into obtenu from public.reviews where user_id in (a, b, z);
   n := n + 1; attendu := '1';
   rapport := rapport || format(E'  %s  %s. « toutes les critiques » n''en rend qu''une a A (006)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
