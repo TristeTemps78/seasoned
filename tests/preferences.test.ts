@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -36,6 +37,39 @@ describe('masquer le temps passe', () => {
     const masque = setHideHours(EMPTY_JOURNAL, true);
     expect(mergeJournals(masque, EMPTY_JOURNAL).hideHours).toBe(true);
     expect(mergeJournals(EMPTY_JOURNAL, masque).hideHours).toBe(true);
+  });
+});
+
+/**
+ * 🔴 **Une preference qui ne vaut que pour un ecran sur deux n'est pas une preference.**
+ *
+ * Le masquage cachait le total de `MyTally` et laissait `MyYear` afficher « ce que pesent
+ * les series terminees » juste au-dessus — le meme genre de chiffre, dans la carte
+ * voisine. Trouve en auditant, pas en testant : les deux composants se lisent separement
+ * et se voient ensemble.
+ *
+ * Ce test lit la source, comme `ordering-notice` : c'est le seul moyen de prouver qu'un
+ * ecran **consulte** une preference, et le trou qu'`episodeMinutes` avait laisse.
+ */
+describe('le masquage vaut pour tous les comptes de temps passe', () => {
+  const sources: readonly [string, string][] = [
+    ['MyTally', 'app/components/MyTally.tsx'],
+    ['MyYear', 'app/components/MyYear.tsx'],
+  ];
+
+  for (const [name, path] of sources) {
+    it(`${name} consulte hideHours`, () => {
+      expect(readFileSync(path, 'utf8')).toContain('hideHours');
+    });
+  }
+
+  /**
+   * ⚠️ Le temps **a venir** n'est pas concerne : « il vous reste ~9 h » n'est pas un compte
+   * de ce qu'on a consomme, c'est le prix d'entree d'une decision. Le reglage porte sur le
+   * regard en arriere.
+   */
+  it('mais pas le temps restant, qui n en est pas un', () => {
+    expect(readFileSync('app/components/MyProgress.tsx', 'utf8')).not.toContain('hideHours');
   });
 });
 

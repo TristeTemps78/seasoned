@@ -80,8 +80,17 @@ export function MyYear() {
       </ul>
 
       {/* ⚠️ « ce que pesent les series terminees », jamais « ce que vous avez regarde » :
-          un visionnage acheve en janvier a pu commencer l'annee d'avant. */}
-      {review.minutesOfFinished > 0 ? (
+          un visionnage acheve en janvier a pu commencer l'annee d'avant.
+
+          🔴 **Et il obeit au masquage (4.6).** Sans cette condition, « je ne veux plus voir
+          le temps passe » cachait le total de `MyTally` et laissait le meme genre de
+          chiffre juste au-dessus, dans la carte voisine. Une preference qui ne vaut que
+          pour un ecran sur deux n'est pas une preference, c'est un bouton decoratif.
+
+          ⚠️ Le temps **a venir** (« il vous reste ~9 h ») n'est PAS concerne : ce n'est pas
+          un compte de ce qu'on a consomme, c'est le prix d'entree d'une decision. Le
+          reglage porte sur le regard en arriere, pas sur le calcul. */}
+      {review.minutesOfFinished > 0 && journal.hideHours !== true ? (
         <p className="numeric text-sm text-(--color-muted)">
           {t('year.weight', {
             commitment: formatCommitment(review.minutesOfFinished, locale),

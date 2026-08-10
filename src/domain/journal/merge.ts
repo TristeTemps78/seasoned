@@ -220,6 +220,55 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
  * Sert deja aujourd'hui, sans aucun compte : c'est l'import de fichier qui **complete**
  * un journal existant au lieu de l'ecraser. Servira tel quel a la synchronisation.
  */
+/**
+ * Ce qui se fusionne **hors** des entrees, et comment — un champ par ligne.
+ *
+ * ## 🔴 Pourquoi une table indexee plutot que des lignes ecrites a la main
+ *
+ * Rien n'obligeait a traiter un nouveau champ de document ici. Ajouter `regions` puis
+ * `hideHours` a demande d'y penser **deux fois**, et un oubli n'aurait rien casse de
+ * visible : brancher un second appareil aurait simplement efface une preference, en
+ * silence, sans qu'aucun geste ne l'ait demandee.
+ *
+ * Le type indexe rend l'oubli **impossible** : ajouter un champ a {@link Journal} oblige a
+ * dire ici comment il fusionne, ou a le ranger dans {@link MERGED_ELSEWHERE} avec sa
+ * raison. `npm run typecheck` refuse tout le reste, et il le refuse **au moment ou l'on
+ * ecrit le champ**.
+ *
+ * Meme procede que `GESTURE_DATES` dans `library.ts` et `KNOWN_ENTRY_FIELDS` dans
+ * `parse.ts` : le filet existait deja deux fois dans ce depot, il n'avait pas ete tendu
+ * ici.
+ */
+const MERGED_ELSEWHERE = ['version', 'entries', 'deviceId', 'unknownFields'] as const;
+
+const DOCUMENT_MERGE: {
+  readonly [K in Exclude<keyof Journal, (typeof MERGED_ELSEWHERE)[number]>]: (
+    a: Journal,
+    b: Journal,
+  ) => Journal[K];
+} = {
+  // Les plateformes ne sont pas datees : on garde la liste la plus fournie plutot que
+  // d'en perdre. Une preference declaree deux fois n'a jamais fait de mal.
+  platforms: (a, b) => unite(a.platforms, b.platforms),
+  // Les pays suivent exactement la meme regle.
+  regions: (a, b) => unite(a.regions, b.regions),
+  // ⚠️ **Le masquage gagne des qu'un cote le demande.** Ce n'est pas symetrique, et ce
+  // n'est pas un oubli : un appareil qui affiche encore le chiffre n'a pas « choisi » de
+  // l'afficher, il n'a simplement pas ete regle. Se tromper vers le silence est
+  // rattrapable en un clic ; l'inverse remet sous les yeux un chiffre que quelqu'un
+  // avait explicitement demande a ne plus voir.
+  hideHours: (a, b) => (a.hideHours === true || b.hideHours === true ? true : undefined),
+};
+
+/** L'union de deux ensembles non dates, sans doublon. Vide devient `undefined`. */
+function unite(
+  a: readonly string[] | undefined,
+  b: readonly string[] | undefined,
+): readonly string[] | undefined {
+  const all = [...new Set([...(a ?? []), ...(b ?? [])])];
+  return all.length > 0 ? all : undefined;
+}
+
 export function mergeJournals(a: Journal, b: Journal): Journal {
   const entries: Record<JournalKey, JournalEntry> = {};
   const keys = new Set([...Object.keys(a.entries), ...Object.keys(b.entries)]);
@@ -232,16 +281,14 @@ export function mergeJournals(a: Journal, b: Journal): Journal {
     if (merged !== undefined && worthKeeping(merged)) entries[key] = merged;
   }
 
-  // Les plateformes ne sont pas datees : on garde la liste la plus fournie plutot que
-  // d'en perdre. Une preference declaree deux fois n'a jamais fait de mal.
-  const platforms = [
-    ...new Set([...(a.platforms ?? []), ...(b.platforms ?? [])]),
-  ];
-
-  // ⚠️ Les pays suivent exactement la meme regle, et il fallait y penser **ici** : sans
-  // cette ligne, brancher un second appareil effacerait en silence les pays choisis sur le
-  // premier — une preference perdue sans qu'aucun geste ne l'ait demandee.
-  const regions = [...new Set([...(a.regions ?? []), ...(b.regions ?? [])])];
+  const preferences: Record<string, unknown> = {};
+  for (const [field, merge] of Object.entries(DOCUMENT_MERGE)) {
+    const value = merge(a, b);
+    // ⚠️ On n'ecrit que ce qui a une valeur : poser `platforms: undefined` ferait
+    // apparaitre la cle a la serialisation, et un client d'a cote la relirait comme un
+    // champ present et vide.
+    if (value !== undefined) preferences[field] = value;
+  }
 
   const unknownFields = mergeUnknown(a.unknownFields, b.unknownFields);
 
@@ -252,14 +299,7 @@ export function mergeJournals(a: Journal, b: Journal): Journal {
     entries,
     // L'appareil local garde son identite : c'est *son* journal qui accueille l'autre.
     ...(a.deviceId !== undefined ? { deviceId: a.deviceId } : {}),
-    ...(platforms.length > 0 ? { platforms } : {}),
-    ...(regions.length > 0 ? { regions } : {}),
-    // ⚠️ **Le masquage gagne des qu'un cote le demande.** Ce n'est pas symetrique, et ce
-    // n'est pas un oubli : un appareil qui affiche encore le chiffre n'a pas « choisi » de
-    // l'afficher, il n'a simplement pas ete regle. Se tromper vers le silence est
-    // rattrapable en un clic ; l'inverse remet sous les yeux un chiffre que quelqu'un
-    // avait explicitement demande a ne plus voir.
-    ...(a.hideHours === true || b.hideHours === true ? { hideHours: true } : {}),
+    ...preferences,
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
 }
