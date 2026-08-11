@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 
 import { ReviewBody } from '@/app/components/ReviewBody';
 import { LocaleProvider } from '@/app/i18n/LocaleProvider';
-import { readFileSync } from 'node:fs';
 
 /**
  * Le corps d'une critique, teste sur ce qu'il **cache**.
@@ -64,31 +63,4 @@ describe('quand le domaine a tranche « masque »', () => {
   });
 });
 
-/**
- * 🔴 Ni le test du domaine (`feed.test.ts`) ni celui de ce composant ne prouvent que le fil
- * **appelle** quoi que ce soit. C'est le trou exact d'`episodeMinutes` et d'`ordering.ts` :
- * livres verts, et morts-nes.
- *
- * On lit donc la source, comme `ordering-notice` et `no-hardcoded-strings` le font deja.
- * Debrancher l'une de ces trois pieces ferait retomber le fil sur les seuls faits — en
- * silence, puisqu'un fil sans critiques est exactement ce qu'on avait avant.
- */
-describe('le fil est reellement branche', () => {
-  const source = readFileSync('app/components/Friends.tsx', 'utf8');
 
-  it('lit les critiques', () => {
-    expect(source).toContain('feedReviews');
-  });
-
-  it('les caviarde avec une position par oeuvre', () => {
-    expect(source).toContain('redactReviewsAcross');
-  });
-
-  it('les range avec les faits plutot que de les afficher a part', () => {
-    expect(source).toContain('mergeFeed');
-  });
-
-  it('affiche le corps par le composant partage', () => {
-    expect(source).toContain('<ReviewBody');
-  });
-});

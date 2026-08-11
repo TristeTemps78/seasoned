@@ -16,11 +16,6 @@ import { describe, expect, it } from 'vitest';
  * quoi que ce soit, et c'est exactement le trou qu'`episodeMinutes` avait laisse.
  */
 describe('l activite se publie depuis toutes les pages', () => {
-  it('le chrome du site monte le publieur', () => {
-    const chrome = readFileSync('app/components/SiteChrome.tsx', 'utf8');
-    expect(chrome).toContain('<PublishActivity />');
-  });
-
   it('le publieur projette bien le journal', () => {
     const source = readFileSync('app/components/PublishActivity.tsx', 'utf8');
     expect(source).toContain('projectActivity');

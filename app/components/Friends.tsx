@@ -18,12 +18,11 @@ import {
   type PublishedReview,
 } from '@/src/social/client';
 import { ReportButton } from '@/app/components/ReportButton';
-import { ReviewBody } from '@/app/components/ReviewBody';
 import { Discover } from '@/app/components/Discover';
 import { DailyRound } from '@/app/components/DailyRound';
 import { FriendQuiz } from '@/app/components/FriendQuiz';
 import { Avatar } from '@/app/components/Avatar';
-import { PosterChip } from '@/app/components/PosterChip';
+import { FriendsFeed } from '@/app/components/FriendsFeed';
 import { pathIn } from '@/lib/routes';
 import { socialFrom } from '@/app/social/socialFrom';
 
@@ -413,145 +412,18 @@ export function Friends() {
         titleOf={(subject) => journal.entries[subject as JournalKey]?.snapshot?.title}
       />
 
-      <section className="space-y-3">
-        <h2 className="section-heading">{t('friends.feed.title')}</h2>
-        {timeline.length === 0 ? (
-          // ⚠️ Mieux vaut se taire que compter zero : un fil vide dit quoi faire, il
-          // n'affiche pas « 0 activite ». Mais il ne doit pas dire « rien a lire » quand
-          // la verite est « je n'ai pas pu lire » — c'est le defaut de 10.0, et la seule
-          // facon de ne pas le refaire est que l'ecran connaisse la difference.
-          <div className="empty-state" role={unreadable ? 'status' : undefined}>
-            <p className="empty-state-body">
-              {t(unreadable ? 'friends.feed.unreadable' : 'friends.feed.empty')}
-            </p>
-          </div>
-        ) : (
-          <ul>
-            {timeline.map((entry, index) => {
-              if (entry.of === 'review') {
-                const review = entry.review;
-                const parsed = parseJournalKey(review.subject);
-                // Le titre vient de **mon** instantane local, jamais d'un appel catalogue :
-                // une requete par ligne de fil est le cout par utilisateur que ce produit
-                // refuse. Sans instantane on montre la cle — le lien, lui, marche toujours.
-                // ⚠️ L'instantane publie **d'abord**, le journal du lecteur ensuite. L'ordre
-                // inverse laissait « tmdb:94997 » a l'ecran pour toute serie que le lecteur
-                // n'avait pas deja — c'est-a-dire dans le seul cas ou un fil sert a decouvrir.
-                const title = review.title ?? journal.entries[review.subject]?.snapshot?.title;
-                const poster =
-                  review.posterPath ?? journal.entries[review.subject]?.snapshot?.posterPath;
-
-                return (
-                  <li
-                    key={`review-${review.authorId}-${review.subject}-${review.target}-${index}`}
-                    className="feed-row space-y-2 text-sm"
-                  >
-                    {/* ⚠️ `flex-wrap` et non une colonne : la ligne porte le pseudo, le verbe et
-                        le titre de la serie, qui doivent rester **une phrase**. Une colonne les
-                        empilerait en trois fragments qui ne se lisent plus ensemble. Les `{' '}`
-                        qui suivent deviennent des elements de flex vides — la specification dit
-                        qu'un element anonyme fait de blanc seul n'est pas rendu, donc ils ne
-                        creusent aucun trou. */}
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      {poster === undefined ? null : (
-                        <PosterChip path={poster} title={title ?? review.subject} />
-                      )}
-                      <Avatar handle={review.handle} face={review.face} />
-                      <Link
-                        href={pathIn(`/u/${review.handle}`, locale)}
-                        className="font-medium hover:text-(--color-volt)"
-                      >
-                        @{review.handle}
-                      </Link>{' '}
-                      {t('friends.item.reviewed')}{' '}
-                      {parsed === undefined ? (
-                        <span className="font-medium">{title ?? review.subject}</span>
-                      ) : (
-                        <Link
-                          href={pathIn(`/serie/${parsed.providerId}`, locale)}
-                          className="font-medium hover:text-(--color-volt)"
-                        >
-                          {title ?? review.subject}
-                        </Link>
-                      )}
-                      <ReportButton
-                        onReport={(ground) =>
-                          client === undefined || userId === undefined
-                            ? Promise.resolve(false)
-                            : client.report(userId, review.authorId, ground)
-                        }
-                      />
-                    </div>
-                    <ReviewBody
-                      hidden={review.hidden === true}
-                      text={review.text}
-                      hiddenText={review.hiddenText ?? ''}
-                      throughSeason={review.throughSeason}
-                    />
-                  </li>
-                );
-              }
-
-              const item = entry.fact;
-              // 🔴 Le bloc « fait » ne nommait **pas du tout** la serie : la ligne disait
-              // « @x a note la saison 1 — 4,5 ★ » sans jamais dire de quelle serie. Pire que
-              // la cle brute des critiques, et invisible au HTML — il faut le lire a l'ecran.
-              const factTitle = item.title ?? journal.entries[item.subject]?.snapshot?.title;
-              const factPoster =
-                item.posterPath ?? journal.entries[item.subject]?.snapshot?.posterPath;
-              const factParsed = parseJournalKey(item.subject);
-              return (
-                <li
-                  key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
-                  className="feed-row flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
-                >
-                  {factPoster === undefined ? null : (
-                    <PosterChip path={factPoster} title={factTitle ?? item.subject} />
-                  )}
-                  <Avatar handle={item.handle} face={item.face} />{' '}
-                  <Link
-                    href={pathIn(`/u/${item.handle}`, locale)}
-                    className="font-medium hover:text-(--color-volt)"
-                  >
-                    @{item.handle}
-                  </Link>{' '}
-                  {t(`friends.item.${item.kind}`)}{' '}
-                  {/* ⚠️ Le titre n'est rendu que s'il est **connu** : ecrire la cle a la place
-                      serait revenir au defaut qu'on corrige. Sans titre, la phrase reste
-                      « @x a termine » — incomplete, mais jamais absurde. */}
-                  {factTitle === undefined ? null : factParsed === undefined ? (
-                    <span className="font-medium">{factTitle}</span>
-                  ) : (
-                    <Link
-                      href={pathIn(`/serie/${factParsed.providerId}`, locale)}
-                      className="font-medium hover:text-(--color-volt)"
-                    >
-                      {factTitle}
-                    </Link>
-                  )}{' '}
-                  {item.season !== undefined && item.stars !== undefined
-                    ? t('friends.item.season', {
-                        season: String(item.season),
-                        stars: item.stars.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-GB'),
-                      })
-                    : null}
-                  {/* ⚠️ Sur chaque ligne, et non dans un menu de profil : on signale ce qu'on
-                      vient de lire, au moment ou on le lit. Une voie de signalement qui
-                      demande de retrouver la personne ailleurs n'en est pas une — c'est le
-                      meme raisonnement qui a mis `/regles` en pied de page de tout le site. */}
-                  <ReportButton
-                    onReport={(ground) =>
-                      client === undefined || userId === undefined
-                        ? Promise.resolve(false)
-                        : client.report(userId, item.authorId, ground)
-                    }
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+      {/* Le fil vit dans son propre fichier depuis le 2026-08-11 : il pesait 139 des 557
+          lignes de ce composant, qui en portait cinq sujets sans rapport. */}
+      <FriendsFeed
+        timeline={timeline}
+        unreadable={unreadable}
+        journal={journal}
+        onReport={(authorId, ground) =>
+          client === undefined || userId === undefined
+            ? Promise.resolve(false)
+            : client.report(userId, authorId, ground)
+        }
+      />
     </div>
   );
 }

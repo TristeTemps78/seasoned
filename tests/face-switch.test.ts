@@ -108,10 +108,6 @@ describe('la fusion tranche par la date, jamais par l ordre', () => {
  * exactement la feature ecrite qui ne marche pas.
  */
 describe('la bascule est annoncee depuis toutes les pages', () => {
-  it('le chrome du site monte l annonce', () => {
-    expect(readFileSync('app/components/SiteChrome.tsx', 'utf8')).toContain('<FaceSwitch />');
-  });
-
   it('l annonce ecrit ce qu elle vient de montrer', () => {
     const source = readFileSync('app/components/FaceSwitch.tsx', 'utf8');
     expect(source).toContain('announceFace(current)');

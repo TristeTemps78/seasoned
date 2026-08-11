@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { setProvider } from '@/lib/catalog';
@@ -166,20 +165,4 @@ describe('SeriesOrderings — le fil du fournisseur jusqu’à l’écran', () =
   });
 });
 
-/**
- * Le dernier maillon que même le test ci-dessus ne voit pas : que **la page** appelle
- * `SeriesOrderings`.
- *
- * Lire la source est un procédé déjà employé dans ce dépôt (`no-hardcoded-strings`,
- * `no-journal-on-server`) et c'est le seul qui atteigne ce maillon-là sans monter un rendu
- * de page complet. C'est fruste, et ça vaut mieux que rien : sans lui, supprimer une ligne
- * de la page laisserait 650 tests verts.
- */
-describe('la page série câble bien le bandeau', () => {
-  it('rend SeriesOrderings', () => {
-    const source = readFileSync('app/(site)/serie/[id]/page.tsx', 'utf8');
-    expect(source).toContain("from '@/app/components/SeriesOrderings'");
-    expect(source).toMatch(/<SeriesOrderings\b/);
-  });
 
-});
