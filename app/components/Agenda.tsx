@@ -144,8 +144,16 @@ function Row({ episode, now, posterPath }: {
           <span className="meta">
             {formatDate(episode.airsOn, locale)}
           </span>
-          {/* Le temps restant est un chiffre : il va dans la grille, comme partout ailleurs. */}
-          <span className="numeric text-sm text-(--color-volt)">{label}</span>
+          {/* 🔴 Deux defauts sur la meme ligne, trouves en auditant `.numeric`.
+              1. Le commentaire disait « le temps restant est un chiffre » — faux dans **deux
+                 branches sur trois** : `label` vaut « aujourd'hui » ou « demain ». Le
+                 monospace transformait ces mots en extrait de terminal, exactement ce qui
+                 rendait `/bilan` laid.
+              2. La couleur etait `--color-volt`, qui signifie desormais « vous » depuis le
+                 basculement de l'accent au vert. Or une date de diffusion parle de la SERIE :
+                 c'est `--color-live`, comme dans `LibraryCard` qui rend deja la meme phrase.
+                 Le basculement de l'accent a rendu ce slip **visible**, il ne l'a pas cree. */}
+          <span className="text-sm font-medium text-(--color-live)">{label}</span>
         </span>
       </div>
     </li>

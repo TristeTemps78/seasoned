@@ -79,21 +79,31 @@ export function MyYear() {
           en prose ne se lit pas comme une mesure : elle se lit comme une remarque.
           Les tuiles portent le nombre en grand et l'etiquette en petit, et chacune prend une
           teinte differente (`.tile:nth-child`). C'est la seule bande de couleur de la page. */}
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]">
         {([
           ['year.stat.finished', review.finished],
           ['year.stat.rated', review.seasonsRated],
           ['year.stat.written', review.reviewsWritten],
           ['year.stat.liked', review.liked],
+          // ⚠️ Les heures entrent dans la MEME bande que les autres mesures. Elles flottaient
+          // seules en dessous, en une phrase de 14 px — une mesure ecrite en prose entre
+          // quatre mesures en tuiles, c'est-a-dire la seule qui ne se lisait pas.
+          // Elles obeissent au masquage (4.6) : `hideHours` retire le chiffre partout ou il
+          // parait, sinon la preference ne vaudrait que pour un ecran sur deux.
+          ...(review.minutesOfFinished > 0 && journal.hideHours !== true
+            ? ([['year.stat.hours', formatCommitment(review.minutesOfFinished, tr)]] as const)
+            : []),
         ] as const)
           // ⚠️ Zero ne s'affiche pas : « 0 critique » annonce un manque, la ou l'absence de
           // tuile ne dit rien. C'est la regle « mieux vaut se taire que compter zero »,
           // deja appliquee au fil et au classement.
-          .filter(([, valeur]) => valeur > 0)
+          .filter(([, valeur]) => valeur !== 0)
           .map(([cle, valeur]) => (
             <div key={cle} className="tile">
               <dt className="label">{t(cle)}</dt>
-              <dd className="tile-value">{n(valeur)}</dd>
+              <dd className="tile-value">
+                {typeof valeur === 'number' ? n(valeur) : valeur}
+              </dd>
             </div>
           ))}
       </dl>
@@ -112,13 +122,7 @@ export function MyYear() {
       {/* ⚠️ Plus de `numeric` ici : le monospace aligne des COLONNES de nombres. Sur une
           phrase — « les séries terminées cette année-là pèsent 12 heures » — il donne du code,
           et c'est ce que la capture du 2026-08-11 montrait juste sous les tuiles. */}
-      {review.minutesOfFinished > 0 && journal.hideHours !== true ? (
-        <p className="meta">
-          {t('year.weight', {
-            commitment: formatCommitment(review.minutesOfFinished, tr),
-          })}
-        </p>
-      ) : null}
+
 
       {best !== undefined ? (
         // 🔴 C'etait une **petite affiche a cote d'une phrase de 14 px**, dans une rangee qui
@@ -134,14 +138,19 @@ export function MyYear() {
           <div className="min-w-0">
             <p className="label">{t('year.best')}</p>
             {parsed === undefined ? (
-              <p className="section-heading">{best.title}</p>
+              <h3 className="section-heading">{best.title}</h3>
             ) : (
-              <Link
-                className="section-heading block transition-colors hover:text-(--color-volt)"
-                href={pathIn(`/serie/${parsed.providerId}`, locale)}
-              >
-                {best.title}
-              </Link>
+              // ⚠️ `<h3>` et non un `<p>` stylé en titre : `no-adhoc-typography` ne regarde
+              // que les `<h*>`, donc un paragraphe qui joue un titre lui est **invisible** —
+              // c'est le defaut que `MyFaceCard` nomme deja, et que je venais de commettre.
+              <h3 className="section-heading">
+                <Link
+                  className="block transition-colors hover:text-(--color-volt)"
+                  href={pathIn(`/serie/${parsed.providerId}`, locale)}
+                >
+                  {best.title}
+                </Link>
+              </h3>
             )}
           </div>
         </div>

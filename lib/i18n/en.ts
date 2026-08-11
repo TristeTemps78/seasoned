@@ -158,6 +158,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'year.aria': 'My year',
   'year.title': 'Your {year}',
   'year.pick': 'Pick a year',
+  'year.stat.hours': 'Time put in',
   'year.stat.finished': 'Seen to the end',
   'year.stat.rated': 'Seasons rated',
   'year.stat.written': 'Reviews',

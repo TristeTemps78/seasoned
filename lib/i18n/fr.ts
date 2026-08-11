@@ -186,6 +186,7 @@ export const FR = {
   'year.aria': 'Mon année',
   'year.title': 'Votre {year}',
   'year.pick': 'Choisir une année',
+  'year.stat.hours': 'Temps passé',
   'year.stat.finished': 'Menées au bout',
   'year.stat.rated': 'Saisons notées',
   'year.stat.written': 'Critiques',
