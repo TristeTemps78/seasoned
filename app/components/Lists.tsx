@@ -179,7 +179,10 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
       {lists.length === 0 ? (
         <p className="prose-note">{editable ? t('lists.none') : t('lists.noneOther')}</p>
       ) : (
-        <ul className="space-y-3">
+        // ⚠️ Une **grille** et non une pile : une liste est un objet qu'on parcourt du regard
+        // pour choisir, pas un article qu'on lit de haut en bas. Empilees pleine largeur, dix
+        // listes demandent dix ecrans de defilement pour en trouver une.
+        <ul className="grid gap-3 sm:grid-cols-2">
           {lists.map((list) => {
             const shown = items[list.slug] ?? [];
             const isOpen = open === list.slug;

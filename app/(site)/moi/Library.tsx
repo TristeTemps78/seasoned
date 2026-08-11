@@ -114,7 +114,10 @@ function Row({ title, subtitle, items, lead = false }: {
     // Meme regle que l'accueil : la grille sort de la colonne de lecture, jamais le texte.
     <section className="bleed space-y-4" aria-label={title}>
       <RowHeader title={title} subtitle={subtitle} />
-      <ul className={`poster-grid ${lead ? 'poster-grid-lead' : ''}`}>
+      {/* ⚠️ La rangee de tete est une **mosaique** et non une grille plus grande : c'est ce
+          qui casse la linearite de l'ecran. La premiere serie — celle qui revient le plus
+          tot — occupe quatre cases, les autres suivent en dense. */}
+      <ul className={`poster-grid ${lead ? 'poster-grid-mosaic' : ''}`}>
         {items.map((item) => (
           <li key={item.key}>
             <LibraryCard item={item} lead={lead} />

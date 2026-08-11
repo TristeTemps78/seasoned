@@ -7,6 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn, seriesPath } from '@/lib/routes';
 import { parseJournalKey } from '@/src/domain/journal';
 import type { LibraryItem } from '@/src/domain/library';
+import { Icon } from '@/app/components/Icon';
 
 /**
  * Une vignette de la bibliotheque.
@@ -66,6 +67,32 @@ export function LibraryCard({ item, lead = false }: {
           size={lead ? 'w500' : 'w342'}
           className="transition-opacity group-hover:opacity-85"
         />
+
+        {/* Ce que cette affiche sait de MOI, et que la meme affiche dans le catalogue ignore.
+            ⚠️ `aria-hidden` : les trois faits sont ecrits en toutes lettres sous la vignette. */}
+        {item.entry.liked?.at !== undefined ? (
+          <span className="poster-badge poster-badge-tr poster-badge-liked" aria-hidden="true">
+            <Icon name="heart" />
+          </span>
+        ) : decision === 'completed' ? (
+          <span className="poster-badge poster-badge-tr poster-badge-done" aria-hidden="true">
+            <Icon name="check" />
+          </span>
+        ) : decision === 'abandoned' ? (
+          // ⚠️ Une croix et non une absence : la carte des abandons est la donnee propriete du
+          // produit, et une serie lachee doit se reconnaitre d'un coup d'oeil dans la grille.
+          <span className="poster-badge poster-badge-tr text-(--color-muted)" aria-hidden="true">
+            <Icon name="close" />
+          </span>
+        ) : null}
+
+        {/* La position, en bas — une progression se lit de gauche a droite. Absente pour une
+            serie qu'on n'a pas commencee : un « S0E0 » serait pire que rien. */}
+        {position !== undefined ? (
+          <span className="poster-progress numeric" aria-hidden="true">
+            S{position.seasonNumber}E{position.episodeNumber}
+          </span>
+        ) : null}
       </div>
 
       <p className="mt-2 line-clamp-2 text-sm font-medium leading-snug">

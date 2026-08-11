@@ -60,11 +60,11 @@ export function Agenda() {
 
       {groups.map(({ labelKey, episodes }) =>
         episodes.length === 0 ? null : (
-          <section key={labelKey} className="space-y-3" aria-label={t(labelKey)}>
-            <h2 className="label font-semibold">
+          <section key={labelKey} className="band" aria-label={t(labelKey)}>
+            <h2 className="row-title">
               {t(labelKey)}
             </h2>
-            <ul className="divide-y divide-(--color-edge) panel">
+            <ul className="divide-y divide-(--color-edge)">
               {episodes.map((episode) => (
                 <Row
                   key={episode.key}
@@ -127,7 +127,7 @@ function Row({ episode, now, posterPath }: {
     );
 
   return (
-    <li className="flex items-center gap-4 px-4 py-3">
+    <li className="flex items-center gap-4 py-3">
       {/* 2,25 rem de large : assez pour reconnaitre une affiche d'un coup d'oeil, assez peu
           pour que la ligne reste une ligne. `w154` est la plus petite taille du CDN — on ne
           telecharge pas 342 px pour en afficher 36. */}
