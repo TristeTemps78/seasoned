@@ -174,7 +174,7 @@
    * seule bordure, un seul fond dans toute l'application ».
    *
    * ⚠️ **Elle ne porte QUE la sous-couche** — rayon, bordure, fond — et laisse le rembourrage
-   * aux utilitaires, comme `.section-title` laisse la typographie a `.row-title`. C'est ce qui
+   * aux utilitaires : la forme et la typographie se decident separement. C'est ce qui
    * rend l'extraction **strictement neutre au pixel** : les dix-neuf sites gardaient deja des
    * rembourrages differents (`py-4`, `py-3`, aucun), et trois surchargent l'opacite du fond
    * (`/50`, `/70`) — ce que la couche `components` laisse gagner aux utilitaires.
@@ -301,7 +301,8 @@
     letter-spacing: -0.01em;
   }
   /* ⚠️ Il n'y a plus de `.tile-label` : elle etait `.label` a `0.0625rem` pres, avec **un
-     seul** usage — le meme defaut que `.section-title` extraite et employee nulle part. La
+     seul** usage — le meme defaut que `.section-title`, extraite puis jamais employee, et
+     retiree le 2026-08-11. La
      tuile emploie donc `.label`, ce qui fait grossir son libelle de 11 px a 12 px. */
 
   .tile-value {
@@ -313,28 +314,9 @@
     text-wrap: balance;
   }
   /**
-   * Le titre de section — un trait volt, un libelle en capitales, une phrase.
-   *
-   * Cette forme existait deja sur l'accueil, ecrite a la main. Elle est ici pour que la
-   * prochaine section lui ressemble sans avoir a la retrouver.
-   *
-   * ⚠️ **Elle ne porte que la FORME** — le filet et son retrait. La typographie du libelle
-   * vit dans `.row-title`, un cran nomme, pose sur le titre lui-meme.
-   */
-  .section-title {
-    /* ⚠️ **60 %, pas 100 %.** L'accueil portait ce filet a `--color-volt/60` et c'est cette
-       version-la qui a ete regardee et jugee bonne ; la classe extraite au 6.7 avait pris
-       le volt plein sans que personne le voie, puisqu'elle n'etait utilisee nulle part.
-       Trois filets de cyan sature empiles sur une meme page se disputent l'attention des
-       affiches. Constat de rendu, pas une regle : les trois anciennes ont ete retirees le
-       2026-08-11 (`base.css`). Cette valeur reste parce qu'elle a ete regardee. */
-    border-left: 2px solid color-mix(in oklab, var(--color-volt) 60%, transparent);
-    padding-left: 0.75rem;
-  }
-  /**
    * Le libelle qui ouvre une grille d'affiches.
    *
-   * Une classe nommee, et non `.section-title > :first-child` : un selecteur positionnel se
+   * Une classe nommee, et non un selecteur positionnel du genre `.row-head > :first-child` : il se
    * defait en inserant n'importe quoi avant le titre, sans erreur et sans test.
    *
    * `0.8125rem` en capitales, decide le 2026-08-05 : sur un ecran ou « l'affiche est

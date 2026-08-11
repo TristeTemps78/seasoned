@@ -175,19 +175,6 @@ body::before {
   opacity: 1;
 }
 
-/**
- * Ce qui compte le plus sur un ecran : un chiffre qui brille juste assez.
- *
- * Reserve aux valeurs uniques et importantes — le total du bilan, l'engagement d'une
- * serie. Pose sur chaque chiffre de la page, l'effet disparait par saturation.
- */
-.glow {
-  color: var(--color-volt);
-  text-shadow: 0 0 24px color-mix(in oklab, var(--color-volt) 45%, transparent);
-}
-
-/* =============================================================================
- * ⚠️ `
 
 /**
  * ⚠️ Toute animation d'ambiance se tait quand le systeme le demande.

@@ -55,7 +55,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
   return (
     <section
       // `card panel-lit` : c'est le chiffre qui repond a la question du nom du site, sur une
-      // page qui n'a que trois cartes. Il portait deja `glow` sur son total ; la surface qui
+      // page qui n'a que trois bandes. (`glow` a ete retiree le 2026-08-11 avec le monospace :
       // le contient restait, elle, au meme poids que les deux autres.
       className="band"
       aria-label={t('tally.aria')}
