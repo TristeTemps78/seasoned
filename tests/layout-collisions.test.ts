@@ -103,15 +103,33 @@ it('toute classe a marge superieure negative est isolee d un conteneur `space-y`
   expect(remontantes.length, 'aucune marge negative — la garde examinerait le vide')
     .toBeGreaterThan(0);
 
+  /**
+   * Les conteneurs qui **isolent** une remontee du `space-y` de la page.
+   *
+   * ⚠️ La premiere version de cette garde n'en connaissait qu'un, ecrit en dur — et le
+   * deuxieme hero du produit (`FaceHero`, 2026-08-12) l'a fait echouer alors qu'il appliquait
+   * exactement le bon patron, avec son propre conteneur. Une garde qui refuse la bonne
+   * solution parce qu'elle n'en connait qu'une instance est une garde qui pousse a la
+   * contourner.
+   *
+   * La liste est **verifiee contre la feuille** juste apres : un conteneur nomme ici mais
+   * absent du CSS laisserait passer n'importe quoi.
+   */
+  const ISOLANTS = ['show-hero', 'face-hero-wrap'];
+  for (const isolant of ISOLANTS) {
+    expect(CSS, `.${isolant} n'existe pas dans la feuille`).toContain(`.${isolant}`);
+  }
+
   const fautes = filesUnder('app')
     .filter((file) => pathOf(file).endsWith('.tsx'))
     .flatMap((file) => {
       const code = codeOf(file);
+      const isole = ISOLANTS.some((one) => code.includes(one));
       return remontantes.flatMap((classe) => {
         const employee = new RegExp(String.raw`[\s"'\`{]${classe}[\s"'\`}$]`).test(code);
         if (!employee) return [];
         // Le fichier qui remonte quelque chose doit nommer son conteneur d'isolement.
-        return /show-hero/.test(code) ? [] : [`${pathOf(file)} :: ${classe}`];
+        return isole ? [] : [`${pathOf(file)} :: ${classe}`];
       });
     });
 

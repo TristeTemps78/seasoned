@@ -127,14 +127,18 @@ function Row({ episode, now, posterPath }: {
 
   return (
     <li className="flex items-center gap-4 py-3">
-      {/* 2,25 rem de large : assez pour reconnaitre une affiche d'un coup d'oeil, assez peu
-          pour que la ligne reste une ligne. `w154` est la plus petite taille du CDN — on ne
-          telecharge pas 342 px pour en afficher 36. */}
+      {/* 🔴 **C'etait `w-9`, soit 36 px** — et le commentaire pretendait que c'etait « assez
+          pour reconnaitre une affiche d'un coup d'oeil ». A 36 px de large, une affiche n'est
+          pas reconnaissable : c'est un carre de couleur. Le calendrier redevenait ce qu'il
+          etait avant qu'on lui donne des vignettes — un ecran ou l'on cherche sa serie **en
+          lisant**.
+          A 64 px la ligne reste une ligne (elle fait 96 px de haut, contre 54) et l'affiche
+          redevient un objet qu'on identifie sans lire. */}
       {/* ⚠️ Un `div` et non un `span` : `Poster` rend une `div` quand l'affiche manque
           (le monogramme), et une `div` dans un `span` est un imbriquement invalide que
           rien ici ne signalerait. */}
-      <div className="poster-frame aspect-2/3 w-9 shrink-0">
-        <Poster path={posterPath} title={episode.title} size="w154" />
+      <div className="poster-frame aspect-2/3 w-16 shrink-0">
+        <Poster path={posterPath} title={episode.title} size="w185" />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">

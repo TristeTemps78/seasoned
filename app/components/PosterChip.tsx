@@ -37,8 +37,16 @@ export function PosterChip({
   readonly wide?: boolean;
 }) {
   return (
+    // 🔴 **`w-16` etait un timbre-poste.** Densite d'image mesuree sur `/bilan` le
+    // 2026-08-12 : **0,5 %** de la surface rendue, pour une page dont le point d'arrivee est
+    // « la saison que vous avez le mieux notee » — annoncee avec une affiche de 64 x 96 px.
+    // A `w-28`, la meme affiche couvre six fois plus de surface, et la mise en avant se lit
+    // enfin comme une mise en avant.
+    //
+    // ⚠️ Le format du fil ne bouge **pas** : la, une ligne par personne doit rester une
+    // ligne, et c'est exactement pourquoi ce composant a deux tailles plutot qu'une.
     <span
-      className={`poster-frame block shrink-0 ${wide ? 'w-16' : 'w-10'}`}
+      className={`poster-frame block shrink-0 ${wide ? 'w-28' : 'w-10'}`}
     >
       {/* Le rapport vit sur un enfant et non sur le cadre : `Poster` rend un `<img>` en
           `h-full`, qui sans hauteur donnee s'effondre a la hauteur de son alt — c'est-a-dire

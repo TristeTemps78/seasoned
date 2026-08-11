@@ -6,6 +6,7 @@ import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
 import { EmptyState } from '@/app/components/EmptyState';
+import { FaceHero } from '@/app/components/FaceHero';
 import { MyTally } from '@/app/components/MyTally';
 import { PageHeader } from '@/app/components/PageHeader';
 import { MyYear } from '@/app/components/MyYear';
@@ -75,7 +76,14 @@ export function MyStats() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={t('tallyPage.title')} lede={t('tallyPage.lede')} />
+      {/* 🔴 **La seule face dont le sujet soit vous, et la seule sans une image.** Densite
+          mesuree le 2026-08-12 : 0,5 % de la surface rendue, soit une affiche de 64 x 96 px
+          sur 1090 px de haut. La bande est faite de vos propres affiches, deja dans le
+          journal — aucun appel, rien d'invente. Elle se retire d'elle-meme sous quatre
+          series, et rend alors ses enfants tels quels. */}
+      <FaceHero>
+        <PageHeader title={t('tallyPage.title')} lede={t('tallyPage.lede')} />
+      </FaceHero>
 
       {/* ⚠️ **Hors du `silent`, et c'est voulu.** Les deux autres cartes se taisent faute de
           matiere ; la face, elle, dit « pas encore, et voila comment » — c'est la seule

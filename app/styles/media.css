@@ -597,4 +597,112 @@
     letter-spacing: 0.1em;
     color: color-mix(in oklab, var(--color-muted) 70%, transparent);
   }
+
+  /**
+   * =============================================================================
+   * LA BANDE DE VOS AFFICHES — la matiere du produit, sur la face qui n'en avait aucune
+   * =============================================================================
+   *
+   * 🔴 Mesure du 2026-08-12, densite d'image sur la surface rendue :
+   *
+   *     /bilan        0,5 %     une seule affiche, 64 x 96 px, sur 1090 px de haut
+   *     /moi          1,3 %
+   *     /serie/1396   (bande + generique + affiches)
+   *     accueil       (banniere pleine largeur + trois rails)
+   *
+   * `/bilan` est la page qui dit **qui vous etes** — vos heures, votre annee, la saison que
+   * vous avez le mieux notee — et elle le disait en texte gris avec une vignette de la taille
+   * d'un timbre. Les deux faces qui ont une banniere sont les deux qui parlent des series des
+   * AUTRES ; celle qui parle de vous n'avait rien.
+   *
+   * Cette bande est faite de **vos** affiches, prises dans votre journal. Aucun appel, aucune
+   * donnee inventee : ce sont les series que vous suivez, celles-la et pas d'autres.
+   *
+   * ## Ce qui la rend lisible plutot que bruyante
+   *
+   *   - elle est **derriere** : desaturee, assombrie, et dissoute vers le bas par un degrade
+   *     qui finit sur `--color-ink` opaque. Le titre se pose dessus, il ne lutte pas avec ;
+   *   - elle ne se repete **pas sur les autres faces**. Une meme bande partout redonnerait
+   *     exactement le defaut qu'on corrige depuis trois jours — « toutes mes pages se
+   *     ressemblent » ;
+   *   - elle **n'existe pas** sous quatre affiches. Une bande de deux vignettes n'est pas une
+   *     bande, c'est un accident ; et un journal vide a deja son ecran vide, qui parle.
+   */
+  .face-hero {
+    position: relative;
+    isolation: isolate;
+    /* Pleine largeur, sans le rembourrage de la colonne : une bande va d'un bord a l'autre.
+       Meme mecanique que `.show-backdrop`. */
+    margin-inline: calc(50% - 50vw);
+    /* Annule le `py-8` de `<main>` : la bande part sous la barre translucide, qui la floute. */
+    margin-top: -2rem;
+    height: 11rem;
+    overflow: hidden;
+  }
+
+  @media (width >= 40rem) {
+    .face-hero {
+      height: 14rem;
+    }
+  }
+
+  .face-hero-strip {
+    display: flex;
+    height: 100%;
+    /* Legerement plus large que l'ecran, et decalee : une rangee qui commence pile au bord
+       gauche se lit comme une grille qui commence ; decalee, elle se lit comme une matiere
+       qui passe. */
+    margin-left: -3%;
+    width: 106%;
+  }
+
+  .face-hero-strip > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .face-hero-strip img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    /* Le sujet d'une affiche est au-dessus du centre : cadrer au milieu coupe les visages. */
+    object-position: center 30%;
+    /* ⚠️ Desaturee et sombre **avant** le voile, pas a la place : le voile tient le contraste
+       du texte, le filtre empeche six affiches de couleurs differentes de se disputer. */
+    filter: saturate(0.55) brightness(0.55);
+  }
+
+  /**
+   * Le voile qui dissout la bande dans la page.
+   *
+   * ⚠️ Il finit sur `--color-ink` **opaque**, sinon la bande garde une arete horizontale que
+   * l'oeil lit comme une bordure oubliee — exactement la lecon de `.show-backdrop::after`.
+   */
+  .face-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-ink) 35%, transparent) 0%,
+      color-mix(in oklab, var(--color-ink) 70%, transparent) 55%,
+      var(--color-ink) 100%
+    );
+  }
+
+  /**
+   * L'en-tete mord dans la bande.
+   *
+   * ⚠️ **Enveloppe avec elle dans un conteneur dedie** (`.face-hero-wrap`), et jamais frere
+   * d'un `space-y-*` : l'utilitaire de Tailwind 4 pose `margin-block-start: 0` sur chaque
+   * enfant suivant et annulerait cette remontee sans que rien ne le signale. C'est le defaut
+   * qui a laisse le chevauchement de la fiche serie mort pendant des mois.
+   */
+  .face-hero-wrap > .face-hero + * {
+    position: relative;
+    z-index: 2;
+    margin-top: -5.5rem;
+  }
 }
