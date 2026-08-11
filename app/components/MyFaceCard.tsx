@@ -35,8 +35,8 @@ export function MyFaceCard() {
   const face = faceOf(journal);
 
   return (
-    <section className="card space-y-3" aria-label={t('face.title')}>
-      <h2 className="card-title">{t('face.title')}</h2>
+    <section className="band" aria-label={t('face.title')}>
+      <h2 className="row-title">{t('face.title')}</h2>
       {face === undefined ? (
         <p className="prose-note">{t('face.pending')}</p>
       ) : (

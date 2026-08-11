@@ -180,7 +180,12 @@ function Featured({ item, label, locale, children }: {
           fallait defiler pour voir une seule serie, sur un produit dont les series SONT le
           sujet. Le commentaire de la version precedente decrivait deja ce defaut et l'avait
           corrige a moitie : la preuve etait descendue sous la ligne de flottaison. */}
-      <div className="max-w-2xl space-y-5">{children}</div>
+      {/* ⚠️ **Centre**, a la demande de Tristan (2026-08-11) : l'accroche est la seule chose de
+          la page qui s'adresse au visiteur plutot que de lui montrer quelque chose. Centree,
+          elle se lit comme une adresse ; alignee a gauche, elle se lisait comme le debut d'un
+          article. Le reste de la page — banniere, rails — reste aligne a gauche : ce sont des
+          objets qu'on parcourt, et centrer une grille casse la ligne de depart du regard. */}
+      <div className="mx-auto max-w-2xl space-y-5 text-center">{children}</div>
 
       {summary === undefined ? null : (
       <div className="mt-10 flex flex-col gap-6 sm:mt-14 sm:flex-row sm:items-end">

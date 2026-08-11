@@ -37,10 +37,10 @@ export function TasteCard({ profile, journalTitles = {} }: {
       // une surface plate ; la matiere commune porte desormais son propre liseré interieur,
       // et `panel-lit` est reserve a `MyTally` — l'ecran n'a droit qu'a une surface qui
       // compte, et c'est le total des heures, pas le profil de gout.
-      className="card space-y-3"
+      className="band"
       aria-label={t('taste.aria')}
     >
-      <h2 className="card-title">{t('taste.title')}</h2>
+      <h2 className="row-title">{t('taste.title')}</h2>
 
       <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {profile.averageStars !== undefined ? (

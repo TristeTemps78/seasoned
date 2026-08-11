@@ -138,6 +138,55 @@
       0 0.75rem 1.75rem -0.75rem rgb(0 0 0 / 0.75),
       var(--halo);
   }
+  /**
+   * =============================================================================
+   * LA BANDE — une section qui n'est pas une boite
+   * =============================================================================
+   *
+   * 🔴 `/bilan` empilait **quatre `.card`** : quatre rectangles gris arrondis, l'un sous
+   * l'autre, chacun avec son titre a l'interieur. C'est la forme visuelle d'un tableau de
+   * bord d'administration, et c'est exactement ce que le brief nomme comme critere d'echec :
+   * *« si un ecran ressemble a un dashboard admin, recommencer »*.
+   *
+   * Une bande n'a **ni fond, ni bordure, ni rayon**. Elle est ouverte par un titre suivi d'un
+   * filet qui traverse la page (`.row-head`), et son contenu se pose directement sur le fond.
+   * L'ecran cesse d'etre une pile de boites pour devenir une suite de bandes — la difference
+   * entre une page de reglages et une page de magazine.
+   *
+   * ⚠️ `.card` **reste**, et c'est volontaire : une boite garde un sens pour ce qui est
+   * vraiment un objet distinct au milieu d'un flux (un formulaire, un encart d'action). Ce qui
+   * change est qu'elle n'est plus la forme **par defaut** d'une section.
+   */
+  .band {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+  }
+
+  /**
+   * Le titre d'une bande porte son filet **tout seul**.
+   *
+   * ⚠️ Pose depuis la bande plutot qu'en ajoutant `.row-head` sur chaque titre : c'est une
+   * regle contre quatre modifications de JSX, et surtout la prochaine bande l'aura sans que
+   * personne ait a y penser. La duplication qu'on evite ici est celle qui a produit `.label`
+   * ecrite a la main dix fois.
+   *
+   * Enfant **direct** : un titre imbrique dans une rangee (celui de `MyYear`, flanque de son
+   * selecteur d'annee) n'a pas la place d'un filet, et le lui donner le collerait au menu.
+   */
+  .band > .row-title {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+  }
+
+  .band > .row-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-image: linear-gradient(to right, var(--color-edge), transparent);
+  }
+
   .card {
     padding: 1rem 1.25rem;
   }
