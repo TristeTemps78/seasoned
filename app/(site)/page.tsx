@@ -232,17 +232,22 @@ function Row({ title, subtitle, series, locale, lead = false }: {
   if (series.length === 0) return null;
 
   return (
-    // `.bleed` : la grille sort de la colonne de lecture, le texte n'en sort jamais.
-    <section className="bleed space-y-4" aria-label={title}>
+    // 🔴 **Un rail, plus une grille.** L'accueil rendait trois grilles identiques empilees :
+    // meme nombre de colonnes, meme rythme, meme hauteur. Trois fois le meme bloc, donc un
+    // seul objet visuel repete — c'est ca, « toutes mes pages se ressemblent ».
+    //
+    // Le rail defile horizontalement et **deborde du bord droit** : une rangee qui se termine
+    // pile au bord se lit comme finie, une rangee coupee dit qu'il y en a plus.
+    <section className="space-y-3" aria-label={title}>
       <RowHeader title={title} subtitle={subtitle} />
-      <ul className={`poster-grid ${lead ? 'poster-grid-lead' : ''}`}>
+      <ul className={`rail ${lead ? 'rail-lead' : ''}`}>
         {series.map(({ summary, status }) => (
           <li key={summary.providerId}>
             <SeriesCard
               series={summary}
               locale={locale}
-              // 300 px rendus depuis un fichier de 342 seraient a la limite du flou ; la
-              // grille dense n'a aucune raison de telecharger 500.
+              // Les affiches du rail sont plus grandes que celles de l'ancienne grille : elles
+              // n'ont plus a rentrer toutes en meme temps.
               size={lead ? 'w500' : 'w342'}
               {...(status !== undefined ? { status } : {})}
             />

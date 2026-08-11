@@ -70,6 +70,72 @@
    * le titre commence sous elle. C'est ce chevauchement — et lui seul — qui fait la difference
    * entre une page de contenu et une fiche de film.
    */
+  /**
+   * =============================================================================
+   * LE RAIL — l'accueil cesse d'etre trois grilles empilees
+   * =============================================================================
+   *
+   * 🔴 L'accueil rendait **trois grilles identiques** l'une sous l'autre : meme nombre de
+   * colonnes, meme rythme, meme hauteur. Trois fois le meme bloc, donc un seul objet visuel
+   * repete — c'est la definition de « toutes mes pages se ressemblent ».
+   *
+   * Un rail defile **horizontalement**. Ca change trois choses d'un coup, et aucune n'est
+   * cosmetique :
+   *
+   *   1. Il **deborde volontairement** du bord droit. Une rangee qui se termine pile au bord
+   *      se lit comme finie ; une rangee coupee dit qu'il y en a plus, sans un mot.
+   *   2. Il tient sur **une hauteur fixe**, donc trois rails tiennent dans un ecran la ou
+   *      trois grilles en demandaient quatre.
+   *   3. Les affiches y sont **plus grandes** — 9,5 rem contre 1/8e de la largeur — parce
+   *      qu'elles n'ont plus a rentrer toutes en meme temps.
+   *
+   * ⚠️ `scroll-snap` sur les elements et pas seulement sur le conteneur : sans lui, un
+   * defilement au trackpad s'arrete au milieu d'une affiche, ce qui donne exactement l'air
+   * d'un debordement accidentel qu'on cherche a eviter.
+   */
+  .rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 9.5rem;
+    gap: var(--gap-poster-grid);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    /* Le rail sort de la colonne de lecture et va jusqu'au bord de l'ecran, mais son contenu
+       commence a l'alignement du texte : c'est ce qui fait qu'il « part » de la page au lieu
+       d'y flotter. */
+    margin-inline: calc(50% - 50vw);
+    padding-inline: max(1rem, calc(50vw - 45rem));
+    /* De la place pour l'ombre portee et le grossissement au survol, sinon les deux sont
+       rognes par le conteneur qui defile. */
+    padding-block: 0.5rem 1rem;
+    scrollbar-width: none;
+  }
+
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rail > * {
+    scroll-snap-align: start;
+  }
+
+  @media (width >= 40rem) {
+    .rail {
+      grid-auto-columns: 11.5rem;
+    }
+  }
+
+  /** La rangee de tete : des affiches nettement plus grandes, pour dire par ou commencer. */
+  .rail-lead {
+    grid-auto-columns: 13rem;
+  }
+
+  @media (width >= 40rem) {
+    .rail-lead {
+      grid-auto-columns: 17rem;
+    }
+  }
+
   .show-backdrop {
     position: relative;
     /* Plein cadre, **sans le rembourrage de `.bleed`** : une bande d'image ne se recentre pas
