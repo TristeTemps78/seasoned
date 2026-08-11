@@ -7,6 +7,7 @@ import type { FeedEntry } from '@/src/domain/feed';
 import type { FeedItem, PublishedReview } from '@/src/social/client';
 import type { Redacted } from '@/src/domain/spoiler';
 import { Avatar } from '@/app/components/Avatar';
+import { EmptyState } from '@/app/components/EmptyState';
 import { PosterChip } from '@/app/components/PosterChip';
 import { ReportButton } from '@/app/components/ReportButton';
 import { ReviewBody } from '@/app/components/ReviewBody';
@@ -60,18 +61,16 @@ export function FriendsFeed({
         // n'affiche pas « 0 activite ». Mais il ne doit pas dire « rien a lire » quand
         // la verite est « je n'ai pas pu lire » — c'est le defaut de 10.0, et la seule
         // facon de ne pas le refaire est que l'ecran connaisse la difference.
-        <div className="empty-state" role={unreadable ? 'status' : undefined}>
-          <p className="empty-state-body">
-            {t(unreadable ? 'friends.feed.unreadable' : 'friends.feed.empty')}
-          </p>
-          {/* ⚠️ **Et pas de bouton ici, contrairement aux quatre autres ecrans vides.** La
-              regle posee le 2026-08-11 est qu'un ecran vide porte une action ; elle ne dit pas
-              qu'il porte un *lien*. Les deux gestes que la phrase nomme — suivre quelqu'un,
-              donner son nom — sont le formulaire et `Discover`, a deux cents pixels au-dessus,
-              sur cette meme page. Un bouton qui menerait ailleurs ferait sortir de l'ecran ou
-              l'action se trouve. Appliquer la regle ici la retournerait contre son objet : ce
-              qu'on corrige, c'est un ecran sans issue, pas un ecran sans bouton. */}
-        </div>
+        // ⚠️ **Sans actions, contrairement aux quatre autres ecrans vides.** La regle posee le
+        // 2026-08-11 est qu'un ecran vide porte une action ; elle ne dit pas qu'il porte un
+        // *lien*. Les deux gestes que la phrase nomme — suivre quelqu'un, donner son nom —
+        // sont le formulaire et `Discover`, a deux cents pixels au-dessus, sur cette meme
+        // page. Un bouton qui menerait ailleurs ferait sortir de l'ecran ou l'action se
+        // trouve. C'est pourquoi `EmptyState` rend `actions` **optionnel** : ce qu'on corrige
+        // est un ecran sans issue, pas un ecran sans bouton.
+        <EmptyState status={unreadable}>
+          {t(unreadable ? 'friends.feed.unreadable' : 'friends.feed.empty')}
+        </EmptyState>
       ) : (
         <ul>
           {timeline.map((entry, index) => {

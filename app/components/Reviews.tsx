@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useAuth } from '@/app/auth/AuthProvider';
+import { EmptyState } from '@/app/components/EmptyState';
 import { ReportButton } from '@/app/components/ReportButton';
 import { FaceDot } from '@/app/components/FaceDot';
 import { journalKey } from '@/src/domain/journal';
@@ -86,11 +87,13 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
     return (
       <section className="space-y-3" aria-label={t('review.title')}>
         <h2 className="section-heading">{t('review.title')}</h2>
-        <div className="empty-state">
-          <p className="empty-state-body">
-            {t('review.none')} {t('review.beFirst')}
-          </p>
-        </div>
+        {/* ⚠️ Sans `title` : la section qui l'entoure porte deja le sien, et un second niveau
+            de titre y decrirait une hierarchie qui n'existe pas. Sans actions non plus — le
+            champ d'ecriture est sur cette page, dans « Ou j'en suis », et la phrase l'y
+            envoie par son nom plutot que par un lien qui ferait sortir de l'ecran. */}
+        <EmptyState>
+          {t('review.none')} {t('review.beFirst')}
+        </EmptyState>
       </section>
     );
   }

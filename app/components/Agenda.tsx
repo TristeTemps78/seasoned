@@ -7,6 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { upcomingFrom, type UpcomingEpisode } from '@/src/domain/calendar';
 import { parseJournalKey } from '@/src/domain/journal';
 import { CalendarExport } from '@/app/components/CalendarExport';
+import { EmptyState } from '@/app/components/EmptyState';
 import { Poster } from '@/app/components/Poster';
 import { pathIn, seriesPath } from '@/lib/routes';
 import { formatDate } from '@/lib/format';
@@ -174,23 +175,25 @@ function EmptyAgenda() {
         <h1 className="page-title">{t('agenda.title')}</h1>
         <p className="text-(--color-muted)">{t('agenda.lede')}</p>
       </header>
-      <div className="empty-state">
-        <h2 className="empty-state-title">{t('agenda.empty.title')}</h2>
-        <p className="empty-state-body">{t('agenda.empty.body')}</p>
-        {/* 🔴 Il n'y en avait aucune. L'ecran expliquait tres bien que le vide est normal —
-            une date n'existe qu'une fois la diffusion programmee — et **s'arretait la**. Or
-            c'est l'ecran d'arrivee de tout compte jeune sur cette face : la phrase repond a
-            « est-ce casse ? », le bouton repond a « et maintenant ? ». Un ecran vide porte
-            une action, sans exception depuis le 2026-08-11. */}
-        <div className="empty-state-actions">
-          <Link href={pathIn('/recherche', locale)} className="btn btn-primary">
-            {t('tallyPage.empty.search')}
-          </Link>
-          <Link href={pathIn('/moi', locale)} className="btn">
-            {t('gate.library')}
-          </Link>
-        </div>
-      </div>
+      {/* 🔴 Il n'y avait aucune action. L'ecran expliquait tres bien que le vide est normal —
+          une date n'existe qu'une fois la diffusion programmee — et **s'arretait la**. Or
+          c'est l'ecran d'arrivee de tout compte jeune sur cette face : la phrase repond a
+          « est-ce casse ? », les boutons repondent a « et maintenant ? ». */}
+      <EmptyState
+        title={t('agenda.empty.title')}
+        actions={
+          <>
+            <Link href={pathIn('/recherche', locale)} className="btn btn-primary">
+              {t('tallyPage.empty.search')}
+            </Link>
+            <Link href={pathIn('/moi', locale)} className="btn">
+              {t('gate.library')}
+            </Link>
+          </>
+        }
+      >
+        {t('agenda.empty.body')}
+      </EmptyState>
     </div>
   );
 }

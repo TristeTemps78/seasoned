@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
+import { EmptyState } from '@/app/components/EmptyState';
 import { JournalTransfer } from '@/app/components/JournalTransfer';
 import { LibraryCard } from '@/app/components/LibraryCard';
 import { MyPlatforms } from '@/app/components/MyPlatforms';
@@ -137,23 +138,22 @@ function Row({ title, subtitle, items, lead = false }: {
 function EmptyLibrary() {
   const { t, locale } = useT();
   return (
-    <div className="empty-state">
-      <h2 className="empty-state-title">{t('library.empty.title')}</h2>
-      <p className="empty-state-body">
-        {t('library.empty.before')}
-        <em>{t('library.empty.em')}</em>
-        {t('library.empty.after')}
-      </p>
-      {/* Les utilitaires alignes a la main sont devenus `.empty-state-actions` : cinq ecrans
-          vides portent desormais des actions, et c'etait le dernier a les recopier. */}
-      <div className="empty-state-actions">
-        <Link href={pathIn('/', locale)} className="btn">
-          {t('library.empty.browse')}
-        </Link>
-        <Link href={pathIn('/recherche', locale)} className="btn btn-primary">
-          {t('library.empty.search')}
-        </Link>
-      </div>
-    </div>
+    <EmptyState
+      title={t('library.empty.title')}
+      actions={
+        <>
+          <Link href={pathIn('/', locale)} className="btn">
+            {t('library.empty.browse')}
+          </Link>
+          <Link href={pathIn('/recherche', locale)} className="btn btn-primary">
+            {t('library.empty.search')}
+          </Link>
+        </>
+      }
+    >
+      {t('library.empty.before')}
+      <em>{t('library.empty.em')}</em>
+      {t('library.empty.after')}
+    </EmptyState>
   );
 }

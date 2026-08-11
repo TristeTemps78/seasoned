@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useT } from '@/app/i18n/LocaleProvider';
+import { EmptyState } from '@/app/components/EmptyState';
 import { pathIn } from '@/lib/routes';
 
 /**
@@ -42,23 +43,25 @@ export function AccountGate({ title, body, secondaryHref, secondaryLabel }: {
   const { t, locale } = useT();
 
   return (
-    <section className="empty-state" aria-label={title}>
-      <h2 className="empty-state-title">{title}</h2>
-      <p className="empty-state-body">{body}</p>
-
-      <div className="empty-state-actions">
-        <Link href={pathIn('/compte', locale)} className="btn btn-primary">
-          {t('gate.create')}
-        </Link>
-        <Link href={pathIn(secondaryHref ?? '/', locale)} className="btn">
-          {secondaryLabel ?? t('gate.browse')}
-        </Link>
-      </div>
-
-      {/* La phrase qui desamorce l'invitation. Sans elle, la carte se lit comme un mur de
-          connexion — exactement ce que ce produit n'est pas : tout le journal, toutes les
-          notes et toutes les critiques s'ecrivent sans compte, dans ce navigateur. */}
-      <p className="meta-sm">{t('gate.rest')}</p>
-    </section>
+    <EmptyState
+      label={title}
+      title={title}
+      actions={
+        <>
+          <Link href={pathIn('/compte', locale)} className="btn btn-primary">
+            {t('gate.create')}
+          </Link>
+          <Link href={pathIn(secondaryHref ?? '/', locale)} className="btn">
+            {secondaryLabel ?? t('gate.browse')}
+          </Link>
+        </>
+      }
+      // La phrase qui desamorce l'invitation. Sans elle, la carte se lit comme un mur de
+      // connexion — exactement ce que ce produit n'est pas : tout le journal, toutes les
+      // notes et toutes les critiques s'ecrivent sans compte, dans ce navigateur.
+      note={t('gate.rest')}
+    >
+      {body}
+    </EmptyState>
   );
 }

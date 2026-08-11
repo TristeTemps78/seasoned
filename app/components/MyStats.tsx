@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
+import { EmptyState } from '@/app/components/EmptyState';
 import { MyTally } from '@/app/components/MyTally';
 import { MyYear } from '@/app/components/MyYear';
 import { MyFaceCard } from '@/app/components/MyFaceCard';
@@ -86,20 +87,22 @@ export function MyStats() {
       <MyFaceCard />
 
       {silent ? (
-        <div className="empty-state">
-          <h2 className="empty-state-title">{t('tallyPage.empty.title')}</h2>
-          <p className="empty-state-body">{t('tallyPage.empty.body')}</p>
-          {/* Un ecran vide porte une action, sans exception depuis le 2026-08-11. Celui-ci
-              n'en avait aucune : il constatait, et laissait la page finir la. */}
-          <div className="empty-state-actions">
-            <Link href={pathIn('/recherche', locale)} className="btn btn-primary">
-              {t('tallyPage.empty.search')}
-            </Link>
-            <Link href={pathIn('/moi', locale)} className="btn">
-              {t('gate.library')}
-            </Link>
-          </div>
-        </div>
+        // Il n'avait aucune action : il constatait, et laissait la page finir la.
+        <EmptyState
+          title={t('tallyPage.empty.title')}
+          actions={
+            <>
+              <Link href={pathIn('/recherche', locale)} className="btn btn-primary">
+                {t('tallyPage.empty.search')}
+              </Link>
+              <Link href={pathIn('/moi', locale)} className="btn">
+                {t('gate.library')}
+              </Link>
+            </>
+          }
+        >
+          {t('tallyPage.empty.body')}
+        </EmptyState>
       ) : (
         <>
           {/* L'annee en cours d'abord : c'est la question qu'on se pose en ouvrant cet
