@@ -4,6 +4,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { faceOf } from '@/src/domain/face';
 import { Mark } from '@/app/components/Mark';
+import { FaceDot } from '@/app/components/FaceDot';
 
 /**
  * Votre face, en toutes lettres — sur l'ecran qui dit **qui vous etes**.
@@ -38,7 +39,30 @@ export function MyFaceCard() {
     <section className="band" aria-label={t('face.title')}>
       <h2 className="row-title">{t('face.title')}</h2>
       {face === undefined ? (
-        <p className="prose-note">{t('face.pending')}</p>
+        // 🔴 C'etait **un paragraphe gris nu**, et c'est le premier bloc sous le titre de la
+        // page — donc la premiere chose que voit quiconque ouvre `/bilan` sans avoir encore
+        // de face, c'est-a-dire tout le monde au debut. Vu sur la capture du 2026-08-11.
+        //
+        // Le cube neutre reprend exactement le role qu'il joue dans l'etat forme : porter le
+        // poids visuel. Et les trois pastilles montrent **ce qu'on peut devenir** — le texte
+        // annonce une attente, elles disent a quoi elle mene. C'est du contenu, pas un
+        // ornement, et ca n'a coute aucun composant nouveau.
+        <div className="flex items-center gap-4">
+          {/* Sans `face`, le cube rend ses trois facettes vives — l'etat d'avant 9.2, intact.
+              L'opacite dit « pas encore » sans afficher un manque. */}
+          <Mark className="size-12 opacity-45" />
+          <div className="space-y-2">
+            <p className="prose-note">{t('face.pending')}</p>
+            <ul className="flex flex-wrap gap-x-4 gap-y-1">
+              {(['finisher', 'cutter', 'rewatcher'] as const).map((id) => (
+                <li key={id} className="flex items-center gap-1.5 meta-sm">
+                  <FaceDot face={id} />
+                  {t(`face.${id}`)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       ) : (
         <div className="flex items-center gap-4">
           {/* 🔴 **C'est le cube qui porte le poids visuel, pas un cran de titre.** Le reflexe
