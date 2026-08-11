@@ -67,6 +67,37 @@ it('aucun composant ne rappelle le serif a la main', () => {
   expect(fautes).toEqual([]);
 });
 
+it('aucune image ne porte la matiere des boites', () => {
+  /*
+   * 🔴 Le defaut, trouve en mesurant l'accueil le 2026-08-11 : l'affiche de la mise en avant
+   * portait `className="panel"` — la matiere **generique des boites** — la ou les cinq
+   * suivantes vivaient dans un `.poster-frame`. C'etait la premiere affiche qu'un visiteur
+   * voit, la plus grande, et la seule posee sur une banniere : celle qui a le plus besoin de
+   * se decoller de son fond, traitee comme un rectangle gris.
+   *
+   * La regle est simple et sans exception aujourd'hui : **une image n'est pas une boite.**
+   * `.panel` habille une surface qui contient du contenu ; une oeuvre se pose dans un cadre
+   * (`.poster-frame`), qui lui donne son anneau, ses ombres et son soulevement.
+   *
+   * ⚠️ Cette garde existe parce que la regression, elle, etait **silencieuse** : remettre
+   * `panel` sur cette image laissait les 959 tests verts. Verifie en la remettant.
+   */
+  const fautes = filesUnder('app')
+    .filter((file) => pathOf(file).endsWith('.tsx'))
+    .flatMap((file) => {
+      const code = codeOf(file);
+      // Les attributs d'une balise `<img …>`, quelle que soit la forme d'ecriture du
+      // `className` — meme precaution que `no-adhoc-typography`, qui a deja rate `.tile`
+      // ecrite en gabarit.
+      const fautives = [...code.matchAll(/<img\b([^>]*)>/g)].filter(([, attrs]) =>
+        /\bpanel\b/.test(attrs ?? ''),
+      );
+      return fautives.length > 0 ? [pathOf(file)] : [];
+    });
+
+  expect(fautes, 'une affiche traitee comme une boite : voir .poster-frame').toEqual([]);
+});
+
 it('l affiche est un objet, pas un rectangle', () => {
   // Les trois proprietes qui font la difference entre une vignette posee sur la page et un
   // trou decoupe dedans. ⚠️ L'anneau doit vivre sur un pseudo-element : en `box-shadow: inset`
