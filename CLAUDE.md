@@ -40,7 +40,13 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
 
 ## Pour travailler
 
-- `npm run check` vert avant tout commit.
+- `npm run check` vert avant tout commit. **Et `npm run build` avant de pousser** : la CI le
+  lance, et c'est lui qui vérifie que `/serie/[id]` reste `○ Static` — l'invariant de coût.
+- **La mise en page ne se teste pas ici : jsdom n'a aucun moteur de rendu.** Trois défauts
+  (chevauchement annulé par un `space-y`, tuiles de 64 px, 566 px cachés derrière une barre
+  masquée) ont vécu sous 956 tests verts. Ce qui se lit dans la source est gardé par
+  `tests/layout-collisions.test.ts` ; le reste **se mesure au navigateur**, en lisant le DOM
+  (`getComputedStyle`, `getBoundingClientRect`, `scrollWidth > clientWidth`).
 - `npm run db:push` applique `supabase/*.sql`. `npm run db:scenarios` rejoue 52 scénarios
   RLS contre la vraie base, en transaction annulée — **rien ne persiste, jamais**.
 - `npm run db:round -- 2026-08-10 7` construit 7 manches de quiz d'avance depuis TMDB.
