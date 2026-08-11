@@ -170,11 +170,11 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
       // `edge-lit` — le liseré sans le halo — ce qui le laissait au meme poids que les onze
       // autres surfaces de la page. `card` porte la forme et le rembourrage, `panel-lit`
       // n'ajoute que l'emphase : deux formes nommees qui se composent, aucun utilitaire.
-      className="card panel-lit space-y-4"
+      className="band"
       aria-label={t('progress.aria')}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="card-title">{t('progress.title')}</h2>
+        <h2 className="row-title">{t('progress.title')}</h2>
         <WhereItLives />
       </div>
 

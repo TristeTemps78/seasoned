@@ -93,8 +93,8 @@ export function StopMap({
   if (!configured || !ready || buckets.length === 0) return null;
 
   return (
-    <section className="card mt-4 space-y-3" aria-label={t('stops.aria')}>
-      <h3 className="card-title">{t('stops.title')}</h3>
+    <section className="band mt-6" aria-label={t('stops.aria')}>
+      <h3 className="row-title">{t('stops.title')}</h3>
 
       {read.verdict !== undefined ? (
         <p className="rounded-md bg-(--color-warn)/10 px-3 py-2.5 text-sm">

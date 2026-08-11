@@ -283,10 +283,22 @@
      deja son `h1` — d'ou le cran en dessous, pour ne pas offrir deux titres de meme poids a
      la premiere lecture. `/hors-ligne` **est** une page, et ce titre est son seul `h1` : le
      mettre a `1rem` laisserait un ecran sans titre du tout. Meme regle, deux situations. */
+  /**
+   * ⚠️ **Troisieme emploi du serif**, et le seul ajoute depuis sa mise en place.
+   *
+   * Un ecran vide est la premiere impression de tout le monde : c'est litteralement le seul
+   * ecran d'un compte neuf. Le brief demande un ton editorial ici — une phrase courte en
+   * serif, pas un message d'erreur d'application. « Votre journal est une page blanche » et
+   * « Aucun element » disent la meme chose et ne racontent pas la meme histoire.
+   *
+   * Le test `editorial-voice` compte les emplois du serif : il passe de deux a trois, et
+   * c'est une decision, pas une derive.
+   */
   .empty-state-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
   /* ⚠️ Il n'y a plus de `.tile-label` : elle etait `.label` a `0.0625rem` pres, avec **un
      seul** usage — le meme defaut que `.section-title` extraite et employee nulle part. La

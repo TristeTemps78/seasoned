@@ -62,11 +62,11 @@ export function CalendarExport() {
 
   return (
     <section
-      className="card space-y-3"
+      className="band"
       aria-label={t('calendar.aria')}
     >
       <div>
-        <h2 className="card-title">{t('calendar.title')}</h2>
+        <h2 className="row-title">{t('calendar.title')}</h2>
         <p className="max-w-prose text-xs leading-relaxed text-(--color-muted)">
           {t('calendar.body')}
         </p>

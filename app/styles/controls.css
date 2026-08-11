@@ -67,11 +67,18 @@
     opacity: 0.45;
     cursor: not-allowed;
   }
+  /* ⚠️ Les mesures du brief (4.1), recopiees : hauteur `--control-height`, rayon
+     `--radius-button`, graisse 700. Un bouton principal a la hauteur d'un lien ne se
+     distingue pas d'un lien — c'est la seule action affirmative d'un ecran, elle doit avoir
+     une masse. */
   .btn-primary {
     border-color: var(--color-volt);
     background-color: var(--color-volt);
     color: var(--color-ink);
-    font-weight: 650;
+    min-height: var(--control-height);
+    border-radius: var(--radius-button);
+    padding-inline: 1.25rem;
+    font-weight: 700;
     box-shadow:
       inset 0 1px 0 0 color-mix(in oklab, white 35%, transparent),
       0 0.5rem 1.25rem -0.75rem color-mix(in oklab, var(--color-volt) 90%, transparent);

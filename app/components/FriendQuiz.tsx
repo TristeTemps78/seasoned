@@ -47,8 +47,8 @@ export function FriendQuiz({
   if (quiz === undefined) return null;
 
   return (
-    <section className="card space-y-4" aria-label={t('friendQuiz.title')}>
-      <h2 className="card-title">{t('friendQuiz.title')}</h2>
+    <section className="band" aria-label={t('friendQuiz.title')}>
+      <h2 className="row-title">{t('friendQuiz.title')}</h2>
 
       <p className="prose-note">
         {quiz.kind === 'friendLiked'

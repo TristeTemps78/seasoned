@@ -80,8 +80,8 @@ export function SeriesPeople({ seriesId }: { readonly seriesId: string }) {
   if (!configured || shown.length === 0) return null;
 
   return (
-    <section className="card space-y-3" aria-label={t('people.title')}>
-      <h2 className="card-title">{t('people.title')}</h2>
+    <section className="band" aria-label={t('people.title')}>
+      <h2 className="row-title">{t('people.title')}</h2>
       <ul className="flex flex-wrap gap-x-5 gap-y-3 text-sm">
         {shown.map((item) => (
           <li key={item.authorId} className="flex items-center gap-2">

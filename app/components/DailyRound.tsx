@@ -113,8 +113,8 @@ export function DailyRound() {
 
   if (over) {
     return (
-      <section className="card space-y-3" aria-label={t('round.board')}>
-        <h2 className="card-title">{t('round.board')}</h2>
+      <section className="band" aria-label={t('round.board')}>
+        <h2 className="row-title">{t('round.board')}</h2>
         {board.length === 0 ? (
           // Mieux vaut se taire que compter zero : un classement vide dit qu'il n'y a
           // rien a montrer, pas que le produit est casse.
@@ -138,9 +138,9 @@ export function DailyRound() {
   if (question === undefined) return null;
 
   return (
-    <section className="card space-y-4" aria-label={t('round.title')}>
+    <section className="band" aria-label={t('round.title')}>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="card-title">{t('round.title')}</h2>
+        <h2 className="row-title">{t('round.title')}</h2>
         <span className="meta">
           {t('round.progress', { n: String(ordinal) })}
         </span>

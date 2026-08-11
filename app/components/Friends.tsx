@@ -426,7 +426,7 @@ export function Friends() {
             </p>
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul>
             {timeline.map((entry, index) => {
               if (entry.of === 'review') {
                 const review = entry.review;
@@ -444,7 +444,7 @@ export function Friends() {
                 return (
                   <li
                     key={`review-${review.authorId}-${review.subject}-${review.target}-${index}`}
-                    className="panel space-y-2 bg-(--color-surface)/50 px-4 py-3 text-sm"
+                    className="feed-row space-y-2 text-sm"
                   >
                     {/* ⚠️ `flex-wrap` et non une colonne : la ligne porte le pseudo, le verbe et
                         le titre de la serie, qui doivent rester **une phrase**. Une colonne les
@@ -503,7 +503,7 @@ export function Friends() {
               return (
                 <li
                   key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
-                  className="panel flex flex-wrap items-center gap-x-2 gap-y-1 bg-(--color-surface)/50 px-4 py-3 text-sm"
+                  className="feed-row flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
                 >
                   {factPoster === undefined ? null : (
                     <PosterChip path={factPoster} title={factTitle ?? item.subject} />

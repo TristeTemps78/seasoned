@@ -19,8 +19,8 @@ import { ROOT, codeOf, filesUnder, pathOf, styleSheet } from './sources';
 
 const CSS = styleSheet();
 
-/** Les deux seuls crans autorises a porter `--font-serif`. */
-const AUTORISES = ['.hero-title', '.review-prose'] as const;
+/** Les trois seuls crans autorises a porter `--font-serif`. */
+const AUTORISES = ['.hero-title', '.review-prose', '.empty-state-title'] as const;
 
 it('la police existe reellement, et son poids reste tenable', () => {
   // Une declaration `next/font/local` qui pointe un fichier absent casse le build — mais un
@@ -41,13 +41,13 @@ it('elle est branchee sur le html, sinon la variable ne vaut rien', () => {
   expect(CSS).toContain('--font-voltface-serif');
 });
 
-it('seuls deux crans portent le serif', () => {
+it('seuls trois crans portent le serif', () => {
   // On lit les blocs de declaration qui posent `font-family: var(--font-serif)`, et on verifie
   // que le selecteur qui les ouvre est l'un des deux autorises.
   const blocs = [...CSS.matchAll(/([^{}]+)\{([^{}]*font-family:\s*var\(--font-serif\)[^{}]*)\}/g)];
 
   // D'abord : il y en a bien, sinon ce test passe pour la pire des raisons.
-  expect(blocs.length, 'aucun emploi du serif — la voix editoriale a disparu').toBe(2);
+  expect(blocs.length, 'aucun emploi du serif — la voix editoriale a disparu').toBe(3);
 
   for (const [, selecteur] of blocs) {
     const nom = (selecteur ?? '').trim().split(/\s+/).pop() ?? '';

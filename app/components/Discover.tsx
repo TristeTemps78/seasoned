@@ -65,8 +65,8 @@ export function Discover() {
   if (!configured || others.length === 0) return null;
 
   return (
-    <section className="card space-y-3" aria-label={t('discover.aria')}>
-      <h2 className="card-title">{t('discover.title')}</h2>
+    <section className="band" aria-label={t('discover.aria')}>
+      <h2 className="row-title">{t('discover.title')}</h2>
       <p className="meta">{t('discover.why')}</p>
       <ul className="flex flex-wrap gap-2">
         {others.map((person) => (

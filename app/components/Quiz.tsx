@@ -59,8 +59,8 @@ export function Quiz() {
   const chosen = answered;
 
   return (
-    <section className="card space-y-4" aria-label={t('quiz.title')}>
-      <h2 className="card-title">{t('quiz.title')}</h2>
+    <section className="band" aria-label={t('quiz.title')}>
+      <h2 className="row-title">{t('quiz.title')}</h2>
 
       {quiz.kind === 'onDay' ? (
         <p className="prose-note">
