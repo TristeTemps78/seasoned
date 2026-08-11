@@ -7,6 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
 import { EmptyState } from '@/app/components/EmptyState';
 import { MyTally } from '@/app/components/MyTally';
+import { PageHeader } from '@/app/components/PageHeader';
 import { MyYear } from '@/app/components/MyYear';
 import { MyFaceCard } from '@/app/components/MyFaceCard';
 import { TasteCard } from '@/app/components/TasteCard';
@@ -74,10 +75,7 @@ export function MyStats() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="page-title">{t('tallyPage.title')}</h1>
-        <p className="text-(--color-muted)">{t('tallyPage.lede')}</p>
-      </header>
+      <PageHeader title={t('tallyPage.title')} lede={t('tallyPage.lede')} />
 
       {/* ⚠️ **Hors du `silent`, et c'est voulu.** Les deux autres cartes se taisent faute de
           matiere ; la face, elle, dit « pas encore, et voila comment » — c'est la seule

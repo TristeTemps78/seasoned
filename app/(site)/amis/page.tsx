@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { legalIsComplete } from '@/lib/legal';
 import { Friends } from '@/app/components/Friends';
+import { PageHeader } from '@/app/components/PageHeader';
 
 /**
  * La face « Mes amis » — la premiere qui montre le contenu de quelqu'un d'autre.
@@ -35,13 +36,8 @@ export function FriendsView({ locale }: { readonly locale: Locale }) {
     // ⚠️ Pas de conteneur ici : `<main>` porte deja la largeur et les marges de toutes
     // les pages. En ajouter un second decalait cet ecran par rapport aux quatre autres —
     // un demi-centimetre que personne ne sait nommer et que tout le monde voit.
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="page-title">{t(locale, 'friendsPage.title')}</h1>
-        <p className="prose-note">
-          {t(locale, 'friendsPage.lede')}
-        </p>
-      </header>
+    <div className="space-y-8">
+      <PageHeader title={t(locale, 'friendsPage.title')} lede={t(locale, 'friendsPage.lede')} />
       {legalIsComplete() ? (
         <Friends />
       ) : (

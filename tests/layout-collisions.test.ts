@@ -142,3 +142,76 @@ it('les mesures de la serie ne dependent pas d un point de rupture de fenetre', 
     'les mesures ne doivent plus fixer leurs colonnes a la fenetre',
   ).toBe(false);
 });
+
+it('aucune face ne redessine son en-tete a la main', () => {
+  /*
+   * 🔴 Le defaut, releve en comparant les six faces le 2026-08-11 :
+   *
+   *   face          ecart au contenu   phrase d'accroche        balise
+   *   /moi          space-y-8          text-(--color-muted)     header
+   *   /calendrier   space-y-10         text-(--color-muted)     header
+   *   /bilan        space-y-8          text-(--color-muted)     header
+   *   /amis         space-y-6          prose-note               header
+   *   /listes       space-y-6          prose-note               div
+   *   /recherche    space-y-8          text-(--color-muted)     — aucun titre —
+   *
+   * Trois ecarts, deux traitements de la phrase, une face sans `<h1>`. Et l'accroche courait
+   * sur **1120 px** la ou elle n'etait pas `.prose-note` (mesure sur `/moi`,
+   * `max-width: none`), alors que la feuille declare la regle : *une phrase sur 1248 px ne se
+   * lit pas.*
+   *
+   * La loi : le cran `page-title` ne s'ecrit que dans les deux composants qui ont le droit de
+   * dessiner une tete de page. Partout ailleurs, on passe par `PageHeader` — ce qui donne au
+   * meme coup la meme accroche bornee et le meme rythme.
+   */
+  /*
+   * ⚠️ **Les exemptions sont des familles, pas des oublis** — et la premiere version de cette
+   * garde etait trop large : elle accusait sept fichiers dont aucun n'avait le defaut. Une
+   * garde qui reclame une refonte sans rien corriger est une garde qu'on apprend a ignorer,
+   * ce que `no-hardcoded-strings` documente deja.
+   */
+  const AUTORISES = [
+    // Le patron commun des six faces.
+    'app/components/PageHeader.tsx',
+    // De nature : `/u/<nom>` porte un **bloc d'identite** — avatar, pseudo, face, bouton
+    // suivre — et non un titre suivi d'une phrase.
+    'app/components/PublicProfile.tsx',
+    // Les quatre documents. Ils forment **deja** une famille coherente : `.text-page` les
+    // borne tous a 42 rem et tient leur rythme a 2 rem. Le defaut mesure — une accroche sur
+    // 1120 px — ne peut pas s'y produire.
+    'app/(site)/mentions/page.tsx',
+    'app/(site)/confidentialite/page.tsx',
+    'app/(site)/convertir/page.tsx',
+    'app/(site)/regles/page.tsx',
+    // Les pages dont le corps entier **est** un ecran vide : leur `<h1>` est le titre de cet
+    // ecran, pas la tete d'une face. Un `PageHeader` y ajouterait une seconde tete.
+    'app/(site)/hors-ligne/page.tsx',
+    'app/(site)/serie/[id]/page.tsx',
+  ];
+
+  /**
+   * La 404 existe **en double**, une par disposition racine — un seul `<html>` peut exister par
+   * page, donc les deux langues ne partagent pas le fichier. Les nommer une par une ferait
+   * oublier la troisieme le jour ou une langue s'ajoute, et la garde accuserait alors une page
+   * correcte. Meme raisonnement que `MOUNTED_BY_THE_FRAMEWORK` dans `no-orphan-component`.
+   */
+  const MEME_FAMILLE = /(^|\/)not-found\.tsx$/;
+
+  const fautes = filesUnder('app')
+    .filter((file) => pathOf(file).endsWith('.tsx'))
+    .filter((file) => !AUTORISES.includes(pathOf(file)) && !MEME_FAMILLE.test(pathOf(file)))
+    .filter((file) => /\bpage-title\b/.test(codeOf(file)))
+    .map((file) => pathOf(file));
+
+  expect(fautes, 'un en-tete de page ecrit a la main finira par deriver — voir PageHeader').toEqual(
+    [],
+  );
+
+  // Ancrage : la loi ne vaut que si les deux autorises l'emploient vraiment. Sans ca, elle
+  // resterait verte le jour ou `page-title` disparaitrait de tout le depot.
+  for (const chemin of AUTORISES) {
+    const file = filesUnder('app').find((one) => pathOf(one) === chemin);
+    expect(file, `${chemin} a disparu`).toBeDefined();
+    expect(codeOf(file!)).toMatch(/\bpage-title\b/);
+  }
+});

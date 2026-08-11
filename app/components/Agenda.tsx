@@ -8,6 +8,7 @@ import { upcomingFrom, type UpcomingEpisode } from '@/src/domain/calendar';
 import { parseJournalKey } from '@/src/domain/journal';
 import { CalendarExport } from '@/app/components/CalendarExport';
 import { EmptyState } from '@/app/components/EmptyState';
+import { PageHeader } from '@/app/components/PageHeader';
 import { Poster } from '@/app/components/Poster';
 import { pathIn, seriesPath } from '@/lib/routes';
 import { formatDate } from '@/lib/format';
@@ -53,11 +54,8 @@ export function Agenda() {
   const groups = groupByHorizon(upcoming, now);
 
   return (
-    <div className="space-y-10">
-      <header className="space-y-2">
-        <h1 className="page-title">{t('agenda.title')}</h1>
-        <p className="text-(--color-muted)">{t('agenda.lede')}</p>
-      </header>
+    <div className="space-y-8">
+      <PageHeader title={t('agenda.title')} lede={t('agenda.lede')} />
 
       {groups.map(({ labelKey, episodes }) =>
         episodes.length === 0 ? null : (
@@ -170,11 +168,8 @@ function Row({ episode, now, posterPath }: {
 function EmptyAgenda() {
   const { t, locale } = useT();
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="page-title">{t('agenda.title')}</h1>
-        <p className="text-(--color-muted)">{t('agenda.lede')}</p>
-      </header>
+    <div className="space-y-8">
+      <PageHeader title={t('agenda.title')} lede={t('agenda.lede')} />
       {/* 🔴 Il n'y avait aucune action. L'ecran expliquait tres bien que le vide est normal —
           une date n'existe qu'une fois la diffusion programmee — et **s'arretait la**. Or
           c'est l'ecran d'arrivee de tout compte jeune sur cette face : la phrase repond a

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { AuthCallback } from '@/app/components/AuthCallback';
+import { PageHeader } from '@/app/components/PageHeader';
 
 /**
  * Le retour du lien de connexion.
@@ -22,8 +23,8 @@ export const metadata: Metadata = AuthCallbackMetadata(DEFAULT_LOCALE);
 
 export function AuthCallbackView({ locale }: { readonly locale: Locale }) {
   return (
-    <div className="space-y-6">
-      <h1 className="page-title">{t(locale, 'account.title')}</h1>
+    <div className="space-y-8">
+      <PageHeader title={t(locale, 'account.title')} />
       <AuthCallback />
     </div>
   );

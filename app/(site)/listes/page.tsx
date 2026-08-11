@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { Lists } from '@/app/components/Lists';
+import { PageHeader } from '@/app/components/PageHeader';
 
 /**
  * La face « Mes listes ».
@@ -24,11 +25,8 @@ export const metadata: Metadata = listsMetadata(DEFAULT_LOCALE);
 
 export function ListsView({ locale }: { readonly locale: Locale }) {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="page-title">{t(locale, 'listsPage.title')}</h1>
-        <p className="prose-note">{t(locale, 'listsPage.intro')}</p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader title={t(locale, 'listsPage.title')} lede={t(locale, 'listsPage.intro')} />
       <Lists />
     </div>
   );

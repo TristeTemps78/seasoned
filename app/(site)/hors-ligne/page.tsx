@@ -25,8 +25,12 @@ export function OfflineView({ locale }: { readonly locale: Locale }) {
     <div className="empty-state my-12">
       <h1 className="page-title">{t(locale, 'offline.heading')}</h1>
       <p className="empty-state-body">{t(locale, 'offline.body')}</p>
-      {/* Les memes utilitaires que `EmptyLibrary`, au caractere pres — cf. `globals.css`. */}
-      <div className="mt-5 flex flex-wrap justify-center gap-2">
+      {/* 🔴 **Le dernier a recopier la rangee d'actions a la main.** Son commentaire l'assumait
+          — *« les memes utilitaires qu'`EmptyLibrary`, au caractere pres »* — et c'est
+          exactement ce que `.empty-state-actions` a remplace le 2026-08-11 dans les cinq autres
+          ecrans vides. Il avait ete oublie parce qu'il est le seul a vivre dans une page plutot
+          que dans un composant. Trouve par la garde des en-tetes, en cherchant autre chose. */}
+      <div className="empty-state-actions">
         <Link href={pathIn('/moi', locale)} className="btn btn-primary">
           {t(locale, 'offline.open')}
         </Link>

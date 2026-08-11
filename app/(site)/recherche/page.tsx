@@ -11,6 +11,7 @@ import { DEFAULT_LOCALE, t, tn, type Locale } from '@/lib/i18n';
  */
 const HYDRATED_RESULTS = 8;
 import { SearchForm } from '@/app/components/SearchForm';
+import { PageHeader } from '@/app/components/PageHeader';
 import { SeriesCard } from '@/app/components/SeriesCard';
 
 interface PageProps {
@@ -73,13 +74,22 @@ export async function SearchView({ query, locale }: {
 
   return (
     <div className="space-y-8">
-      {/* ⚠️ Borne a la meme largeur que sur l'accueil. Le formulaire prenait les 1024 px
-          de la colonne pour saisir trois mots — un champ aussi large se lit comme une
-          zone de texte, pas comme une recherche, et l'oeil doit traverser tout l'ecran
-          pour aller du dernier caractere tape au bouton. */}
-      <div className="max-w-2xl">
-        <SearchForm defaultValue={query} autoFocus={query.length === 0} locale={locale} />
-      </div>
+      {/* 🔴 **Cette face n'avait aucun titre.** Les cinq autres ouvrent sur un `<h1>` ; celle-ci
+          commencait par un champ de saisie, donc le document n'avait pas de tete — ni pour un
+          lecteur d'ecran qui parcourt les titres, ni pour l'oeil qui cherche ou il est arrive.
+          `search.title` existait deja et ne servait qu'aux metadonnees.
+
+          ⚠️ Le champ vit **dans** l'en-tete et non en dessous : sur cette page, chercher n'est
+          pas le contenu, c'est la question. Ce qui suit — les resultats — est la reponse. */}
+      <PageHeader title={t(locale, 'search.title')}>
+        {/* ⚠️ Borne a la meme largeur que sur l'accueil. Le formulaire prenait les 1024 px
+            de la colonne pour saisir trois mots — un champ aussi large se lit comme une
+            zone de texte, pas comme une recherche, et l'oeil doit traverser tout l'ecran
+            pour aller du dernier caractere tape au bouton. */}
+        <div className="max-w-2xl pt-2">
+          <SearchForm defaultValue={query} autoFocus={query.length === 0} locale={locale} />
+        </div>
+      </PageHeader>
 
       {query.length === 0 ? (
         <p className="text-(--color-muted)">{t(locale, 'search.prompt')}</p>

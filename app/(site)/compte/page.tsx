@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { AccountPanel } from '@/app/components/AccountPanel';
+import { PageHeader } from '@/app/components/PageHeader';
 
 /**
  * La face cachee : le compte.
@@ -29,11 +30,8 @@ export const metadata: Metadata = accountMetadata(DEFAULT_LOCALE);
 
 export function AccountView({ locale }: { readonly locale: Locale }) {
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="page-title">{t(locale, 'account.title')}</h1>
-        <p className="max-w-prose text-(--color-muted)">{t(locale, 'account.lede')}</p>
-      </header>
+    <div className="space-y-8">
+      <PageHeader title={t(locale, 'account.title')} lede={t(locale, 'account.lede')} />
       <AccountPanel />
     </div>
   );
