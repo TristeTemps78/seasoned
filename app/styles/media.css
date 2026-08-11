@@ -230,6 +230,58 @@
     color: var(--color-bright);
   }
 
+  /**
+   * =============================================================================
+   * DEUX COLONNES — la fiche serie cesse d'etre une colonne unique
+   * =============================================================================
+   *
+   * 🔴 Tout le produit tenait dans **une seule colonne** : onze blocs a la file, tous de la
+   * meme largeur, du haut vers le bas. C'est ca, « trop lineaire » — et aucune couleur ni
+   * aucune typographie ne pouvait le corriger.
+   *
+   * ⚠️ La colonne laterale est **premiere dans le document**, et ce n'est pas un detail :
+   * sous 64 rem la grille retombe en une colonne, et c'est l'ordre du DOM qui tranche. Votre
+   * progression doit arriver avant les critiques des autres sur un telephone.
+   *
+   * ⚠️ `align-items: start` est ce qui rend le `sticky` possible : sans lui, l'element de
+   * grille s'etire sur toute la hauteur de la rangee et n'a donc **plus rien a coller**. Le
+   * defaut est silencieux — la regle `position: sticky` est bien la, elle ne fait rien.
+   */
+  .series-split {
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  @media (width >= 64rem) {
+    .series-split {
+      grid-template-columns: 19rem 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    .series-aside {
+      position: sticky;
+      /* Sous la barre collante, qui fait ~3,5 rem. */
+      top: 4.5rem;
+      /* Une colonne plus haute que l'ecran ne peut pas coller : on la laisse defiler
+         d'elle-meme plutot que de tronquer son contenu. */
+      max-height: calc(100vh - 6rem);
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+
+    .series-aside::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .series-aside,
+  .series-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
   .show-backdrop {
     position: relative;
     /* Plein cadre, **sans le rembourrage de `.bleed`** : une bande d'image ne se recentre pas

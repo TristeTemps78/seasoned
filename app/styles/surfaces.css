@@ -205,6 +205,54 @@
 
   .feed-row {
     padding-block: 0.875rem;
+    /* Le retrait negatif rend la zone de survol plus large que la colonne de texte : elle
+       s'allume jusqu'aux marges, ce qui la fait lire comme une ligne entiere et non comme un
+       fond derriere des mots. */
+    margin-inline: -0.75rem;
+    padding-inline: 0.75rem;
+    border-radius: var(--radius-control);
+    transition: background-color var(--dur-fast) var(--ease-out-expo);
+  }
+
+  .feed-row:hover {
+    background-color: color-mix(in oklab, var(--color-surface) 55%, transparent);
+  }
+
+  /**
+   * =============================================================================
+   * CE QUI REPOND AU GESTE — « pas assez de plaisir »
+   * =============================================================================
+   *
+   * 🔴 Releve avant d'ecrire : **seule l'affiche reagissait au survol**. Les tuiles, les
+   * lignes de fil, les listes, les episodes — rien ne bougeait. Un produit ou un seul objet
+   * sur dix repond au geste se ressent comme une page imprimee : correct, et mort.
+   *
+   * Ce n'est pas de l'ornement. Un retour au survol dit **« ceci est vivant, tu peux agir
+   * dessus »** avant tout clic, et c'est ce qui separe une interface d'un document.
+   *
+   * ⚠️ Tout passe par `--dur-fast` et `--ease-out-expo` : une exponentielle sortante part vite
+   * et s'arrete longuement, donc le survol semble **obeir au doigt** plutot que se declencher.
+   * Des courbes differentes d'un objet a l'autre s'entendent immediatement, meme sans savoir
+   * les nommer.
+   */
+  .tile {
+    transition:
+      border-color var(--dur-fast) var(--ease-out-expo),
+      transform var(--dur-fast) var(--ease-out-expo);
+  }
+
+  .tile:hover {
+    /* Deux pixels. Assez pour que l'oeil le voie, trop peu pour que la grille bouge. */
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--tile-hue) 55%, var(--color-edge));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile,
+    .tile:hover {
+      transform: none;
+      transition: none;
+    }
   }
 
   .card {

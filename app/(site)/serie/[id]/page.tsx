@@ -321,32 +321,6 @@ export async function SeriesView({ id, locale }: {
         </div>
       </header>
 
-      <section aria-label={t(locale, 'series.demands')}>
-        {/* Titre masque visuellement : les chiffres se lisent d'eux-memes, mais la
-            structure du document doit rester coherente pour qui navigue au clavier
-            ou au lecteur d'ecran — et pour les moteurs, qui lisent la hierarchie. */}
-        <h2 className="sr-only">{t(locale, 'series.demands')}</h2>
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Stat label={t(locale, 'stat.seasons')} value={String(seasons.rateable.length)} />
-          <Stat label={t(locale, 'stat.episodes')} value={String(episodeCount)} />
-          {totalRuntimeMinutes !== undefined ? (
-            // Le tilde n'est pas cosmetique : le total est une estimation (mediane
-            // d'une saison x nombre d'episodes), et l'annoncer comme exact serait
-            // mentir sur la seule promesse chiffree de la page d'accueil.
-            <Stat
-              label={t(locale, 'stat.commitment')}
-              value={`~ ${formatCommitment(totalRuntimeMinutes, translatorFor(locale))}`}
-              emphasis
-            />
-          ) : null}
-          {detail.lastAiredAt !== undefined ? (
-            <Stat
-              label={t(locale, 'stat.lastEpisode')}
-              value={formatDate(detail.lastAiredAt, locale)}
-            />
-          ) : null}
-        </dl>
-      </section>
 
       {/* ⚠️ Range dans « la serie » et non dans « le detail » : un visage repond a *quelle est
           cette serie* — souvent avant le synopsis, et c'est la raison pour laquelle la
@@ -354,6 +328,50 @@ export async function SeriesView({ id, locale }: {
           decision, c'est-a-dire trop tard pour la prendre.
           Gratuit en reseau : le generique voyage dans la reponse de la fiche. */}
       <Cast cast={detail.cast ?? []} locale={locale} />
+
+      {/* =============================================================================
+          🔴 DEUX COLONNES — la fiche cesse d'etre une colonne unique
+          =============================================================================
+
+          « Il y a encore trop de linearite. » Le mot etait juste et la cause etait simple :
+          **tout le produit tenait dans une seule colonne**, section apres section, du haut
+          vers le bas. Onze blocs a la file, tous de la meme largeur.
+
+          A gauche, ce qui vous concerne et ne bouge pas : les mesures de la serie, votre
+          progression, vos listes. **Colle** au defilement, donc toujours atteignable pendant
+          qu'on parcourt le generique ou les critiques a droite.
+
+          ⚠️ La colonne laterale est **premiere dans le document**. Sous 64 rem la grille
+          retombe en une colonne, et c'est l'ordre du DOM qui decide : votre progression doit
+          arriver avant les critiques des autres sur un telephone. */}
+      <div className="series-split">
+        <aside className="series-aside">
+          <section aria-label={t(locale, 'series.demands')}>
+            {/* Titre masque visuellement : les chiffres se lisent d'eux-memes, mais la
+                structure du document doit rester coherente pour qui navigue au clavier
+                ou au lecteur d'ecran — et pour les moteurs, qui lisent la hierarchie. */}
+            <h2 className="sr-only">{t(locale, 'series.demands')}</h2>
+            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <Stat label={t(locale, 'stat.seasons')} value={String(seasons.rateable.length)} />
+              <Stat label={t(locale, 'stat.episodes')} value={String(episodeCount)} />
+              {totalRuntimeMinutes !== undefined ? (
+                // Le tilde n'est pas cosmetique : le total est une estimation (mediane
+                // d'une saison x nombre d'episodes), et l'annoncer comme exact serait
+                // mentir sur la seule promesse chiffree de la page d'accueil.
+                <Stat
+                  label={t(locale, 'stat.commitment')}
+                  value={`~ ${formatCommitment(totalRuntimeMinutes, translatorFor(locale))}`}
+                  emphasis
+                />
+              ) : null}
+              {detail.lastAiredAt !== undefined ? (
+                <Stat
+                  label={t(locale, 'stat.lastEpisode')}
+                  value={formatDate(detail.lastAiredAt, locale)}
+                />
+              ) : null}
+            </dl>
+          </section>
 
       {/* Le seul element de la page qui vous connaisse. Il s'ajoute cote navigateur :
           la page elle-meme reste statique et mise en cache, et **aucune donnee de
@@ -363,7 +381,6 @@ export async function SeriesView({ id, locale }: {
           suit est **semantique** — la serie · vous · les autres · le detail · ailleurs — et
           il etait deja ecrit dans les commentaires de ce fichier sans rien rendre visible.
           Quatre coupures, pas douze : une ligne entre chaque bloc redessinerait un tableau. */}
-      <div className="section-rule space-y-10">
       <MyProgress
         canPublish={legalIsComplete()}
         seriesId={id}
@@ -410,10 +427,10 @@ export async function SeriesView({ id, locale }: {
       <SeriesArtworkChoice id={id} />
 
       <AddToList seriesId={id} />
-      </div>
+        </aside>
 
-      {/* Les autres. */}
-      <div className="section-rule space-y-10">
+        {/* A droite, ce qui se lit et se parcourt : les autres, puis le detail. */}
+        <div className="series-main">
       <Reviews seriesId={id} />
 
       {/* Apres les critiques, et non avant : on lit d'abord ce que disent les gens qu'on a
@@ -421,10 +438,8 @@ export async function SeriesView({ id, locale }: {
           `Discover` passe **devant** le fil — mais la, le fil est vide au demarrage et la
           page serait blanche ; ici la page est pleine de toute facon. */}
       <SeriesPeople seriesId={id} />
-      </div>
 
       {/* Le detail — ce qu'on vient chercher une fois la decision prise. */}
-      <div className="section-rule space-y-10">
       <SeriesOrderings
         id={id}
         seasonCount={seasons.rateable.length}
@@ -445,9 +460,12 @@ export async function SeriesView({ id, locale }: {
       />
 
       <SeasonList seasons={seasons} locale={locale} />
+        </div>
       </div>
 
-      {/* Ailleurs — la seule sortie de la page. */}
+      {/* Ailleurs — la seule sortie de la page. ⚠️ **Hors des deux colonnes** : c'est une
+          grille d'affiches pleine largeur, et la coincer dans 1 fr la reduirait a trois
+          vignettes. */}
       <div className="section-rule">
         <AlsoByCreators detail={detail} locale={locale} />
       </div>
