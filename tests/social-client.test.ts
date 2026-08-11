@@ -191,3 +191,81 @@ describe('SocialClient.followers', () => {
     expect(asked).toHaveLength(1);
   });
 });
+
+/**
+ * L'apercu d'une liste — quatre series montrees **sans requete supplementaire**.
+ *
+ * ## Ce que ces tests peuvent prouver, et ce qu'ils ne peuvent pas
+ *
+ * Ils doublent `fetch`, donc ils ne prouvent **rien** sur ce que PostgREST accepte
+ * reellement : c'est la lecon que ce depot a payee trois sessions au lot 10, ou trois
+ * lectures repondaient 400 depuis toujours pendant que la suite etait verte.
+ *
+ * La validite de la requete a donc ete verifiee **contre la vraie base**, a la cle publique,
+ * avec son ancrage — une colonne inexistante rend `42703`, une relation inexistante
+ * `PGRST200`, un tri embarque invalide `42703`, et la requete d'ici rend `200`.
+ *
+ * Ce qui suit couvre l'autre moitie, celle qu'un appel reseau ne montre pas : **la forme
+ * demandee** et **la tolerance du decodage**. Un apercu casse doit couter ses vignettes,
+ * jamais la liste.
+ */
+describe('SocialClient.listsBy — l apercu voyage avec le compte', () => {
+  function recording(body: unknown) {
+    const asked: string[] = [];
+    const fetchImpl = (async (url: string) => {
+      asked.push(String(url));
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as unknown as typeof fetch;
+    return { asked, client: new SocialClient({ ...OPTIONS, fetchImpl }) };
+  }
+
+  const ROW = {
+    slug: 'a-voir',
+    title: 'À voir',
+    updated_at: '2026-08-11T00:00:00Z',
+    list_items: [{ count: 12 }],
+    preview: [{ subject: 'tmdb:1396' }, { subject: 'tmdb:94605' }],
+  };
+
+  it('demande le compte ET l apercu dans un seul aller-retour', async () => {
+    const { asked, client } = recording([ROW]);
+    const lists = await client.listsBy('moi');
+
+    // ⚠️ **Un seul appel.** C'est l'invariant qui compte : la solution evidente — un appel par
+    // liste — est exactement ce que `SeriesList.count` s'interdit (« dix listes en feraient
+    // sinon onze »), et rien d'autre que ce decompte ne l'empeche de revenir.
+    expect(asked).toHaveLength(1);
+    expect(asked[0]).toContain('list_items(count)');
+    expect(asked[0]).toContain('preview:list_items(subject)');
+    // Borne cote serveur, jamais cote client : sans `preview.limit`, une liste de 500 series
+    // ferait voyager 500 cles pour en afficher quatre.
+    expect(asked[0]).toContain('preview.limit=4');
+    expect(asked[0]).toContain('preview.order=added_at.asc');
+
+    expect(lists[0]?.count).toBe(12);
+    expect(lists[0]?.preview).toEqual(['tmdb:1396', 'tmdb:94605']);
+  });
+
+  it('une liste dont l apercu manque garde sa place, sans vignettes', async () => {
+    // Le cas reel : les reponses d'avant ce changement, et toute forme inattendue. Perdre
+    // quatre miniatures est un defaut d'affichage ; perdre la liste serait une page blanche.
+    const { client } = recording([{ ...ROW, preview: undefined }]);
+    await expect(client.listsBy('moi')).resolves.toEqual([
+      expect.objectContaining({ slug: 'a-voir', count: 12, preview: [] }),
+    ]);
+
+    const brise = recording([{ ...ROW, preview: 'pas un tableau' }]);
+    await expect(brise.client.listsBy('moi')).resolves.toEqual([
+      expect.objectContaining({ slug: 'a-voir', preview: [] }),
+    ]);
+
+    // Et une entree de la mauvaise forme ne fait pas tomber les autres.
+    const partiel = recording([{ ...ROW, preview: [{ subject: 'tmdb:1396' }, { autre: 1 }, null] }]);
+    await expect(partiel.client.listsBy('moi')).resolves.toEqual([
+      expect.objectContaining({ preview: ['tmdb:1396'] }),
+    ]);
+  });
+});

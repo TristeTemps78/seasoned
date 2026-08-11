@@ -181,6 +181,32 @@ export interface SeriesList {
    */
   readonly count: number;
   readonly updatedAt: string;
+  /**
+   * Les premieres series de la liste, pour la donner a voir sans l'ouvrir.
+   *
+   * ## Pourquoi elle arrive dans la MEME requete
+   *
+   * Une carte de liste ne montrait que du texte : un titre, une phrase, un nombre. Sur un
+   * produit dont le sujet est ce qu'on regarde, c'est une liste de courses — et pour savoir
+   * ce qu'il y a dedans, il fallait cliquer chacune.
+   *
+   * La reponse evidente serait un appel par liste. C'est exactement ce que {@link count}
+   * s'interdit deux lignes plus haut : *« une page de profil qui montre dix listes en ferait
+   * sinon onze »*. Le second embarquement (`preview:list_items(subject)` avec
+   * `preview.limit`) rend les deux dans **un seul aller-retour**, quel que soit le nombre de
+   * listes.
+   *
+   * ⚠️ **La requete a ete verifiee contre la vraie base a la cle publique** avant d'etre
+   * ecrite ici, et avec son ancrage : trois variantes invalides repondent 400 (`42703`,
+   * `PGRST200`), la bonne repond 200. Ce n'est pas du zele — `#rows()` promet de ne jamais
+   * lever, donc un `select` mal forme rendrait `[]` et **toutes les listes dispararaitraient
+   * en silence**. C'est le defaut qui a coute trois sessions au lot 10.
+   *
+   * ⚠️ Ce sont des **cles de journal** (`tmdb:1396`), jamais des titres : le catalogue est
+   * loue, pas possede. Le titre et l'affiche viennent de l'instantane du lecteur, et a defaut
+   * `PosterChip` rend son monogramme.
+   */
+  readonly preview: readonly string[];
 }
 
 /**
@@ -212,6 +238,15 @@ export interface FeedItem extends ActivityItem {
  * ici ne compile pas. C'est le meme procede que `REPORT_GROUNDS` sur `/regles`, ou le typage
  * interdit d'appliquer une regle qu'on n'a pas publiee.
  */
+/**
+ * Combien de series une carte de liste donne a voir sans etre ouverte.
+ *
+ * Quatre, et pas plus : la carte fait la moitie de la largeur de lecture, et une cinquieme
+ * vignette la ferait passer a la ligne — une rangee qui casse se lit comme un debordement,
+ * pas comme un apercu. Voir {@link SeriesList.preview}.
+ */
+const LIST_PREVIEW = 4;
+
 const KNOWN_KINDS: Readonly<Record<ActivityKind, true>> = {
   rated_season: true,
   finished: true,
@@ -1128,14 +1163,30 @@ export class SocialClient {
    * page de profil qui affiche dix listes ferait sinon onze requetes.
    */
   async listsBy(userId: string, limit = 50): Promise<readonly SeriesList[]> {
+    // ⚠️ **Deux embarquements de la meme table**, sous deux alias : `list_items(count)` pour
+    // le nombre total, `preview:list_items(subject)` borne a quatre pour les vignettes. Un
+    // alias est obligatoire — sans lui PostgREST fusionne les deux et le compte se perd.
     const rows = await this.#rows<Record<string, unknown>>(
-      `lists?user_id=eq.${encodeURIComponent(userId)}&select=slug,title,note,updated_at,list_items(count)&order=updated_at.desc&limit=${limit}`,
+      `lists?user_id=eq.${encodeURIComponent(userId)}` +
+        `&select=slug,title,note,updated_at,list_items(count),preview:list_items(subject)` +
+        `&preview.order=added_at.asc&preview.limit=${LIST_PREVIEW}` +
+        `&order=updated_at.desc&limit=${limit}`,
     );
     return rows.flatMap((row) => {
       const slug = row['slug'];
       const title = row['title'];
       if (typeof slug !== 'string' || typeof title !== 'string') return [];
       const note = row['note'];
+      // ⚠️ Defensif jusqu'au bout : une liste dont l'apercu manque ou arrive dans une forme
+      // inattendue doit s'afficher **sans vignettes**, jamais disparaitre. Une carte de liste
+      // vaut infiniment plus que ses quatre miniatures.
+      const raw = row['preview'];
+      const preview = Array.isArray(raw)
+        ? raw.flatMap((item) => {
+            const subject = (item as Record<string, unknown> | null)?.['subject'];
+            return typeof subject === 'string' ? [subject] : [];
+          })
+        : [];
       return [
         {
           slug,
@@ -1143,6 +1194,7 @@ export class SocialClient {
           ...(typeof note === 'string' && note.length > 0 ? { note } : {}),
           count: countOf(row['list_items']),
           updatedAt: String(row['updated_at'] ?? ''),
+          preview,
         },
       ];
     });

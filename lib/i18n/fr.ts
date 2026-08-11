@@ -235,6 +235,7 @@ export const FR = {
   'lists.noteLabel': 'Une phrase, si vous voulez',
   'lists.notePlaceholder': 'Pourquoi celles-là (facultatif)',
   'lists.create': 'Créer la liste',
+  'lists.cancel': 'Annuler',
   'lists.none': 'Vous n’avez pas encore de liste.',
   'lists.noneOther': 'Aucune liste à lire ici pour l’instant.',
   'lists.count.one': '{n} série',
@@ -544,6 +545,11 @@ export const FR = {
   'profile.lists': 'Ses listes',
   'profile.reviews': 'Ce qu’elle ou il a écrit',
   'profile.none': 'Rien de public à lire ici pour l’instant.',
+  // ⚠️ Absente à zéro, et c'est une exception assumée à la règle 4 : sur /bilan « 0 critique »
+  // est une porte — votre écran, votre geste ; ici le lecteur ne peut rien pour ce que
+  // quelqu'un d'autre n'a pas écrit, et la section plus bas le dit déjà.
+  'profile.count.one': '{n} critique publiée',
+  'profile.count.other': '{n} critiques publiées',
   'profile.follow': 'Suivre',
   'profile.unfollow': 'Ne plus suivre',
   'profile.self': 'C’est vous.',

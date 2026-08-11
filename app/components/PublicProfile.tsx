@@ -13,7 +13,9 @@ import { pathIn } from '@/lib/routes';
 import { type Profile, type PublishedReview } from '@/src/social/client';
 import { Lists } from '@/app/components/Lists';
 import { Avatar } from '@/app/components/Avatar';
+import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
+import { PosterChip } from '@/app/components/PosterChip';
 import { socialFrom } from '@/app/social/socialFrom';
 
 /**
@@ -55,7 +57,7 @@ import { socialFrom } from '@/app/social/socialFrom';
  * qu'elle vive dans `src/domain/`, jamais dans la couche de rendu.
  */
 export function PublicProfile({ handle }: { readonly handle: string }) {
-  const { t, locale } = useT();
+  const { t, tn, locale } = useT();
   const { configured, ready, account } = useAuth();
   const { journal } = useJournal();
 
@@ -142,31 +144,46 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-4">
-          {/* ⚠️ La face n'est PAS posee en surimpression ici, alors que `Avatar` sait le faire :
-              elle est deja dite en toutes lettres deux lignes plus bas. La repeter en pastille
-              ferait annoncer la meme chose deux fois au meme endroit — c'est utile dans une
-              liste dense, ou le mot ne tient pas, et redondant sur une page qui a la place. */}
-          <Avatar handle={profile.handle} large />
-          <div className="flex flex-wrap items-baseline gap-3">
-            <h1 className="page-title">@{profile.handle}</h1>
-          {/* ⚠️ Le **mot**, pas la pastille. Ailleurs c'est l'inverse : dans le fil et dans
-              « des gens a decouvrir », une ligne par personne ne supporte pas un mot de plus.
-              Ici il y a la place, et une couleur seule n'apprend rien a qui la voit pour la
-              premiere fois. La pastille l'accompagne pour faire le lien avec les listes. */}
+      {/* 🔴 **L'identite etait une ligne de texte flottante.** Un avatar, un `<h1>` et un mot,
+          poses sur le fond de la page — la seule page du produit dont le sujet est *quelqu'un*
+          n'avait aucun bloc d'identite. `.panel` en fait un objet, comme une affiche est un
+          objet : c'est le meme raisonnement qu'`editorial-voice` applique aux visuels. */}
+      <header className="panel flex flex-wrap items-center gap-5 p-5">
+        {/* ⚠️ La face n'est PAS posee en surimpression sur l'avatar, alors qu'`Avatar` sait le
+            faire : elle est dite en toutes lettres juste a cote. La repeter en pastille ferait
+            annoncer la meme chose deux fois au meme endroit — c'est utile dans une liste
+            dense, ou le mot ne tient pas, et redondant sur une page qui a la place. */}
+        <Avatar handle={profile.handle} large />
+
+        <div className="min-w-0 space-y-1">
+          <h1 className="page-title">@{profile.handle}</h1>
+          {/* La ligne qui dit **qui** c'est en deux mesures : sa face, et ce qu'il y a a lire.
+              ⚠️ Le **mot** de la face, pas la pastille seule. Ailleurs c'est l'inverse : dans
+              le fil et dans « des gens a decouvrir », une ligne par personne ne supporte pas un
+              mot de plus. Ici il y a la place, et une couleur seule n'apprend rien a qui la
+              voit pour la premiere fois. La pastille l'accompagne pour faire le lien. */}
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 meta">
             {profile.face !== undefined ? (
-              <span className="flex items-center gap-1.5 meta">
+              <span className="flex items-center gap-1.5">
                 <FaceDot face={profile.face} />
                 {t(`face.${profile.face}`)}
               </span>
             ) : null}
-          </div>
+            {/* ⚠️ **Rien a zero, et c'est une exception assumee a la regle 4.** Sur `/bilan`,
+                « 0 critique » est une porte : c'est votre ecran, et l'etiquette nomme un geste
+                que vous pouvez faire. Ici, le lecteur ne peut rien pour les critiques que
+                quelqu'un d'autre n'a pas ecrites — et la section plus bas le dit deja. */}
+            {reviews.length > 0 ? <span>{tn('profile.count', reviews.length)}</span> : null}
+          </p>
         </div>
+
+        {/* `ms-auto` : l'action se colle a droite quel que soit le contenu de gauche. Un
+            `justify-between` sur le conteneur casserait des que le bloc d'identite passe a la
+            ligne sur un telephone. */}
         {isSelf ? (
-          <span className="meta">{t('profile.self')}</span>
+          <span className="ms-auto meta">{t('profile.self')}</span>
         ) : account === undefined || named === undefined ? null : (
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="ms-auto flex flex-wrap items-center gap-3">
             {/* La reciprocite se dit ici et nulle part ailleurs : c'est la seule page ou l'on
                 regarde **une** personne. Sur `/amis` on lit une liste, et une mention par
                 ligne y serait du bruit. */}
@@ -176,9 +193,17 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
             {/* 🔴 Le bouton « Suivre » s'affichait a tout compte connecte, y compris a qui
                 n'a pas reclame de nom — et `008_followers.sql` refuse desormais ce suivi.
                 *Un bouton qui ne peut pas marcher ne se degrade pas, il ne s'affiche pas*
-                (2026-08-09) : on montre a la place le geste qui debloque. */}
+                (2026-08-09) : on montre a la place le geste qui debloque.
+                ⚠️ `btn-primary` seulement pour **suivre** : c'est l'action de la page. « Ne
+                plus suivre » est un retrait, et une action de retrait qui brille invite au
+                geste qu'on ne cherche pas a provoquer. */}
             {named ? (
-              <button type="button" className="btn" aria-pressed={following} onClick={toggleFollow}>
+              <button
+                type="button"
+                className={`btn ${following ? '' : 'btn-primary'}`}
+                aria-pressed={following}
+                onClick={toggleFollow}
+              >
                 {following ? t('profile.unfollow') : t('profile.follow')}
               </button>
             ) : (
@@ -188,67 +213,122 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
             )}
           </div>
         )}
-      </div>
+      </header>
 
-      {/* Les listes avant les critiques : une liste se lit sans rien savoir de la personne,
-          une critique suppose qu'on connaisse la serie. C'est aussi le seul contenu de cette
-          page qui ne puisse rien spoiler. */}
-      <section className="space-y-3" aria-label={t('profile.lists')}>
-        <h2 className="section-heading">{t('profile.lists')}</h2>
-        <Lists ownerId={profile.userId} />
-      </section>
+      {/* =============================================================================
+          🔴 LES CRITIQUES PASSENT DEVANT — et la decision qu'on renverse etait fondee
+             sur le defaut qu'on vient de corriger
+          =============================================================================
 
+          Les listes venaient en premier, avec cet argument : *« une liste se lit sans rien
+          savoir de la personne, une critique suppose qu'on connaisse la serie »*. Il etait
+          vrai — parce que les critiques n'affichaient **ni titre ni affiche** (voir plus bas).
+          Une fois qu'elles portent les deux, elles se lisent aussi froid qu'une liste, et
+          mieux : ce sont des phrases ecrites par quelqu'un, c'est-a-dire la seule chose de
+          cette page qui dise **qui** il est.
+
+          ⚠️ Le second argument — *« le seul contenu qui ne puisse rien spoiler »* — ne tenait
+          deja plus : `redactReviewsAcross` caviarde, oeuvre par oeuvre, tout ce que le lecteur
+          n'a pas atteint. Le spoiler est traite en amont, pas par l'ordre des sections.
+
+          Consequence pratique mesuree : sur un profil sans liste — le cas de tous les profils
+          aujourd'hui —, la page s'ouvrait sur « Rien a lire ici pour l'instant » avant de
+          montrer ce que la personne avait ecrit. */}
       <section className="space-y-3" aria-label={t('profile.reviews')}>
         <h2 className="section-heading">{t('profile.reviews')}</h2>
 
         {reviews.length === 0 ? (
-          <p className="prose-note">{t('profile.none')}</p>
+          <EmptyState>{t('profile.none')}</EmptyState>
         ) : (
-          <ul className="space-y-3">
+          // ⚠️ **Deux colonnes**, et non une pile pleine largeur. Mesure au DOM le
+          // 2026-08-11 : une critique de deux mots occupait une carte de 1120 px de large et
+          // 87 px de haut. Une opinion courte est le cas le plus frequent, et elle ne merite
+          // pas la largeur d'un article.
+          <ul className="grid gap-3 sm:grid-cols-2">
             {visible.map((shown) => {
               const review = shown;
               const parsed = parseJournalKey(review.subject);
               const id = `${review.subject}:${review.target}`;
-              const title = journal.entries[review.subject]?.snapshot?.title;
+              /* 🔴 **La page affichait `tmdb:94605`.** Constate a l'ecran le 2026-08-11 sur
+                 `/u/tristetemps78` : deux critiques, deux cles brutes, zero image sur toute
+                 la page.
+
+                 La cause : le titre n'etait lu que dans le journal du **lecteur**
+                 (`journal.entries[…]?.snapshot?.title`), donc jamais pour une serie qu'il ne
+                 suit pas — c'est-a-dire jamais dans le seul cas ou un profil sert a
+                 decouvrir quelqu'un.
+
+                 `PublishedReview` porte pourtant `title` et `posterPath` **depuis 018**, et
+                 la documentation du type decrit mot pour mot ce defaut : *« sans eux, le fil
+                 affichait "@test wrote about tmdb:94997" »*. Le correctif avait ete applique
+                 au fil et **oublie ici**, sur la page qui est la destination de tous les
+                 liens `@nom` du produit. L'ordre est le meme que dans `FriendsFeed` :
+                 l'instantane publie d'abord, le journal du lecteur en repli. */
+              const title = review.title ?? journal.entries[review.subject]?.snapshot?.title;
+              const posterPath =
+                review.posterPath ?? journal.entries[review.subject]?.snapshot?.posterPath;
+              const shownTitle = title ?? review.subject;
+              const href = parsed === undefined
+                ? undefined
+                : pathIn(`/serie/${parsed.providerId}`, locale);
 
               return (
-                <li key={id} className="card space-y-2">
-                  {parsed === undefined ? (
-                    <span className="text-sm font-medium">{title ?? review.subject}</span>
+                <li key={id} className="card flex gap-4">
+                  {/* L'affiche a gauche, le texte a droite : c'est ce qui fait qu'on
+                      reconnait la serie **avant** de lire, comme partout ailleurs dans le
+                      produit. `PosterChip` rend son monogramme quand l'affiche manque —
+                      jamais un trou. */}
+                  {href === undefined ? (
+                    <PosterChip path={posterPath} title={shownTitle} wide />
                   ) : (
-                    <Link
-                      className="text-sm font-medium hover:text-(--color-volt)"
-                      href={pathIn(`/serie/${parsed.providerId}`, locale)}
-                    >
-                      {title ?? review.subject}
+                    <Link href={href} className="shrink-0">
+                      <PosterChip path={posterPath} title={shownTitle} wide />
                     </Link>
                   )}
 
-                  <ReviewBody
-                    hidden={shown.hidden === true}
-                    text={shown.text}
-                    hiddenText={shown.hiddenText ?? ''}
-                    throughSeason={shown.throughSeason}
-                  />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    {href === undefined ? (
+                      <span className="text-sm font-medium">{shownTitle}</span>
+                    ) : (
+                      <Link
+                        className="block text-sm font-medium hover:text-(--color-volt)"
+                        href={href}
+                      >
+                        {shownTitle}
+                      </Link>
+                    )}
 
-                  {/* ⚠️ **Sur ses propres critiques uniquement**, et cette seule condition
-                      ferme trois pieges d'un coup : pas de texte masque qui redevient
-                      lisible en image, pas de mots d'autrui diffuses hors contexte, et pas
-                      d'image impossible a masquer alors que `/regles` promet le contraire.
-                      C'est aussi le seul geste qui ait un sens : on partage ce qu'on a
-                      ecrit. */}
-                  {isSelf ? (
-                    <ShareReview
-                      title={title ?? review.subject}
-                      handle={profile.handle}
+                    <ReviewBody
+                      hidden={shown.hidden === true}
                       text={shown.text}
+                      hiddenText={shown.hiddenText ?? ''}
+                      throughSeason={shown.throughSeason}
                     />
-                  ) : null}
+
+                    {/* ⚠️ **Sur ses propres critiques uniquement**, et cette seule condition
+                        ferme trois pieges d'un coup : pas de texte masque qui redevient
+                        lisible en image, pas de mots d'autrui diffuses hors contexte, et pas
+                        d'image impossible a masquer alors que `/regles` promet le contraire.
+                        C'est aussi le seul geste qui ait un sens : on partage ce qu'on a
+                        ecrit. */}
+                    {isSelf ? (
+                      <ShareReview
+                        title={shownTitle}
+                        handle={profile.handle}
+                        text={shown.text}
+                      />
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
           </ul>
         )}
+      </section>
+
+      <section className="space-y-3" aria-label={t('profile.lists')}>
+        <h2 className="section-heading">{t('profile.lists')}</h2>
+        <Lists ownerId={profile.userId} />
       </section>
     </div>
   );

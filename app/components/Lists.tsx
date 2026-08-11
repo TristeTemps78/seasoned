@@ -11,6 +11,7 @@ import { pathIn } from '@/lib/routes';
 import { type SeriesList } from '@/src/social/client';
 import { socialFrom } from '@/app/social/socialFrom';
 import { AccountGate } from '@/app/components/AccountGate';
+import { EmptyState } from '@/app/components/EmptyState';
 import { PosterChip } from '@/app/components/PosterChip';
 
 /**
@@ -95,6 +96,14 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState<ListRejection | 'failed' | undefined>(undefined);
+  /**
+   * Le formulaire de creation est-il demande ?
+   *
+   * ⚠️ Il n'est pas la seule condition : il s'ouvre **aussi** tant qu'il n'y a aucune liste
+   * (voir le rendu). Un etat qui vaudrait « ouvert » ou « ferme » tout seul obligerait a le
+   * poser a l'initialisation, avant que `listsBy` ait repondu — donc a deviner.
+   */
+  const [creating, setCreating] = useState(false);
 
   const accessToken = account?.accessToken;
   const myId = account?.userId;
@@ -161,6 +170,9 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
     setTitle('');
     setNote('');
     setError(undefined);
+    // La liste creee devient le sujet de la page : le formulaire se replie derriere son
+    // bouton, sinon on lit sa propre creation par-dessus deux champs vides.
+    setCreating(false);
     await load();
   }, [title, note, clientFor, myId, lists, load]);
 
@@ -211,36 +223,69 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
     );
   }
 
+  // Deploye tant qu'il n'y a rien a montrer, replie des qu'il y a des listes a lire.
+  const formOpen = creating || lists.length === 0;
+
   return (
     <div className="space-y-6">
+      {/* 🔴 **Le formulaire etait deploye en permanence, et en tete.** Deux champs et un
+          bouton occupaient le haut de la page avant la premiere liste — c'est-a-dire que la
+          face « Mes listes » s'ouvrait sur la creation d'une liste plutot que sur les siennes.
+          Le geste le plus rare tenait la meilleure place.
+
+          ⚠️ Il reste **deploye tant qu'il n'y a aucune liste** : la, creer est la seule chose
+          a faire, et le replier derriere un bouton ajouterait un clic a l'unique geste
+          possible. La forme suit l'etat, elle n'est pas la meme pour tout le monde. */}
       {editable ? (
-        <section className="card space-y-3" aria-label={t('lists.newAria')}>
-          <h2 className="card-title">{t('lists.new')}</h2>
-          <input
-            className="field w-full"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={t('lists.titlePlaceholder')}
-            aria-label={t('lists.titleLabel')}
-          />
-          <input
-            className="field w-full"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t('lists.notePlaceholder')}
-            aria-label={t('lists.noteLabel')}
-          />
-          {error !== undefined ? (
-            <p className="text-sm text-(--color-warn)">{t(`lists.error.${error}`)}</p>
-          ) : null}
-          <button type="button" className="btn" onClick={create}>
-            {t('lists.create')}
+        formOpen ? (
+          <section className="card space-y-3" aria-label={t('lists.newAria')}>
+            <h2 className="card-title">{t('lists.new')}</h2>
+            <input
+              className="field w-full"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t('lists.titlePlaceholder')}
+              aria-label={t('lists.titleLabel')}
+            />
+            <input
+              className="field w-full"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={t('lists.notePlaceholder')}
+              aria-label={t('lists.noteLabel')}
+            />
+            {error !== undefined ? (
+              <p className="text-sm text-(--color-warn)">{t(`lists.error.${error}`)}</p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="btn btn-primary" onClick={create}>
+                {t('lists.create')}
+              </button>
+              {lists.length > 0 ? (
+                <button type="button" className="btn" onClick={() => setCreating(false)}>
+                  {t('lists.cancel')}
+                </button>
+              ) : null}
+            </div>
+          </section>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-primary"
+            aria-expanded={false}
+            onClick={() => setCreating(true)}
+          >
+            {t('lists.new')}
           </button>
-        </section>
+        )
       ) : null}
 
       {lists.length === 0 ? (
-        <p className="prose-note">{editable ? t('lists.none') : t('lists.noneOther')}</p>
+        // ⚠️ Sans action pour le proprietaire : le formulaire de creation est deploye juste
+        // au-dessus, sur cette meme page. *Un ecran sans issue, pas un ecran sans bouton.*
+        // Et sans action pour un visiteur non plus : il ne peut rien pour les listes que
+        // quelqu'un d'autre n'a pas faites.
+        <EmptyState>{editable ? t('lists.none') : t('lists.noneOther')}</EmptyState>
       ) : (
         // ⚠️ Une **grille** et non une pile : une liste est un objet qu'on parcourt du regard
         // pour choisir, pas un article qu'on lit de haut en bas. Empilees pleine largeur, dix
@@ -263,7 +308,48 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
                   <p className="meta">{list.note}</p>
                 ) : null}
 
-                <div className="flex flex-wrap gap-2">
+                {/* 🔴 **La carte ne montrait aucune serie.** Un titre, une phrase, un nombre :
+                    sur un produit dont le sujet est ce qu'on regarde, une liste se lisait comme
+                    une liste de courses, et savoir ce qu'il y avait dedans demandait de les
+                    ouvrir une par une.
+
+                    ⚠️ **Zero requete de plus** : les quatre cles arrivent dans la meme reponse
+                    que le compte, par un second embarquement (`SeriesList.preview`). L'appel
+                    par liste etait la solution evidente et c'est exactement ce que le type
+                    s'interdit — *dix listes en feraient onze*. La requete a ete verifiee contre
+                    la vraie base avant d'etre ecrite.
+
+                    ⚠️ L'affiche vient de l'instantane du **lecteur** : chez quelqu'un d'autre,
+                    on ne l'a pas toujours, et `PosterChip` rend alors son monogramme. C'est le
+                    prix de la regle 1 — le catalogue est loue, pas possede. */}
+                {list.preview.length > 0 ? (
+                  <ul className="flex flex-wrap gap-2">
+                    {list.preview.map((subject) => {
+                      const parsed = parseJournalKey(subject);
+                      const snapshot = journal.entries[subject]?.snapshot;
+                      const seriesTitle = snapshot?.title ?? t('library.card.tracked');
+                      const chip = (
+                        <PosterChip path={snapshot?.posterPath} title={seriesTitle} wide />
+                      );
+                      return (
+                        <li key={subject}>
+                          {parsed === undefined ? (
+                            chip
+                          ) : (
+                            <Link
+                              href={pathIn(`/serie/${parsed.providerId}`, locale)}
+                              aria-label={seriesTitle}
+                            >
+                              {chip}
+                            </Link>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
+
+                <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
                     className="btn"
@@ -272,8 +358,11 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
                   >
                     {isOpen ? t('lists.close') : t('lists.open')}
                   </button>
+                  {/* ⚠️ `quiet-action` et non `.btn` : supprimer une liste est **irreversible**
+                      (la cascade est dans le SQL), et lui donner le meme poids visuel que
+                      « Voir » met un geste sans retour a cote d'un geste sans consequence. */}
                   {editable ? (
-                    <button type="button" className="btn" onClick={() => drop(list.slug)}>
+                    <button type="button" className="quiet-action" onClick={() => drop(list.slug)}>
                       {t('lists.delete')}
                     </button>
                   ) : null}
