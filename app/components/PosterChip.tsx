@@ -38,7 +38,7 @@ export function PosterChip({
 }) {
   return (
     <span
-      className={`block shrink-0 overflow-hidden rounded panel ${wide ? 'w-16' : 'w-10'}`}
+      className={`poster-frame block shrink-0 ${wide ? 'w-16' : 'w-10'}`}
     >
       {/* Le rapport vit sur un enfant et non sur le cadre : `Poster` rend un `<img>` en
           `h-full`, qui sans hauteur donnee s'effondre a la hauteur de son alt — c'est-a-dire

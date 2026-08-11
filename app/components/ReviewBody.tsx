@@ -54,5 +54,9 @@ export function ReviewBody({
     );
   }
 
-  return <p className="whitespace-pre-wrap text-sm">{hidden ? hiddenText : text}</p>;
+  // ⚠️ `review-prose` : ce que quelqu'un a **ecrit** n'est pas de l'interface. C'est le seul
+  // texte d'auteur du produit, et le serif est ce qui fait la difference entre un tracker qui
+  // stocke des avis et un magazine qui les publie. Second et dernier emploi de la voix
+  // editoriale, avec `.hero-title`.
+  return <p className="review-prose whitespace-pre-wrap">{hidden ? hiddenText : text}</p>;
 }

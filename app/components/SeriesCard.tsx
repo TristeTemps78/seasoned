@@ -73,7 +73,7 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE, size = 'w3
     >
       {/* `--halo` : au survol la vignette gagne la lueur volt **sans recopier** l'elevation
           de la matiere. Un changement de bordure seul ne dit pas qu'un objet se souleve. */}
-      <div className="relative aspect-2/3 overflow-hidden panel transition-[border-color,box-shadow] duration-200 group-hover:border-(--color-volt)/50 group-hover:[--halo:0_0_2rem_-0.75rem_var(--color-volt)]">
+      <div className="poster-frame aspect-2/3">
         <Poster
           path={series.posterPath}
           title={series.title}

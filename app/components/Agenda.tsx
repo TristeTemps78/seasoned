@@ -134,7 +134,7 @@ function Row({ episode, now, posterPath }: {
       {/* ⚠️ Un `div` et non un `span` : `Poster` rend une `div` quand l'affiche manque
           (le monogramme), et une `div` dans un `span` est un imbriquement invalide que
           rien ici ne signalerait. */}
-      <div className="aspect-2/3 w-9 shrink-0 overflow-hidden rounded border border-(--color-edge)">
+      <div className="poster-frame aspect-2/3 w-9 shrink-0">
         <Poster path={posterPath} title={episode.title} size="w154" />
       </div>
 

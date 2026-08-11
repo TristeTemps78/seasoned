@@ -57,6 +57,46 @@ export const instrumentSans = localFont({
   fallback: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 
+/**
+ * La troisieme voix — le serif editorial (2026-08-11).
+ *
+ * ## Pourquoi une police de plus, alors que deux suffisaient
+ *
+ * Deux polices sans empattement font un **produit**. Ce qui manquait pour faire un
+ * *magazine* — la reference que Tristan poursuit depuis trois passes — est la seconde voix :
+ * un serif pour ce qui se **lit** (un titre d'accroche, le corps d'une critique), pendant que
+ * le sans porte ce qui s'**utilise** (boutons, etiquettes, navigation).
+ *
+ * C'est la seule regle du brief que rien d'autre ne pouvait remplacer : ni une couleur, ni
+ * une ombre, ni une densite ne donnent a un ecran son air imprime.
+ *
+ * ⚠️ **Jamais sur toute l'interface.** Un produit entierement en serif se lit comme un blog.
+ * Deux emplois, et ils sont exhaustifs : `.hero-title` et `.review-prose`.
+ *
+ * ## Le cout, mesure et pas estime
+ *
+ * **58 Ko**, sous-ensemble latin, axe de graisse 400→600. Trois variantes ont ete pesees
+ * avant de choisir :
+ *
+ *   Newsreader:wght@400          22 Ko   un seul poids — pas de titre gras
+ *   Newsreader:wght@400..600     58 Ko   ← retenu
+ *   Newsreader:opsz,wght         132 Ko  l'axe optique triple le fichier pour un gain nul
+ *                                        a nos deux tailles d'emploi
+ *
+ * Le budget police passe de 43 a 101 Ko. `display: 'swap'` : le texte s'affiche
+ * immediatement dans le repli, donc rien n'attend jamais ce fichier.
+ */
+export const newsreader = localFont({
+  src: './fonts/Newsreader-Variable-latin.woff2',
+  weight: '400 600',
+  style: 'normal',
+  display: 'swap',
+  variable: '--font-voltface-serif',
+  // ⚠️ Georgia d'abord : c'est le seul serif d'ecran present sur Windows **et** macOS, donc
+  // le repli reste un serif au lieu de retomber sur un Times de rendu different partout.
+  fallback: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
+});
+
 export const plexMono = localFont({
   src: './fonts/IBMPlexMono-Regular-latin.woff2',
   weight: '400',

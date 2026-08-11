@@ -56,7 +56,7 @@ export function LibraryCard({ item, lead = false }: {
       href={href}
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-live)"
     >
-      <div className="aspect-2/3 overflow-hidden panel">
+      <div className="poster-frame aspect-2/3">
         {/* ⚠️ L'affiche **choisie** passe devant celle du catalogue. C'est tout l'interet
             de la feature : elle doit se voir dans la bibliotheque, pas seulement sur la
             fiche ou on l'a choisie. */}

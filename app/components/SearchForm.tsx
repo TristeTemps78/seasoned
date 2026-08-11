@@ -25,7 +25,7 @@ export function SearchForm({ defaultValue = '', autoFocus = false, locale = DEFA
     <form
       action={pathIn('/recherche', locale)}
       method="GET"
-      className="flex items-stretch gap-0 overflow-hidden panel bg-(--color-surface)/70 focus-within:border-(--color-volt)/60"
+      className="search-shell flex items-stretch gap-0 overflow-hidden panel bg-(--color-surface)/70"
     >
       <input
         type="search"
@@ -34,11 +34,11 @@ export function SearchForm({ defaultValue = '', autoFocus = false, locale = DEFA
         autoFocus={autoFocus}
         placeholder={t(locale, 'search.placeholder')}
         aria-label={t(locale, 'search.submit')}
-        className="min-w-0 flex-1 bg-transparent px-4 py-3 placeholder:text-(--color-muted) focus:outline-none"
+        className="search-input min-w-0 flex-1 bg-transparent px-4 py-3 text-inherit placeholder:text-(--color-muted) focus:outline-none"
       />
       <button
         type="submit"
-        className="flex items-center gap-2 border-l border-(--color-edge) px-5 text-sm font-semibold text-(--color-volt) transition-colors hover:bg-(--color-volt) hover:text-(--color-ink)"
+        className="search-submit flex items-center gap-2 border-l border-(--color-edge) px-5 text-sm font-semibold text-(--color-volt) transition-colors hover:bg-(--color-volt) hover:text-(--color-ink)"
       >
         <Icon name="search" />
         {t(locale, 'search.submit')}

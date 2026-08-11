@@ -52,7 +52,7 @@ export function Cast({
             {/* La meme matiere que la vignette d'une serie : deux objets de meme forme sur une
                 meme page doivent se ressembler. Sans l'etat de survol, qui appartient a ce
                 qu'on peut ouvrir — et un visage ne s'ouvre pas encore. */}
-            <div className="relative aspect-2/3 overflow-hidden panel">
+            <div className="poster-frame aspect-2/3">
               <Poster path={member.profilePath} title={member.name} size="w185" />
             </div>
             <p className="mt-2 clamp-2 text-sm font-medium">{member.name}</p>

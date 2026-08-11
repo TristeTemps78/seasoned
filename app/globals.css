@@ -41,6 +41,24 @@
   --font-mono: var(--font-voltface-mono), ui-monospace, 'SF Mono', 'Cascadia Mono',
     'Segoe UI Mono', monospace;
 
+  /**
+   * La voix editoriale (2026-08-11) — **deux emplois, et c'est tout**.
+   *
+   * `.hero-title` et `.review-prose`. Un produit entierement en serif se lit comme un blog ;
+   * un produit sans serif du tout se lit comme un tableau de bord. La distinction que ce
+   * jeton porte est : le sans sert ce qu'on **utilise**, le serif ce qu'on **lit**.
+   */
+  --font-serif: var(--font-voltface-serif), Georgia, Cambria, 'Times New Roman', serif;
+
+  /**
+   * L'assouplissement de toute animation d'interface.
+   *
+   * Une exponentielle sortante part vite et s'arrete longuement : c'est ce qui donne a un
+   * survol l'impression d'obeir au doigt plutot que de se declencher. Toutes les transitions
+   * de ce fichier y passent — sans quoi chacune invente sa courbe et l'ensemble sonne faux.
+   */
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+
   /* Le fond descend vers un noir bleute : c'est lui qui fait exister la lueur.
      Un gris neutre eteindrait les accents au lieu de les porter. */
   /* =============================================================================
@@ -67,8 +85,31 @@
   /* Remonte de #8790a6 le 2026-08-11 : c'est la couleur la plus employee du produit (157
      usages), donc la plus rentable a corriger. L'ancienne tenait 4,6:1 sur `--color-surface`,
      celle-ci ~6:1 — ce qui compte, vu qu'elle habille surtout du petit texte. */
-  --color-muted: #9aa3ba;
-  --color-text: #e8ebf2;
+  --color-muted: #93a3b8;
+  --color-text: #e6edf6;
+
+  /**
+   * =============================================================================
+   * L'echelle de gris — quatre crans, tous teintes bleu, aucun neutre
+   * =============================================================================
+   *
+   * 🔴 **Il n'y avait qu'UN gris secondaire pour tout le produit** (`--color-muted`, 157
+   * usages). Un seul cran entre le texte et le fond, c'est-a-dire aucune hierarchie dans ce
+   * qui n'est pas un titre : une etiquette, un synopsis, une date et un compteur etaient
+   * peints exactement de la meme facon. C'est la moitie de « pas de contraste ».
+   *
+   * ⚠️ **Teintes bleu, jamais neutres.** Un gris neutre (`#888`) sur un fond bleu-noir se lit
+   * comme sale — l'oeil compare la teinte du texte a celle du fond, et un ecart de teinte se
+   * lit comme un defaut d'impression. Chacun de ces quatre garde la meme famille que
+   * `--color-ink`, seule la clarte change.
+   *
+   * A employer par **role**, pas par gout : `dim` pour ce qui doit s'effacer (mentions,
+   * horodatages), `muted` pour le corps secondaire, `soft` pour ce qui accompagne un titre,
+   * `bright` pour ce qui doit se lire avant le reste sans etre un titre.
+   */
+  --color-dim: #64748b;
+  --color-soft: #b6c2d4;
+  --color-bright: #f3f7fc;
 
   /* L'arc electrique — l'accent du produit, et la racine de son nom.
      `volt` est la couleur d'interaction : liens actifs, focus, bordure vivante. */
@@ -368,11 +409,20 @@ body::before {
    * ⚠️ Aucun troisieme cran n'a ete cree pour la banniere : ce serait refaire `.tile-label`,
    * retiree pour cause d'usage unique.
    */
+  /* ⚠️ **Le seul titre en serif de tout le produit** (2026-08-11). L'accroche de l'accueil et
+     le titre pose sur une banniere sont les deux seuls endroits ou l'on **lit** avant
+     d'utiliser — c'est la definition qui decide, pas la taille. Les autres crans restent au
+     sans : un `h2` de section en serif ferait un blog, pas un magazine.
+
+     La graisse redescend a 600 : un serif a 700 sur 3,5 rem devient une masse noire, la ou le
+     sans avait besoin de 700 pour peser. Et l'interlettrage cesse d'etre negatif — un serif
+     resserre se referme sur ses empattements. */
   .hero-title {
+    font-family: var(--font-serif);
     font-size: 2.5rem;
     line-height: 1.05;
-    font-weight: 700;
-    letter-spacing: -0.035em;
+    font-weight: 600;
+    letter-spacing: -0.015em;
     text-wrap: balance;
   }
 
@@ -1062,6 +1112,24 @@ body::before {
   }
 
   /**
+   * Le texte d'une critique — la seconde et derniere apparition du serif.
+   *
+   * Ce que quelqu'un a **ecrit** n'est pas de l'interface : c'est du texte d'auteur, et il
+   * merite d'etre dessine comme tel. C'est la difference exacte entre un tracker qui stocke
+   * des avis et un magazine qui les publie — et elle ne coute qu'une declaration.
+   *
+   * ⚠️ `1.0625rem` et une interligne de 1,7 : un serif a la taille et a l'interligne du sans
+   * parait tasse, parce que ses empattements remplissent l'espace entre les lignes.
+   */
+  .review-prose {
+    font-family: var(--font-serif);
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--color-soft);
+    max-width: 68ch;
+  }
+
+  /**
    * La grille d'affiches — **le meme rythme sur les trois ecrans qui en rendent une**.
    *
    * L'accueil, la bibliotheque et « aussi par ce createur » rendent le meme objet : une
@@ -1445,6 +1513,52 @@ body::before {
   }
 
   /**
+   * =============================================================================
+   * La recherche s'inverse — la seule micro-interaction signature du produit
+   * =============================================================================
+   *
+   * Au repos c'est un creux sombre comme le reste ; au focus, le champ **bascule en clair**.
+   * Ce n'est pas un ornement : c'est le seul endroit de l'interface ou l'on tape du texte
+   * libre, et l'inversion dit sans un mot « c'est ici que ca se passe maintenant ».
+   *
+   * ⚠️ L'anneau de focus habituel est **retire ici, et remplace** — pas supprime. Un contour
+   * volt sur un fond blanc serait moins visible que le basculement lui-meme, qui change 100 %
+   * de la surface du champ. On ne perd donc rien en accessibilite ; on gagne un signal
+   * beaucoup plus gros. Le bouton, lui, garde le sien.
+   *
+   * 333 ms en exponentielle sortante : assez lent pour qu'on **voie** la bascule, assez rapide
+   * pour ne pas retarder la frappe.
+   */
+  .search-shell {
+    transition:
+      background-color 333ms var(--ease-out-expo),
+      border-color 333ms var(--ease-out-expo),
+      color 333ms var(--ease-out-expo);
+  }
+
+  .search-shell:focus-within {
+    background-color: var(--color-bright);
+    border-color: var(--color-bright);
+    /* L'encre du texte tape : une encre bleu-nuit et non du noir, pour rester dans la meme
+       famille que le reste du produit. */
+    color: #16202c;
+  }
+
+  .search-shell:focus-within .search-input::placeholder {
+    color: #6b7a8d;
+  }
+
+  .search-shell:focus-within .search-submit {
+    color: #0d7490;
+    border-color: rgb(0 0 0 / 0.14);
+  }
+
+  .search-shell:focus-within .search-submit:hover {
+    background-color: #16202c;
+    color: var(--color-bright);
+  }
+
+  /**
    * Le titre de section — un trait volt, un libelle en capitales, une phrase.
    *
    * Cette forme existait deja sur l'accueil, ecrite a la main. Elle est ici pour que la
@@ -1564,6 +1678,92 @@ body::before {
   .clamp-3 {
     -webkit-line-clamp: 3;
     line-clamp: 3;
+  }
+
+  /**
+   * =============================================================================
+   * L'affiche comme OBJET — la piece maitresse, et elle n'existait pas
+   * =============================================================================
+   *
+   * Les affiches vivaient dans un `.panel` : une bordure grise de 1 px, un fond de carte, la
+   * meme matiere qu'un panneau de reglages. Cinq cadres differents dans cinq fichiers, tous
+   * plats. Or c'est **le** composant du produit — celui qui occupe la majorite de l'ecran sur
+   * l'accueil, la bibliotheque et le generique.
+   *
+   * Trois choses, et les trois comptent :
+   *
+   * 1. **Un anneau interne clair**, pas une bordure sombre. Une bordure grise creuse un
+   *    contour ; un liseré clair a l'interieur fait un **bord eclaire**, donc un objet pose
+   *    sur la page plutot qu'un trou decoupe dedans.
+   * 2. **Deux ombres portees**, une courte et une longue. Une seule ombre donne un autocollant ;
+   *    deux donnent une distance au fond.
+   * 3. **Une echelle au survol**, courte et en exponentielle sortante. C'est ce qui rend une
+   *    grille vivante sans qu'aucune couleur ne bouge.
+   *
+   * ⚠️ **L'anneau est sur `::after` et non en `box-shadow: inset` sur le cadre.** Une ombre
+   * interne se peint sous le contenu : avec un `<img>` qui remplit la boite, elle serait
+   * entierement cachee. Le defaut serait invisible en relisant le CSS — la regle est la, elle
+   * ne rend simplement rien.
+   */
+  .poster-frame {
+    position: relative;
+    overflow: hidden;
+    /* Le rayon suit la taille : 8 px sur une affiche de 300 px et sur une vignette de 40 px
+       ne se lisent pas pareil — le second parait arrondi comme un bouton. */
+    border-radius: clamp(2px, 2.66%, 8px);
+    /* Le puits est **plus sombre** que la page : ce qu'on voit avant le chargement doit etre
+       un creux, pas une carte grise de la meme valeur que les panneaux. */
+    background-color: color-mix(in oklab, var(--color-ink) 85%, black);
+    box-shadow:
+      0 1px 5px rgb(0 0 0 / 0.25),
+      0 4px 16px rgb(0 0 0 / 0.35);
+    transition:
+      transform 140ms var(--ease-out-expo),
+      box-shadow 140ms var(--ease-out-expo);
+  }
+
+  .poster-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-bright) 22%, transparent);
+  }
+
+  /* Le survol repond aussi bien au cadre qu'au lien qui l'enveloppe : la moitie des grilles
+     posent le titre **sous** l'affiche, et survoler le titre doit animer l'affiche. */
+  .poster-frame:hover,
+  a:hover > .poster-frame,
+  a:focus-visible > .poster-frame,
+  .group:hover .poster-frame {
+    transform: scale(1.045);
+    box-shadow:
+      0 1px 5px rgb(0 0 0 / 0.25),
+      0 10px 28px rgb(0 0 0 / 0.45);
+    z-index: 2;
+  }
+
+  /* L'anneau prend l'accent quand l'objet est cible au clavier — le focus doit se voir sur
+     l'objet lui-meme, pas seulement sur le lien invisible qui l'entoure. */
+  a:focus-visible > .poster-frame::after,
+  .group:focus-visible .poster-frame::after {
+    box-shadow: inset 0 0 0 2px var(--color-volt);
+  }
+
+  /* ⚠️ Le grossissement disparait entierement pour qui refuse le mouvement : une grille de
+     soixante affiches qui bougent au passage de la souris est exactement ce que ce reglage
+     existe pour supprimer. L'anneau et les ombres restent — ce sont de la matiere, pas de
+     l'animation. */
+  @media (prefers-reduced-motion: reduce) {
+    .poster-frame,
+    .poster-frame:hover,
+    a:hover > .poster-frame,
+    .group:hover .poster-frame {
+      transform: none;
+      transition: none;
+    }
   }
 
   /**

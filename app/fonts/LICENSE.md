@@ -9,6 +9,12 @@ cette licence accompagne les fichiers — c'est l'objet de ce document.
 |---|---|---|
 | `InstrumentSans-Variable-latin.woff2` | Instrument Sans | The Instrument Sans Project Authors |
 | `IBMPlexMono-Regular-latin.woff2` | IBM Plex Mono | IBM Corp. — Reserved Font Name "Plex" |
+| `Newsreader-Variable-latin.woff2` | Newsreader | Production Type |
+
+Copyright 2019 The Newsreader Project Authors
+(https://github.com/productiontype/Newsreader) — sous SIL Open Font License 1.1,
+dont le texte figure ci-dessous. Ajoutee le 2026-08-11 comme **voix editoriale** :
+elle n'habille que l'accroche et le corps des critiques, jamais l'interface.
 
 ---
 
