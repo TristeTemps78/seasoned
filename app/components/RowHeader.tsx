@@ -13,7 +13,7 @@ export function RowHeader({ title, subtitle }: {
   return (
     <div className="section-title">
       <h2 className="row-title">{title}</h2>
-      <p className="text-sm text-(--color-muted)">{subtitle}</p>
+      <p className="meta">{subtitle}</p>
     </div>
   );
 }

@@ -121,7 +121,7 @@ export function TrajectorySection({
       {entryPoint !== undefined ? (
         <div className="mb-4 panel px-4 py-3">
           <p className="text-sm font-medium">{t('entry.title')}</p>
-          <p className="mt-1 text-sm text-(--color-muted)">
+          <p className="mt-1 meta">
             {tn('entry.body', entryPoint.skipped, {
               before: n(entryPoint.before, 1),
               after: n(entryPoint.after, 1),
@@ -161,7 +161,7 @@ export function TrajectorySection({
           />
 
           {hidden > 0 ? (
-            <p className="mt-4 text-xs text-(--color-muted)">{tn('traj.hidden', hidden)}</p>
+            <p className="mt-4 meta-sm">{tn('traj.hidden', hidden)}</p>
           ) : null}
         </div>
       ) : null}
@@ -184,7 +184,7 @@ export function TrajectorySection({
           {grid.length > 0 ? (
             <div className="mt-6 border-t border-(--color-edge) pt-5">
               <h3 className="card-title mb-3">{t('traj.episodeByEpisode')}</h3>
-              <p className="mb-3 text-xs text-(--color-muted)">{t('traj.clickHint')}</p>
+              <p className="mb-3 meta-sm">{t('traj.clickHint')}</p>
               <EpisodeGrid seriesId={seriesId} seasons={grid} />
             </div>
           ) : null}
@@ -214,7 +214,7 @@ export function TrajectorySection({
 
           {/* L'origine des notes remonte jusqu'ici : ce ne sont pas celles de ce
               produit, et les presenter autrement serait malhonnete. */}
-          <p className="mt-5 text-xs text-(--color-muted)">{t('traj.source')}</p>
+          <p className="mt-5 meta-sm">{t('traj.source')}</p>
         </div>
       </details>
     </section>

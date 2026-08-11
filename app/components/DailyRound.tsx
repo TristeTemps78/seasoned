@@ -141,7 +141,7 @@ export function DailyRound() {
     <section className="card space-y-4" aria-label={t('round.title')}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="card-title">{t('round.title')}</h2>
-        <span className="text-sm text-(--color-muted)">
+        <span className="meta">
           {t('round.progress', { n: String(ordinal) })}
         </span>
       </div>
@@ -232,7 +232,7 @@ function QuestionPrompt({
 
   if (kind === 'dates' && Array.isArray(prompt['dates'])) {
     return (
-      <ul className="flex flex-wrap gap-2 text-sm text-(--color-muted)">
+      <ul className="flex flex-wrap gap-2 meta">
         {(prompt['dates'] as unknown[]).filter((one) => typeof one === 'string').map((one) => (
           <li key={String(one)} className="panel px-3 py-1">
             {String(one)}

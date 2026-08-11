@@ -275,7 +275,7 @@ export async function SeriesView({ id, locale }: {
               ) : null}
             </h1>
             {detail.originalTitle !== undefined && detail.originalTitle !== detail.title ? (
-              <p className="text-sm text-(--color-muted)">{detail.originalTitle}</p>
+              <p className="meta">{detail.originalTitle}</p>
             ) : null}
           </div>
 
@@ -486,7 +486,7 @@ async function AlsoByCreators({ detail, locale }: {
           {t(locale, 'series.sameCreator')}
         </h2>
         {names.length > 0 ? (
-          <p className="text-sm text-(--color-muted)">{names}</p>
+          <p className="meta">{names}</p>
         ) : null}
       </div>
       <ul className="poster-grid">

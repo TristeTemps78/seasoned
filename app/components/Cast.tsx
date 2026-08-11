@@ -60,7 +60,7 @@ export function Cast({
                 pour les createurs. Un « rôle inconnu » sous un visage sur deux ferait de
                 l'encart un constat de lacune. */}
             {member.character === undefined ? null : (
-              <p className="clamp-2 text-xs text-(--color-muted)">{member.character}</p>
+              <p className="clamp-2 meta-sm">{member.character}</p>
             )}
           </li>
         ))}

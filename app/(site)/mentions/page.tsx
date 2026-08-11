@@ -78,8 +78,8 @@ export function LegalView({ locale }: { readonly locale: Locale }) {
 
       {/* Obligation contractuelle TMDB, et pas un ornement : le texte doit accompagner
           toute donnee TMDB affichee. */}
-      <p className="text-sm text-(--color-muted)">{t(locale, 'legal.tmdb')}</p>
-      <p className="text-sm text-(--color-muted)">{TMDB_ATTRIBUTION}</p>
+      <p className="meta">{t(locale, 'legal.tmdb')}</p>
+      <p className="meta">{TMDB_ATTRIBUTION}</p>
     </div>
   );
 }

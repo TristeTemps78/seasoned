@@ -62,3 +62,26 @@ export function codeIn(source: string): string {
 export function codeOf(file: string): string {
   return codeIn(readFileSync(file, 'utf8'));
 }
+
+/**
+ * Toute la feuille de style du produit, en une chaine.
+ *
+ * 🔴 **Cinq tests lisaient `app/globals.css` directement**, et les cinq sont tombes le jour ou
+ * ce fichier est devenu un simple point d'entree (segmentation du 2026-08-11) : ils
+ * cherchaient des regles dans un document qui n'en contient plus aucune.
+ *
+ * C'etait la bonne alerte — elle a vu le deplacement. Mais ce qu'ils protegent n'a jamais ete
+ * « la regle vit dans ce fichier-la » : c'est **« la regle existe quelque part »**. Meme lecon
+ * que `no-hardcoded-strings`, tombee quand le dictionnaire est passe de un fichier a trois.
+ *
+ * ⚠️ L'ordre est celui des `@import` de `globals.css` et non `readdirSync`, qui rendrait
+ * l'alphabetique : un test sur la cascade lirait sinon les regles dans un ordre que le
+ * navigateur ne voit jamais.
+ */
+export function styleSheet(): string {
+  const entry = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+  const parts = [...entry.matchAll(/@import\s+'\.\/(styles\/[a-z]+\.css)'/g)].map((m) => m[1] ?? '');
+  return parts
+    .map((relative) => readFileSync(join(ROOT, 'app', ...relative.split('/')), 'utf8'))
+    .join('\n');
+}

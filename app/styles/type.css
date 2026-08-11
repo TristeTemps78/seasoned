@@ -1,0 +1,388 @@
+/**
+ * La typographie — les crans de l'echelle, et eux seuls.
+ *
+ * Extrait de `globals.css` le 2026-08-11. Ce fichier ne contient que des regles
+ * DEPLACEES : aucune valeur n'a change, et le CSS compile est identique au bit pres
+ * avant/apres — c'est ce qui rend ce decoupage verifiable plutot que croyable.
+ */
+
+@layer components {
+  /* =============================================================================
+   * Le vocabulaire — les six formes que ce produit repete
+   * =============================================================================
+   *
+   * ## Pourquoi des classes et non des chaines Tailwind recopiees
+   *
+   * Le « bouton secondaire » etait la meme chaine de huit utilitaires, ecrite **onze fois**
+   * dans onze fichiers. Ce n'est pas un probleme de longueur : c'est qu'aucune des onze
+   * copies ne savait qu'elle etait une copie. Un ecran neuf en inventait une douzieme, un
+   * peu differente — et c'est exactement pour ca que l'application avait l'air bricolee :
+   * pas parce que chaque ecran etait laid, mais parce que **aucun ne ressemblait au
+   * suivant**.
+   *
+   * Ces classes sont donc la reponse a un constat, pas une preference d'ecriture : elles
+   * n'existent que pour des formes deja repetees trois fois ou plus. Rien n'a ete invente
+   * ici « au cas ou ».
+   */
+
+  /* =============================================================================
+   * L'echelle typographique — et TOUT titre porte un cran
+   * =============================================================================
+   *
+   * Il n'y avait pas d'echelle, il y avait des habitudes : `text-2xl font-semibold
+   * tracking-tight` recopie seize fois, `text-lg …` huit fois. Aucune copie ne savait
+   * qu'elle en etait une, donc chaque ecran neuf en inventait une variante — et plusieurs
+   * avaient fini par ecrire leur `h2` en `font-semibold` **nu**, c'est-a-dire a la taille
+   * exacte du corps de texte. Sur ces pages la hierarchie n'existait plus.
+   *
+   * `2.5/3.5rem` (accroche) · `1.875/2.25rem` · `1.375rem` · `1.25rem` · `1rem` · `0.875rem` ·
+   * `0.75rem` (etiquette) — un rapport d'environ 1.33 en haut, qui se resserre en bas.
+   *
+   * 🔴 **L'echelle precedente s'arretait a `2.25rem` et tenait tout entiere dans un rapport de
+   * 3** (0,75 → 2,25 rem) — sur un ecran, ca ne se lit pas comme une hierarchie, ca se lit
+   * comme un seul corps de texte legerement irregulier. Elle est portee a un rapport de
+   * **4,7** (0,75 → 3,5 rem).
+   *
+   * ⚠️ **Et les huit crans etaient en `font-weight: 600`, sans exception.** La taille etait
+   * donc la *seule* variable disponible pour distinguer deux rangs — c'est-a-dire celle qu'on
+   * ne peut pas beaucoup pousser sur une interface dense. Les crans hauts passent a `700`, les
+   * crans de panneau a `650`, l'etiquette gagne un `600` qu'elle n'avait pas du tout : la
+   * graisse porte desormais la moitie du travail, ce qui laisse la densite intacte.
+   *
+   * Chaque cran est range **avec la forme qu'il habille** plutot qu'ici : une valeur et sa
+   * raison qui vivent au meme endroit ne divergent pas. `tests/no-adhoc-typography.test.ts`
+   * tient la liste et refuse un titre **sans** cran autant qu'un titre a taille en dur —
+   * sans quoi rien ne voit qu'un titre a la taille d'un paragraphe.
+   */
+
+  /**
+   * Le cran qui domine une image — au-dessus de l'echelle. Deux emplois : l'accroche de
+   * l'accueil, et le titre pose sur une banniere. `.page-title` (1,75 rem) s'y perdrait.
+   *
+   * ⚠️ Aucun troisieme cran n'a ete cree pour la banniere : ce serait refaire `.tile-label`,
+   * retiree pour cause d'usage unique.
+   */
+  /* ⚠️ **Le seul titre en serif de tout le produit** (2026-08-11). L'accroche de l'accueil et
+     le titre pose sur une banniere sont les deux seuls endroits ou l'on **lit** avant
+     d'utiliser — c'est la definition qui decide, pas la taille. Les autres crans restent au
+     sans : un `h2` de section en serif ferait un blog, pas un magazine.
+
+     La graisse redescend a 600 : un serif a 700 sur 3,5 rem devient une masse noire, la ou le
+     sans avait besoin de 700 pour peser. Et l'interlettrage cesse d'etre negatif — un serif
+     resserre se referme sur ses empattements. */
+  .hero-title {
+    font-family: var(--font-serif);
+    font-size: 2.5rem;
+    line-height: 1.05;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  @media (width >= 40rem) {
+    .hero-title {
+      font-size: 3.5rem;
+    }
+  }
+  /**
+   * L'etiquette — un libelle en capitales qui ouvre un contenu sans lui disputer l'attention.
+   *
+   * 🔴 **Ecrite a la main DIX fois avant d'etre nommee**, et c'est le vrai defaut que la
+   * passe sur l'echelle n'avait pas vu : `text-xs uppercase tracking-wide
+   * text-(--color-muted)` dans neuf fichiers, plus une variante en `tracking-wider`. Le
+   * dépôt avait donc **quatre** tailles concurrentes pour un meme objet visuel, pendant
+   * qu'un cran etait cree pour une forme employee deux fois.
+   *
+   * ⚠️ Les capitales demandent un interlettrage **positif** — jamais `tracking-tight`, qui
+   * etait l'erreur de l'ancien titre de rangee. C'est la seule regle universelle ici ; la
+   * valeur exacte, elle, depend de la taille.
+   */
+  .label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  /**
+   * L'icone — dimensionnee par le texte, jamais en pixels.
+   *
+   * `1.15em` et non `1rem` : une icone posee dans une etiquette de 12 px et une icone posee
+   * dans un bouton de 14 px doivent grandir avec leur libelle, sinon l'une des deux parait
+   * collee. C'est la seule regle qui evite un `w-4 h-4` recopie a chaque emploi — exactement
+   * la duplication que `.label` a mis dix copies a se voir infliger.
+   *
+   * ⚠️ `flex-shrink: 0` : dans un `.btn` en flex, une icone se laisse ecraser a zero avant que
+   * le texte ne se coupe. On la voit alors « disparaitre » sur les libelles longs.
+   */
+  .icon {
+    width: 1.15em;
+    height: 1.15em;
+    flex-shrink: 0;
+  }
+  /** Le titre d'une page — un seul par page, c'est le `h1`. */
+  .page-title {
+    font-size: 1.875rem;
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    text-wrap: balance;
+  }
+  /* La montee ne se fait qu'a partir de 640 px : sur un telephone, `1.75rem` sur un titre
+     de deux lignes mange le tiers de la hauteur utile avant le moindre contenu. */
+  @media (width >= 40rem) {
+    .page-title {
+      font-size: 2.25rem;
+    }
+  }
+  /** Le titre d'une section — le `h2`. */
+  .section-heading {
+    font-size: 1.375rem;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  /**
+   * Le titre d'un panneau — `MyProgress`, `TasteCard`, `CalendarExport`…
+   *
+   * ⚠️ **Ce cran existait deja, ecrit `text-sm font-semibold` huit fois.** Il n'a pas ete
+   * invente ici : il a ete trouve en cherchant ce que le test anti-regression allait
+   * refuser.
+   *
+   * 🔴 **Il etait a `0.875rem`, c'est-a-dire SOUS le corps de texte**, et l'ancien commentaire
+   * defendait ce choix : « un panneau vit a l'interieur d'un ecran qui a deja un titre ». La
+   * premisse est vraie, la conclusion ne suivait pas. Un titre plus petit que le paragraphe
+   * qu'il coiffe ne se lit plus comme un titre — il se lit comme une legende, et les panneaux
+   * n'avaient donc **aucune** hierarchie interne. C'est le premier defaut nomme par Tristan le
+   * 2026-08-11 (« pas assez visuel »), et c'etait celui-la, mesurable, sur tout le produit.
+   *
+   * Il passe a `1rem` — a egalite de taille avec le corps — et c'est la **graisse** qui le
+   * distingue desormais, pas une reduction. Le rapport se lit encore, sans mentir sur le rang.
+   */
+  .card-title {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  /**
+   * La surface encadree — **la forme la plus repandue du produit, et elle n'avait pas de nom**.
+   *
+   * 🔴 `rounded-lg border border-(--color-edge) bg-(--color-surface)` etait recopie **19 fois**
+   * dans 18 fichiers, pendant que `.card` — extraite au 6.7 pour ce role — n'etait employee que
+   * 8 fois. Autrement dit : **71 % des surfaces du produit passaient par la forme qui n'est
+   * ecrite nulle part**, et le commentaire de `.card` affirmait pourtant « un seul rayon, une
+   * seule bordure, un seul fond dans toute l'application ».
+   *
+   * ⚠️ **Elle ne porte QUE la sous-couche** — rayon, bordure, fond — et laisse le rembourrage
+   * aux utilitaires, comme `.section-title` laisse la typographie a `.row-title`. C'est ce qui
+   * rend l'extraction **strictement neutre au pixel** : les dix-neuf sites gardaient deja des
+   * rembourrages differents (`py-4`, `py-3`, aucun), et trois surchargent l'opacite du fond
+   * (`/50`, `/70`) — ce que la couche `components` laisse gagner aux utilitaires.
+   *
+   * ✅ **La transition est finie (2026-08-07)** : `.card` rendait `0.75rem` et un fond a 80 %,
+   * `.panel` `0.5rem` et un fond opaque. C'est `.panel` qui l'a emporte, sur deux mesures
+   * — voir sa declaration plus haut, ou les deux selecteurs partagent desormais **une seule
+   * definition de forme**. `.card` n'ajoute plus que son rembourrage.
+   */
+
+  /** `/mentions`, `/confidentialite`, `/regles`, `/convertir` — les quatre pages de prose,
+      qui portaient `mx-auto max-w-2xl space-y-8 py-6` au caractere pres. */
+  .text-page {
+    margin-inline: auto;
+    max-width: 42rem;
+    padding-block: 1.5rem;
+  }
+  .text-page > * + * {
+    margin-top: 2rem;
+  }
+  /**
+   * Le paragraphe de commentaire — **cinq fois**, au mot pres.
+   *
+   * Ce que le produit dit *a cote* d'une donnee : l'explication sous un reglage, la phrase
+   * qui accompagne un etat vide, le synopsis. Toujours borne a `max-w-prose`, parce qu'une
+   * phrase sur 1080 px ne se lit pas, et toujours en `--color-muted`, parce que ce n'est
+   * jamais l'information principale.
+   */
+  /**
+   * =============================================================================
+   * 🔴 Le texte secondaire — decide 79 fois a la main, nulle part une seule fois
+   * =============================================================================
+   *
+   * Mesure du 2026-08-11 : `text-sm text-(--color-muted)` apparait **39 fois** et
+   * `text-xs text-(--color-muted)` **40 fois** dans `app/`. Soixante-dix-neuf endroits
+   * decident chacun de leur cote a quoi ressemble un texte secondaire.
+   *
+   * C'est la reponse a la question que Tristan pose depuis quatre passes — *pourquoi rien ne
+   * change quand tu changes quelque chose*. Je repeignais les jetons pendant que 79 sites
+   * gardaient leur propre avis sur la taille et la couleur. Un jeton ne peut pas corriger une
+   * decision qui a ete recopiee : il ne change que sa valeur, pas le fait qu'elle soit prise
+   * quatre-vingts fois.
+   *
+   * ⚠️ **Ce n'est pas de l'economie de caracteres.** Ces deux classes sont l'endroit ou l'on
+   * pourra desormais changer l'apparence de tout le texte secondaire du produit — teinte,
+   * taille, interligne — **en deux lignes**. C'est exactement ce que « pouvoir enfin changer
+   * des choses » veut dire.
+   *
+   * Deux crans et pas un : `.meta` accompagne une phrase, `.meta-sm` accompagne une donnee
+   * (date, compteur, mention). Meme couleur aujourd'hui, et c'est deliberé — les separer en
+   * taille suffit a hierarchiser, alors qu'un second gris plus sombre passerait sous le
+   * contraste AA a 12 px.
+   */
+  .meta {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+  .meta-sm {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--color-muted);
+  }
+  .prose-note {
+    max-width: 65ch;
+    line-height: 1.625;
+    color: var(--color-muted);
+  }
+  /**
+   * Le texte d'une critique — la seconde et derniere apparition du serif.
+   *
+   * Ce que quelqu'un a **ecrit** n'est pas de l'interface : c'est du texte d'auteur, et il
+   * merite d'etre dessine comme tel. C'est la difference exacte entre un tracker qui stocke
+   * des avis et un magazine qui les publie — et elle ne coute qu'une declaration.
+   *
+   * ⚠️ `1.0625rem` et une interligne de 1,7 : un serif a la taille et a l'interligne du sans
+   * parait tasse, parce que ses empattements remplissent l'espace entre les lignes.
+   */
+  .review-prose {
+    font-family: var(--font-serif);
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--color-soft);
+    max-width: 68ch;
+  }
+  /**
+   * Sortir de la colonne de 1024 px imposee par `<main>` — pour les **grilles**, jamais pour
+   * le texte : une phrase sur 1248 px ne se lit pas, ce que `.prose-note` dit deja.
+   *
+   * `margin-inline: calc(50% - 50vw)` annule la colonne ; le rembourrage recentre ensuite le
+   * contenu sur `--w-bleed`, donc l'image occupe toute la largeur pendant que ce qui se lit
+   * reste borne. ⚠️ Ne marche qu'avec `overflow-x: clip` sur `body` — voir la-bas.
+   */
+  .bleed {
+    /* 90 rem et non 80 : les captures du 2026-08-11 montrent un tiers d'ecran vide a droite
+       sur un moniteur large, colonne comprise. */
+    --w-bleed: 90rem;
+    margin-inline: calc(50% - 50vw);
+    padding-inline: max(1rem, calc(50vw - var(--w-bleed) / 2));
+  }
+  /* Le titre d'un ecran vide est un cran sous celui d'une section : il ouvre une page qui
+     n'a rien a hierarchiser, donc il annonce sans peser.
+
+     ⚠️ **`/hors-ligne` fait exception et porte `.page-title`, ce qui n'est pas une
+     divergence.** Les quatre autres ecrans vides vivent *a l'interieur* d'une page qui a
+     deja son `h1` — d'ou le cran en dessous, pour ne pas offrir deux titres de meme poids a
+     la premiere lecture. `/hors-ligne` **est** une page, et ce titre est son seul `h1` : le
+     mettre a `1rem` laisserait un ecran sans titre du tout. Meme regle, deux situations. */
+  .empty-state-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  /* ⚠️ Il n'y a plus de `.tile-label` : elle etait `.label` a `0.0625rem` pres, avec **un
+     seul** usage — le meme defaut que `.section-title` extraite et employee nulle part. La
+     tuile emploie donc `.label`, ce qui fait grossir son libelle de 11 px a 12 px. */
+
+  .tile-value {
+    margin-top: 0.375rem;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.125rem;
+    line-height: 1.4;
+    text-wrap: balance;
+  }
+  /**
+   * Le titre de section — un trait volt, un libelle en capitales, une phrase.
+   *
+   * Cette forme existait deja sur l'accueil, ecrite a la main. Elle est ici pour que la
+   * prochaine section lui ressemble sans avoir a la retrouver.
+   *
+   * ⚠️ **Elle ne porte que la FORME** — le filet et son retrait. La typographie du libelle
+   * vit dans `.row-title`, un cran nomme, pose sur le titre lui-meme.
+   */
+  .section-title {
+    /* ⚠️ **60 %, pas 100 %.** L'accueil portait ce filet a `--color-volt/60` et c'est cette
+       version-la qui a ete regardee et jugee bonne ; la classe extraite au 6.7 avait pris
+       le volt plein sans que personne le voie, puisqu'elle n'etait utilisee nulle part.
+       Trois filets de cyan sature empiles sur une meme page se disputent l'attention des
+       affiches, ce que « l'affiche est l'interface » interdit. */
+    border-left: 2px solid color-mix(in oklab, var(--color-volt) 60%, transparent);
+    padding-left: 0.75rem;
+  }
+  /**
+   * Le libelle qui ouvre une grille d'affiches.
+   *
+   * Une classe nommee, et non `.section-title > :first-child` : un selecteur positionnel se
+   * defait en inserant n'importe quoi avant le titre, sans erreur et sans test.
+   *
+   * `0.8125rem` en capitales, decide le 2026-08-05 : sur un ecran ou « l'affiche est
+   * l'interface », un titre de rangee qui pese autant qu'une affiche prend une place qui
+   * n'est pas la sienne. Une etiquette **ouvre** la grille au lieu de la concurrencer.
+   */
+  .row-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  /**
+   * Le total du bilan — le seul chiffre du produit qui domine le titre de sa page.
+   *
+   * Deliberement au-dessus de `.page-title` : une page dont l'etiquette (« Mon bilan ») pese
+   * plus que son contenu (« au moins 537 heures ») annonce quelque chose qu'elle ne montre
+   * pas. C'est un cran nomme et non `text-3xl` en dur, parce que c'est le plus grand texte
+   * du produit hors accroche et qu'il n'a aucune raison d'echapper a l'echelle.
+   *
+   * ⚠️ Il domine `.page-title` **aux deux paliers** depuis le 2026-08-11 (2,25 contre 1,875 rem
+   * sur telephone, 3 contre 2,25 au-dela). L'ancienne note d'inquietude — « la premisse ne vaut
+   * qu'au-dessus de 640 px » — ne s'applique plus : les deux crans montent ensemble.
+   */
+  .tally-figure {
+    font-size: 2.25rem;
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    text-wrap: balance;
+  }
+  /* ⚠️ **Le palier est ici, et pas l'inverse.** « au moins 537 heures » a 3 rem dans une carte
+     de 360 px part sur quatre lignes : le chiffre le plus important du produit deviendrait le
+     plus illisible. On monte a partir de 640 px, ou la place existe. */
+  @media (width >= 40rem) {
+    .tally-figure {
+      font-size: 3rem;
+    }
+  }
+  /**
+   * Deux lignes, puis des points de suspension.
+   *
+   * ⚠️ Ce n'est pas cosmetique : « The Rookie : Le Flic de » coupe net au milieu d'un mot
+   * est **faux**, on ne sait plus de quelle serie il s'agit. Deux lignes suffisent a la
+   * quasi-totalite des titres, et le reste s'annonce comme tronque au lieu de mentir.
+   */
+  .clamp-2,
+  .clamp-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .clamp-2 {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  /* Trois lignes pour un synopsis, deux pour un titre : ce n'est pas le meme objet. Un
+     resume coupe a deux lignes ne dit rien du sujet, la ou un titre coupe a trois occupe la
+     place d'une affiche. La forme est declaree une fois, seul le nombre de lignes differe. */
+  .clamp-3 {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+}

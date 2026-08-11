@@ -58,7 +58,7 @@ export function ForeignImport() {
         >
           {t('convert.pick')}
         </button>
-        <span className="text-xs text-(--color-muted)">{t('convert.local')}</span>
+        <span className="meta-sm">{t('convert.local')}</span>
 
         {/* Mecanique du bouton, pas un controle : `sr-only` le cache a l'oeil mais le
             laisse focalisable et **sans nom** au clavier. Voir `JournalTransfer`, meme

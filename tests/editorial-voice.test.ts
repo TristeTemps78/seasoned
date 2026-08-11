@@ -1,7 +1,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { ROOT, codeOf, filesUnder, pathOf } from './sources';
+import { ROOT, codeOf, filesUnder, pathOf, styleSheet } from './sources';
 
 /**
  * La voix editoriale — deux emplois, et pas un de plus (2026-08-11).
@@ -17,7 +17,7 @@ import { ROOT, codeOf, filesUnder, pathOf } from './sources';
  * s'affiche parfaitement.
  */
 
-const CSS = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+const CSS = styleSheet();
 
 /** Les deux seuls crans autorises a porter `--font-serif`. */
 const AUTORISES = ['.hero-title', '.review-prose'] as const;

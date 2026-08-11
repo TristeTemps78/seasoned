@@ -127,7 +127,7 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                   {/* Le fait reste, le contenu non. Retirer la ligne entiere ferait un fil a
                       trous, qui est lui-meme un indice — savoir qu'il EXISTE une critique de
                       la saison 6 n'en revele pas le contenu. */}
-                  <p className="text-sm text-(--color-muted)">
+                  <p className="meta">
                     {review.target === 'series'
                       ? t('review.hiddenSeries')
                       : t('review.hidden', { n: review.throughSeason })}

@@ -58,7 +58,7 @@ export function ResumeStrip() {
         </span>
       ) : null}
 
-      <span className="ml-auto text-xs text-(--color-muted)">{t('resume.library')}</span>
+      <span className="ml-auto meta-sm">{t('resume.library')}</span>
     </Link>
   );
 }

@@ -1,0 +1,203 @@
+/**
+ * Les controles — boutons, champs, recherche, icones, cases.
+ *
+ * Extrait de `globals.css` le 2026-08-11. Ce fichier ne contient que des regles
+ * DEPLACEES : aucune valeur n'a change, et le CSS compile est identique au bit pres
+ * avant/apres — c'est ce qui rend ce decoupage verifiable plutot que croyable.
+ */
+
+@layer components {
+  /**
+   * Le bouton.
+   *
+   * Une seule forme, deux niveaux d'insistance.
+   *
+   * 🔴 **`.btn-primary` etait un contour**, et l'ancien commentaire le defendait ainsi : « un
+   * aplat de cyan sature a cote d'une affiche TMDB gagne toujours l'attention ». C'est vrai,
+   * et c'etait le but manque : sur un ecran ou l'on doit reperer *l'action a faire*, le bouton
+   * principal etait dessine exactement comme le secondaire, a 8 % de fond pres. Personne ne
+   * voyait par ou commencer — le meme defaut que les trois rangees identiques de l'accueil.
+   *
+   * Il porte desormais l'aplat plein et une encre sombre. ⚠️ Le texte passe a `--color-ink` :
+   * du volt sur du volt serait illisible, et `.btn:hover` pose `color: var(--color-volt)` —
+   * d'ou la surcharge explicite dans l'etat de survol juste en dessous, sans quoi le libelle
+   * disparaitrait au passage de la souris.
+   */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-edge);
+    background-color: color-mix(in oklab, var(--color-surface) 70%, transparent);
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    color: var(--color-text);
+    /* La lumiere des surfaces, en plus discret : un bouton est petit. */
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--color-text) 8%, transparent),
+      0 1px 2px -1px rgb(0 0 0 / 0.5);
+    transition:
+      border-color 160ms ease,
+      color 160ms ease,
+      background-color 160ms ease;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: color-mix(in oklab, var(--color-volt) 55%, transparent);
+    color: var(--color-volt);
+  }
+  /*
+   * ⚠️ La hauteur tactile, mesuree le 2026-08-04 a 360 px : les boutons faisaient **38 px**.
+   * Apple recommande 44 px, Android 48 px. Le rembourrage seul ne peut pas y suffire sans
+   * grossir le texte, d'ou une hauteur minimale — et **seulement sur mobile**, parce qu'un
+   * bouton de 44 px de haut a la souris est simplement gros.
+   *
+   * Le rembourrage vertical descend a `0.375rem` pour que le libelle reste centre sans que
+   * la boite ne depasse la hauteur demandee sur deux lignes.
+   */
+  @media (width < 40rem) {
+    .btn {
+      min-height: 2.75rem;
+      padding-block: 0.375rem;
+    }
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    border-color: var(--color-volt);
+    background-color: var(--color-volt);
+    color: var(--color-ink);
+    font-weight: 650;
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, white 35%, transparent),
+      0 0.5rem 1.25rem -0.75rem color-mix(in oklab, var(--color-volt) 90%, transparent);
+  }
+  .btn-primary:hover:not(:disabled) {
+    border-color: color-mix(in oklab, var(--color-volt) 70%, white);
+    background-color: color-mix(in oklab, var(--color-volt) 70%, white);
+    /* ⚠️ Sans cette ligne, `.btn:hover` repeindrait le libelle en volt — sur un fond volt. */
+    color: var(--color-ink);
+  }
+  /** Le bouton d'un geste qu'on ne defait pas. */
+  .btn-danger {
+    border-color: color-mix(in oklab, var(--color-warn) 45%, transparent);
+    color: var(--color-warn);
+  }
+  .btn-danger:hover:not(:disabled) {
+    border-color: var(--color-warn);
+    color: var(--color-warn);
+  }
+  /** Un bouton deja choisi — l'etat, pas l'action. */
+  .btn[aria-pressed='true'] {
+    border-color: color-mix(in oklab, var(--color-volt) 55%, transparent);
+    color: var(--color-volt);
+    background-color: color-mix(in oklab, var(--color-volt) 10%, transparent);
+  }
+  /**
+   * L'action qui defait — ne plus suivre, annuler une marque, masquer ses heures. Elle ne
+   * doit pas peser autant qu'un `.btn`. Recopiee quatre fois avant d'etre nommee.
+   */
+  .quiet-action {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    transition: color 160ms ease;
+  }
+  .quiet-action:hover {
+    color: var(--color-text);
+  }
+  /** Le champ de saisie — **le seul element qui s'enfonce** : meme lumiere venue d'en haut
+      que les surfaces et les boutons, mais recue en dedans. ⚠️ L'anneau de focus est
+      **volt** : il etait vert par endroits, la couleur qui signifie « en diffusion ». */
+  .field {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-edge);
+    background-color: color-mix(in oklab, var(--color-surface) 70%, transparent);
+    box-shadow: inset 0 2px 4px -2px rgb(0 0 0 / 0.7);
+    padding: 0.625rem 0.875rem;
+    color: var(--color-text);
+    transition: border-color 160ms ease;
+  }
+  .field::placeholder {
+    color: var(--color-muted);
+  }
+  .field:hover {
+    border-color: color-mix(in oklab, var(--color-volt) 35%, transparent);
+  }
+  /**
+   * =============================================================================
+   * La recherche s'inverse — la seule micro-interaction signature du produit
+   * =============================================================================
+   *
+   * Au repos c'est un creux sombre comme le reste ; au focus, le champ **bascule en clair**.
+   * Ce n'est pas un ornement : c'est le seul endroit de l'interface ou l'on tape du texte
+   * libre, et l'inversion dit sans un mot « c'est ici que ca se passe maintenant ».
+   *
+   * ⚠️ L'anneau de focus habituel est **retire ici, et remplace** — pas supprime. Un contour
+   * volt sur un fond blanc serait moins visible que le basculement lui-meme, qui change 100 %
+   * de la surface du champ. On ne perd donc rien en accessibilite ; on gagne un signal
+   * beaucoup plus gros. Le bouton, lui, garde le sien.
+   *
+   * 333 ms en exponentielle sortante : assez lent pour qu'on **voie** la bascule, assez rapide
+   * pour ne pas retarder la frappe.
+   */
+  .search-shell {
+    transition:
+      background-color 333ms var(--ease-out-expo),
+      border-color 333ms var(--ease-out-expo),
+      color 333ms var(--ease-out-expo);
+  }
+  .search-shell:focus-within {
+    background-color: var(--color-bright);
+    border-color: var(--color-bright);
+    /* L'encre du texte tape : une encre bleu-nuit et non du noir, pour rester dans la meme
+       famille que le reste du produit. */
+    color: var(--color-invert-ink);
+  }
+  .search-shell:focus-within .search-input::placeholder {
+    color: var(--color-invert-muted);
+  }
+  .search-shell:focus-within .search-submit {
+    color: var(--color-invert-accent);
+    border-color: rgb(0 0 0 / 0.14);
+  }
+  .search-shell:focus-within .search-submit:hover {
+    background-color: var(--color-invert-ink);
+    color: var(--color-bright);
+  }
+  /**
+   * La case de la grille d'episodes — 32 px au doigt, 20 px a la souris.
+   *
+   * 20 px est tres en dessous des 44 px recommandes, sur le geste le plus fin du produit :
+   * noter un episode. Mesure au navigateur le 2026-08-05 sur `/fr/serie/1396` (**16
+   * colonnes**, pas 62 — 62 est le nombre total d'episodes) : la table fait **375 px** a
+   * 20 px, 565 a 32, 757 a 44, contre ~328 px utiles a 360 px. On prend **32** : +156 % de
+   * surface tactile pour 1,7 ecran de defilement au lieu de 1,1, dans un conteneur qui
+   * defile deja. 44 px ne vaut pas ses 2,3 ecrans.
+   *
+   * ⚠️ Le cas qui ferait ceder la densite n'est pas *Breaking Bad* mais la **saison unique
+   * de ~200 episodes** (~6 800 px a 32 px). Ce serait alors un seuil sur `widest`, pas un
+   * retour a 20 px partout.
+   *
+   * Meme patron que `.btn` : base bureau, surcharge sous 640 px. Une seule declaration pour
+   * les trois nœuds concernes (case vide, case pleine, bouton), qui **doivent** s'accorder —
+   * sans quoi la boite et son bouton ont deux tailles, silencieusement.
+   */
+  .grid-cell {
+    height: 1.25rem;
+    width: 1.25rem;
+  }
+  @media (width < 40rem) {
+    .grid-cell {
+      height: 2rem;
+      width: 2rem;
+    }
+  }
+}

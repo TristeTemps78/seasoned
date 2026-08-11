@@ -58,7 +58,7 @@ export function AccountPanel() {
         </button>
       </section>
 
-      <p className="max-w-prose text-sm text-(--color-muted)">{t('account.notSynced')}</p>
+      <p className="max-w-prose meta">{t('account.notSynced')}</p>
 
       <StopMapConsent />
 

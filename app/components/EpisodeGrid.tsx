@@ -242,13 +242,13 @@ export function EpisodeGrid({ seriesId, seasons }: {
             }
           />
 
-          <span className="text-xs text-(--color-muted)">
+          <span className="meta-sm">
             {t('grid.publicShort')}&nbsp;: {n(selected.voteAverage, 1)}/10
           </span>
         </div>
       ) : null}
 
-      <p className="flex items-center gap-2 text-xs text-(--color-muted)">
+      <p className="flex items-center gap-2 meta-sm">
         {layer === 'mine' ? (
           <>
             <span>{n(0.5, 1)}</span>

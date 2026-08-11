@@ -120,7 +120,7 @@ export function SiteChrome({ locale, Messages, children }: {
                 est pas une. Un reglage se range avec les reglages. */}
             <Link
               href={pathIn('/compte', locale)}
-              className="flex shrink-0 items-center gap-1.5 text-xs text-(--color-muted) hover:text-(--color-text)"
+              className="flex shrink-0 items-center gap-1.5 meta-sm hover:text-(--color-text)"
             >
               <Icon name="user" />
               {t(locale, 'account.nav')}
@@ -152,7 +152,7 @@ export function SiteChrome({ locale, Messages, children }: {
 
         <footer className="border-t border-(--color-edge) mt-12">
           {/* Meme largeur que l'en-tete, pour la meme raison. */}
-          <div className="mx-auto max-w-7xl px-4 py-6 text-xs text-(--color-muted) space-y-1">
+          <div className="mx-auto max-w-7xl px-4 py-6 meta-sm space-y-1">
             {/* Un lien depuis chaque page, et pas seulement depuis la bibliotheque :
                 ceux qui cherchent ou remettre leur historique n'ont, par definition,
                 pas encore de bibliotheque. Et un moteur ne trouve une page que si

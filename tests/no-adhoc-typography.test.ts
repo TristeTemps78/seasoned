@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
-import { codeIn } from './sources';
+import { codeIn, styleSheet } from './sources';
 
 /**
  * Tout titre de `app/` porte un cran de l'echelle. Aucun ne redecide sa taille sur place.
@@ -139,6 +139,6 @@ it('l echelle lue est bien celle du depot', () => {
 
   // Et que les crans existent reellement dans la feuille de style — sans quoi le test
   // protegerait une echelle qui n'est plus definie nulle part.
-  const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+  const css = styleSheet();
   for (const cran of SCALE) expect(css).toContain(`.${cran} {`);
 });

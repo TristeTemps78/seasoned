@@ -141,7 +141,7 @@ function Row({ episode, now, posterPath }: {
       <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         {title}
         <span className="flex items-baseline gap-3">
-          <span className="text-sm text-(--color-muted)">
+          <span className="meta">
             {formatDate(episode.airsOn, locale)}
           </span>
           {/* Le temps restant est un chiffre : il va dans la grille, comme partout ailleurs. */}

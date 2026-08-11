@@ -95,7 +95,7 @@ export function TasteCard({ profile, journalTitles = {} }: {
         ) : null}
       </dl>
 
-      <p className="text-xs text-(--color-muted)">
+      <p className="meta-sm">
         {tn('taste.basis', profile.seasonRatings, {
           extra:
             profile.episodeRatings > 0
@@ -117,7 +117,7 @@ function Figure({ label, value, hint }: {
       <dt className="label">{label}</dt>
       <dd className="mt-0.5 text-lg font-semibold">{value}</dd>
       {hint !== undefined ? (
-        <dd className="text-xs text-(--color-muted)">{hint}</dd>
+        <dd className="meta-sm">{hint}</dd>
       ) : null}
     </div>
   );

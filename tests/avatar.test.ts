@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { ROOT } from './sources';
+import { styleSheet } from './sources';
 import { AVATAR_HUES, avatarHue, avatarInitials } from '@/app/components/Avatar';
 
 /**
@@ -35,7 +33,7 @@ it('la teinte tombe toujours dans la plage declaree par la feuille de style', ()
 it('les huit teintes existent reellement dans la feuille', () => {
   // Sans quoi le composant designerait des regles absentes, et tous les avatars seraient gris
   // sans qu'aucun test ne bouge.
-  const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+  const css = styleSheet();
   for (let hue = 1; hue <= AVATAR_HUES; hue += 1) {
     expect(css).toContain(`--color-hue-${hue}:`);
     expect(css).toContain(`.avatar[data-hue='${hue}']`);

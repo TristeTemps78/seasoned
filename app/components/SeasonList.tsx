@@ -78,7 +78,7 @@ export function SeasonList({ seasons, locale = DEFAULT_LOCALE }: {
               <span className="font-medium">
                 {t(locale, 'seasons.seasonN', { n: season.ref.seasonNumber })}
               </span>
-              <span className="text-sm text-(--color-muted)">
+              <span className="meta">
                 {tn(locale, 'series.episodes', season.episodeCount)}
                 {season.airedFrom !== undefined
                   ? ` · ${formatDate(season.airedFrom, locale)}`
@@ -90,7 +90,7 @@ export function SeasonList({ seasons, locale = DEFAULT_LOCALE }: {
       )}
 
       {seasons.specials.length > 0 ? (
-        <p className="text-sm text-(--color-muted)">{t(locale, 'seasons.specials')}</p>
+        <p className="meta">{t(locale, 'seasons.specials')}</p>
       ) : null}
     </section>
   );

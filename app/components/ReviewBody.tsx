@@ -44,7 +44,7 @@ export function ReviewBody({
   if (hidden && !revealed) {
     return (
       <div className="space-y-2">
-        <p className="text-sm text-(--color-muted)">
+        <p className="meta">
           {throughSeason > 0 ? t('review.hidden', { n: throughSeason }) : t('review.hiddenSeries')}
         </p>
         <button type="button" className="btn" onClick={() => setRevealed(true)}>

@@ -269,7 +269,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
       {/* Niveau 1 — la position, qui n'apparait qu'une fois la serie commencee. */}
       {position !== undefined ? (
         <div className="flex flex-wrap items-center gap-2 border-t border-(--color-edge) pt-3">
-          <label className="text-sm text-(--color-muted)" htmlFor="season">
+          <label className="meta" htmlFor="season">
             {t('progress.season')}
           </label>
           <select
@@ -291,7 +291,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
 
           {current !== undefined ? (
             <>
-              <label className="text-sm text-(--color-muted)" htmlFor="episode">
+              <label className="meta" htmlFor="episode">
                 {t('progress.episode')}
               </label>
               <select
@@ -308,7 +308,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
                   </option>
                 ))}
               </select>
-              <span className="text-xs text-(--color-muted)">{t('progress.orGrid')}</span>
+              <span className="meta-sm">{t('progress.orGrid')}</span>
             </>
           ) : null}
         </div>

@@ -80,7 +80,7 @@ export function CalendarExport() {
         >
           {t('calendar.download')}
         </button>
-        <span className="text-xs text-(--color-muted)">
+        <span className="meta-sm">
           {tn('calendar.count', upcoming.length)}
         </span>
         {saved ? (

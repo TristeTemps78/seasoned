@@ -67,7 +67,7 @@ export function Discover() {
   return (
     <section className="card space-y-3" aria-label={t('discover.aria')}>
       <h2 className="card-title">{t('discover.title')}</h2>
-      <p className="text-sm text-(--color-muted)">{t('discover.why')}</p>
+      <p className="meta">{t('discover.why')}</p>
       <ul className="flex flex-wrap gap-2">
         {others.map((person) => (
           <li key={person.userId} className="flex items-center gap-1">
@@ -86,7 +86,7 @@ export function Discover() {
                 publie** : « 0 à lire » annoncerait le vide au lieu de se taire, et ce sont
                 justement eux que le tri a deja renvoyes en fin de liste. */}
             {person.wrote > 0 ? (
-              <span className="text-xs text-(--color-muted)">{tn('discover.wrote', person.wrote)}</span>
+              <span className="meta-sm">{tn('discover.wrote', person.wrote)}</span>
             ) : null}
           </li>
         ))}

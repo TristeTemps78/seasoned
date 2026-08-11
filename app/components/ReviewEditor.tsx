@@ -65,7 +65,7 @@ export function ReviewEditor({ seriesId, seasonNumber, canPublish }: {
 
   return (
     <div className="w-full space-y-2">
-      <label className="block text-sm text-(--color-muted)" htmlFor={`review-${target}`}>
+      <label className="block meta" htmlFor={`review-${target}`}>
         {label}
       </label>
       <textarea
@@ -78,7 +78,7 @@ export function ReviewEditor({ seriesId, seasonNumber, canPublish }: {
       />
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-xs text-(--color-muted)">
+        <span className="meta-sm">
           {text.trim().length} / {MAX_REVIEW_CHARS}
         </span>
 
@@ -117,7 +117,7 @@ export function ReviewEditor({ seriesId, seasonNumber, canPublish }: {
 
       {/* ⛔ Le verrou legal. On peut ecrire sans, jamais publier : sans adresse de contact,
           il n'existe aucune voie de recours — meme raison qui ferme la face « Mes amis ». */}
-      {!canPublish ? <p className="text-xs text-(--color-muted)">{t('review.publishLocked')}</p> : null}
+      {!canPublish ? <p className="meta-sm">{t('review.publishLocked')}</p> : null}
     </div>
   );
 }

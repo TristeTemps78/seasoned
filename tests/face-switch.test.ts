@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { styleSheet } from './sources';
 import {
   announceFace,
   EMPTY_JOURNAL,
@@ -119,7 +120,7 @@ describe('la bascule est annoncee depuis toutes les pages', () => {
   /** Le mouvement se retire pour qui le refuse : un objet qui tourne deux fois sur lui-meme
    *  est exactement ce que ce reglage existe pour supprimer. */
   it('le retournement respecte prefers-reduced-motion', () => {
-    const css = readFileSync('app/globals.css', 'utf8');
+    const css = styleSheet();
     const reduced = css.slice(css.indexOf('.mark[data-turning]'));
     expect(reduced).toContain('prefers-reduced-motion');
     expect(reduced.slice(reduced.indexOf('prefers-reduced-motion'))).toContain('data-turning');

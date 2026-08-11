@@ -98,7 +98,7 @@ export function OrderingNotice({
         </ul>
       </div>
 
-      <p className="text-xs text-(--color-muted)">{t(locale, 'ordering.caution')}</p>
+      <p className="meta-sm">{t(locale, 'ordering.caution')}</p>
     </section>
   );
 }

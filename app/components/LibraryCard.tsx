@@ -72,7 +72,7 @@ export function LibraryCard({ item, lead = false }: {
         {item.snapshot?.title ?? t('library.card.tracked')}
       </p>
 
-      <p className="text-xs text-(--color-muted)">
+      <p className="meta-sm">
         {item.daysUntilNext !== undefined ? (
           // Le chiffre est la valeur : « dans 3 jours » repond a la question qu'on se
           // pose, la ou « en cours » ne dit rien.

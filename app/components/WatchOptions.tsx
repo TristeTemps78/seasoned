@@ -88,7 +88,7 @@ export function WatchOptions({ byRegion, fallbackRegion }: {
 
       {/* Obligation contractuelle : TMDB agrege ces donnees depuis JustWatch et impose de
           le citer partout ou elles apparaissent. */}
-      <p className="text-xs text-(--color-muted)">
+      <p className="meta-sm">
         {JUSTWATCH_ATTRIBUTION}
         {shown.length === 1
           ? ` ${t('watch.region', { region: regionName(shown[0]!.region, locale) })}`

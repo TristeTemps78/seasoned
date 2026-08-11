@@ -114,7 +114,7 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE, size = 'w3
         {series.title}
       </p>
       {firstYear !== undefined ? (
-        <p className="numeric text-xs text-(--color-muted)">{firstYear}</p>
+        <p className="numeric meta-sm">{firstYear}</p>
       ) : null}
     </Link>
   );

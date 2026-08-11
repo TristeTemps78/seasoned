@@ -35,7 +35,7 @@ export function ReportButton({ onReport }: {
   const [failed, setFailed] = useState(false);
 
   if (state === 'sent') {
-    return <span className="text-xs text-(--color-muted)">{t('report.sent')}</span>;
+    return <span className="meta-sm">{t('report.sent')}</span>;
   }
 
   if (state !== 'open') {
@@ -43,7 +43,7 @@ export function ReportButton({ onReport }: {
       <button
         type="button"
         onClick={() => setState('open')}
-        className="text-xs text-(--color-muted) underline-offset-2 hover:text-(--color-warn) hover:underline"
+        className="meta-sm underline-offset-2 hover:text-(--color-warn) hover:underline"
       >
         {t('report.open')}
       </button>
@@ -52,7 +52,7 @@ export function ReportButton({ onReport }: {
 
   return (
     <div className="mt-2 space-y-1 border-t border-(--color-edge) pt-2">
-      <p className="text-xs text-(--color-muted)">{t('report.which')}</p>
+      <p className="meta-sm">{t('report.which')}</p>
       {REPORT_GROUNDS.map((ground) => (
         <button
           key={ground}
@@ -63,7 +63,7 @@ export function ReportButton({ onReport }: {
               if (ok) setState('sent');
             });
           }}
-          className="block w-full rounded-md px-2 py-1 text-left text-xs text-(--color-muted) hover:bg-(--color-surface) hover:text-(--color-text)"
+          className="block w-full rounded-md px-2 py-1 text-left meta-sm hover:bg-(--color-surface) hover:text-(--color-text)"
         >
           {t(`rules.ground.${ground}`)}
         </button>
@@ -74,7 +74,7 @@ export function ReportButton({ onReport }: {
           setFailed(false);
           setState('idle');
         }}
-        className="px-2 py-1 text-xs text-(--color-muted) hover:text-(--color-text)"
+        className="px-2 py-1 meta-sm hover:text-(--color-text)"
       >
         {t('report.cancel')}
       </button>

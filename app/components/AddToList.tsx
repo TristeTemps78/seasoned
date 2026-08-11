@@ -84,7 +84,7 @@ export function AddToList({ seriesId }: { readonly seriesId: string }) {
         lists.length === 0 ? (
           // On ne propose pas de creer une liste ici : ce serait un second formulaire a tenir
           // d'accord avec celui de `/listes`. Un lien y mene.
-          <p className="text-sm text-(--color-muted)">
+          <p className="meta">
             {t('addToList.none')}{' '}
             <Link className="underline hover:text-(--color-volt)" href={pathIn('/listes', locale)}>
               {t('addToList.goToLists')}

@@ -190,7 +190,7 @@ export function DataSafety() {
           {t('safety.title')}
           <span
             aria-hidden="true"
-            className="ml-auto text-xs text-(--color-muted) transition-transform group-open:rotate-180"
+            className="ml-auto meta-sm transition-transform group-open:rotate-180"
           >
             ▾
           </span>
@@ -222,7 +222,7 @@ export function DataSafety() {
         <button
           type="button"
           onClick={dismiss}
-          className="rounded-md px-3 py-1.5 text-sm text-(--color-muted) hover:text-(--color-ink)"
+          className="rounded-md px-3 py-1.5 meta hover:text-(--color-ink)"
         >
           {t('safety.later')}
         </button>
@@ -231,9 +231,9 @@ export function DataSafety() {
       {/* iOS n'expose aucun evenement d'installation : la seule voie est le geste manuel,
           donc on l'explique au lieu de proposer un bouton qui ne ferait rien. */}
       {prompt === undefined && isApple() ? (
-        <p className="text-xs text-(--color-muted)">{t('safety.iosHint')}</p>
+        <p className="meta-sm">{t('safety.iosHint')}</p>
       ) : (
-        <p className="text-xs text-(--color-muted)">{t('safety.installWhy')}</p>
+        <p className="meta-sm">{t('safety.installWhy')}</p>
       )}
 
       {saved ? (

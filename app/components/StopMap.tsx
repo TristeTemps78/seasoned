@@ -114,7 +114,7 @@ export function StopMap({
           que `hasHiddenSignal` sur la trajectoire, et il vaut mieux que le silence — sans
           lui, quelqu'un en saison 2 ne saurait pas qu'il y a une raison de deplier. */}
       {read.hasHiddenSignal ? (
-        <p className="text-sm text-(--color-muted)">{t('stops.hidden')}</p>
+        <p className="meta">{t('stops.hidden')}</p>
       ) : null}
 
       <details className="group panel">
@@ -135,7 +135,7 @@ export function StopMap({
         </ul>
       </details>
 
-      <p className="text-xs text-(--color-muted)">{t('stops.source')}</p>
+      <p className="meta-sm">{t('stops.source')}</p>
     </section>
   );
 }

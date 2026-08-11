@@ -72,7 +72,7 @@ export function SignIn() {
     <section aria-label={t('account.aria')} className="card max-w-md space-y-4">
       <form onSubmit={onSend} className="space-y-3">
         <div className="space-y-1">
-          <label htmlFor={emailId} className="block text-sm text-(--color-muted)">
+          <label htmlFor={emailId} className="block meta">
             {t('account.email.label')}
           </label>
           <input
@@ -103,7 +103,7 @@ export function SignIn() {
           />
           <label htmlFor={ageId} className="text-sm">
             {t('account.age', { age: String(MINIMUM_AGE) })}
-            <span className="mt-0.5 block text-xs text-(--color-muted)">
+            <span className="mt-0.5 block meta-sm">
               {t('account.ageWhy')}
             </span>
           </label>
@@ -118,7 +118,7 @@ export function SignIn() {
         </button>
       </form>
 
-      <p aria-live="polite" className="text-sm text-(--color-muted)">
+      <p aria-live="polite" className="meta">
         {state === 'sent'
           ? t('account.sent')
           : state === 'rate_limited'
@@ -130,10 +130,10 @@ export function SignIn() {
 
       {state === 'sent' ? (
         <form onSubmit={onCode} className="space-y-2 border-t border-(--color-edge) pt-4">
-          <label htmlFor={codeId} className="block text-sm text-(--color-muted)">
+          <label htmlFor={codeId} className="block meta">
             {t('account.code.label')}
           </label>
-          <p className="text-xs text-(--color-muted)">{t('account.code.why')}</p>
+          <p className="meta-sm">{t('account.code.why')}</p>
           <div className="flex gap-2">
             <input
               id={codeId}

@@ -1,0 +1,293 @@
+/**
+ * La marque et les visages — le cube, ses arcs, les trois faces, les avatars.
+ *
+ * Extrait de `globals.css` le 2026-08-11. Ce fichier ne contient que des regles
+ * DEPLACEES : aucune valeur n'a change, et le CSS compile est identique au bit pres
+ * avant/apres — c'est ce qui rend ce decoupage verifiable plutot que croyable.
+ */
+
+@layer components {
+  /**
+   * La marque.
+   *
+   * Trois faces vives dans une barre par ailleurs sobre : c'est le seul point de couleur
+   * franche du chassis, et c'est ce qui permet a l'oeil d'y revenir.
+   *
+   * L'arc electrique du logo est rendu par un `drop-shadow` cyan qui **n'apparait qu'au
+   * survol** — presente en permanence, une lueur cesse d'etre un evenement. Elle est portee
+   * par le lien parent, donc elle repond aussi au focus clavier.
+   */
+  .mark {
+    width: 1.625rem;
+    height: 1.625rem;
+    flex-shrink: 0;
+    transition:
+      transform 220ms cubic-bezier(0.2, 0.8, 0.3, 1),
+      filter 220ms ease;
+  }
+  .mark-top {
+    fill: var(--color-face-red);
+  }
+  .mark-left {
+    fill: var(--color-face-blue);
+  }
+  .mark-right {
+    fill: var(--color-face-yellow);
+  }
+  /**
+   * 9.2 — la marque porte la face.
+   *
+   * Quand `data-face` est pose, les trois facettes reculent et **une seule** revient devant.
+   * Ecrit dans cet ordre — tout eteindre, puis rallumer — plutot qu'en trois regles
+   * symetriques : la seconde forme obligerait a penser aux deux autres a chaque ajout, et
+   * une quatrieme face oubliee laisserait deux facettes vives au lieu d'une.
+   *
+   * ⚠️ Sans l'attribut, **aucune** de ces regles ne s'applique : le logo neutre d'avant est
+   * intact, ce qui est exactement ce qu'il faut pour qui n'a pas encore de face.
+   */
+  .mark[data-face] :is(.mark-top, .mark-left, .mark-right) {
+    opacity: 0.22;
+    transition: opacity 220ms ease;
+  }
+  .mark[data-face='finisher'] .mark-top,
+  .mark[data-face='cutter'] .mark-left,
+  .mark[data-face='rewatcher'] .mark-right {
+    opacity: 1;
+  }
+  .mark[data-turning] {
+    animation: face-turn 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) 1 both;
+  }
+  /**
+   * Le bandeau qui porte l'annonce.
+   *
+   * Il emprunte `.card` — donc la matiere du reste du produit — et n'ajoute que son
+   * arrivee. Lui inventer un fond a lui ferait un troisieme registre de surface pour une
+   * chose qui reste neuf secondes.
+   *
+   * ⚠️ Le liseré prend la couleur de la face annoncee, et **seulement** celle-la : c'est le
+   * seul endroit du produit ou une couleur de face deborde du cube, et elle le fait parce
+   * que la couleur EST le message. Les trois valeurs sont celles du logo, sans nuance
+   * inventee — voir `.face-dot`.
+   */
+  .face-switch {
+    animation: face-switch-in 320ms ease-out 1 both;
+    border-left: 3px solid var(--color-muted);
+  }
+  .face-switch:has(.mark[data-face='finisher']) {
+    border-left-color: var(--color-face-red);
+  }
+  .face-switch:has(.mark[data-face='cutter']) {
+    border-left-color: var(--color-face-blue);
+  }
+  .face-switch:has(.mark[data-face='rewatcher']) {
+    border-left-color: var(--color-face-yellow);
+  }
+  /* ⚠️ Le retournement disparait entierement pour qui refuse le mouvement : c'est un objet
+     qui tourne deux fois sur lui-meme, exactement ce que ce reglage existe pour supprimer.
+     La couleur et le texte restent — l'annonce est portee par les mots, l'animation ne fait
+     que la rendre remarquable. */
+  @media (prefers-reduced-motion: reduce) {
+    .mark[data-turning],
+    .face-switch {
+      animation: none;
+    }
+  }
+  /**
+   * La face de quelqu'un d'autre, dans une liste dense.
+   *
+   * Les trois couleurs sont **celles du logo**, sans exception : c'est ce qui fait qu'une
+   * pastille bleue dans le fil et la facette bleue de la marque parlent de la meme chose.
+   * En inventer une nuance ici casserait le seul lien qui rend le systeme lisible.
+   */
+  .face-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    vertical-align: baseline;
+    background: var(--color-muted);
+  }
+  .face-dot[data-face='finisher'] {
+    background: var(--color-face-red);
+  }
+  .face-dot[data-face='cutter'] {
+    background: var(--color-face-blue);
+  }
+  .face-dot[data-face='rewatcher'] {
+    background: var(--color-face-yellow);
+  }
+  /**
+   * =============================================================================
+   * Le visage de quelqu'un — et il n'y en avait aucun
+   * =============================================================================
+   *
+   * 🔴 Avant le 2026-08-11, une personne s'affichait « `@pseudo` », en **gris**, plus une
+   * pastille de 8 px. C'est tout. Sur les cinq surfaces qui rendent des gens — le fil d'amis,
+   * `SeriesPeople`, `PublicProfile`, `Discover`, `DailyRound` — le produit ne montrait donc
+   * jamais personne : il montrait des chaines de caracteres. C'est le manque que Tristan a
+   * nomme « des icones pour les gens », et c'est le plus gros ecart avec la reference.
+   *
+   * ## Genere, et jamais televerse
+   *
+   * Il n'y a pas de photo de profil, et ce n'est pas un raccourci : accepter une image, c'est
+   * un stockage, une moderation, un recadrage et une surface d'abus, pour un produit qui n'a
+   * pas encore d'utilisateurs. Les initiales et une teinte **derivee du pseudo** donnent le
+   * seul benefice qui compte ici — deux personnes ne se ressemblent pas — pour zero octet
+   * televerse et zero moderation.
+   *
+   * ⚠️ La teinte est **deterministe** (voir `app/components/Avatar.tsx`) : le meme pseudo
+   * donne toujours la meme couleur, sur toutes les surfaces et pour tous les lecteurs. Une
+   * couleur tiree au hasard a l'affichage ferait de l'avatar un ornement ; derivee du nom,
+   * elle devient reconnaissable — c'est ce qui permet de retrouver quelqu'un dans une liste
+   * sans lire son pseudo.
+   */
+  .avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1;
+    /* L'encre sombre sur une teinte vive : les huit teintes sont claires par construction,
+       donc c'est le seul sens qui tienne le contraste sur les huit. */
+    color: var(--color-ink);
+    background-image: linear-gradient(
+      145deg,
+      var(--avatar-hue, var(--color-muted)),
+      color-mix(in oklab, var(--avatar-hue, var(--color-muted)) 58%, black)
+    );
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, white 45%, transparent),
+      0 1px 3px -1px rgb(0 0 0 / 0.6);
+    user-select: none;
+  }
+  .avatar[data-hue='1'] {
+    --avatar-hue: var(--color-hue-1);
+  }
+  .avatar[data-hue='2'] {
+    --avatar-hue: var(--color-hue-2);
+  }
+  .avatar[data-hue='3'] {
+    --avatar-hue: var(--color-hue-3);
+  }
+  .avatar[data-hue='4'] {
+    --avatar-hue: var(--color-hue-4);
+  }
+  .avatar[data-hue='5'] {
+    --avatar-hue: var(--color-hue-5);
+  }
+  .avatar[data-hue='6'] {
+    --avatar-hue: var(--color-hue-6);
+  }
+  .avatar[data-hue='7'] {
+    --avatar-hue: var(--color-hue-7);
+  }
+  .avatar[data-hue='8'] {
+    --avatar-hue: var(--color-hue-8);
+  }
+  /* Deux tailles, pas cinq : la liste dense et l'en-tete de profil. Une troisieme se creerait
+     le jour ou un ecran en aurait vraiment besoin — c'est la regle du fichier. */
+  .avatar-lg {
+    width: 4rem;
+    height: 4rem;
+    font-size: 1.5rem;
+  }
+  /* La pastille et le visage sur le meme objet : la face se lit en surimpression, en bas a
+     droite, comme un indicateur de presence. Sans le fond en encre, une pastille rouge sur
+     une teinte rouge disparaitrait. */
+  .avatar-stack {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+  .avatar-stack > .face-dot {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 2px solid var(--color-ink);
+    box-sizing: content-box;
+  }
+  /**
+   * Les arcs electriques — **volt**-face.
+   *
+   * Toujours visibles : ils sont la moitie du nom, pas un effet de survol. Le trait est
+   * fin et l'opacite basse pour qu'ils encadrent le cube sans lui disputer l'attention.
+   * L'epaisseur est en unites du `viewBox`, donc elle grossit avec le cube — ce qu'on veut :
+   * un trait fige a 1,4 px serait un cheveu sur un logo de 74 px.
+   */
+  .mark-arcs {
+    fill: none;
+    stroke: var(--color-volt);
+    stroke-width: 0.9;
+    stroke-linecap: round;
+    opacity: 0.5;
+    transition:
+      opacity 220ms ease,
+      filter 220ms ease;
+  }
+  /* Trois filaments d'intensites inegales : une decharge uniforme se lit comme un cadre.
+     Le pointille du premier n'est pas decoratif — c'est ce qui fait qu'une boucle fermee
+     cesse de ressembler a un cercle dessine autour du logo. */
+  .mark-arc-1 {
+    stroke-dasharray: 5 2.5 2 3.5 7 2;
+    opacity: 0.75;
+  }
+  .mark-arc-2 {
+    stroke-dasharray: 4 2 6 3;
+    opacity: 0.55;
+  }
+  .mark-arc-3 {
+    stroke-dasharray: 6 2.5 3 2;
+    opacity: 0.45;
+  }
+  /* Le cube pivote de quelques degres : assez pour qu'on sente un volume, pas assez pour
+     que la barre bouge. Un logo qui tourne sur lui-meme serait un jouet. */
+  a:hover > .mark,
+  a:focus-visible > .mark {
+    transform: rotate(-8deg) scale(1.06);
+  }
+  a:hover > .mark .mark-arcs,
+  a:focus-visible > .mark .mark-arcs {
+    opacity: 1;
+    filter: drop-shadow(0 0 3px color-mix(in oklab, var(--color-volt) 85%, transparent));
+    animation: mark-flicker 1.4s steps(1, end) infinite;
+  }
+  /* Les trois filaments scintillent en decalage : en phase, ils feraient un seul clignotant. */
+  a:hover > .mark .mark-arc-2,
+  a:focus-visible > .mark .mark-arc-2 {
+    animation-delay: 0.23s;
+    animation-duration: 1.1s;
+  }
+  a:hover > .mark .mark-arc-3,
+  a:focus-visible > .mark .mark-arc-3 {
+    animation-delay: 0.61s;
+    animation-duration: 1.7s;
+  }
+  /* ⚠️ Le mouvement est retire pour qui le refuse — la couleur, elle, reste : c'est
+     l'identite, pas une animation. */
+  @media (prefers-reduced-motion: reduce) {
+    .mark,
+    a:hover > .mark,
+    a:focus-visible > .mark {
+      transition: none;
+      transform: none;
+    }
+    /* ⚠️ Le scintillement disparait entierement : c'est exactement le genre de clignotement
+       que ce reglage existe pour supprimer. La couleur et les filaments restent — c'est
+       l'identite, pas une animation. */
+    a:hover > .mark .mark-arcs,
+    a:focus-visible > .mark .mark-arcs,
+    a:hover > .mark .mark-arc-2,
+    a:focus-visible > .mark .mark-arc-2,
+    a:hover > .mark .mark-arc-3,
+    a:focus-visible > .mark .mark-arc-3 {
+      animation: none;
+    }
+  }
+}

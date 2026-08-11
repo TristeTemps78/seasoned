@@ -66,7 +66,7 @@ export function StatusBadge({ status, withDetail = false, locale = DEFAULT_LOCAL
         {statusLabel(status.status, translatorFor(locale))}
       </span>
       {withDetail ? (
-        <span className="text-sm text-(--color-muted)">{describeStatus(status, translatorFor(locale))}</span>
+        <span className="meta">{describeStatus(status, translatorFor(locale))}</span>
       ) : null}
     </div>
   );

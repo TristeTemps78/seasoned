@@ -1,0 +1,190 @@
+/**
+ * Les jetons — la seule source des valeurs du produit.
+ *
+ * Extrait de `globals.css` le 2026-08-11. Ce fichier ne contient que des regles
+ * DEPLACEES : aucune valeur n'a change, et le CSS compile est identique au bit pres
+ * avant/apres — c'est ce qui rend ce decoupage verifiable plutot que croyable.
+ */
+
+@theme {
+  /* `next/font` declare `--font-voltface-*` sur `<html>` ; le repli est deja dans la
+     declaration de chaque police, donc il tient meme si le fichier ne se charge pas. */
+  --font-sans: var(--font-voltface-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, sans-serif;
+  --font-mono: var(--font-voltface-mono), ui-monospace, 'SF Mono', 'Cascadia Mono',
+    'Segoe UI Mono', monospace;
+
+  /**
+   * La voix editoriale (2026-08-11) — **deux emplois, et c'est tout**.
+   *
+   * `.hero-title` et `.review-prose`. Un produit entierement en serif se lit comme un blog ;
+   * un produit sans serif du tout se lit comme un tableau de bord. La distinction que ce
+   * jeton porte est : le sans sert ce qu'on **utilise**, le serif ce qu'on **lit**.
+   */
+  --font-serif: var(--font-voltface-serif), Georgia, Cambria, 'Times New Roman', serif;
+
+  /**
+   * L'assouplissement de toute animation d'interface.
+   *
+   * Une exponentielle sortante part vite et s'arrete longuement : c'est ce qui donne a un
+   * survol l'impression d'obeir au doigt plutot que de se declencher. Toutes les transitions
+   * de ce fichier y passent — sans quoi chacune invente sa courbe et l'ensemble sonne faux.
+   */
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+
+  /* Le fond descend vers un noir bleute : c'est lui qui fait exister la lueur.
+     Un gris neutre eteindrait les accents au lieu de les porter. */
+  /* =============================================================================
+   * 🔴 Releve le 2026-08-11, apres avoir enfin regarde les captures
+   * =============================================================================
+   *
+   * Les trois valeurs precedentes — `#08090e`, `#11131c`, `#222739` — tenaient dans un
+   * intervalle de luminosite de **7 %**. Sur un ecran, ca ne se lit pas comme un fond, une
+   * surface et une arete : ca se lit comme **une seule couleur legerement sale**. Toutes les
+   * captures montrent la meme chose, ecran apres ecran — des boites grises identiques
+   * empilees sur du noir, qu'aucune correction de typographie ou d'icone ne pouvait sauver.
+   *
+   * Le fond quitte le noir pur : un `#08090e` ne laisse **aucune place en dessous** pour une
+   * ombre portee, donc l'elevation de `.panel` etait peinte dans le vide. Les trois niveaux
+   * s'ecartent maintenant assez pour se distinguer sans lumiere rasante.
+   *
+   * ⚠️ Ne pas remonter davantage sans regarder les affiches : au-dela, un fond clair
+   * commence a laver les vignettes TMDB sombres, et c'est le seul vrai argument qu'avait
+   * « l'affiche est l'interface ».
+   */
+  --color-ink: #0e1117;
+  --color-surface: #1a1f29;
+  --color-edge: #333c4c;
+  /* Remonte de #8790a6 le 2026-08-11 : c'est la couleur la plus employee du produit (157
+     usages), donc la plus rentable a corriger. L'ancienne tenait 4,6:1 sur `--color-surface`,
+     celle-ci ~6:1 — ce qui compte, vu qu'elle habille surtout du petit texte. */
+  --color-muted: #93a3b8;
+  --color-text: #e6edf6;
+
+  /**
+   * =============================================================================
+   * L'echelle de gris — quatre crans, tous teintes bleu, aucun neutre
+   * =============================================================================
+   *
+   * 🔴 **Il n'y avait qu'UN gris secondaire pour tout le produit** (`--color-muted`, 157
+   * usages). Un seul cran entre le texte et le fond, c'est-a-dire aucune hierarchie dans ce
+   * qui n'est pas un titre : une etiquette, un synopsis, une date et un compteur etaient
+   * peints exactement de la meme facon. C'est la moitie de « pas de contraste ».
+   *
+   * ⚠️ **Teintes bleu, jamais neutres.** Un gris neutre (`#888`) sur un fond bleu-noir se lit
+   * comme sale — l'oeil compare la teinte du texte a celle du fond, et un ecart de teinte se
+   * lit comme un defaut d'impression. Chacun de ces quatre garde la meme famille que
+   * `--color-ink`, seule la clarte change.
+   *
+   * A employer par **role**, pas par gout : `dim` pour ce qui doit s'effacer (mentions,
+   * horodatages), `muted` pour le corps secondaire, `soft` pour ce qui accompagne un titre,
+   * `bright` pour ce qui doit se lire avant le reste sans etre un titre.
+   */
+  --color-dim: #64748b;
+  --color-soft: #b6c2d4;
+  --color-bright: #f3f7fc;
+
+  /* L'arc electrique — l'accent du produit, et la racine de son nom.
+     `volt` est la couleur d'interaction : liens actifs, focus, bordure vivante. */
+  --color-volt: #22d3ee;
+  --color-volt-dim: #0e7490;
+
+  /* Le magenta ne sert qu'au **second halo du `body`** : il donne au noir une profondeur que
+     le cyan seul rendrait monochrome. Aucun autre emploi, et c'est un choix du 2026-08-05 —
+     « ce qui se compte » parle de vous, donc releve du volt, et un second sens defairait
+     « une couleur, un sens ». Employe seul, jamais en degrade avec le cyan : le duo
+     cyan/magenta sature est le cliche fatigue du genre. */
+  --color-pulse: #e879f9;
+
+  /* Les trois faces du cube, prises sur le logo.
+     ⚠️ Elles n'habillent QUE la marque (`app/components/Mark.tsx`) et ne portent aucun
+     sens applicatif — sinon « une couleur, un sens » tomberait : on ne saurait plus si le
+     rouge parle de la serie, de vous, ou de l'identite du produit. */
+  --color-face-red: #e0332c;
+  --color-face-blue: #1a72c4;
+  --color-face-yellow: #f5c518;
+
+  /* Trois tons de statut, pas plus : le but reste de faire ressortir l'anomalie
+     (une serie annoncee vivante et morte depuis 18 mois), pas de colorier la page.
+
+     ⚠️ **Une couleur, un sens.** Le vert parle de la SERIE — elle diffuse, la date tombe,
+     le plan tient. Le volt parle de VOUS — votre position, votre revisionnage, le bouton
+     que vous venez de choisir. La confusion s'etait installee sur la fiche serie, ou le
+     vert servait a la fois d'etat « en diffusion » et de bouton actif ; deux sens pour une
+     meme couleur est la facon la plus rapide de rendre une interface illisible. */
+  --color-live: #4ade80;
+  --color-warn: #fbbf24;
+
+  /**
+   * La note — **et c'etait deja une couleur pour deux sens**, avant meme la decision du
+   * 2026-08-11.
+   *
+   * `StarRating` peignait ses etoiles en `--color-warn`, c'est-a-dire dans la couleur qui
+   * signifie « anomalie » partout ailleurs (serie annulee, action qu'on ne defait pas). Une
+   * note de 5 etoiles etait donc dessinee comme une alerte. C'est exactement la confusion que
+   * « une couleur, un sens » decrivait, installee dans le code qui citait la regle.
+   *
+   * Un jeton a part, meme si la teinte en est proche aujourd'hui : ce qui compte est que les
+   * deux puissent diverger sans qu'on ait a demeler quel `--color-warn` parlait de quoi.
+   */
+  --color-rating: #ffc53d;
+
+  /* =============================================================================
+   * 2026-08-11 — ce que Tristan a tranche, et ce que ca defait
+   * =============================================================================
+   *
+   * Le constat, mesure avant d'etre cru : la couleur la plus employee du produit etait
+   * `--color-muted`, **157 fois dans le JSX**, contre 43 pour le volt, 37 pour l'ambre et 34
+   * pour le vert reunis. Autrement dit, le gris gagnait trois contre un. Ce n'etait pas un
+   * accident d'ecriture — c'etait la consequence exacte des trois regles ecrites plus haut
+   * (« l'affiche est l'interface », « une couleur, un sens », « le neon ne porte pas le
+   * texte »), qui interdisent chacune une facon de mettre de la couleur.
+   *
+   * ⚠️ Ces regles ne sont plus contraignantes (« pas besoin de regles pour le moment »). Elles
+   * restent ecrites parce qu'elles disent *pourquoi* le produit ressemblait a ca — mais elles
+   * ne tranchent plus. Ce qui suit les contredit deliberement.
+   */
+
+  /* Un second niveau de surface : sans lui, un panneau pose sur un panneau rendait le meme
+     aplat, et la profondeur reposait entierement sur une ombre de 1 px. */
+  --color-surface-2: #262e3b;
+
+  /* =============================================================================
+   * Les huit teintes d'identite — et elles ne veulent RIEN dire
+   * =============================================================================
+   *
+   * C'est l'exception assumee a « une couleur, un sens » : ces huit-la n'ont **aucun** sens
+   * applicatif, et c'est precisement leur fonction. Elles habillent ce qui doit se distinguer
+   * sans se hierarchiser — l'avatar de quelqu'un, une pastille de genre.
+   *
+   * ⚠️ Elles ne doivent jamais servir a un etat. Le jour ou l'une d'elles signifie quelque
+   * chose, elle sort de cette liste et devient un jeton nomme — sinon on retombe exactement
+   * dans la confusion que « une couleur, un sens » decrivait : deux sens pour une couleur.
+   *
+   * Huit et pas douze : au-dela, deux teintes voisines cessent d'etre distinguables sur une
+   * pastille de 32 px, donc la variete devient du bruit.
+   */
+  --color-hue-1: #fb7185;
+  --color-hue-2: #fb923c;
+  --color-hue-3: #facc15;
+  --color-hue-4: #4ade80;
+  --color-hue-5: #2dd4bf;
+  --color-hue-6: #38bdf8;
+  --color-hue-7: #a78bfa;
+  --color-hue-8: #f472b6;
+
+  /**
+   * L'inversion de la recherche — trois valeurs qui n'existent que la.
+   *
+   * ⚠️ Elles sont des **jetons** et non trois litteraux dans `controls.css`, et c'est le test
+   * `styles-segmented` qui l'a impose le jour meme du decoupage : je venais de les ecrire en
+   * dur. Une couleur en dur dans un fichier de sujet reintroduit exactement ce que les jetons
+   * existent pour empecher — une decision prise a deux endroits.
+   *
+   * Une encre bleu-nuit plutot que du noir : le champ bascule en clair, il ne change pas de
+   * famille. C'est ce qui fait que l'inversion se lit comme le meme produit, eclaire.
+   */
+  --color-invert-ink: #16202c;
+  --color-invert-muted: #6b7a8d;
+  --color-invert-accent: #0d7490;
+}

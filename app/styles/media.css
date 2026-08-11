@@ -1,0 +1,190 @@
+/**
+ * Les images — l'affiche comme objet, les grilles, la banniere.
+ *
+ * Extrait de `globals.css` le 2026-08-11. Ce fichier ne contient que des regles
+ * DEPLACEES : aucune valeur n'a change, et le CSS compile est identique au bit pres
+ * avant/apres — c'est ce qui rend ce decoupage verifiable plutot que croyable.
+ */
+
+@layer components {
+  /**
+   * La grille d'affiches — **le meme rythme sur les trois ecrans qui en rendent une**.
+   *
+   * L'accueil, la bibliotheque et « aussi par ce createur » rendent le meme objet : une
+   * grille de vignettes 2:3. Les trois ecrivaient la meme chaine de six utilitaires, et
+   * rien ne garantissait qu'ils resteraient d'accord — c'est exactement ainsi que
+   * `LibraryCard` et `SeriesCard` avaient diverge jusqu'a ce que l'un affiche trois
+   * rectangles gris.
+   *
+   * ⚠️ Trois colonnes au telephone, et c'est un choix : deux donneraient des affiches
+   * inutilement grandes pour un objet qu'on parcourt, quatre les rendraient illisibles.
+   */
+  /* ⚠️ **Resserree le 2026-08-11.** Les gouttieres etaient a 1 / 1,5 rem et la grille
+     s'arretait a six colonnes : sur un ecran large, une rangee montrait six affiches
+     separees par des couloirs de 16 px, ce qui donne une ligne d'objets isoles au lieu d'un
+     mur. La reference n'a pas d'espace entre ses affiches, ou presque. On descend a
+     0,625 / 1 rem et on ajoute un huitieme palier — la densite EST l'effet visuel. */
+  .poster-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 0.625rem;
+    row-gap: 1rem;
+  }
+  @media (width >= 40rem) {
+    .poster-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 48rem) {
+    .poster-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 80rem) {
+    .poster-grid {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+  /**
+   * Le lit de banniere. « Le neon ne porte jamais le texte de lecture » vaut aussi pour une
+   * photo, et on ne sait rien de celle-ci : l'opacite, le masque et les deux encres la
+   * ramenent a une profondeur, pas a une illustration. Le titre reste pose sur l'encre.
+   */
+  .art-bed {
+    position: relative;
+    isolation: isolate;
+  }
+  .art-bed > img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    height: 100%;
+    width: 100%;
+    /* Le sujet d'une banniere est presque toujours au-dessus du centre geometrique :
+       cadrer au milieu coupe les visages a la moitie du front. */
+    object-fit: cover;
+    object-position: center 20%;
+
+    /* 🔴 **Etait a `0.45`, avec un masque qui l'effacait des 35 %** — soit trois traitements
+       cumules (opacite, masque, et les deux encres de `::after`) sur la plus grande image du
+       site. Le commentaire l'assumait : « les deux encres la ramenent a une profondeur, pas a
+       une illustration ». Vu a l'ecran le 2026-08-11, ca ne donne pas de la profondeur, ca
+       donne une tache sombre — et c'est la raison n°1 pour laquelle le produit se lit comme
+       une page de texte.
+
+       ⚠️ La lisibilite ne tient PAS a l'opacite : elle tient au voile de `::after`, qui pose
+       de l'encre pleine a gauche exactement la ou le texte vit. C'est lui qui permet de
+       monter l'image a 0,9 sans qu'un seul mot devienne difficile — verifie sur la banniere
+       la plus claire du catalogue. */
+    opacity: 0.9;
+
+    /* Le masque ne s'ouvre plus qu'a la toute fin : a 35 %, l'image disparaissait avant le
+       bas du bloc, donc un hero un peu haut n'avait d'image que dans son premier tiers. */
+    mask-image: linear-gradient(to bottom, black 0%, black 78%, transparent 100%);
+  }
+  /* Deux encres : depuis la gauche, ou vit le texte, et depuis le bas, ou la page reprend.
+     Le visuel respire en haut a droite — le seul quart ou il ne gene rien. */
+  .art-bed::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    /* ⚠️ Le voile est **renforce a gauche** depuis que l'image monte a 0,9 : l'encre reste
+       pleine jusqu'a 30 % de la largeur, c'est-a-dire sur toute la zone ou vivent le titre,
+       le paragraphe et le champ de recherche. C'est ce qui rend la banniere vive **et** le
+       texte lisible — les deux ne s'echangent pas, ils vivent a des endroits differents. */
+    background-image:
+      linear-gradient(
+        to right,
+        var(--color-ink) 0%,
+        var(--color-ink) 30%,
+        color-mix(in oklab, var(--color-ink) 55%, transparent) 65%,
+        transparent 100%
+      ),
+      linear-gradient(to top, var(--color-ink) 0%, transparent 55%);
+  }
+  /**
+   * La rangee de tete : **300 px** d'affiche contre 190 pour la grille dense. Une variation
+   * de taille dit ce qu'aucun titre ne dit — par ou commencer. L'accueil rendait trois
+   * rangees de **348 / 664 / 664 px**, identiques.
+   */
+  .poster-grid-lead {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (width >= 40rem) {
+    .poster-grid-lead {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 64rem) {
+    .poster-grid-lead {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .poster-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-bright) 22%, transparent);
+  }
+  /* Le survol repond aussi bien au cadre qu'au lien qui l'enveloppe : la moitie des grilles
+     posent le titre **sous** l'affiche, et survoler le titre doit animer l'affiche. */
+  .poster-frame:hover,
+  a:hover > .poster-frame,
+  a:focus-visible > .poster-frame,
+  .group:hover .poster-frame {
+    transform: scale(1.045);
+    box-shadow:
+      0 1px 5px rgb(0 0 0 / 0.25),
+      0 10px 28px rgb(0 0 0 / 0.45);
+    z-index: 2;
+  }
+  /* L'anneau prend l'accent quand l'objet est cible au clavier — le focus doit se voir sur
+     l'objet lui-meme, pas seulement sur le lien invisible qui l'entoure. */
+  a:focus-visible > .poster-frame::after,
+  .group:focus-visible .poster-frame::after {
+    box-shadow: inset 0 0 0 2px var(--color-volt);
+  }
+  /* ⚠️ Le grossissement disparait entierement pour qui refuse le mouvement : une grille de
+     soixante affiches qui bougent au passage de la souris est exactement ce que ce reglage
+     existe pour supprimer. L'anneau et les ombres restent — ce sont de la matiere, pas de
+     l'animation. */
+  @media (prefers-reduced-motion: reduce) {
+    .poster-frame,
+    .poster-frame:hover,
+    a:hover > .poster-frame,
+    .group:hover .poster-frame {
+      transform: none;
+      transition: none;
+    }
+  }
+  /**
+   * L'affiche manquante.
+   *
+   * Une case vide portant « Pas d'affiche » etait le seul endroit de l'application ou l'on
+   * affichait un manque. Le monogramme occupe la meme place et **appartient a la serie** :
+   * il change avec elle, donc la grille garde un rythme au lieu d'un trou.
+   */
+  .poster-void {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background-image: radial-gradient(
+      120% 80% at 50% 0%,
+      color-mix(in oklab, var(--color-volt) 12%, transparent),
+      transparent 70%
+    );
+  }
+  .poster-void > span {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: color-mix(in oklab, var(--color-muted) 70%, transparent);
+  }
+}

@@ -188,13 +188,13 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
               <li key={list.slug} className="card space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="card-title">{list.title}</h3>
-                  <span className="text-xs text-(--color-muted)">
+                  <span className="meta-sm">
                     {tn('lists.count', list.count)}
                   </span>
                 </div>
 
                 {list.note !== undefined ? (
-                  <p className="text-sm text-(--color-muted)">{list.note}</p>
+                  <p className="meta">{list.note}</p>
                 ) : null}
 
                 <div className="flex flex-wrap gap-2">
@@ -215,7 +215,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
 
                 {isOpen ? (
                   shown.length === 0 ? (
-                    <p className="text-sm text-(--color-muted)">{t('lists.empty')}</p>
+                    <p className="meta">{t('lists.empty')}</p>
                   ) : (
                     <ul className="space-y-2">
                       {shown.map((subject) => {

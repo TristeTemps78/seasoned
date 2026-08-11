@@ -71,7 +71,7 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
 
       <section className="space-y-3">
         <h2 className="section-heading">{t(locale, 'rules.grounds.title')}</h2>
-        <p className="text-sm text-(--color-muted)">{t(locale, 'rules.grounds.intro')}</p>
+        <p className="meta">{t(locale, 'rules.grounds.intro')}</p>
         {/* La liste vient de `REPORT_GROUNDS`, pas d'une enumeration recopiee ici : un motif
             ajoute au domaine sans etre publie serait un motif qu'on applique sans l'avoir
             annonce — exactement l'arbitraire que cette page existe pour empecher. */}
@@ -86,7 +86,7 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
 
       <section className="space-y-2">
         <h2 className="section-heading">{t(locale, 'rules.how.title')}</h2>
-        <p className="text-sm text-(--color-muted)">
+        <p className="meta">
           {contact === undefined ? t(locale, 'rules.how.noContact') : t(locale, 'rules.how.body')}
         </p>
       </section>
@@ -98,7 +98,7 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
         <p className="text-sm">
           {t(locale, 'rules.delay.body', { hours: String(REVIEW_DEADLINE_HOURS) })}
         </p>
-        <p className="text-sm text-(--color-muted)">{t(locale, 'rules.delay.why')}</p>
+        <p className="meta">{t(locale, 'rules.delay.why')}</p>
       </section>
 
       <section className="space-y-2">

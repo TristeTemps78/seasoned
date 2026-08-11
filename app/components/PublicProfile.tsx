@@ -156,7 +156,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
               Ici il y a la place, et une couleur seule n'apprend rien a qui la voit pour la
               premiere fois. La pastille l'accompagne pour faire le lien avec les listes. */}
             {profile.face !== undefined ? (
-              <span className="flex items-center gap-1.5 text-sm text-(--color-muted)">
+              <span className="flex items-center gap-1.5 meta">
                 <FaceDot face={profile.face} />
                 {t(`face.${profile.face}`)}
               </span>
@@ -164,14 +164,14 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           </div>
         </div>
         {isSelf ? (
-          <span className="text-sm text-(--color-muted)">{t('profile.self')}</span>
+          <span className="meta">{t('profile.self')}</span>
         ) : account === undefined || named === undefined ? null : (
           <div className="flex flex-wrap items-center gap-3">
             {/* La reciprocite se dit ici et nulle part ailleurs : c'est la seule page ou l'on
                 regarde **une** personne. Sur `/amis` on lit une liste, et une mention par
                 ligne y serait du bruit. */}
             {followsMe ? (
-              <span className="text-sm text-(--color-muted)">{t('profile.followsYou')}</span>
+              <span className="meta">{t('profile.followsYou')}</span>
             ) : null}
             {/* 🔴 Le bouton « Suivre » s'affichait a tout compte connecte, y compris a qui
                 n'a pas reclame de nom — et `008_followers.sql` refuse desormais ce suivi.

@@ -45,7 +45,7 @@ export function MyRegions() {
     <section className="card space-y-3" aria-label={t('regions.aria')}>
       <div>
         <h2 className="card-title">{t('regions.title')}</h2>
-        <p className="text-xs text-(--color-muted)">{t('regions.subtitle')}</p>
+        <p className="meta-sm">{t('regions.subtitle')}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">

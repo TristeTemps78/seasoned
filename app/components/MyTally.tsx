@@ -44,7 +44,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
   if (journal.hideHours === true) {
     return (
       <section className="card space-y-2" aria-label={t('tally.aria')}>
-        <p className="text-sm text-(--color-muted)">{t('tally.hidden')}</p>
+        <p className="meta">{t('tally.hidden')}</p>
         <button type="button" className="btn text-xs" onClick={() => setHideHours(false)}>
           {t('tally.show')}
         </button>
@@ -68,7 +68,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
         {t('tally.atLeast', { commitment: formatCommitment(tally.minutes, tr) })}
       </p>
 
-      <p className="text-sm text-(--color-muted)">
+      <p className="meta">
         {tn('tally.onSeries', tally.counted, {
           episodes: tn('tally.episodes', tally.episodes),
         })}
@@ -83,7 +83,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
           lisait comme portant sur Dexter — la seule serie que l'import n'avait PAS
           ecrite. Un qualificatif du total se place avec le total. */}
       {tally.declaredMinutes > 0 ? (
-        <p className="text-xs text-(--color-muted)">
+        <p className="meta-sm">
           {t('tally.declared', {
             commitment: formatCommitment(tally.declaredMinutes, tr),
           })}
@@ -118,12 +118,12 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
       {/* Ce que le chiffre ne contient pas. Le taire ferait passer un minorant pour un
           total — exactement ce que le « au moins » ci-dessus s'emploie a eviter. */}
       {tally.uncounted > 0 ? (
-        <p className="text-xs text-(--color-muted)">
+        <p className="meta-sm">
           {tn('tally.missing', tally.uncounted)}
         </p>
       ) : null}
 
-      <p className="text-xs text-(--color-muted)">
+      <p className="meta-sm">
         {t('tally.private')} <WhereItLives className="" />
       </p>
 

@@ -22,7 +22,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
  * contraire a qui vient de l'ajouter a son ecran d'accueil — c'est-a-dire exactement le
  * geste que le produit encourage.
  */
-export function WhereItLives({ className = 'text-xs text-(--color-muted)' }: {
+export function WhereItLives({ className = 'meta-sm' }: {
   readonly className?: string;
 }) {
   const { t } = useT();

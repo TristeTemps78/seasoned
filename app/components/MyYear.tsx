@@ -72,7 +72,7 @@ export function MyYear() {
         ) : null}
       </div>
 
-      {thin ? <p className="text-sm text-(--color-muted)">{t('year.thin')}</p> : null}
+      {thin ? <p className="meta">{t('year.thin')}</p> : null}
 
       <ul className="space-y-1 text-sm">
         {review.finished > 0 ? <li>{tn('year.finished', review.finished)}</li> : null}
@@ -93,7 +93,7 @@ export function MyYear() {
           un compte de ce qu'on a consomme, c'est le prix d'entree d'une decision. Le
           reglage porte sur le regard en arriere, pas sur le calcul. */}
       {review.minutesOfFinished > 0 && journal.hideHours !== true ? (
-        <p className="numeric text-sm text-(--color-muted)">
+        <p className="numeric meta">
           {t('year.weight', {
             commitment: formatCommitment(review.minutesOfFinished, tr),
           })}

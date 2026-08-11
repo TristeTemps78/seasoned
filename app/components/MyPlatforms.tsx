@@ -56,7 +56,7 @@ export function MyPlatforms() {
     >
       <div>
         <h2 className="card-title">{t('platforms.title')}</h2>
-        <p className="text-xs text-(--color-muted)">{t('platforms.subtitle')}</p>
+        <p className="meta-sm">{t('platforms.subtitle')}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">

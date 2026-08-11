@@ -1,0 +1,357 @@
+/**
+ * Les surfaces — panneau, carte, tuile, ecran vide, filets de section.
+ *
+ * Extrait de `globals.css` le 2026-08-11. Ce fichier ne contient que des regles
+ * DEPLACEES : aucune valeur n'a change, et le CSS compile est identique au bit pres
+ * avant/apres — c'est ce qui rend ce decoupage verifiable plutot que croyable.
+ */
+
+@layer components {
+  /**
+   * 9.3 — le cube **se retourne**. C'est le nom du produit, joue une fois.
+   *
+   * Un `rotateY` et pas un fondu : une volte-face est un retournement, et le cube est le
+   * seul objet de l'interface qui ait un volume a retourner. La perspective est posee sur
+   * l'element lui-meme (`transform-style` ne sert a rien : le SVG est plat) — ce qu'on
+   * simule est un carton qui pivote, pas un solide.
+   *
+   * ⚠️ **Deux tours, pas un.** Un demi-tour laisserait le cube en miroir a l'arrivee, donc
+   * les trois losanges inverses : la facette vive changerait de cote et l'oeil lirait une
+   * autre face que celle qu'on annonce.
+   */
+  @keyframes face-turn {
+    0% {
+      transform: perspective(240px) rotateY(0deg) scale(1);
+    }
+    45% {
+      transform: perspective(240px) rotateY(360deg) scale(1.12);
+    }
+    70% {
+      transform: perspective(240px) rotateY(720deg) scale(1.04);
+    }
+    100% {
+      transform: perspective(240px) rotateY(720deg) scale(1);
+    }
+  }
+  @keyframes face-switch-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.4rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  /**
+   * Au survol, le champ ne grossit pas : il **scintille**.
+   *
+   * Les paliers de l'animation sont volontairement **inegaux** — 0 %, 8 %, 14 %, 41 %… Un
+   * clignotement a intervalle regulier se lit comme un temoin de charge ; une decharge est
+   * saccadee. C'est la meme raison qui a fait abandonner les arcs lisses.
+   */
+  @keyframes mark-flicker {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    8% {
+      opacity: 0.45;
+    }
+    14% {
+      opacity: 1;
+    }
+    41% {
+      opacity: 0.7;
+    }
+    47% {
+      opacity: 1;
+    }
+    62% {
+      opacity: 0.35;
+    }
+    66% {
+      opacity: 1;
+    }
+    83% {
+      opacity: 0.8;
+    }
+  }
+  /**
+   * La surface qui contient — **une seule forme, deux rembourrages** (9.7, tranche le
+   * 2026-08-07 apres avoir regarde l'ecran).
+   *
+   * `.panel` est la surface nue ; `.card` est la meme surface **avec le rembourrage
+   * standard**. Elles ne sont plus concurrentes : l'une est l'autre, plus le padding, et la
+   * forme n'est ecrite qu'ici.
+   *
+   * ## Ce qui a ete tranche, et sur quoi
+   *
+   * Les deux differaient de `0.75rem` contre `0.5rem`, et d'un fond a 80 % contre opaque.
+   * Deux mesures ont decide, pas un gout :
+   *
+   * 1. **Le rayon** : l'accueil rend **59 elements, tous a 8 px** (releve sur la production).
+   *    `0.5rem` etait donc deja, de fait, le rayon du produit — les affiches en tete. Choisir
+   *    `0.75rem` aurait demande de changer l'accueil pour aligner huit surfaces.
+   * 2. **Le fond** : `color-mix(--color-surface 80%)` sur `--color-ink` rend `#0f1119`,
+   *    c'est-a-dire **plus proche du fond** que `--color-surface` opaque (`#11131c`). Or ce
+   *    qui a ete vu a l'ecran est que **rien ne se detache** : la page est un empilement de
+   *    rectangles gris. Un fond qui se rapproche du fond va contre le seul defaut constate.
+   *
+   * ⚠️ **Et le diagnostic de etait perime** : il annoncait « 19 copies a la
+   * main », chiffre vrai la veille et faux le jour meme — le commit qui a extrait `.panel`
+   * les avait deja absorbees. Il en restait **8**. *Une tache se remesure avant d'etre faite,
+   * surtout quand quelqu'un a travaille entre-temps.*
+   */
+  /**
+   * La matiere de toutes les surfaces — y compris chaque affiche, qui vit deja dans un
+   * `.panel`. Sans elle, les seize surfaces d'une fiche rendaient le meme aplat sans ombre
+   * (mesure le 2026-08-10) : tout etait peint sur le meme plan.
+   *
+   * ⚠️ **`--halo` est le seul point de surcharge**, et il n'est pas cosmetique : un
+   * utilitaire qui redeclare `box-shadow` gagne sur cette couche et efface l'elevation. La
+   * tuile ENGAGEMENT le faisait, ce qui rendait *plate* la seule tuile qui compte.
+   */
+  .panel,
+  .panel-lit,
+  .card,
+  .empty-state {
+    --halo: 0 0 0 0 transparent;
+
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-edge);
+    background-color: var(--color-surface);
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-text) 6%, transparent),
+      transparent 40%
+    );
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--color-text) 10%, transparent),
+      0 1px 2px -1px rgb(0 0 0 / 0.6),
+      0 0.75rem 1.75rem -0.75rem rgb(0 0 0 / 0.75),
+      var(--halo);
+  }
+  .card {
+    padding: 1rem 1.25rem;
+  }
+  /**
+   * La surface qui compte — **une seule par ecran**. Meme regle que `glow` et que la tuile
+   * `emphasis` : l'emphase est un rapport, pas un ornement. Deux valent zero.
+   *
+   * Le halo est a rayon negatif : il deborde sans dessiner de contour, donc il ne se lit pas
+   * comme une seconde bordure.
+   */
+  .panel-lit {
+    border-color: color-mix(in oklab, var(--color-volt) 32%, var(--color-edge));
+    --halo: 0 0 2.5rem -1.25rem color-mix(in oklab, var(--color-volt) 75%, transparent);
+  }
+  /**
+   * Le filet qui coupe une coulee de sections, sans ajouter de boite. Il s'arrete a 40 % :
+   * pleine largeur, il redessinerait une grille de tableau. Le retrait fait partie du filet
+   * — sinon un groupe neuf oublierait son `pt-10` et collerait le trait a son contenu.
+   */
+  .section-rule {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(
+        to right,
+        color-mix(in oklab, var(--color-edge) 100%, transparent),
+        transparent 40%
+      )
+      1;
+    padding-top: 2.5rem;
+  }
+  /* ⚠️ Trouve a l'ecran : sans compte, `Reviews` et `SeriesPeople` rendent `null` tous les
+     deux, et leur groupe laissait **un filet tire au-dessus du vide**. En CSS et non en JSX
+     — un parent React ne sait pas si son enfant a rendu quelque chose. */
+  .section-rule:empty {
+    display: none;
+  }
+  /**
+   * L'ecran vide — la premiere impression de tout le monde.
+   * =============================================================================
+   *
+   * ## Pourquoi cette forme existe
+   *
+   * Il y avait **quatre** ecrans vides et **quatre** mises en page differentes :
+   * `EmptyLibrary` centre sur `max-w-md` avec deux boutons, `EmptyAgenda` et `MyStats` en
+   * boites alignees a gauche, et le fil d'amis reduit a un paragraphe nu. Or c'est
+   * exactement l'etat dans lequel **tout le monde** voit le produit la premiere fois : les
+   * quatre ecrans vides sont, pour un arrivant, les quatre seuls ecrans qui existent.
+   *
+   * ⚠️ Deux d'entre eux **recopiaient a la main** `.card` et `.btn`, extraits au 6.7 —
+   * la duplication s'etait reformee dans les fichiers que ce lot n'avait pas ouverts.
+   *
+   * ## Centre, et c'est une decision
+   *
+   * Un etat vide n'a rien autour de lui pour ancrer la lecture : centre, il se lit comme
+   * une adresse au visiteur ; aligne a gauche, il se lit comme un contenu manquant. La
+   * largeur est bornee parce qu'une phrase sur 1080 px ne se lit pas.
+   *
+   * ## Il dit quoi faire, il ne constate pas
+   *
+   * La regle vaut deja pour le fil d'amis (« mieux vaut se taire que compter zero ») :
+   * un ecran vide qui affiche « 0 element » a decrit l'etat sans rien ouvrir. Ceux qui
+   * portent une action lui donnent `.btn` — il n'y a pas de bouton special ici.
+   */
+  /* La forme (rayon, bordure, fond) est declaree une seule fois, plus haut, avec `.panel`.
+     Ne restent ici que les choix propres a un ecran vide : centre, borne, aere. */
+  .empty-state {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    margin-inline: auto;
+    max-width: 32rem;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+  }
+  /* Le meme degrade que `.poster-void`, et pour le meme probleme : occuper la place d'une
+     chose absente sans afficher un manque. */
+  .empty-state::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(
+      120% 90% at 50% 0%,
+      color-mix(in oklab, var(--color-volt) 10%, transparent),
+      transparent 70%
+    );
+  }
+  .empty-state > * + * {
+    margin-top: 0.75rem;
+  }
+  .empty-state-body {
+    margin-inline: auto;
+    max-width: 34ch;
+    line-height: 1.6;
+    color: var(--color-muted);
+  }
+  /*
+   * Pas de `.empty-state-actions` : la regle de ce fichier est de n'extraire qu'a partir de
+   * trois repetitions, et deux ecrans seulement portent des actions. Les deux alignent les
+   * **memes** utilitaires (`mt-5 flex flex-wrap justify-center gap-2`) — c'est cette
+   * identite, et non un decompte, qui les empeche de diverger. *Un garde-fou adosse a un
+   * decompte est un garde-fou qu'on defera au prochain ecran* : celui-ci l'a ete en un jour.
+   */
+
+  /**
+   * La tuile de mesure — un libelle en capitales, un chiffre en grille.
+   *
+   * Le chiffre ne revient jamais a la ligne : « 2 jours et 2 h » coupe en deux au milieu
+   * d'un tiret cadratin est la difference exacte entre une donnee et un accident.
+   */
+  /* Meme forme que `.panel` (declaree une fois, plus haut) — seul le rembourrage differe.
+     ⚠️ **Ce que la tuile ENGAGEMENT doit a sa geometrie : rien.** Elle est le seul element du
+     site qui ait une identite, et c'est `emphasis` qui la lui donne — liseré volt, fond volt a
+     6 %, halo, chiffre en grille. Les quatre tuiles ont toujours eu le meme rayon ; une seule
+     brille. Aligner la forme ne touche donc pas a ce qui marche, et c'est verifie sur le code
+     de `Stat`, pas suppose. */
+  /**
+   * =============================================================================
+   * 🔴 La tuile sort de la forme commune — et c'est la regle qu'on casse
+   * =============================================================================
+   *
+   * `.panel`, `.card`, `.empty-state` et `.tile` partageaient **une seule** definition :
+   * meme rayon, meme bordure, meme fond. Le commentaire d'origine le revendiquait — « un
+   * seul rayon, une seule bordure, un seul fond dans toute l'application ». C'est
+   * exactement pourquoi chaque ecran se lit comme une pile de boites grises identiques, et
+   * c'est le reproche que Tristan a formule trois fois de suite.
+   *
+   * ⚠️ La regle n'etait pas absurde : elle a supprime dix-neuf copies divergentes. Mais elle
+   * confondait **« une seule facon d'ecrire une surface »** avec **« une seule apparence pour
+   * toutes les surfaces »**. La premiere est de l'hygiene, la seconde est un choix de design
+   * — et personne ne l'avait choisi.
+   *
+   * La tuile prend donc sa propre matiere : un cran plus clair que la carte qui la contient,
+   * et un liseré de couleur.
+   */
+  .tile {
+    --halo: 0 0 0 0 transparent;
+    --tile-hue: var(--color-volt);
+
+    border-radius: 0.5rem;
+    /* Le liseré haut est colore, les trois autres aretes restent sourdes : quatre bordures
+       vives feraient quatre cadres qui se disputent, la ou un trait unique se lit comme une
+       etiquette. */
+    border: 1px solid var(--color-edge);
+    border-top: 2px solid var(--tile-hue);
+    /* Un cran **au-dessus** de `--color-surface` : une tuile vit a l'interieur d'un ecran qui
+       porte deja des cartes, et deux surfaces de meme valeur ne se distinguent pas. */
+    background-color: var(--color-surface-2);
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--tile-hue) 10%, transparent),
+      transparent 55%
+    );
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--color-text) 10%, transparent),
+      0 0.75rem 1.75rem -0.75rem rgb(0 0 0 / 0.75),
+      var(--halo);
+    padding: 0.875rem 1rem;
+  }
+  /* Quatre teintes qui tournent — c'est la rangee de mesures de la fiche serie (saisons,
+     episodes, engagement, dernier episode), et elle en compte justement quatre.
+     ⚠️ Les teintes sont celles du jeu **sans sens applicatif** : une tuile n'annonce pas un
+     etat, elle mesure. Employer `--color-live` ici ferait croire a un statut. */
+  .tile:nth-child(4n + 1) {
+    --tile-hue: var(--color-hue-6);
+  }
+  .tile:nth-child(4n + 2) {
+    --tile-hue: var(--color-hue-4);
+  }
+  .tile:nth-child(4n + 3) {
+    --tile-hue: var(--color-hue-2);
+  }
+  .tile:nth-child(4n + 4) {
+    --tile-hue: var(--color-hue-7);
+  }
+  /* ⚠️ La tuile ENGAGEMENT garde le volt, contre la rotation : c'est la seule qui porte
+     `emphasis`, et son sens — « ce que la serie vous demande » — est le differenciateur du
+     produit. Une couleur decorative la ferait rentrer dans le rang. */
+  .tile.panel-lit {
+    --tile-hue: var(--color-volt);
+  }
+  /**
+   * =============================================================================
+   * L'affiche comme OBJET — la piece maitresse, et elle n'existait pas
+   * =============================================================================
+   *
+   * Les affiches vivaient dans un `.panel` : une bordure grise de 1 px, un fond de carte, la
+   * meme matiere qu'un panneau de reglages. Cinq cadres differents dans cinq fichiers, tous
+   * plats. Or c'est **le** composant du produit — celui qui occupe la majorite de l'ecran sur
+   * l'accueil, la bibliotheque et le generique.
+   *
+   * Trois choses, et les trois comptent :
+   *
+   * 1. **Un anneau interne clair**, pas une bordure sombre. Une bordure grise creuse un
+   *    contour ; un liseré clair a l'interieur fait un **bord eclaire**, donc un objet pose
+   *    sur la page plutot qu'un trou decoupe dedans.
+   * 2. **Deux ombres portees**, une courte et une longue. Une seule ombre donne un autocollant ;
+   *    deux donnent une distance au fond.
+   * 3. **Une echelle au survol**, courte et en exponentielle sortante. C'est ce qui rend une
+   *    grille vivante sans qu'aucune couleur ne bouge.
+   *
+   * ⚠️ **L'anneau est sur `::after` et non en `box-shadow: inset` sur le cadre.** Une ombre
+   * interne se peint sous le contenu : avec un `<img>` qui remplit la boite, elle serait
+   * entierement cachee. Le defaut serait invisible en relisant le CSS — la regle est la, elle
+   * ne rend simplement rien.
+   */
+  .poster-frame {
+    position: relative;
+    overflow: hidden;
+    /* Le rayon suit la taille : 8 px sur une affiche de 300 px et sur une vignette de 40 px
+       ne se lisent pas pareil — le second parait arrondi comme un bouton. */
+    border-radius: clamp(2px, 2.66%, 8px);
+    /* Le puits est **plus sombre** que la page : ce qu'on voit avant le chargement doit etre
+       un creux, pas une carte grise de la meme valeur que les panneaux. */
+    background-color: color-mix(in oklab, var(--color-ink) 85%, black);
+    box-shadow:
+      0 1px 5px rgb(0 0 0 / 0.25),
+      0 4px 16px rgb(0 0 0 / 0.35);
+    transition:
+      transform 140ms var(--ease-out-expo),
+      box-shadow 140ms var(--ease-out-expo);
+  }
+}

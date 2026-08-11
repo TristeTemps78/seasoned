@@ -1,0 +1,201 @@
+/**
+ * La base — html, body, la lueur de fond, le focus, le mouvement reduit.
+ *
+ * Extrait de `globals.css` le 2026-08-11. Ce fichier ne contient que des regles
+ * DEPLACEES : aucune valeur n'a change, et le CSS compile est identique au bit pres
+ * avant/apres — c'est ce qui rend ce decoupage verifiable plutot que croyable.
+ */
+
+/**
+ * Theme — Voltface.
+ *
+ * ## Les deux regles qui gouvernent cette direction artistique
+ *
+ * 1. **« L'affiche est l'interface »**. Les affiches ne decorent
+ *    pas, elles *sont* la navigation. Le cyberpunk se joue donc sur le **chassis** —
+ *    fond, aretes, accents, chiffres — et jamais sur les vignettes. Une page qui brille
+ *    partout ne met plus rien en avant, ce qui reviendrait a defaire la seule lecon d'UX
+ *    que ce projet a reprise de Letterboxd.
+ * 2. **Le neon ne porte jamais le texte de lecture.** Un cyan a 100 % de saturation sur
+ *    fond sombre est spectaculaire et illisible sur un paragraphe. Les accents servent
+ *    les **aretes, les etats et les chiffres** ; le corps de texte reste `--color-text`.
+ *
+ * ## Les deux polices, et pourquoi il n'y en avait aucune avant le 2026-08-07
+ *
+ * Ce bloc affirmait : « `font-src 'self'` interdit Google Fonts, donc le caractere vient
+ * de la grille monospace ». La premisse est vraie, **la conclusion ne suivait pas** :
+ * `next/font/local` sert depuis `/_next/static/media/`, c'est-a-dire depuis `'self'`. La
+ * CSP interdisait un *fournisseur tiers*, jamais une police. Meme forme d'erreur que
+ * « pas de Mac, donc pas de natif » (A11) — et elle a survecu tout aussi longtemps, parce
+ * qu'elle etait ecrite comme un fait.
+ *
+ * Pire : la « grille monospace tabulaire » censee porter le differenciateur etait la pile
+ * **systeme**, recopiee trois fois dans ce fichier. « 537 h », « S5E3 », « 26 mois » —
+ * c'est-a-dire ce que le produit a d'unique — etaient dessines differemment sur chaque
+ * machine, et personne ne les avait jamais vus deux fois pareil.
+ *
+ * Desormais : **Instrument Sans** pour l'interface, **IBM Plex Mono** pour les chiffres.
+ * Le detail du choix et son cout (43 Ko, sous-ensemble latin) sont dans `app/fonts.ts`.
+ * Les deux familles sont branchees ici, donc **un seul endroit** decide du caractere de
+ * tout le site — y compris des ecrans que personne n'a rouverts.
+ */
+
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+
+  /* ⚠️ Indispensable a `.bleed` : `100vw` **inclut la barre de defilement**, donc une section
+     pleine largeur depasse la zone visible de ~15 px. `clip` et non `hidden`, qui se
+     propagerait a la fenetre et casserait le `sticky` de l'en-tete.
+
+     ⚠️ Sur `body` et **pas** sur `html` : verifie au navigateur le 2026-08-10, `overflow:
+     clip` ne se propage pas a la fenetre comme `hidden` le ferait — pose sur `html` la regle
+     etait inerte, le defilement horizontal restait possible. */
+  overflow-x: clip;
+
+  /*
+   * La lueur de fond : deux halos tres dilues, fixes, qui donnent une profondeur au noir
+   * sans rien couter. `background-attachment: fixed` evite qu'ils defilent — un halo qui
+   * suit le contenu se remarque, un halo immobile se ressent.
+   *
+   * Ecrit en `radial-gradient` et non en image : aucun octet a telecharger, et le rendu
+   * suit la taille de la fenetre au lieu de pixeliser.
+   */
+  background-image:
+    radial-gradient(60rem 40rem at 15% -10%, color-mix(in oklab, var(--color-volt) 7%, transparent), transparent),
+    radial-gradient(50rem 35rem at 85% 0%, color-mix(in oklab, var(--color-pulse) 5%, transparent), transparent);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/**
+ * La grille de fond — la signature du genre, pour zero octet.
+ *
+ * Deux degrades repetes qui dessinent un quadrillage de 72 px, a 3 % d'opacite. C'est
+ * volontairement **a la limite du perceptible** : une grille qu'on remarque devient un
+ * motif de papier peint et entre en concurrence avec les affiches, ce que « l'affiche est
+ * l'interface » interdit. On doit la sentir sans la voir.
+ *
+ * En pseudo-element fixe plutot qu'en fond du `body` : il porte deja les halos, et
+ * empiler quatre couches dans une seule propriete rend l'ensemble illisible a modifier.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-volt) 3%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-volt) 3%, transparent) 1px, transparent 1px);
+  background-size: 72px 72px;
+  /* S'efface vers le bas : une grille uniforme sur toute la hauteur ecrase le contenu
+     long, alors qu'un degrade la fait exister en haut et disparaitre ensuite. */
+  mask-image: linear-gradient(to bottom, black, transparent 60%);
+}
+
+/**
+ * Les chiffres, en grille.
+ *
+ * `tabular-nums` fige la chasse des chiffres : une colonne de durees cesse de danser
+ * quand un 1 remplace un 8. C'est la moitie fonctionnelle du choix ; l'autre moitie est
+ * que le monospace **est** le vocabulaire visuel du genre.
+ *
+ * ⚠️ **Cette pile etait ecrite ici a la main, et deux fois de plus ailleurs dans ce
+ * fichier** — donc le differenciateur du produit changeait de dessin selon la machine.
+ * Elle passe par `--font-mono`, defini une seule fois dans `@theme`.
+ *
+ * A poser sur ce qui se lit comme une mesure — durees, positions, compteurs — et non
+ * sur les titres de series.
+ */
+.numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/**
+ * Le focus clavier — neon, et non negociable.
+ *
+ * C'est le seul endroit ou l'accessibilite et la direction artistique demandent la meme
+ * chose : un anneau franc, visible, qui ne depend pas de la couleur seule pour exister
+ * (il a une epaisseur). Le contour par defaut des navigateurs disparaissait sur ce fond.
+ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-volt);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/**
+ * Une surface qui reagit.
+ *
+ * Le liseré superieur est ce qui distingue une carte cyberpunk d'une carte sombre : un
+ * seul trait lumineux, en haut, qui s'allume au survol. Rien d'autre ne bouge — pas
+ * d'echelle, pas d'ombre portee, pour que le regard reste sur les affiches.
+ */
+.edge-lit,
+.panel-lit {
+  position: relative;
+  isolation: isolate;
+}
+
+.edge-lit::before,
+.panel-lit::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--color-volt) 60%, transparent),
+    transparent
+  );
+  opacity: 0.35;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+
+.edge-lit:hover::before,
+.panel-lit:hover::before {
+  opacity: 1;
+}
+
+/**
+ * Ce qui compte le plus sur un ecran : un chiffre qui brille juste assez.
+ *
+ * Reserve aux valeurs uniques et importantes — le total du bilan, l'engagement d'une
+ * serie. Pose sur chaque chiffre de la page, l'effet disparait par saturation.
+ */
+.glow {
+  color: var(--color-volt);
+  text-shadow: 0 0 24px color-mix(in oklab, var(--color-volt) 45%, transparent);
+}
+
+/* =============================================================================
+ * ⚠️ `
+
+/**
+ * ⚠️ Toute animation d'ambiance se tait quand le systeme le demande.
+ *
+ * Ce n'est pas une politesse : les mouvements repetitifs declenchent des troubles
+ * vestibulaires reels, et le depliage du cube prevu a l'ouverture de l'application sera
+ * exactement le genre d'animation concernee.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

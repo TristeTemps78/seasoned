@@ -89,7 +89,7 @@ export async function SearchView({ query, locale }: {
         <p className="text-(--color-muted)">{t(locale, 'search.none', { q: query })}</p>
       ) : (
         <>
-          <p className="text-sm text-(--color-muted)">
+          <p className="meta">
             {tn(locale, 'search.count', total, { q: query })}
           </p>
           {/* ⚠️ Cette page avait sa propre grille (`sm:grid-cols-3 md:grid-cols-5`), donc

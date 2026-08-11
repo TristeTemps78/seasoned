@@ -25,7 +25,7 @@ export function QuizBars({ points, perUnit, label }: {
             className="w-6 rounded-t bg-(--color-volt)"
             style={{ height: `${Math.max(4, point.value * perUnit)}px` }}
           />
-          <span className="text-xs text-(--color-muted)">{point.label}</span>
+          <span className="meta-sm">{point.label}</span>
         </li>
       ))}
     </ul>
