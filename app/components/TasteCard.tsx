@@ -1,6 +1,7 @@
 'use client';
 
 import { useT } from '@/app/i18n/LocaleProvider';
+import { MIN_SERIES_FOR_TASTE } from '@/src/domain/taste';
 import { severityOf, type TasteProfile } from '@/src/domain/taste';
 
 /**
@@ -26,7 +27,24 @@ export function TasteCard({ profile, journalTitles = {} }: {
   readonly journalTitles?: Readonly<Record<string, string>>;
 }) {
   const { t, tn, n } = useT();
-  if (!profile.speaks) return null;
+  // 🔴 **C'etait `return null`.** La doctrine « mieux vaut se taire que compter zero » est
+  // citee dans onze composants du produit ; appliquee ici, elle faisait disparaitre une
+  // section entiere d'une page par ailleurs peuplee — donc l'ecran d'un profil « pas encore
+  // assez nourri » etait identique a celui d'un profil casse.
+  //
+  // C'est le defaut que ce depot a paye trois sessions sur le lot 10 : *l'ecran d'un defaut
+  // est identique a celui d'un demarrage a froid*. Se taire est juste quand il n'y a rien a
+  // dire ; ici il y a quelque chose a dire — **combien il en manque**.
+  if (!profile.speaks) {
+    return (
+      <section className="band" aria-label={t('taste.title')}>
+        <h2 className="row-title">{t('taste.title')}</h2>
+        <p className="prose-note">
+          {t('taste.pending', { need: n(MIN_SERIES_FOR_TASTE), n: n(profile.ratedSeries) })}
+        </p>
+      </section>
+    );
+  }
 
   const severity = severityOf(profile.gapToPublic);
   const gap = profile.gapToPublic;

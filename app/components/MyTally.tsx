@@ -30,9 +30,20 @@ import type { Tally } from '@/src/domain/tally';
  */
 export function MyTally({ tally }: { readonly tally: Tally }) {
   const tr = useT();
-  const { t, tn } = tr;
+  const { t, tn, n } = tr;
   const { journal, setHideHours } = useJournal();
-  if (!tally.worthShowing) return null;
+  // 🔴 Meme conversion que `TasteCard` : un `return null` faisait disparaitre la section
+  // plutot que d'expliquer pourquoi le total manque. Le chiffre est un minorant, et un
+  // minorant trop severe serait trompeur — mais *dire qu'on ne peut pas encore le dire* est
+  // exactement ce que le reste de ce composant fait deja avec « au moins » et « non compte ».
+  if (!tally.worthShowing) {
+    return (
+      <section className="band" aria-label={t('tally.aria')}>
+        <h2 className="row-title">{t('tally.title')}</h2>
+        <p className="prose-note">{t('tally.pending', { n: n(tally.counted) })}</p>
+      </section>
+    );
+  }
 
   const heaviest = tally.heaviest;
 

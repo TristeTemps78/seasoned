@@ -684,6 +684,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
     '{n} shows you follow could not be counted: their snapshots have expired, or the catalogue does not know how long their episodes are. The real total is higher.',
   'tally.declared':
     'Including {commitment} of history carried over from an import — time you did not spend here.',
+  'taste.pending':
+    'Your taste profile appears once {need} series are rated — you have {n}.',
+  'tally.pending':
+    'The total appears once enough series have a known runtime. {n} countable so far.',
   'tally.private': 'Worked out right here — this figure goes nowhere,',
 
   'season.aired.one': '{n} episode out',

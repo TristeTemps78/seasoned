@@ -809,6 +809,10 @@ export const FR = {
   // modèle, jamais sur la valeur interpolée.
   'tally.declared':
     'Dont {commitment} d’historique repris d’un import — du temps que vous n’avez pas passé ici.',
+  'taste.pending':
+    'Votre profil de goût s’affiche à partir de {need} séries notées — vous en avez {n}.',
+  'tally.pending':
+    'Le total s’affichera quand assez de séries auront une durée connue. {n} chiffrable pour l’instant.',
   'tally.private': 'Calculé ici — ce chiffre ne part nulle part,',
 
   // --- Saison en cours -----------------------------------------------------
