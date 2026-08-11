@@ -22,7 +22,7 @@ import { ReviewBody } from '@/app/components/ReviewBody';
 import { Discover } from '@/app/components/Discover';
 import { DailyRound } from '@/app/components/DailyRound';
 import { FriendQuiz } from '@/app/components/FriendQuiz';
-import { FaceDot } from '@/app/components/FaceDot';
+import { Avatar } from '@/app/components/Avatar';
 import { pathIn } from '@/lib/routes';
 import { socialFrom } from '@/app/social/socialFrom';
 
@@ -273,9 +273,10 @@ export function Friends() {
                       que personne n'atteint, c'est-a-dire le defaut que ce depot a deja
                       commis deux fois avec `unfollow` et `setVisibility`. C'est ici que la
                       question « et sa page ? » se pose naturellement : on lit un nom. */}
+                  <Avatar handle={friend.handle} />
                   <Link
                     href={pathIn(`/u/${friend.handle}`, locale)}
-                    className="hover:text-(--color-volt)"
+                    className="font-medium hover:text-(--color-volt)"
                   >
                     @{friend.handle}
                   </Link>
@@ -314,9 +315,10 @@ export function Friends() {
                 const mutual = friends.some((friend) => friend.userId === fan.userId);
                 return (
                   <li key={fan.userId} className="flex items-center gap-1">
+                    <Avatar handle={fan.handle} />
                     <Link
                       href={pathIn(`/u/${fan.handle}`, locale)}
-                      className="hover:text-(--color-volt)"
+                      className="font-medium hover:text-(--color-volt)"
                     >
                       @{fan.handle}
                     </Link>
@@ -431,11 +433,17 @@ export function Friends() {
                     key={`review-${review.authorId}-${review.subject}-${review.target}-${index}`}
                     className="panel space-y-2 bg-(--color-surface)/50 px-4 py-3 text-sm"
                   >
-                    <div>
-                      <FaceDot face={review.face} />{' '}
+                    {/* ⚠️ `flex-wrap` et non une colonne : la ligne porte le pseudo, le verbe et
+                        le titre de la serie, qui doivent rester **une phrase**. Une colonne les
+                        empilerait en trois fragments qui ne se lisent plus ensemble. Les `{' '}`
+                        qui suivent deviennent des elements de flex vides — la specification dit
+                        qu'un element anonyme fait de blanc seul n'est pas rendu, donc ils ne
+                        creusent aucun trou. */}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <Avatar handle={review.handle} face={review.face} />
                       <Link
                         href={pathIn(`/u/${review.handle}`, locale)}
-                        className="text-(--color-muted) hover:text-(--color-volt)"
+                        className="font-medium hover:text-(--color-volt)"
                       >
                         @{review.handle}
                       </Link>{' '}
@@ -472,12 +480,12 @@ export function Friends() {
               return (
                 <li
                   key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
-                  className="panel bg-(--color-surface)/50 px-4 py-3 text-sm"
+                  className="panel flex flex-wrap items-center gap-x-2 gap-y-1 bg-(--color-surface)/50 px-4 py-3 text-sm"
                 >
-                  <FaceDot face={item.face} />{' '}
+                  <Avatar handle={item.handle} face={item.face} />{' '}
                   <Link
                     href={pathIn(`/u/${item.handle}`, locale)}
-                    className="text-(--color-muted) hover:text-(--color-volt)"
+                    className="font-medium hover:text-(--color-volt)"
                   >
                     @{item.handle}
                   </Link>{' '}

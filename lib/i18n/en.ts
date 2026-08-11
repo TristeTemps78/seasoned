@@ -72,6 +72,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'series.airsOn': 'on {date}',
   'series.demands': 'What this series asks of you',
   'series.sameCreator': 'From the same creator',
+  'cast.title': 'On screen',
+  'cast.why': 'The main roles, across every season.',
   'stat.seasons': 'Seasons',
   'stat.episodes': 'Episodes',
   'stat.commitment': 'Commitment',

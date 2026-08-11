@@ -778,6 +778,12 @@ export function posterDimensions(size: PosterSize): { width: number; height: num
   return { width, height: Math.round(width * POSTER_ASPECT) };
 }
 
+/* ⚠️ **Il n'y a pas de `profileUrl`, et c'est deliberé** (2026-08-11). Un portrait TMDB se
+   sert depuis le meme CDN, sous les memes noms de taille (`w185` est declare ci-dessus) et au
+   meme rapport 1,5 : `posterUrl(profilePath, 'w185')` rend exactement l'URL qu'une fonction
+   dediee construirait. Une seconde fonction n'aurait ajoute qu'un endroit de plus a corriger
+   le jour ou le CDN change d'adresse — le defaut que ce depot a paye trois fois. */
+
 /** ⚠️ **Pas les memes que celles des affiches** : `w342` n'existe pas pour une banniere,
     `w780` n'existe pas pour une affiche. Deriver l'une de l'autre sert un 404. */
 const BACKDROP_SIZES = { w300: 300, w780: 780, w1280: 1280 } as const;

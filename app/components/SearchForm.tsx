@@ -1,5 +1,6 @@
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { pathIn } from '@/lib/routes';
+import { Icon } from '@/app/components/Icon';
 
 /**
  * Formulaire de recherche.
@@ -37,8 +38,9 @@ export function SearchForm({ defaultValue = '', autoFocus = false, locale = DEFA
       />
       <button
         type="submit"
-        className="border-l border-(--color-edge) px-5 text-sm font-medium text-(--color-volt) transition-colors hover:bg-(--color-volt)/10"
+        className="flex items-center gap-2 border-l border-(--color-edge) px-5 text-sm font-semibold text-(--color-volt) transition-colors hover:bg-(--color-volt) hover:text-(--color-ink)"
       >
+        <Icon name="search" />
         {t(locale, 'search.submit')}
       </button>
     </form>

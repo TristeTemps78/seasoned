@@ -9,6 +9,7 @@ import { LanguagePicker } from '@/app/components/LanguagePicker';
 import { MyFace } from '@/app/components/MyFace';
 import { FaceSwitch } from '@/app/components/FaceSwitch';
 import { Faces } from '@/app/components/Faces';
+import { Icon } from '@/app/components/Icon';
 import { AuthProvider } from '@/app/auth/AuthProvider';
 import { JournalSync } from '@/app/components/JournalSync';
 import { localeTag, t, type Locale } from '@/lib/i18n';
@@ -119,8 +120,9 @@ export function SiteChrome({ locale, Messages, children }: {
                 est pas une. Un reglage se range avec les reglages. */}
             <Link
               href={pathIn('/compte', locale)}
-              className="shrink-0 text-xs text-(--color-muted) hover:text-(--color-text)"
+              className="flex shrink-0 items-center gap-1.5 text-xs text-(--color-muted) hover:text-(--color-text)"
             >
+              <Icon name="user" />
               {t(locale, 'account.nav')}
             </Link>
             <LanguagePicker />

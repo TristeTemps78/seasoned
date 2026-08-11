@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
-import { FaceDot } from '@/app/components/FaceDot';
+import { Avatar } from '@/app/components/Avatar';
 import { type Discoverable } from '@/src/social/client';
 import { socialFrom } from '@/app/social/socialFrom';
 
@@ -71,8 +71,15 @@ export function Discover() {
       <ul className="flex flex-wrap gap-2">
         {others.map((person) => (
           <li key={person.userId} className="flex items-center gap-1">
-            <Link className="btn" href={pathIn(`/u/${person.handle}`, locale)}>
-              <FaceDot face={person.face} />
+            {/* ⚠️ Le rembourrage gauche se resserre a `0.25rem` : l'avatar fait 2 rem, donc le
+                rembourrage standard de `.btn` lui laissait un blanc deux fois plus large a
+                gauche qu'a droite. Une pastille de personne se lit comme un jeton, pas comme
+                un bouton avec une image dedans. */}
+            <Link
+              className="btn py-1 pl-1"
+              href={pathIn(`/u/${person.handle}`, locale)}
+            >
+              <Avatar handle={person.handle} face={person.face} />
               @{person.handle}
             </Link>
             {/* La raison de cliquer, dite a cote du nom. ⚠️ **Rien pour ceux qui n'ont rien

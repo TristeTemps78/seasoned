@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
+import { Avatar } from '@/app/components/Avatar';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { journalKey } from '@/src/domain/journal';
 import { type SocialClient, type FeedItem } from '@/src/social/client';
@@ -81,16 +82,21 @@ export function SeriesPeople({ seriesId }: { readonly seriesId: string }) {
   return (
     <section className="card space-y-3" aria-label={t('people.title')}>
       <h2 className="card-title">{t('people.title')}</h2>
-      <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+      <ul className="flex flex-wrap gap-x-5 gap-y-3 text-sm">
         {shown.map((item) => (
-          <li key={item.authorId}>
-            <Link
-              href={pathIn(`/u/${item.handle}`, locale)}
-              className="text-(--color-muted) hover:text-(--color-volt)"
-            >
-              @{item.handle}
-            </Link>{' '}
-            {t(item.kind === 'liked' ? 'people.liked' : 'people.finished')}
+          <li key={item.authorId} className="flex items-center gap-2">
+            <Avatar handle={item.handle} face={item.face} />
+            <span>
+              <Link
+                href={pathIn(`/u/${item.handle}`, locale)}
+                className="font-medium hover:text-(--color-volt)"
+              >
+                @{item.handle}
+              </Link>{' '}
+              <span className="text-(--color-muted)">
+                {t(item.kind === 'liked' ? 'people.liked' : 'people.finished')}
+              </span>
+            </span>
           </li>
         ))}
       </ul>

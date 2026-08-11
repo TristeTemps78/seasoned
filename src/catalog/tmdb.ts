@@ -13,6 +13,7 @@
  */
 
 import type {
+  CastMember,
   CatalogProvider,
   Creator,
   DiscoverKind,
@@ -186,6 +187,53 @@ function readCreators(source: Record<string, unknown>): readonly Creator[] {
     .filter((c): c is Creator => c !== undefined);
 }
 
+/**
+ * Le nombre de roles retenus.
+ *
+ * ⚠️ **Le tri est fait par TMDB (`order`), pas ici** : `aggregate_credits` rend deja le
+ * generique par ordre d'importance. Le recouper cote client demanderait de charger les 400
+ * lignes qu'on cherche justement a ne pas garder.
+ *
+ * Douze : deux rangees pleines sur un ecran large, et assez peu pour qu'un generique de
+ * feuilleton quotidien ne devienne pas la moitie de la fiche.
+ */
+const CAST_KEPT = 12;
+
+/**
+ * Le generique, depuis `aggregate_credits`.
+ *
+ * ⚠️ **`aggregate_credits` et non `credits`**, et la difference compte pour une serie :
+ * `credits` ne rend que le generique de la **derniere saison**, donc il oublie tout acteur
+ * parti avant la fin — sur une serie de dix ans, il montre les arrivants et cache les
+ * personnages principaux. `aggregate_credits` cumule les saisons, au prix d'une forme
+ * differente : le personnage vit sous `roles[]` et non dans un champ `character`.
+ *
+ * ⚠️ On garde le **premier** role : un acteur qui a joue deux personnages en dix saisons en a
+ * un principal, et c'est celui que TMDB place en tete. Les concatener rendrait « Untel /
+ * Untel / Untel » sous un visage de 80 px.
+ */
+function readCast(source: Record<string, unknown>): readonly CastMember[] {
+  const credits = asRecord(source['aggregate_credits']);
+  return asArray(credits['cast'])
+    .slice(0, CAST_KEPT)
+    .map((raw) => {
+      const person = asRecord(raw);
+      const id = readNumber(person, 'id');
+      const name = readString(person, 'name');
+      if (id === undefined || name === undefined) return undefined;
+
+      const character = readString(asRecord(asArray(person['roles'])[0]), 'character');
+      const profilePath = readString(person, 'profile_path');
+      return {
+        providerId: String(id),
+        name,
+        ...(character !== undefined ? { character } : {}),
+        ...(profilePath !== undefined ? { profilePath } : {}),
+      };
+    })
+    .filter((member): member is CastMember => member !== undefined);
+}
+
 function readExternalIds(source: Record<string, unknown>): ExternalIds {
   const tmdb = readNumber(source, 'id');
   const external = asRecord(source['external_ids']);
@@ -292,6 +340,7 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
   const nextAiringAt = readDate(nextEpisode, 'air_date');
   const episodeRunTimeMinutes = readRuntime(source);
   const creators = readCreators(source);
+  const cast = readCast(source);
 
   const nextSeason = readNumber(nextEpisode, 'season_number');
   const nextNumber = readNumber(nextEpisode, 'episode_number');
@@ -318,6 +367,7 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
     seasons,
     ...(voteAverage !== undefined && voteAverage > 0 ? { voteAverage } : {}),
     ...(creators.length > 0 ? { creators } : {}),
+    ...(cast.length > 0 ? { cast } : {}),
     ...(lastAiredAt !== undefined ? { lastAiredAt } : {}),
     ...(nextAiringAt !== undefined ? { nextAiringAt } : {}),
     ...(nextFull !== undefined ? { nextEpisode: nextFull } : {}),
@@ -430,7 +480,9 @@ export class TmdbProvider implements CatalogProvider {
   ): Promise<SeriesDetail> {
     const raw = await this.#get(
       `/tv/${encodeURIComponent(providerId)}`,
-      { append_to_response: 'external_ids' },
+      // ⚠️ `aggregate_credits` voyage dans la **meme** reponse : le generique ne coute donc ni
+      // une requete de plus, ni une entree de cache de plus, ni une ligne au budget TMDB.
+      { append_to_response: 'external_ids,aggregate_credits' },
     );
     const mapped = mapSeriesDetail(raw);
     if (mapped === undefined) {

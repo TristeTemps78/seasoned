@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { FaceDot } from '@/app/components/FaceDot';
+import { Avatar } from '@/app/components/Avatar';
 import { QuizBars } from '@/app/components/QuizBars';
 import { QuizChoices, QuizVerdictLine } from '@/app/components/QuizChoices';
 import {
@@ -123,10 +123,10 @@ export function DailyRound() {
           <ol className="space-y-1 text-sm">
             {board.map((line, rank) => (
               <li key={line.handle} className="flex items-center gap-2">
-                <span className="w-6 text-(--color-muted)">{rank + 1}</span>
-                <FaceDot face={line.face} />
-                <span className="flex-1">@{line.handle}</span>
-                <span className="font-medium">{line.score}</span>
+                <span className="numeric w-6 text-(--color-muted)">{rank + 1}</span>
+                <Avatar handle={line.handle} face={line.face} />
+                <span className="flex-1 font-medium">@{line.handle}</span>
+                <span className="numeric text-(--color-volt)">{line.score}</span>
               </li>
             ))}
           </ol>

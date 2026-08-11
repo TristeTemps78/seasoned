@@ -82,6 +82,8 @@ export const FR = {
   'series.airsOn': 'le {date}',
   'series.demands': 'Ce que la série demande',
   'series.sameCreator': 'Du même créateur',
+  'cast.title': 'À l’écran',
+  'cast.why': 'Les rôles principaux, toutes saisons confondues.',
   'stat.seasons': 'Saisons',
   'stat.episodes': 'Épisodes',
   'stat.commitment': 'Engagement',

@@ -143,6 +143,28 @@ export interface Creator {
   readonly name: string;
 }
 
+/**
+ * Un role au generique (2026-08-11).
+ *
+ * ## Pourquoi il n'y avait pas de casting du tout
+ *
+ * `profile_path` n'apparaissait **nulle part** dans le depot : la fiche serie nommait ses
+ * createurs et personne d'autre. Sur la reference du projet, les visages occupent la moitie
+ * de la page — c'est le manque que Tristan a nomme le 2026-08-11.
+ *
+ * ⚠️ `character` est **optionnel, et souvent absent** hors des series americaines — meme
+ * degradation silencieuse que `creators`. Un role sans nom de personnage reste un visage
+ * utile ; refuser la ligne entiere viderait le generique des series qu'on connait le moins.
+ */
+export interface CastMember {
+  readonly providerId: string;
+  readonly name: string;
+  /** Le personnage joue, quand le fournisseur le connait. */
+  readonly character?: string;
+  /** Le chemin de la photo chez le fournisseur. Absent = on rendra un monogramme. */
+  readonly profilePath?: string;
+}
+
 /** Fiche complete d'une serie, telle que rendue par un fournisseur. */
 export interface SeriesDetail extends SeriesSummary {
   readonly externalIds: ExternalIds;
@@ -174,6 +196,14 @@ export interface SeriesDetail extends SeriesSummary {
    * absent hors des series americaines — degrader sans bruit.
    */
   readonly creators?: readonly Creator[];
+  /**
+   * Le generique, dans l'ordre du fournisseur.
+   *
+   * ⚠️ **Borne a la source** (voir `readCast`) : `aggregate_credits` rend le generique de
+   * toutes les saisons reunies, soit plus de 400 lignes sur une serie longue. Les charger
+   * pour en afficher douze ferait payer la fiche entiere pour un encart.
+   */
+  readonly cast?: readonly CastMember[];
 }
 
 /** Un episode tel que rendu par un fournisseur. */

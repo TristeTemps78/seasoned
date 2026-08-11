@@ -30,6 +30,7 @@ import { TrajectorySection } from '@/app/components/TrajectorySection';
 import { WatchOptions } from '@/app/components/WatchOptions';
 import { SeriesOrderings } from '@/app/components/SeriesOrderings';
 import { MyProgress } from '@/app/components/MyProgress';
+import { Cast } from '@/app/components/Cast';
 import { Reviews } from '@/app/components/Reviews';
 import { SeriesPeople } from '@/app/components/SeriesPeople';
 import { AddToList } from '@/app/components/AddToList';
@@ -344,6 +345,13 @@ export async function SeriesView({ id, locale }: {
           ) : null}
         </dl>
       </section>
+
+      {/* ⚠️ Range dans « la serie » et non dans « le detail » : un visage repond a *quelle est
+          cette serie* — souvent avant le synopsis, et c'est la raison pour laquelle la
+          reference le place haut. Le mettre avec les orderings l'aurait fait tomber sous la
+          decision, c'est-a-dire trop tard pour la prendre.
+          Gratuit en reseau : le generique voyage dans la reponse de la fiche. */}
+      <Cast cast={detail.cast ?? []} locale={locale} />
 
       {/* Le seul element de la page qui vous connaisse. Il s'ajoute cote navigateur :
           la page elle-meme reste statique et mise en cache, et **aucune donnee de

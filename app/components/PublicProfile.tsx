@@ -12,6 +12,7 @@ import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { type Profile, type PublishedReview } from '@/src/social/client';
 import { Lists } from '@/app/components/Lists';
+import { Avatar } from '@/app/components/Avatar';
 import { FaceDot } from '@/app/components/FaceDot';
 import { socialFrom } from '@/app/social/socialFrom';
 
@@ -142,18 +143,25 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-baseline gap-3">
-          <h1 className="page-title">@{profile.handle}</h1>
+        <div className="flex flex-wrap items-center gap-4">
+          {/* ⚠️ La face n'est PAS posee en surimpression ici, alors que `Avatar` sait le faire :
+              elle est deja dite en toutes lettres deux lignes plus bas. La repeter en pastille
+              ferait annoncer la meme chose deux fois au meme endroit — c'est utile dans une
+              liste dense, ou le mot ne tient pas, et redondant sur une page qui a la place. */}
+          <Avatar handle={profile.handle} large />
+          <div className="flex flex-wrap items-baseline gap-3">
+            <h1 className="page-title">@{profile.handle}</h1>
           {/* ⚠️ Le **mot**, pas la pastille. Ailleurs c'est l'inverse : dans le fil et dans
               « des gens a decouvrir », une ligne par personne ne supporte pas un mot de plus.
               Ici il y a la place, et une couleur seule n'apprend rien a qui la voit pour la
               premiere fois. La pastille l'accompagne pour faire le lien avec les listes. */}
-          {profile.face !== undefined ? (
-            <span className="flex items-center gap-1.5 text-sm text-(--color-muted)">
-              <FaceDot face={profile.face} />
-              {t(`face.${profile.face}`)}
-            </span>
-          ) : null}
+            {profile.face !== undefined ? (
+              <span className="flex items-center gap-1.5 text-sm text-(--color-muted)">
+                <FaceDot face={profile.face} />
+                {t(`face.${profile.face}`)}
+              </span>
+            ) : null}
+          </div>
         </div>
         {isSelf ? (
           <span className="text-sm text-(--color-muted)">{t('profile.self')}</span>

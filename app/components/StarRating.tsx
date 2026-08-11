@@ -89,7 +89,7 @@ function Star({ filled, className }: { readonly filled: 0 | 0.5 | 1; readonly cl
       {filled === 0.5 ? (
         <defs>
           <linearGradient id={id}>
-            <stop offset="50%" stopColor="var(--color-warn)" />
+            <stop offset="50%" stopColor="var(--color-rating)" />
             <stop offset="50%" stopColor="transparent" />
           </linearGradient>
         </defs>
@@ -97,7 +97,10 @@ function Star({ filled, className }: { readonly filled: 0 | 0.5 | 1; readonly cl
       <path
         d="M10 1.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L1.6 7.7l5.8-.8z"
         fill={
-          filled === 1 ? 'var(--color-warn)' : filled === 0.5 ? `url(#${id})` : 'transparent'
+          // ⚠️ `--color-rating` et non `--color-warn` : les etoiles etaient peintes dans la
+          // couleur qui signifie « anomalie » partout ailleurs. Voir le jeton dans
+          // `globals.css`.
+          filled === 1 ? 'var(--color-rating)' : filled === 0.5 ? `url(#${id})` : 'transparent'
         }
         stroke="var(--color-edge)"
         strokeWidth="1"
