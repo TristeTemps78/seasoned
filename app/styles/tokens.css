@@ -84,10 +84,29 @@
   --color-soft: #aabbcc;
   --color-bright: #ffffff;
 
-  /* L'arc electrique — l'accent du produit, et la racine de son nom.
-     `volt` est la couleur d'interaction : liens actifs, focus, bordure vivante. */
-  --color-volt: #22d3ee;
-  --color-volt-dim: #0e7490;
+  /**
+   * =============================================================================
+   * L'accent — passe au vert du brief le 2026-08-11
+   * =============================================================================
+   *
+   * 🔴 **Retenu six passes par deference pour le nom du produit**, et c'etait une erreur de
+   * ma part : j'ai laisse « Voltface s'appelle volt » decider d'un choix graphique que
+   * personne ne m'avait demande de proteger. Le brief est explicite — un seul accent fait
+   * tout le travail, et c'est le vert.
+   *
+   * Ce jeton repeint **les 65 composants d'un coup** : boutons, pastilles, focus, survols,
+   * liens actifs, filets de section. C'est le changement le plus visible que ce depot puisse
+   * subir, et il tient en deux lignes — exactement ce que la segmentation d'hier a achete.
+   *
+   * ⚠️ Le nom `--color-volt` est **garde**. Le renommer toucherait 65 fichiers pour un gain
+   * nul : ce qu'un jeton nomme est un ROLE (« l'accent, ce qui vous concerne »), pas une
+   * teinte. Un `--color-green` mentirait le jour ou l'accent redeviendrait autre chose.
+   *
+   * `fill` sert l'aplat au repos, `dim` le survol — l'echelle du brief, sans son troisieme
+   * cran (`press`), qu'aucun etat du produit n'emploie aujourd'hui.
+   */
+  --color-volt: #00e054;
+  --color-volt-dim: #00ac1c;
 
   /* Le magenta ne sert aujourd'hui qu'au second halo du `body`. Ce n'est plus une regle :
      l'argument qui l'y confinait etait « une couleur, un sens », retiree le 2026-08-11.
@@ -110,7 +129,11 @@
      retiree le 2026-08-11. Elle reste utile a connaitre avant de repeindre quoi que ce soit
      — si le volt devenait vert (voir le basculement du brief plus bas), il faudrait donner
      autre chose a `--color-live`. */
-  --color-live: #4ade80;
+  /* ⚠️ **Le cyan reprend ce role, et ce n'est pas un lot de consolation.** Avec l'accent passe
+     au vert, un « en diffusion » vert serait indistinguable d'un bouton actif — la confusion
+     exacte que ce produit avait deja connue sur la fiche serie. Le cyan qui portait l'accent
+     porte desormais l'etat de la SERIE : elle diffuse, la date tombe. */
+  --color-live: #22d3ee;
   --color-warn: #fbbf24;
 
   /**
@@ -125,7 +148,9 @@
    * Un jeton a part, meme si la teinte en est proche aujourd'hui : ce qui compte est que les
    * deux puissent diverger sans qu'on ait a demeler quel `--color-warn` parlait de quoi.
    */
-  --color-rating: #ffc53d;
+  /* L'etoile active, au vert du brief : la note est une action affirmative, comme aimer ou
+     marquer vu. L'or les separait de tout le reste sans raison. */
+  --color-rating: #00e054;
 
   /* =============================================================================
    * 2026-08-11 — ce que Tristan a tranche, et ce que ca defait
@@ -259,5 +284,5 @@
 
   --color-invert-ink: #16202c;
   --color-invert-muted: #6b7a8d;
-  --color-invert-accent: #0d7490;
+  --color-invert-accent: #00842a;
 }

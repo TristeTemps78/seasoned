@@ -11,9 +11,11 @@ export function RowHeader({ title, subtitle }: {
   readonly subtitle: string;
 }) {
   return (
-    <div className="section-title">
-      <h2 className="row-title">{title}</h2>
-      <p className="meta">{subtitle}</p>
+    <div className="space-y-1">
+      <div className="row-head">
+        <h2 className="row-title">{title}</h2>
+      </div>
+      <p className="meta-sm">{subtitle}</p>
     </div>
   );
 }

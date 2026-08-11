@@ -80,10 +80,14 @@ export function Faces({ locale }: { readonly locale: Locale }) {
                 // ⚠️ Le volt passe **sur le libelle**, pas seulement sous lui : un trait de
                 // 2 px sous un mot gris etait la plus faible difference possible, et il
                 // fallait chercher ou l'on etait. Deux signaux, dont un non colore.
-                className={`inline-block border-b-2 px-3 py-4 text-sm whitespace-nowrap transition-colors ${
+                // ⚠️ Capitales serrees, 700, 12 px (brief 4.3). Un onglet en minuscules a la
+                // taille du corps de texte ne se lit pas comme de la navigation : il se lit
+                // comme un lien dans une phrase. Les capitales demandent un interlettrage
+                // **positif** — c'est la seule regle universelle de la typographie en capitales.
+                className={`inline-block border-b-2 px-3 py-4 text-xs font-bold tracking-[0.08em] whitespace-nowrap uppercase transition-colors ${
                   active
-                    ? 'border-(--color-volt) font-medium text-(--color-volt) [text-shadow:0_0_1rem_color-mix(in_oklab,var(--color-volt)_45%,transparent)]'
-                    : 'border-transparent text-(--color-muted) hover:text-(--color-text)'
+                    ? 'border-(--color-volt) text-(--color-bright)'
+                    : 'border-transparent text-(--color-muted) hover:text-(--color-bright)'
                 }`}
               >
                 {t(face.labelKey)}

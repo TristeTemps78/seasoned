@@ -329,6 +329,34 @@
    * l'interface », un titre de rangee qui pese autant qu'une affiche prend une place qui
    * n'est pas la sienne. Une etiquette **ouvre** la grille au lieu de la concurrencer.
    */
+  /**
+   * L'ouverture d'une rangee — un libelle, puis un filet qui traverse.
+   *
+   * 🔴 C'etait une **barre verticale de 2 px a gauche** du titre. Elle marquait le bloc sans
+   * jamais dire ou il s'arretait, et sur une page qui en empile quatre, quatre petits traits
+   * verticaux se lisent comme une liste a puces, pas comme des sections.
+   *
+   * Le filet horizontal fait l'inverse : il **traverse la page** et s'efface vers la droite.
+   * Il donne au titre une ligne de base commune avec le rail qu'il ouvre, et il decoupe
+   * l'ecran en bandes au lieu de le decouper en boites. C'est le motif de section du brief
+   * (4.10), et c'est ce qui distingue un magazine d'un empilement de cartes.
+   */
+  .row-head {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+  }
+
+  /* ⚠️ En `::after` et non en `border-bottom` sur le conteneur : le filet doit commencer
+     **apres** le titre, pas passer dessous. Un `flex: 1` prend exactement la place restante,
+     quelle que soit la longueur du libelle — aucune valeur a maintenir. */
+  .row-head::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-image: linear-gradient(to right, var(--color-edge), transparent);
+  }
+
   .row-title {
     font-size: 0.875rem;
     font-weight: 700;
