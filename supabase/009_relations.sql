@@ -24,9 +24,11 @@
 --   1. `#rows()` promet en tete de fichier de **ne jamais lever** : un 400 y devient `[]`.
 --      La promesse est bonne — une panne du social ne doit pas interrompre un produit local
 --      — mais elle transforme une erreur de schema en « personne n'a rien ecrit ».
---   2. Les ecrans se **taisent** quand la liste est vide : *mieux vaut se taire que compter
---      zero*. Bonne regle, meme consequence — l'ecran d'un defaut est identique a l'ecran
---      d'un demarrage a froid.
+--   2. Les ecrans se **taisaient** quand la liste etait vide : *mieux vaut se taire que
+--      compter zero*. On la croyait bonne ; elle a coute trois sessions ici — l'ecran d'un
+--      defaut etait identique a l'ecran d'un demarrage a froid. **Cette regle est morte le
+--      2026-08-11** (voir `CLAUDE.md`, regle 4) : un ecran qui n'a rien a montrer dit
+--      desormais quoi faire, et le fil distingue « vide » de « illisible ».
 --   3. La base ne contient **aucun profil** (verifie : 1 compte, 0 profil, 0 critique). Il
 --      n'existait donc aucune donnee dont l'absence aurait pu surprendre.
 --

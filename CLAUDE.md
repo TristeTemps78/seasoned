@@ -10,11 +10,33 @@ Un mix entre Letterboxd, Serializd et TV Time.
 - Serializd : les séries, saison par saison.
 - TV Time : où j'en suis, et ce qui revient.
 
-## Les trois règles
+## Les quatre règles
 
 1. Prendre du recul.
 2. La structure la plus simple qui marche.
 3. Ne pas refaire ce qui existe déjà.
+4. **Un écran qui n'a rien à montrer dit quoi faire.** Jamais `return null`.
+
+### Sur la quatrième (2026-08-11, décision de Tristan)
+
+Elle remplace une doctrine qui était citée dans **onze composants** : *« mieux vaut se
+taire que compter zéro »*, et sa jumelle *« mieux vaut se taire que montrer une porte
+fermée »*. Appliquées, elles rendaient deux des six faces muettes pour un visiteur sans
+compte, faisaient disparaître « où la regarder » de la fiche série, et cachaient l'écriture
+de critiques — c'est-à-dire la moitié de la cible. Verdict de Tristan : *« ça doit être
+précisément l'inverse, sinon les gens ne viendraient pas si on tait tout »*.
+
+Trois précisions, parce qu'une règle appliquée mécaniquement redevient une doctrine :
+
+- **Un écran sans issue, pas un écran sans bouton.** Quand le geste est déjà sur la page
+  (le fil d'amis vide, le formulaire juste au-dessus), une phrase suffit.
+- **Un bouton qui ne peut pas marcher ne s'affiche toujours pas** (règle du 2026-08-09,
+  le bouton Google de `SignIn`). Une porte *nommée, avec sa condition dite et son chemin
+  cliquable* n'est pas un bouton mort : elle informe.
+- **Trois silences restent, et ce sont des fonctionnalités** : `stop_map()` sous cinq
+  contributeurs (c'est de l'anonymat, un compte se déduirait du chiffre), le spoiler
+  (`mieux vaut masquer à tort`), et ce qui n'a littéralement rien derrière sur une page
+  par ailleurs pleine (`FaceDot`, `Cast`, le compteur de cœurs à zéro).
 
 ## Pour travailler
 

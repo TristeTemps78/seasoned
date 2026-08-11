@@ -332,9 +332,12 @@ export function Friends() {
             ⚠️ Ce bloc **depend d'une politique**, pas seulement de ce code : sans
             `008_followers.sql`, `followers()` rend des identifiants dont aucun profil n'est
             lisible, donc une liste vide — et rien ne le signalerait.
-            Muet quand il n'y a personne : *mieux vaut se taire que compter zero*. Et aucun
-            compteur nulle part, parce qu'il ne collerait pas aux noms (un compte sans handle
-            suit sans rien avoir a montrer). */}
+            ⚠️ **Muet quand il n'y a personne, et c'est l'exception la mieux fondee** a la
+            regle 4 (2026-08-11) : ecrire « personne ne vous suit » serait **faux**. Un compte
+            sans nom peut suivre et n'apparait dans aucune de ces listes — le meme fait qui
+            interdit deja tout compteur ici. Une regle qui exige de parler ne peut pas exiger
+            de dire une chose fausse ; c'est le seul silence de ce fichier qui ne se discute
+            meme pas. */}
         {fans.length > 0 ? (
           <div className="space-y-1 text-sm">
             <p className="text-(--color-muted)">{t('friends.followersLabel')}</p>

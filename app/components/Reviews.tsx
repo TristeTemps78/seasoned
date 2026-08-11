@@ -220,9 +220,10 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
 /**
  * Le coeur d'une critique.
  *
- * ⚠️ **Le nombre ne s'affiche qu'a partir de un.** « 0 » annonce le vide et decourage le
- * premier — c'est la meme doctrine que partout ici : *mieux vaut se taire que compter
- * zero*.
+ * ⚠️ **Le nombre ne s'affiche qu'a partir de un**, et c'est une exception assumee a la
+ * regle 4 (2026-08-11). Un « 0 » colle a un coeur n'ouvre rien : il n'a ni cause a
+ * expliquer, ni geste a proposer que le coeur lui-meme ne propose deja. La regle demande
+ * qu'un ecran vide dise quoi faire ; elle ne demande pas qu'un compteur affiche zero.
  */
 function LikeButton({
   count,

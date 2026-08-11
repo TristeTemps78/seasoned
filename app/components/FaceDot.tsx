@@ -18,8 +18,12 @@ import type { FaceId } from '@/src/domain/face';
  *
  * ## Rien du tout quand il n'y a rien
  *
- * `undefined` = la personne est sous le seuil, ou n'a jamais ouvert `/amis`. On n'affiche
- * ni pastille grise ni « pas de face » : *mieux vaut se taire que compter zero*.
+ * `undefined` = la personne est sous le seuil, ou n'a jamais ouvert `/amis`. On n'affiche ni
+ * pastille grise ni « pas de face ».
+ *
+ * ⚠️ Exception assumee a la regle 4 (2026-08-11), et de la categorie la plus simple : ce
+ * composant n'est **pas un ecran**, c'est un glyphe de 8 px colle a un pseudo. Il n'a nulle
+ * part ou dire quoi faire, et la face se gagne ailleurs (`/bilan`) ou l'invitation existe.
  */
 export function FaceDot({ face }: { readonly face: FaceId | undefined }) {
   const { t } = useT();

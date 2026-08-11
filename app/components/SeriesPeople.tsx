@@ -33,8 +33,19 @@ import { socialFrom } from '@/app/social/socialFrom';
  * C'est la question que pose — *ce fait decrit-il l'oeuvre ou quelqu'un
  * d'autre ?* — et la reponse est « quelqu'un d'autre », comme pour le fil.
  *
- * **Se tait quand il n'y a personne**, et se tait aussi quand il n'y a que soi :
- * *mieux vaut se taire que compter zero*, et se soi-meme n'est pas une decouverte.
+ * ## ⚠️ Il se tait a zero, et c'est une exception ASSUMEE a la regle 4
+ *
+ * La regle du 2026-08-11 dit qu'un ecran sans rien a montrer dit quoi faire. Elle ne
+ * s'applique pas ici, et le raisonnement doit etre ecrit sinon quelqu'un « corrigera » ce
+ * fichier par symetrie :
+ *
+ *   - il est rendu **juste sous `Reviews`**, qui porte deja l'invitation a ecrire quand
+ *     personne n'a rien ecrit. Deux encarts vides l'un sur l'autre sur la meme page
+ *     doublent le vide au lieu de l'ouvrir ;
+ *   - et il n'y a **rien derriere** : « 0 personne » n'a aucune cause interessante a
+ *     expliquer, contrairement a `Discover` dont le vide raconte le reglage de visibilite.
+ *
+ * Se soi-meme n'est pas une decouverte non plus : on se tait aussi quand il n'y a que soi.
  */
 export function SeriesPeople({ seriesId }: { readonly seriesId: string }) {
   const { t, locale } = useT();
