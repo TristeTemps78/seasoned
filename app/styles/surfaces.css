@@ -78,12 +78,18 @@
     }
   }
   /**
-   * La surface qui contient — **une seule forme, deux rembourrages** (9.7, tranche le
-   * 2026-08-07 apres avoir regarde l'ecran).
+   * La surface qui contient — `.panel` nue, `.card` avec le rembourrage standard.
    *
-   * `.panel` est la surface nue ; `.card` est la meme surface **avec le rembourrage
-   * standard**. Elles ne sont plus concurrentes : l'une est l'autre, plus le padding, et la
-   * forme n'est ecrite qu'ici.
+   * 🔴 **Ce bloc annoncait « une seule forme » pour TOUTES les surfaces du produit**, `.tile`
+   * et `.empty-state` comprises, et le revendiquait ainsi : « un seul rayon, une seule
+   * bordure, un seul fond dans toute l'application ». C'est ce qui faisait que chaque ecran se
+   * lisait comme une pile de boites identiques.
+   *
+   * La regle confondait deux choses : **une seule facon d'ecrire une surface** (de l'hygiene,
+   * qui a supprime 19 copies divergentes) et **une seule apparence pour toutes les surfaces**
+   * (un choix de design que personne n'avait fait). `.tile` a sa propre matiere depuis le
+   * 2026-08-11 ; l'affirmation ne vaut donc plus que pour `.panel`, `.card` et
+   * `.empty-state`, qui la partagent encore **par constat, pas par contrainte**.
    *
    * ## Ce qui a ete tranche, et sur quoi
    *

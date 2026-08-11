@@ -9,16 +9,22 @@
 /**
  * Theme — Voltface.
  *
- * ## Les deux regles qui gouvernent cette direction artistique
+ * ## 🔴 Il n'y a plus de doctrine ici — retiree le 2026-08-11
  *
- * 1. **« L'affiche est l'interface »**. Les affiches ne decorent
- *    pas, elles *sont* la navigation. Le cyberpunk se joue donc sur le **chassis** —
- *    fond, aretes, accents, chiffres — et jamais sur les vignettes. Une page qui brille
- *    partout ne met plus rien en avant, ce qui reviendrait a defaire la seule lecon d'UX
- *    que ce projet a reprise de Letterboxd.
- * 2. **Le neon ne porte jamais le texte de lecture.** Un cyan a 100 % de saturation sur
- *    fond sombre est spectaculaire et illisible sur un paragraphe. Les accents servent
- *    les **aretes, les etats et les chiffres** ; le corps de texte reste `--color-text`.
+ * Ce bloc portait trois regles : « l'affiche est l'interface », « une couleur, un sens »,
+ * « le neon ne porte jamais le texte de lecture ». Elles etaient citees **treize fois** dans
+ * quatre fichiers, et chacune interdisait une facon de mettre de la couleur. Le resultat
+ * mesure : `--color-muted` employe 157 fois contre 43 pour l'accent — le gris gagnait trois
+ * contre un, ecran apres ecran, pendant cinq passes de corrections qui ne se voyaient pas.
+ *
+ * ⚠️ **Elles ne sont pas seulement « non contraignantes », elles sont supprimees.** La
+ * nuance a coute une session entiere : tant qu'une regle reste ecrite comme une regle, elle
+ * oriente celui qui relit le fichier — moi compris. J'ai continue a m'y conformer apres
+ * qu'elles aient ete levees, simplement parce qu'elles etaient encore la, formulees a
+ * l'imperatif, a cote du code qu'elles avaient produit.
+ *
+ * *Une regle qu'on garde « pour memoire » n'est pas de la memoire, c'est une regle.* Ce qui
+ * reste ici ne decrit donc que **ce que le code fait**, jamais ce qu'il faudrait faire.
  *
  * ## Les deux polices, et pourquoi il n'y en avait aucune avant le 2026-08-07
  *

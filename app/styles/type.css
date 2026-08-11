@@ -314,7 +314,8 @@
        version-la qui a ete regardee et jugee bonne ; la classe extraite au 6.7 avait pris
        le volt plein sans que personne le voie, puisqu'elle n'etait utilisee nulle part.
        Trois filets de cyan sature empiles sur une meme page se disputent l'attention des
-       affiches, ce que « l'affiche est l'interface » interdit. */
+       affiches. Constat de rendu, pas une regle : les trois anciennes ont ete retirees le
+       2026-08-11 (`base.css`). Cette valeur reste parce qu'elle a ete regardee. */
     border-left: 2px solid color-mix(in oklab, var(--color-volt) 60%, transparent);
     padding-left: 0.75rem;
   }

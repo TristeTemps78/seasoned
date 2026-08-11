@@ -49,8 +49,8 @@
    * s'ecartent maintenant assez pour se distinguer sans lumiere rasante.
    *
    * ⚠️ Ne pas remonter davantage sans regarder les affiches : au-dela, un fond clair
-   * commence a laver les vignettes TMDB sombres, et c'est le seul vrai argument qu'avait
-   * « l'affiche est l'interface ».
+   * commence a laver les vignettes TMDB sombres. C'est une observation sur le rendu, pas une
+   * doctrine — les trois anciennes regles ont ete retirees le 2026-08-11, voir `base.css`.
    */
   --color-ink: #14181c;
   --color-surface: #2c3440;
@@ -89,29 +89,27 @@
   --color-volt: #22d3ee;
   --color-volt-dim: #0e7490;
 
-  /* Le magenta ne sert qu'au **second halo du `body`** : il donne au noir une profondeur que
-     le cyan seul rendrait monochrome. Aucun autre emploi, et c'est un choix du 2026-08-05 —
-     « ce qui se compte » parle de vous, donc releve du volt, et un second sens defairait
-     « une couleur, un sens ». Employe seul, jamais en degrade avec le cyan : le duo
+  /* Le magenta ne sert aujourd'hui qu'au second halo du `body`. Ce n'est plus une regle :
+     l'argument qui l'y confinait etait « une couleur, un sens », retiree le 2026-08-11.
+     Seule observation qui tienne encore : employe **en degrade avec le cyan**, le duo
      cyan/magenta sature est le cliche fatigue du genre. */
   --color-pulse: #e879f9;
 
-  /* Les trois faces du cube, prises sur le logo.
-     ⚠️ Elles n'habillent QUE la marque (`app/components/Mark.tsx`) et ne portent aucun
-     sens applicatif — sinon « une couleur, un sens » tomberait : on ne saurait plus si le
-     rouge parle de la serie, de vous, ou de l'identite du produit. */
+  /* Les trois faces du cube, prises sur le logo. Elles n'habillent aujourd'hui que la marque
+     (`app/components/Mark.tsx`) et la pastille de face — c'est un etat de fait, pas une
+     interdiction. */
   --color-face-red: #e0332c;
   --color-face-blue: #1a72c4;
   --color-face-yellow: #f5c518;
 
-  /* Trois tons de statut, pas plus : le but reste de faire ressortir l'anomalie
-     (une serie annoncee vivante et morte depuis 18 mois), pas de colorier la page.
+  /* Les tons de statut. Ce que le code fait aujourd'hui : le vert dit que la SERIE diffuse,
+     l'ambre signale une anomalie (annulee, ou declaree vivante et morte depuis 18 mois).
+     Le volt parle de VOUS — position, revisionnage, bouton choisi.
 
-     ⚠️ **Une couleur, un sens.** Le vert parle de la SERIE — elle diffuse, la date tombe,
-     le plan tient. Le volt parle de VOUS — votre position, votre revisionnage, le bouton
-     que vous venez de choisir. La confusion s'etait installee sur la fiche serie, ou le
-     vert servait a la fois d'etat « en diffusion » et de bouton actif ; deux sens pour une
-     meme couleur est la facon la plus rapide de rendre une interface illisible. */
+     ⚠️ C'est une **repartition observee**, plus une regle : « une couleur, un sens » a ete
+     retiree le 2026-08-11. Elle reste utile a connaitre avant de repeindre quoi que ce soit
+     — si le volt devenait vert (voir le basculement du brief plus bas), il faudrait donner
+     autre chose a `--color-live`. */
   --color-live: #4ade80;
   --color-warn: #fbbf24;
 
@@ -153,13 +151,13 @@
    * Les huit teintes d'identite — et elles ne veulent RIEN dire
    * =============================================================================
    *
-   * C'est l'exception assumee a « une couleur, un sens » : ces huit-la n'ont **aucun** sens
-   * applicatif, et c'est precisement leur fonction. Elles habillent ce qui doit se distinguer
-   * sans se hierarchiser — l'avatar de quelqu'un, une pastille de genre.
+   * Ces huit-la n'ont **aucun** sens applicatif, et c'est precisement leur fonction : elles
+   * habillent ce qui doit se distinguer sans se hierarchiser — l'avatar de quelqu'un, une
+   * pastille de genre.
    *
-   * ⚠️ Elles ne doivent jamais servir a un etat. Le jour ou l'une d'elles signifie quelque
-   * chose, elle sort de cette liste et devient un jeton nomme — sinon on retombe exactement
-   * dans la confusion que « une couleur, un sens » decrivait : deux sens pour une couleur.
+   * ⚠️ Le jour ou l'une d'elles signifie quelque chose, elle sort de cette liste et devient un
+   * jeton nomme. Non par doctrine — il n'y en a plus — mais parce qu'une teinte qui veut dire
+   * « genre policier » a un endroit et rien du tout a un autre ne s'interprete plus.
    *
    * Huit et pas douze : au-dela, deux teintes voisines cessent d'etre distinguables sur une
    * pastille de 32 px, donc la variete devient du bruit.
