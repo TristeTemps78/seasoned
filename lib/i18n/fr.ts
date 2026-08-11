@@ -156,6 +156,16 @@ export const FR = {
     'Utile si vous lisez vos e-mails sur un autre appareil que celui-ci.',
   'account.signedInAs': 'Connecté en tant que {email}.',
   'account.signOut': 'Se déconnecter',
+  'account.gives.title': 'Ce qu’un compte ajoute',
+  'account.gives.friends.title': 'Suivre vos proches',
+  'account.gives.friends.body':
+    'Voir ce qu’ils regardent et lire ce qu’ils écrivent, sans que rien ne vous dévoile la suite de ce que vous n’avez pas vu.',
+  'account.gives.lists.title': 'Tenir des listes',
+  'account.gives.lists.body':
+    'Ranger des séries pour plus tard, ou pour quelqu’un — et lui en donner l’adresse.',
+  'account.gives.devices.title': 'Retrouver votre journal ailleurs',
+  'account.gives.devices.body':
+    'Vos notes restent dans ce navigateur, et une copie suit votre compte jusqu’à vos autres appareils.',
   'account.unavailable.title': 'Les comptes ne sont pas encore ouverts',
   'account.unavailable.body':
     'Cette installation n’est pas reliée à une base de données. Vos notes restent dans ce navigateur, et la bibliothèque fonctionne normalement.',

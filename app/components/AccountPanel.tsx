@@ -43,7 +43,30 @@ export function AccountPanel() {
   // formulaire de connexion clignote une demi-seconde chez quelqu'un qui est deja connecte.
   if (!ready) return <div className="h-64" aria-hidden="true" />;
 
-  if (account === undefined) return <SignIn />;
+  /**
+   * 🔴 **La page d'arrivee du produit etait une carte de 448 px seule dans 1120.**
+   *
+   * Mesure au DOM le 2026-08-12 : `/compte` rendait un unique `.card max-w-md`, aligne a
+   * gauche, avec **672 px de vide a sa droite** et zero image sur toute la page. Or c'est la
+   * destination de **toutes** les portes posees la veille — `/amis`, `/listes`, « ajouter a
+   * une liste » y menent toutes. Le produit invitait quelque part, et l'endroit etait vide.
+   *
+   * ⚠️ La colonne de droite n'est pas de la decoration : ce sont les **trois seules choses**
+   * qu'un compte debloque, et chacune se verifie dans le code — les abonnements (`009`), les
+   * listes (`007`), la reprise du journal d'un appareil a l'autre (`JournalSync`). Une page
+   * qui demande un compte doit dire ce qu'il donne, sinon elle demande sans rien offrir.
+   *
+   * ⚠️ **Seulement deconnecte.** Une fois le compte ouvert, la promesse devient du bruit :
+   * on ne redit pas a quelqu'un pourquoi il s'est inscrit.
+   */
+  if (account === undefined) {
+    return (
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,28rem)_1fr] lg:items-start">
+        <SignIn />
+        <WhatAnAccountGives />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -128,6 +151,50 @@ function StopMapConsent() {
       <button type="button" className="btn" onClick={() => setKeepStopsPrivate(!out)}>
         {t(out ? 'stops.opt.rejoin' : 'stops.opt.leave')}
       </button>
+    </section>
+  );
+}
+
+/**
+ * Ce qu'un compte donne — les trois seules choses, et rien de plus.
+ *
+ * ## Pourquoi ce bloc existe
+ *
+ * `/compte` est la destination de toutes les portes du produit, et elle ne disait rien de ce
+ * qu'il y a derriere : un champ e-mail, une case d'age, un bouton. Demander sans offrir.
+ *
+ * ⚠️ **Chaque ligne se verifie dans le code**, et aucune n'est un argument de vente : les
+ * abonnements viennent de `009_relations.sql`, les listes de `007_lists.sql`, la reprise du
+ * journal de `JournalSync`. Le jour ou l'une des trois disparait, cette liste ment — c'est
+ * pourquoi il y en a trois et pas six.
+ *
+ * ⚠️ La derniere phrase **desamorce** : tout le reste du produit marche sans compte, et le
+ * dire est ce qui rend l'invitation credible plutot qu'agressive. C'est la meme phrase que
+ * `AccountGate`, au meme endroit du raisonnement — elle est reprise, pas reecrite.
+ */
+function WhatAnAccountGives() {
+  const { t } = useT();
+
+  const promesses = [
+    ['account.gives.friends.title', 'account.gives.friends.body'],
+    ['account.gives.lists.title', 'account.gives.lists.body'],
+    ['account.gives.devices.title', 'account.gives.devices.body'],
+  ] as const;
+
+  return (
+    <section className="band" aria-label={t('account.gives.title')}>
+      <h2 className="row-title">{t('account.gives.title')}</h2>
+      {/* Une bande et non des cartes : trois boites grises a cote d'une quatrieme boite grise
+          (le formulaire) donneraient exactement la pile que `.band` existe pour defaire. */}
+      <dl className="space-y-4">
+        {promesses.map(([titre, corps]) => (
+          <div key={titre} className="space-y-1">
+            <dt className="card-title">{t(titre)}</dt>
+            <dd className="prose-note">{t(corps)}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="meta-sm">{t('gate.rest')}</p>
     </section>
   );
 }

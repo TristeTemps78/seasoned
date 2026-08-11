@@ -63,7 +63,7 @@ export function Agenda() {
             <h2 className="row-title">
               {t(labelKey)}
             </h2>
-            <ul className="divide-y divide-(--color-edge)">
+            <ul className="divide-y divide-(--color-edge-quiet)">
               {episodes.map((episode) => (
                 <Row
                   key={episode.key}

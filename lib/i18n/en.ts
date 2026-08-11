@@ -135,6 +135,16 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'account.code.why': 'Useful if you read your email on a different device from this one.',
   'account.signedInAs': 'Signed in as {email}.',
   'account.signOut': 'Sign out',
+  'account.gives.title': 'What an account adds',
+  'account.gives.friends.title': 'Follow the people close to you',
+  'account.gives.friends.body':
+    'See what they are watching and read what they write, without anything revealing what you have not seen yet.',
+  'account.gives.lists.title': 'Keep lists',
+  'account.gives.lists.body':
+    'Set series aside for later, or for someone — and hand them the address.',
+  'account.gives.devices.title': 'Find your journal elsewhere',
+  'account.gives.devices.body':
+    'Your notes stay in this browser, and a copy follows your account to your other devices.',
   'account.unavailable.title': 'Accounts are not open yet',
   'account.unavailable.body':
     'This installation is not connected to a database. Your notes stay in this browser, and the library works as usual.',
