@@ -43,9 +43,27 @@
 
   /* Le fond descend vers un noir bleute : c'est lui qui fait exister la lueur.
      Un gris neutre eteindrait les accents au lieu de les porter. */
-  --color-ink: #08090e;
-  --color-surface: #11131c;
-  --color-edge: #222739;
+  /* =============================================================================
+   * 🔴 Releve le 2026-08-11, apres avoir enfin regarde les captures
+   * =============================================================================
+   *
+   * Les trois valeurs precedentes — `#08090e`, `#11131c`, `#222739` — tenaient dans un
+   * intervalle de luminosite de **7 %**. Sur un ecran, ca ne se lit pas comme un fond, une
+   * surface et une arete : ca se lit comme **une seule couleur legerement sale**. Toutes les
+   * captures montrent la meme chose, ecran apres ecran — des boites grises identiques
+   * empilees sur du noir, qu'aucune correction de typographie ou d'icone ne pouvait sauver.
+   *
+   * Le fond quitte le noir pur : un `#08090e` ne laisse **aucune place en dessous** pour une
+   * ombre portee, donc l'elevation de `.panel` etait peinte dans le vide. Les trois niveaux
+   * s'ecartent maintenant assez pour se distinguer sans lumiere rasante.
+   *
+   * ⚠️ Ne pas remonter davantage sans regarder les affiches : au-dela, un fond clair
+   * commence a laver les vignettes TMDB sombres, et c'est le seul vrai argument qu'avait
+   * « l'affiche est l'interface ».
+   */
+  --color-ink: #0e1117;
+  --color-surface: #1a1f29;
+  --color-edge: #333c4c;
   /* Remonte de #8790a6 le 2026-08-11 : c'est la couleur la plus employee du produit (157
      usages), donc la plus rentable a corriger. L'ancienne tenait 4,6:1 sur `--color-surface`,
      celle-ci ~6:1 — ce qui compte, vu qu'elle habille surtout du petit texte. */
@@ -115,7 +133,7 @@
 
   /* Un second niveau de surface : sans lui, un panneau pose sur un panneau rendait le meme
      aplat, et la profondeur reposait entierement sur une ombre de 1 px. */
-  --color-surface-2: #191d2a;
+  --color-surface-2: #262e3b;
 
   /* =============================================================================
    * Les huit teintes d'identite — et elles ne veulent RIEN dire
@@ -1056,11 +1074,16 @@ body::before {
    * ⚠️ Trois colonnes au telephone, et c'est un choix : deux donneraient des affiches
    * inutilement grandes pour un objet qu'on parcourt, quatre les rendraient illisibles.
    */
+  /* ⚠️ **Resserree le 2026-08-11.** Les gouttieres etaient a 1 / 1,5 rem et la grille
+     s'arretait a six colonnes : sur un ecran large, une rangee montrait six affiches
+     separees par des couloirs de 16 px, ce qui donne une ligne d'objets isoles au lieu d'un
+     mur. La reference n'a pas d'espace entre ses affiches, ou presque. On descend a
+     0,625 / 1 rem et on ajoute un huitieme palier — la densite EST l'effet visuel. */
   .poster-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: 1rem;
-    row-gap: 1.5rem;
+    column-gap: 0.625rem;
+    row-gap: 1rem;
   }
 
   @media (width >= 40rem) {
@@ -1075,6 +1098,12 @@ body::before {
     }
   }
 
+  @media (width >= 80rem) {
+    .poster-grid {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+
   /**
    * Sortir de la colonne de 1024 px imposee par `<main>` — pour les **grilles**, jamais pour
    * le texte : une phrase sur 1248 px ne se lit pas, ce que `.prose-note` dit deja.
@@ -1084,7 +1113,9 @@ body::before {
    * reste borne. ⚠️ Ne marche qu'avec `overflow-x: clip` sur `body` — voir la-bas.
    */
   .bleed {
-    --w-bleed: 80rem;
+    /* 90 rem et non 80 : les captures du 2026-08-11 montrent un tiers d'ecran vide a droite
+       sur un moniteur large, colonne comprise. */
+    --w-bleed: 90rem;
     margin-inline: calc(50% - 50vw);
     padding-inline: max(1rem, calc(50vw - var(--w-bleed) / 2));
   }
@@ -1109,8 +1140,23 @@ body::before {
        cadrer au milieu coupe les visages a la moitie du front. */
     object-fit: cover;
     object-position: center 20%;
-    opacity: 0.45;
-    mask-image: linear-gradient(to bottom, black 0%, black 35%, transparent 100%);
+
+    /* 🔴 **Etait a `0.45`, avec un masque qui l'effacait des 35 %** — soit trois traitements
+       cumules (opacite, masque, et les deux encres de `::after`) sur la plus grande image du
+       site. Le commentaire l'assumait : « les deux encres la ramenent a une profondeur, pas a
+       une illustration ». Vu a l'ecran le 2026-08-11, ca ne donne pas de la profondeur, ca
+       donne une tache sombre — et c'est la raison n°1 pour laquelle le produit se lit comme
+       une page de texte.
+
+       ⚠️ La lisibilite ne tient PAS a l'opacite : elle tient au voile de `::after`, qui pose
+       de l'encre pleine a gauche exactement la ou le texte vit. C'est lui qui permet de
+       monter l'image a 0,9 sans qu'un seul mot devienne difficile — verifie sur la banniere
+       la plus claire du catalogue. */
+    opacity: 0.9;
+
+    /* Le masque ne s'ouvre plus qu'a la toute fin : a 35 %, l'image disparaissait avant le
+       bas du bloc, donc un hero un peu haut n'avait d'image que dans son premier tiers. */
+    mask-image: linear-gradient(to bottom, black 0%, black 78%, transparent 100%);
   }
 
   /* Deux encres : depuis la gauche, ou vit le texte, et depuis le bas, ou la page reprend.
@@ -1121,14 +1167,19 @@ body::before {
     inset: 0;
     z-index: -1;
     pointer-events: none;
+    /* ⚠️ Le voile est **renforce a gauche** depuis que l'image monte a 0,9 : l'encre reste
+       pleine jusqu'a 30 % de la largeur, c'est-a-dire sur toute la zone ou vivent le titre,
+       le paragraphe et le champ de recherche. C'est ce qui rend la banniere vive **et** le
+       texte lisible — les deux ne s'echangent pas, ils vivent a des endroits differents. */
     background-image:
       linear-gradient(
         to right,
         var(--color-ink) 0%,
-        color-mix(in oklab, var(--color-ink) 60%, transparent) 55%,
+        var(--color-ink) 30%,
+        color-mix(in oklab, var(--color-ink) 55%, transparent) 65%,
         transparent 100%
       ),
-      linear-gradient(to top, var(--color-ink) 0%, transparent 60%);
+      linear-gradient(to top, var(--color-ink) 0%, transparent 55%);
   }
 
   /**

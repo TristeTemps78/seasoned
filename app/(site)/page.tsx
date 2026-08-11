@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import {
   backdropDimensions,
@@ -66,7 +67,11 @@ export async function Home({ locale }: { readonly locale: Locale }) {
           ecran de 800 px pour trois lignes de texte : on arrivait sur le produit sans voir
           une seule serie. Or les series **sont** le produit, et l'accueil doit prouver ce
           qu'il annonce dans la meme vue que l'annonce. */}
-      <section className="max-w-2xl space-y-5 pt-2">
+      <Featured
+        item={featured}
+        label={t(locale, 'home.waiting.title')}
+        locale={locale}
+      >
         <div className="space-y-3">
           <h1 className="hero-title">
             {t(locale, 'home.h1')}
@@ -88,18 +93,7 @@ export async function Home({ locale }: { readonly locale: Locale }) {
             coute rien, ne reveille personne, et ne s'affiche que pour qui a deja un
             journal. La page, elle, reste statique pour tout le monde. */}
         <ResumeStrip />
-      </section>
-
-      {/* La preuve, avant la liste. ⚠️ Elle **sort** de la rangee (`rest`) au lieu de s'y
-          ajouter : la montrer deux fois sur le meme ecran ferait douter qu'il s'agisse de
-          la meme serie. */}
-      {featured !== undefined ? (
-        <Featured
-          item={featured}
-          label={t(locale, 'home.waiting.title')}
-          locale={locale}
-        />
-      ) : null}
+      </Featured>
 
       {/* Cette rangee passe en premier a dessein : c'est la seule qui montre ce que
           fait le produit. Les deux autres ne contiennent, par construction, que des
@@ -144,17 +138,25 @@ export async function Home({ locale }: { readonly locale: Locale }) {
  * ⚠️ **Le lien enveloppe le titre seul, pas le bloc** : un `<a>` contenant image, badge et
  * synopsis annonce au lecteur d'ecran une cible dont le nom fait trois phrases.
  */
-function Featured({ item, label, locale }: {
-  readonly item: SeriesWithStatus;
+function Featured({ item, label, locale, children }: {
+  /** ⚠️ Optionnel : sans banniere dans tout le catalogue, l'accroche doit **quand meme**
+      s'afficher. C'est le repli, pas un trou. */
+  readonly item: SeriesWithStatus | undefined;
   readonly label: string;
   readonly locale: Locale;
+  /** L'accroche du site — titre, phrase, recherche. Voir le commentaire du composant. */
+  readonly children: ReactNode;
 }) {
-  const { summary, status } = item;
-  const backdrop = backdropUrl(summary.backdropPath, 'w1280');
-  const poster = posterUrl(summary.posterPath, 'w342');
+  const summary = item?.summary;
+  const status = item?.status;
+  const backdrop = backdropUrl(summary?.backdropPath, 'w1280');
+  const poster = posterUrl(summary?.posterPath, 'w342');
 
   return (
-    <section className="bleed art-bed py-10 sm:py-14" aria-label={summary.title}>
+    <section
+      className="bleed art-bed py-10 sm:py-16"
+      aria-label={summary?.title ?? t(locale, 'home.h1')}
+    >
       {backdrop !== undefined ? (
         // Le plus gros element de l'ecran, donc celui que Google chronometre : priorite
         // haute, dimensions declarees, et `srcSet` pour ne pas servir 1280 px a un
@@ -162,7 +164,7 @@ function Featured({ item, label, locale }: {
         // eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous.
         <img
           src={backdrop}
-          srcSet={`${backdropUrl(summary.backdropPath, 'w780')} 780w, ${backdrop} 1280w`}
+          srcSet={`${backdropUrl(summary?.backdropPath, 'w780')} 780w, ${backdrop} 1280w`}
           sizes="100vw"
           alt=""
           fetchPriority="high"
@@ -172,7 +174,16 @@ function Featured({ item, label, locale }: {
         />
       ) : null}
 
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
+      {/* L'accroche du site, **posee sur la banniere** et non au-dessus d'elle. C'est le
+          correctif du 2026-08-11 : vu a l'ecran, le premier ecran de l'accueil ne contenait
+          aucune image — un titre, un paragraphe et un champ de recherche sur du noir. Il
+          fallait defiler pour voir une seule serie, sur un produit dont les series SONT le
+          sujet. Le commentaire de la version precedente decrivait deja ce defaut et l'avait
+          corrige a moitie : la preuve etait descendue sous la ligne de flottaison. */}
+      <div className="max-w-2xl space-y-5">{children}</div>
+
+      {summary === undefined ? null : (
+      <div className="mt-10 flex flex-col gap-6 sm:mt-14 sm:flex-row sm:items-end">
         {poster !== undefined ? (
           // eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous.
           <img
@@ -205,6 +216,7 @@ function Featured({ item, label, locale }: {
           ) : null}
         </div>
       </div>
+      )}
     </section>
   );
 }

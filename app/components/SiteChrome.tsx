@@ -129,7 +129,11 @@ export function SiteChrome({ locale, Messages, children }: {
           </div>
         </header>
 
-        <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-8">
+        {/* ⚠️ `max-w-6xl` et non `5xl` depuis le 2026-08-11 : a 1024 px, la colonne laissait
+            un tiers de l'ecran vide a droite sur un moniteur large — visible sur les trois
+            captures. On ne va pas plus loin : au-dela de ~1150 px, une ligne de texte cesse
+            d'etre lisible, et c'est `.bleed` qui existe pour laisser sortir les grilles. */}
+        <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-8">
           {/* Au-dessus du contenu, et sur toutes les pages : le risque de perte ne
               depend pas de l'endroit ou l'on se trouve. Ne rend rien tant qu'il n'y a
               rien a perdre, ni si l'application est deja installee. */}
