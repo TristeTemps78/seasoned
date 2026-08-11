@@ -210,32 +210,40 @@ export async function SeriesView({ id, locale }: {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
-      {/* ⚠️ `-mt-8` annule le `py-8` de `<main>` : sans lui, une bande d'encre separait la
-          banniere de la barre de navigation, ce qui la faisait lire comme une image collee
-          dans la page. Avec, elle passe **sous** la barre translucide, qui la floute.
+      {/* 🔴 **La bande et l'en-tete sont UN SEUL enfant du document depuis le 2026-08-11**, et
+          c'est ce qui fait enfin exister le chevauchement.
 
-          ⚠️ **Le repli est la mise en page d'avant, au pixel pres** : sans banniere, ni
-          `.bleed` ni `.art-bed`. C'est le cas courant, pas l'exception. */}
-      {/* 🔴 **La banniere est une BANDE, plus un fond.** Elle etait posee derriere tout
-          l'en-tete, a moitie effacee, avec le titre par-dessus — ce qui donne un fond teinte
-          et pas une image. Elle occupe desormais toute la largeur, se dissout vers le bas, et
-          l'en-tete remonte **dedans**. C'est le chevauchement qui fait la fiche de film. */}
-      {backdrop !== undefined ? (
-        <div className="show-backdrop -mt-8" aria-hidden="true">
-          {/* Le plus gros element de l'ecran, donc celui que Google chronometre. */}
-          {/* eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous. */}
-          <img
-            src={backdrop}
-            srcSet={`${backdropUrl(detail.backdropPath, 'w780')} 780w, ${backdrop} 1280w`}
-            sizes="100vw"
-            alt=""
-            fetchPriority="high"
-            decoding="async"
-            width={backdropDimensions('w1280').width}
-            height={backdropDimensions('w1280').height}
-          />
-        </div>
-      ) : null}
+          Ils etaient deux freres de l'`<article className="space-y-10">`. Or l'utilitaire
+          d'espacement de Tailwind 4 pose `margin-block-start: 0` sur chaque enfant suivant, et
+          ecrasait donc le `margin-top: -9rem` de `.show-header-overlap` — mesure au DOM :
+          `getComputedStyle(header).marginTop === "0px"`. La banniere finissait a `y=588`,
+          l'en-tete commencait a `y=628` : quarante pixels de vide la ou le code promettait
+          cent pixels de recouvrement. **La fiche de film n'avait jamais ete rendue une fois.**
+
+          ⚠️ La correction est **structurelle** : gagner la cascade a coups de specificite
+          laisserait le piege arme pour le prochain `space-y`. Voir `.show-hero`.
+
+          ⚠️ `.show-hero` porte le `-2rem` qui annule le `py-8` de `<main>` : sans lui, une
+          bande d'encre separe la banniere de la barre de navigation, ce qui la fait lire comme
+          une image collee dans la page. **Uniquement s'il y a une banniere** — sinon le titre
+          passerait sous la navigation, et le cas est courant. */}
+      <div className={backdrop !== undefined ? 'show-hero' : undefined}>
+        {backdrop !== undefined ? (
+          <div className="show-backdrop" aria-hidden="true">
+            {/* Le plus gros element de l'ecran, donc celui que Google chronometre. */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous. */}
+            <img
+              src={backdrop}
+              srcSet={`${backdropUrl(detail.backdropPath, 'w780')} 780w, ${backdrop} 1280w`}
+              sizes="100vw"
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+              width={backdropDimensions('w1280').width}
+              height={backdropDimensions('w1280').height}
+            />
+          </div>
+        ) : null}
 
       <header
         className={`show-header ${backdrop !== undefined ? 'show-header-overlap' : ''}`}
@@ -318,40 +326,32 @@ export async function SeriesView({ id, locale }: {
               {detail.overview}
             </p>
           ) : null}
-        </div>
-      </header>
 
+          {/* =============================================================================
+              🔴 CE QUE LA SERIE VOUS DEMANDE — remonte de 830 px, et cesse d'etre illisible
+              =============================================================================
 
-      {/* ⚠️ Range dans « la serie » et non dans « le detail » : un visage repond a *quelle est
-          cette serie* — souvent avant le synopsis, et c'est la raison pour laquelle la
-          reference le place haut. Le mettre avec les orderings l'aurait fait tomber sous la
-          decision, c'est-a-dire trop tard pour la prendre.
-          Gratuit en reseau : le generique voyage dans la reponse de la fiche. */}
-      <Cast cast={detail.cast ?? []} locale={locale} />
+              Ce bloc vivait dans la colonne laterale, et les deux defauts s'additionnaient :
 
-      {/* =============================================================================
-          🔴 DEUX COLONNES — la fiche cesse d'etre une colonne unique
-          =============================================================================
+                - **il etait trop bas.** Mesure au DOM : `y=1681` sur un document de 3764, soit
+                  plus de deux ecrans de 720 px sous le titre. Le seul chiffre que ce produit
+                  affiche et qu'aucun concurrent ne calcule etait derriere un mur de 636 px de
+                  photos d'acteurs ;
+                - **il etait illisible.** Quatre tuiles de 64 px de large dans une colonne de
+                  304, libelles coupes. Voir `.series-measures` pour la mesure complete.
 
-          « Il y a encore trop de linearite. » Le mot etait juste et la cause etait simple :
-          **tout le produit tenait dans une seule colonne**, section apres section, du haut
-          vers le bas. Onze blocs a la file, tous de la meme largeur.
+              Il ferme donc l'en-tete : *qu'est-ce que c'est → dans quel etat → quand revient
+              le prochain → de quoi ca parle → **ce que ca vous coute***. La derniere ligne est
+              la chute, et elle touche « Ou j'en suis » qui commence juste dessous.
 
-          A gauche, ce qui vous concerne et ne bouge pas : les mesures de la serie, votre
-          progression, vos listes. **Colle** au defilement, donc toujours atteignable pendant
-          qu'on parcourt le generique ou les critiques a droite.
-
-          ⚠️ La colonne laterale est **premiere dans le document**. Sous 64 rem la grille
-          retombe en une colonne, et c'est l'ordre du DOM qui decide : votre progression doit
-          arriver avant les critiques des autres sur un telephone. */}
-      <div className="series-split">
-        <aside className="series-aside">
+              ⚠️ Il reste un `<section>` avec son titre pour lecteur d'ecran : le remonter ne
+              doit pas le sortir de la hierarchie du document, que les moteurs lisent. */}
           <section aria-label={t(locale, 'series.demands')}>
             {/* Titre masque visuellement : les chiffres se lisent d'eux-memes, mais la
                 structure du document doit rester coherente pour qui navigue au clavier
                 ou au lecteur d'ecran — et pour les moteurs, qui lisent la hierarchie. */}
             <h2 className="sr-only">{t(locale, 'series.demands')}</h2>
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <dl className="series-measures">
               <Stat label={t(locale, 'stat.seasons')} value={String(seasons.rateable.length)} />
               <Stat label={t(locale, 'stat.episodes')} value={String(episodeCount)} />
               {totalRuntimeMinutes !== undefined ? (
@@ -372,6 +372,32 @@ export async function SeriesView({ id, locale }: {
               ) : null}
             </dl>
           </section>
+        </div>
+      </header>
+      </div>
+
+
+      {/* =============================================================================
+          🔴 DEUX COLONNES — la fiche cesse d'etre une colonne unique
+          =============================================================================
+
+          « Il y a encore trop de linearite. » Le mot etait juste et la cause etait simple :
+          **tout le produit tenait dans une seule colonne**, section apres section, du haut
+          vers le bas. Onze blocs a la file, tous de la meme largeur.
+
+          A gauche, ce qui vous concerne et ne bouge pas : les mesures de la serie, votre
+          progression, vos listes. **Colle** au defilement, donc toujours atteignable pendant
+          qu'on parcourt le generique ou les critiques a droite.
+
+          ⚠️ La colonne laterale est **premiere dans le document**. Sous 64 rem la grille
+          retombe en une colonne, et c'est l'ordre du DOM qui decide : votre progression doit
+          arriver avant les critiques des autres sur un telephone. */}
+      <div className="series-split">
+        <aside className="series-aside">
+      {/* ⚠️ « Ce que la serie vous demande » **est parti d'ici** et ferme desormais l'en-tete.
+          Cette colonne ne porte plus que ce qui est a VOUS : votre progression, votre affiche,
+          vos listes. C'est ce qui la rend nommable en un mot, et ce qui explique qu'elle passe
+          en premier dans le document sur un telephone. */}
 
       {/* Le seul element de la page qui vous connaisse. Il s'ajoute cote navigateur :
           la page elle-meme reste statique et mise en cache, et **aucune donnee de
@@ -429,24 +455,22 @@ export async function SeriesView({ id, locale }: {
       <AddToList seriesId={id} />
         </aside>
 
-        {/* A droite, ce qui se lit et se parcourt : les autres, puis le detail. */}
+        {/* =============================================================================
+            A droite : les faits d'abord, les avis ensuite
+            =============================================================================
+
+            🔴 Cette colonne s'ouvrait sur `Reviews`. Depuis que les critiques ne se taisent
+            plus a zero (2026-08-11), son premier element est donc, sur la quasi-totalite du
+            catalogue, **un encart vide** — mesure a 198 px de haut sur `/serie/1396`. Ouvrir
+            la moitie principale de la page sur une boite qui dit « personne n'a encore ecrit »
+            etait le prix a payer de la conversion, et il ne se paie pas ici.
+
+            L'ordre suit desormais la question que la page sert : *puis-je la voir* (ou), *est-ce
+            qu'elle tient* (la trajectoire, le differenciateur), *comment elle est faite* (les
+            saisons, les montages), et enfin *qu'en disent les gens*. Les faits avant les avis —
+            c'est deja l'ordre que la colonne de gauche applique en faisant passer votre
+            position avant les critiques des autres. */}
         <div className="series-main">
-      <Reviews seriesId={id} />
-
-      {/* Apres les critiques, et non avant : on lit d'abord ce que disent les gens qu'on a
-          choisi de suivre, puis on decouvre les autres. C'est l'inverse de `/amis`, ou
-          `Discover` passe **devant** le fil — mais la, le fil est vide au demarrage et la
-          page serait blanche ; ici la page est pleine de toute facon. */}
-      <SeriesPeople seriesId={id} />
-
-      {/* Le detail — ce qu'on vient chercher une fois la decision prise. */}
-      <SeriesOrderings
-        id={id}
-        seasonCount={seasons.rateable.length}
-        episodeCount={episodeCount}
-        locale={locale}
-      />
-
       <WatchHere id={id} locale={locale} />
 
       <Trajectory
@@ -460,13 +484,47 @@ export async function SeriesView({ id, locale }: {
       />
 
       <SeasonList seasons={seasons} locale={locale} />
+
+      {/* Le detail des montages — ce qu'on vient verifier une fois la decision prise. */}
+      <SeriesOrderings
+        id={id}
+        seasonCount={seasons.rateable.length}
+        episodeCount={episodeCount}
+        locale={locale}
+      />
+
+      <Reviews seriesId={id} />
+
+      {/* Apres les critiques, et non avant : on lit d'abord ce que disent les gens qu'on a
+          choisi de suivre, puis on decouvre les autres. C'est l'inverse de `/amis`, ou
+          `Discover` passe **devant** le fil — mais la, le fil est vide au demarrage et la
+          page serait blanche ; ici la page est pleine de toute facon. */}
+      <SeriesPeople seriesId={id} />
         </div>
       </div>
 
-      {/* Ailleurs — la seule sortie de la page. ⚠️ **Hors des deux colonnes** : c'est une
-          grille d'affiches pleine largeur, et la coincer dans 1 fr la reduirait a trois
-          vignettes. */}
-      <div className="section-rule">
+      {/* =============================================================================
+          Le generique et le voisinage — le detail qu'on regarde APRES avoir decide
+          =============================================================================
+
+          🔴 `Cast` etait rendu **avant** les deux colonnes, et son commentaire assumait la
+          decision : *« un visage repond a quelle est cette serie […] c'est la raison pour
+          laquelle la reference le place haut »*. Mesure au DOM le 2026-08-11 : la rangee
+          occupait **636 px** entre le synopsis et tout le reste, et repoussait « ce que la
+          serie vous demande » a `y=1681`.
+
+          C'est-a-dire que le bloc le plus banal de la page — celui que TMDB, Wikipedia,
+          Allocine et Netflix affichent tous a l'identique — se payait deux ecrans de
+          defilement, pris sur le seul bloc qu'aucun d'eux n'affiche. La regle 3 du projet dit
+          *ne pas refaire ce qui existe deja* ; elle ne dit pas de lui donner la meilleure
+          place.
+
+          Il descend donc avec « du meme createur » : deux rangees pleine largeur, meme
+          nature — le voisinage d'une serie, qu'on parcourt une fois la decision prise.
+          ⚠️ **Hors des deux colonnes** : ce sont des grilles d'affiches, et les coincer dans
+          1 fr les reduirait a trois vignettes. */}
+      <div className="section-rule space-y-10">
+        <Cast cast={detail.cast ?? []} locale={locale} />
         <AlsoByCreators detail={detail} locale={locale} />
       </div>
     </article>

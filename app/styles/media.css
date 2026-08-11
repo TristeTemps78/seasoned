@@ -243,9 +243,35 @@
    * sous 64 rem la grille retombe en une colonne, et c'est l'ordre du DOM qui tranche. Votre
    * progression doit arriver avant les critiques des autres sur un telephone.
    *
-   * ⚠️ `align-items: start` est ce qui rend le `sticky` possible : sans lui, l'element de
-   * grille s'etire sur toute la hauteur de la rangee et n'a donc **plus rien a coller**. Le
-   * defaut est silencieux — la regle `position: sticky` est bien la, elle ne fait rien.
+   * ⚠️ `align-items: start` empeche l'element de grille de s'etirer sur toute la hauteur de
+   * la rangee — sans lui, la colonne laterale ferait la hauteur de la colonne principale.
+   *
+   * =============================================================================
+   * 🔴 LE PIEGE COLLANT — mesure au DOM le 2026-08-11, et retire
+   * =============================================================================
+   *
+   * La colonne laterale etait `position: sticky` avec :
+   *
+   *     max-height: calc(100vh - 6rem);   →  624 px sur une fenetre de 720
+   *     overflow-y: auto;
+   *     scrollbar-width: none;            →  et aucune barre pour le dire
+   *
+   * Mesure sur `/serie/1396`, fenetre 1280x720 :
+   *
+   *     aside.clientHeight  624
+   *     aside.scrollHeight  1190
+   *     → 566 px de contenu HORS DE VUE, dans une boite sans barre de defilement.
+   *
+   * C'est-a-dire : la moitie de « Ou j'en suis » — les notes de saison, les decisions,
+   * l'espace d'ecriture — etait inatteignable pour qui ne devine pas qu'une boite muette
+   * defile. Le commentaire d'origine avait vu le probleme et choisi la pire issue : *« une
+   * colonne plus haute que l'ecran ne peut pas coller : on la laisse defiler d'elle-meme
+   * plutot que de tronquer son contenu »*. Les deux options etaient mauvaises ; la troisieme
+   * — **ne pas coller** — n'avait pas ete envisagee.
+   *
+   * Un panneau colle n'a de sens que s'il tient dans l'ecran. Celui-ci ne tient pas, donc il
+   * defile avec la page, comme tout le reste. On perd « toujours atteignable pendant qu'on
+   * parcourt le reste » ; on gagne « atteignable tout court ».
    */
   .series-split {
     display: grid;
@@ -258,21 +284,6 @@
       gap: 3rem;
       align-items: start;
     }
-
-    .series-aside {
-      position: sticky;
-      /* Sous la barre collante, qui fait ~3,5 rem. */
-      top: 4.5rem;
-      /* Une colonne plus haute que l'ecran ne peut pas coller : on la laisse defiler
-         d'elle-meme plutot que de tronquer son contenu. */
-      max-height: calc(100vh - 6rem);
-      overflow-y: auto;
-      scrollbar-width: none;
-    }
-
-    .series-aside::-webkit-scrollbar {
-      display: none;
-    }
   }
 
   .series-aside,
@@ -280,6 +291,40 @@
     display: flex;
     flex-direction: column;
     gap: 2rem;
+  }
+
+  /**
+   * =============================================================================
+   * 🔴 CE QUE LA SERIE VOUS DEMANDE — quatre tuiles de 64 px de large
+   * =============================================================================
+   *
+   * Ces mesures — saisons, episodes, **engagement**, dernier episode — vivaient dans la
+   * colonne laterale de 304 px, en `grid-cols-2 sm:grid-cols-4`. Mesure au DOM le
+   * 2026-08-11, fenetre 1280 :
+   *
+   *     grid-template-columns  "64px 64px 64px 64px"
+   *     hauteur d'une tuile    257 px
+   *     dt "COMMITMENT"        clientWidth 30, scrollWidth 97   → coupe
+   *     dd "~ 50 h — 2 j 2 h"  clientWidth 30, scrollWidth 54   → coupe
+   *     dl                     clientWidth 304, scrollWidth 343 → deborde
+   *
+   * Le chiffre qui porte tout le differenciateur du produit — *ce que cette serie vous
+   * coute* — etait rendu dans une colonne de 64 px de large et 257 px de haut, avec son
+   * propre libelle tronque.
+   *
+   * ⚠️ **La cause est un point de rupture Tailwind dans un conteneur etroit.** `sm:` regarde
+   * la **fenetre**, pas le parent : a 1280 px il s'applique, et demande quatre colonnes dans
+   * 304 px. Rien ne le signale — pas le typage, pas le build, pas un test. La reponse est
+   * `auto-fit` + `minmax`, qui regarde la place reellement disponible.
+   *
+   * Les mesures ont depuis rejoint l'en-tete, ou elles ont la largeur du texte. Cette classe
+   * les suit : elle doit rester juste **quel que soit** le conteneur, sinon on aura seulement
+   * deplace le defaut.
+   */
+  .series-measures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.75rem;
   }
 
   .show-backdrop {
@@ -319,6 +364,44 @@
       color-mix(in oklab, var(--color-ink) 45%, transparent) 55%,
       var(--color-ink) 100%
     );
+  }
+
+  /**
+   * =============================================================================
+   * 🔴 LE CHEVAUCHEMENT N'A JAMAIS EU LIEU — mesure au DOM le 2026-08-11
+   * =============================================================================
+   *
+   * `.show-header-overlap` demande `margin-top: -9rem`. Mesure sur `/serie/1396` :
+   *
+   *     .show-header  classList  "show-header show-header-overlap"
+   *     getComputedStyle().marginTop   →  "0px"
+   *
+   * La cause : le parent `<article>` porte `space-y-10`, et l'utilitaire d'espacement de
+   * Tailwind 4 pose `margin-block-start: 0` sur chaque enfant suivant. C'est **la meme
+   * propriete calculee** que `margin-top`, et l'utilitaire passe apres dans la cascade. La
+   * regle du composant est donc ecrasee, en silence : aucun typage, aucun build, aucun test
+   * ne voit un `margin-top` annule par un utilitaire du parent.
+   *
+   * Consequence a l'ecran : la banniere finissait a `y=588`, l'en-tete commencait a `y=628`.
+   * Quarante pixels de **vide** la ou le commentaire d'origine promettait cent pixels de
+   * recouvrement — *« l'affiche mord dans l'image […] c'est ce chevauchement, et lui seul,
+   * qui fait la difference entre une page de contenu et une fiche de film »*. La difference
+   * n'avait jamais ete rendue une seule fois.
+   *
+   * ## La correction est structurelle, pas une surenchere de specificite
+   *
+   * Gagner la cascade par `!important` ou par un selecteur plus fort laisserait le meme piege
+   * arme pour le prochain qui ajoutera un `space-y` quelque part. La bande et l'en-tete **sont
+   * un seul objet** — c'est exactement ce que le commentaire decrit —, donc ils deviennent un
+   * seul enfant du document : `.show-hero`. A l'interieur, aucun `space-y`, donc plus rien a
+   * ecraser, et l'intention est portee par la structure au lieu de dependre d'un ordre de
+   * cascade.
+   */
+  .show-hero {
+    /* Remonte sous la barre collante translucide, qui la floute. ⚠️ Portee par le conteneur
+       et **seulement quand il y a une banniere** : sans image, remonter ferait passer le titre
+       sous la navigation. Le cas est courant — beaucoup de series n'ont aucun visuel. */
+    margin-top: -2rem;
   }
 
   /**
