@@ -40,6 +40,8 @@ export interface YearHighlight {
   readonly key: JournalKey;
   readonly title: string;
   readonly stars: number;
+  /** L'affiche, du meme instantane que le titre — voir {@link HeaviestSeries.posterPath}. */
+  readonly posterPath?: string;
 }
 
 export interface YearReview {
@@ -150,9 +152,15 @@ export function buildYearReview(journal: Journal, year: number, now: Date = new 
       if (!counts(rating, year)) continue;
       seasonsRated += 1;
       if (best === undefined || rating.stars > best.stars) {
-        const title = freshSnapshot(entry, now)?.title;
+        const snapshot = freshSnapshot(entry, now);
+        const title = snapshot?.title;
         if (title !== undefined) {
-          best = { key, title, stars: rating.stars };
+          best = {
+            key,
+            title,
+            stars: rating.stars,
+            ...(snapshot?.posterPath !== undefined ? { posterPath: snapshot.posterPath } : {}),
+          };
         }
       }
     }

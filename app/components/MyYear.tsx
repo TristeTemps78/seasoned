@@ -8,6 +8,7 @@ import { formatCommitment } from '@/lib/format';
 import { parseJournalKey } from '@/src/domain/journal';
 import { buildYearReview, yearsWithActivity } from '@/src/domain/year';
 import { pathIn } from '@/lib/routes';
+import { PosterChip } from '@/app/components/PosterChip';
 
 /**
  * « Votre annee » — le bilan annuel.
@@ -100,19 +101,24 @@ export function MyYear() {
       ) : null}
 
       {best !== undefined ? (
-        <p className="text-sm">
-          {t('year.best')}{' '}
-          {parsed === undefined ? (
-            <span className="font-medium">{best.title}</span>
-          ) : (
-            <Link
-              className="font-medium hover:text-(--color-volt)"
-              href={pathIn(`/serie/${parsed.providerId}`, locale)}
-            >
-              {best.title}
-            </Link>
-          )}
-        </p>
+        // La saison la mieux notee de l'annee est la seule mise en avant de cet ecran : elle
+        // porte donc son affiche, comme la serie la plus lourde de `/bilan`.
+        <div className="flex items-center gap-3">
+          <PosterChip path={best.posterPath} title={best.title} wide />
+          <p className="text-sm">
+            {t('year.best')}{' '}
+            {parsed === undefined ? (
+              <span className="font-medium">{best.title}</span>
+            ) : (
+              <Link
+                className="font-medium hover:text-(--color-volt)"
+                href={pathIn(`/serie/${parsed.providerId}`, locale)}
+              >
+                {best.title}
+              </Link>
+            )}
+          </p>
+        </div>
       ) : null}
     </section>
   );

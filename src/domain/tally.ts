@@ -71,6 +71,15 @@ export interface HeaviestSeries {
   readonly minutes: number;
   /** Nombre de visionnages complets — ce qui explique un total inhabituel. */
   readonly passes: number;
+  /**
+   * L'affiche, prise dans le **meme instantane** que le titre juste au-dessus.
+   *
+   * 🔴 Elle manquait, et c'est tout le defaut de l'ecran : `/bilan` nommait « Arcane » sans
+   * jamais la montrer. Six ecrans du produit rendaient **zero image** le 2026-08-11 — un
+   * produit dont le sujet est ce qu'on regarde. Le titre venait deja du snapshot ; l'affiche
+   * y etait, a cote, et personne ne la remontait.
+   */
+  readonly posterPath?: string;
 }
 
 export interface Tally {
@@ -274,6 +283,7 @@ export function buildTally(journal: Journal, now: Date = new Date()): Tally {
         title: snapshot.title,
         minutes: Math.round(spent),
         passes: passesOf(entry),
+        ...(snapshot.posterPath !== undefined ? { posterPath: snapshot.posterPath } : {}),
       };
     }
   }

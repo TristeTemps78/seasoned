@@ -10,6 +10,7 @@ import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { type SeriesList } from '@/src/social/client';
 import { socialFrom } from '@/app/social/socialFrom';
+import { PosterChip } from '@/app/components/PosterChip';
 
 /**
  * Les listes — les miennes quand `ownerId` est absent, celles de quelqu'un sinon.
@@ -219,21 +220,29 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
                     <ul className="space-y-2">
                       {shown.map((subject) => {
                         const parsed = parseJournalKey(subject);
-                        const seriesTitle =
-                          journal.entries[subject]?.snapshot?.title ?? t('library.card.tracked');
+                        const snapshot = journal.entries[subject]?.snapshot;
+                        const seriesTitle = snapshot?.title ?? t('library.card.tracked');
 
                         return (
                           <li key={subject} className="flex items-center justify-between gap-3">
-                            {parsed === undefined ? (
-                              <span className="text-sm">{seriesTitle}</span>
-                            ) : (
-                              <Link
-                                className="text-sm hover:text-(--color-volt)"
-                                href={pathIn(`/serie/${parsed.providerId}`, locale)}
-                              >
-                                {seriesTitle}
-                              </Link>
-                            )}
+                            {/* Une liste de series sans une seule affiche est une liste de
+                                courses. ⚠️ L'affiche ne vient que du journal du lecteur : une
+                                liste consultee chez quelqu'un d'autre porte des series qu'on
+                                n'a pas, et `PosterChip` rend alors le monogramme — c'est deja
+                                mieux qu'une ligne de texte nue. */}
+                            <span className="flex min-w-0 items-center gap-3">
+                              <PosterChip path={snapshot?.posterPath} title={seriesTitle} />
+                              {parsed === undefined ? (
+                                <span className="text-sm">{seriesTitle}</span>
+                              ) : (
+                                <Link
+                                  className="text-sm font-medium hover:text-(--color-volt)"
+                                  href={pathIn(`/serie/${parsed.providerId}`, locale)}
+                                >
+                                  {seriesTitle}
+                                </Link>
+                              )}
+                            </span>
                             {editable ? (
                               <button
                                 type="button"

@@ -23,7 +23,7 @@ import { Discover } from '@/app/components/Discover';
 import { DailyRound } from '@/app/components/DailyRound';
 import { FriendQuiz } from '@/app/components/FriendQuiz';
 import { Avatar } from '@/app/components/Avatar';
-import { Poster } from '@/app/components/Poster';
+import { PosterChip } from '@/app/components/PosterChip';
 import { pathIn } from '@/lib/routes';
 import { socialFrom } from '@/app/social/socialFrom';
 
@@ -453,15 +453,8 @@ export function Friends() {
                         qu'un element anonyme fait de blanc seul n'est pas rendu, donc ils ne
                         creusent aucun trou. */}
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      {/* L'affiche de la serie dont on parle. `w154` : elle est rendue a
-                          40 px de large, donc le plus petit fichier du CDN suffit — servir
-                          `w342` ferait payer quatre fois le poids pour rien. */}
                       {poster === undefined ? null : (
-                        <span className="block w-10 shrink-0 overflow-hidden rounded panel">
-                          <span className="block aspect-2/3">
-                            <Poster path={poster} title={title ?? review.subject} size="w154" />
-                          </span>
-                        </span>
+                        <PosterChip path={poster} title={title ?? review.subject} />
                       )}
                       <Avatar handle={review.handle} face={review.face} />
                       <Link
@@ -513,15 +506,7 @@ export function Friends() {
                   className="panel flex flex-wrap items-center gap-x-2 gap-y-1 bg-(--color-surface)/50 px-4 py-3 text-sm"
                 >
                   {factPoster === undefined ? null : (
-                    <span className="block w-10 shrink-0 overflow-hidden rounded panel">
-                      <span className="block aspect-2/3">
-                        <Poster
-                          path={factPoster}
-                          title={factTitle ?? item.subject}
-                          size="w154"
-                        />
-                      </span>
-                    </span>
+                    <PosterChip path={factPoster} title={factTitle ?? item.subject} />
                   )}
                   <Avatar handle={item.handle} face={item.face} />{' '}
                   <Link

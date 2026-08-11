@@ -3,6 +3,7 @@
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { WhereItLives } from '@/app/components/WhereItLives';
+import { PosterChip } from '@/app/components/PosterChip';
 import { formatCommitment } from '@/lib/format';
 import type { Tally } from '@/src/domain/tally';
 
@@ -90,7 +91,12 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
       ) : null}
 
       {heaviest !== undefined ? (
-        <div>
+        // 🔴 L'ecran nommait la serie sans jamais la montrer — « Arcane : 12 heures », en
+        // texte gris. C'est le seul objet de la page qui ait un visage ; le cacher etait le
+        // defaut le plus cher de `/bilan`.
+        <div className="flex items-center gap-3">
+          <PosterChip path={heaviest.posterPath} title={heaviest.title} wide />
+          <div>
           <p className="label">
             {t('tally.heaviest')}
           </p>
@@ -105,6 +111,7 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
                   commitment: formatCommitment(heaviest.minutes, tr),
                 })}
           </p>
+          </div>
         </div>
       ) : null}
 

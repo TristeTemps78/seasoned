@@ -980,8 +980,7 @@ body::before {
   .panel,
   .panel-lit,
   .card,
-  .empty-state,
-  .tile {
+  .empty-state {
     --halo: 0 0 0 0 transparent;
 
     border-radius: 0.5rem;
@@ -1325,8 +1324,72 @@ body::before {
      6 %, halo, chiffre en grille. Les quatre tuiles ont toujours eu le meme rayon ; une seule
      brille. Aligner la forme ne touche donc pas a ce qui marche, et c'est verifie sur le code
      de `Stat`, pas suppose. */
+  /**
+   * =============================================================================
+   * 🔴 La tuile sort de la forme commune — et c'est la regle qu'on casse
+   * =============================================================================
+   *
+   * `.panel`, `.card`, `.empty-state` et `.tile` partageaient **une seule** definition :
+   * meme rayon, meme bordure, meme fond. Le commentaire d'origine le revendiquait — « un
+   * seul rayon, une seule bordure, un seul fond dans toute l'application ». C'est
+   * exactement pourquoi chaque ecran se lit comme une pile de boites grises identiques, et
+   * c'est le reproche que Tristan a formule trois fois de suite.
+   *
+   * ⚠️ La regle n'etait pas absurde : elle a supprime dix-neuf copies divergentes. Mais elle
+   * confondait **« une seule facon d'ecrire une surface »** avec **« une seule apparence pour
+   * toutes les surfaces »**. La premiere est de l'hygiene, la seconde est un choix de design
+   * — et personne ne l'avait choisi.
+   *
+   * La tuile prend donc sa propre matiere : un cran plus clair que la carte qui la contient,
+   * et un liseré de couleur.
+   */
   .tile {
+    --halo: 0 0 0 0 transparent;
+    --tile-hue: var(--color-volt);
+
+    border-radius: 0.5rem;
+    /* Le liseré haut est colore, les trois autres aretes restent sourdes : quatre bordures
+       vives feraient quatre cadres qui se disputent, la ou un trait unique se lit comme une
+       etiquette. */
+    border: 1px solid var(--color-edge);
+    border-top: 2px solid var(--tile-hue);
+    /* Un cran **au-dessus** de `--color-surface` : une tuile vit a l'interieur d'un ecran qui
+       porte deja des cartes, et deux surfaces de meme valeur ne se distinguent pas. */
+    background-color: var(--color-surface-2);
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--tile-hue) 10%, transparent),
+      transparent 55%
+    );
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--color-text) 10%, transparent),
+      0 0.75rem 1.75rem -0.75rem rgb(0 0 0 / 0.75),
+      var(--halo);
     padding: 0.875rem 1rem;
+  }
+
+  /* Quatre teintes qui tournent — c'est la rangee de mesures de la fiche serie (saisons,
+     episodes, engagement, dernier episode), et elle en compte justement quatre.
+     ⚠️ Les teintes sont celles du jeu **sans sens applicatif** : une tuile n'annonce pas un
+     etat, elle mesure. Employer `--color-live` ici ferait croire a un statut. */
+  .tile:nth-child(4n + 1) {
+    --tile-hue: var(--color-hue-6);
+  }
+  .tile:nth-child(4n + 2) {
+    --tile-hue: var(--color-hue-4);
+  }
+  .tile:nth-child(4n + 3) {
+    --tile-hue: var(--color-hue-2);
+  }
+  .tile:nth-child(4n + 4) {
+    --tile-hue: var(--color-hue-7);
+  }
+
+  /* ⚠️ La tuile ENGAGEMENT garde le volt, contre la rotation : c'est la seule qui porte
+     `emphasis`, et son sens — « ce que la serie vous demande » — est le differenciateur du
+     produit. Une couleur decorative la ferait rentrer dans le rang. */
+  .tile.panel-lit {
+    --tile-hue: var(--color-volt);
   }
 
   /* ⚠️ Il n'y a plus de `.tile-label` : elle etait `.label` a `0.0625rem` pres, avec **un
