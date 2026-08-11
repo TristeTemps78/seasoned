@@ -636,6 +636,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'watch.rent': 'To rent',
   'watch.buy': 'To buy',
   'watch.region': 'Availability: {region}.',
+  'watch.nowhere':
+    'Nothing found for {regions}. The catalogue does not know every offer, and the country is the one your language implies until you pick your own.',
+  'watch.changeRegions': 'Pick my countries',
 
   'rules.title': 'The rules, and how to report',
   'rules.intro':

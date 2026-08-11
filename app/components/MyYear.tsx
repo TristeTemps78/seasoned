@@ -41,12 +41,16 @@ export function MyYear() {
     [journal, year],
   );
 
-  // 🔴 Le silence vaut pour une annee qu'on n'a PAS demandee, jamais pour celle qu'on
-  // vient de choisir. Vu a l'ecran : choisir 2025 faisait disparaitre le bloc **avec son
-  // selecteur**, donc on ne pouvait plus revenir a 2026 sans recharger la page. Repondre
-  // « rien a raconter » est une reponse ; retirer la question n'en est pas une.
+  // Sans une seule annee vecue, il n'y a pas d'annee a nommer : c'est le journal vide, et
+  // `MyStats` porte deja l'unique ecran vide de cette face.
   if (review === undefined) return null;
-  if (!review.worthShowing && chosen === undefined) return null;
+
+  // 🔴 **La seconde condition est tombee le 2026-08-11.** Elle disait : une annee maigre ne
+  // s'affiche que si on l'a demandee au selecteur. Le commentaire d'origine avait pourtant
+  // deja trouve le bon argument — *« repondre "rien a raconter" est une reponse ; retirer la
+  // question n'en est pas une »* — et ne l'appliquait qu'a moitie : au deuxieme clic, pas au
+  // premier affichage. Or c'est au premier que ca compte, et l'annee en cours est **la** seule
+  // question qu'on se pose en ouvrant cet ecran en decembre. `thin` existait deja pour ca.
   const thin = !review.worthShowing;
 
   const best = review.best;
@@ -94,10 +98,18 @@ export function MyYear() {
             ? ([['year.stat.hours', formatCommitment(review.minutesOfFinished, tr)]] as const)
             : []),
         ] as const)
-          // ⚠️ Zero ne s'affiche pas : « 0 critique » annonce un manque, la ou l'absence de
-          // tuile ne dit rien. C'est la regle « mieux vaut se taire que compter zero »,
-          // deja appliquee au fil et au classement.
-          .filter(([, valeur]) => valeur !== 0)
+          // 🔴 **Le filtre a saute.** Il retirait toute tuile a zero — « 0 critique annonce un
+          // manque, la ou l'absence de tuile ne dit rien ». C'est vrai d'un compteur ordinaire,
+          // et faux ici : ces quatre etiquettes sont **les quatre gestes que le produit sait
+          // faire**. Une tuile a zero n'annonce pas un manque, elle annonce une porte — et un
+          // lecteur qui n'a jamais ecrit de critique apprend a cet instant qu'il pourrait.
+          // C'est exactement le raisonnement de Tristan : *« sinon les gens ne viendraient pas
+          // si on tait tout »*, applique a l'ecran qui parle de lui.
+          //
+          // ⚠️ Le temps passe, lui, n'est PAS un geste : il reste conditionne plus haut
+          // (`minutesOfFinished > 0`), et il obeit toujours au masquage (4.6). Une bande de
+          // mesures ou tout est a zero resterait une bande de mesures ; « 0 heure » serait un
+          // reproche.
           .map(([cle, valeur]) => (
             <div key={cle} className="tile">
               <dt className="label">{t(cle)}</dt>

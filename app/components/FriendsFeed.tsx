@@ -64,6 +64,13 @@ export function FriendsFeed({
           <p className="empty-state-body">
             {t(unreadable ? 'friends.feed.unreadable' : 'friends.feed.empty')}
           </p>
+          {/* ⚠️ **Et pas de bouton ici, contrairement aux quatre autres ecrans vides.** La
+              regle posee le 2026-08-11 est qu'un ecran vide porte une action ; elle ne dit pas
+              qu'il porte un *lien*. Les deux gestes que la phrase nomme — suivre quelqu'un,
+              donner son nom — sont le formulaire et `Discover`, a deux cents pixels au-dessus,
+              sur cette meme page. Un bouton qui menerait ailleurs ferait sortir de l'ecran ou
+              l'action se trouve. Appliquer la regle ici la retournerait contre son objet : ce
+              qu'on corrige, c'est un ecran sans issue, pas un ecran sans bouton. */}
         </div>
       ) : (
         <ul>

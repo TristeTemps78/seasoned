@@ -8,7 +8,7 @@ import { upcomingFrom, type UpcomingEpisode } from '@/src/domain/calendar';
 import { parseJournalKey } from '@/src/domain/journal';
 import { CalendarExport } from '@/app/components/CalendarExport';
 import { Poster } from '@/app/components/Poster';
-import { seriesPath } from '@/lib/routes';
+import { pathIn, seriesPath } from '@/lib/routes';
 import { formatDate } from '@/lib/format';
 
 /**
@@ -167,7 +167,7 @@ function Row({ episode, now, posterPath }: {
  * qu'une fois la diffusion programmee. Le dire evite qu'on cherche le bogue.
  */
 function EmptyAgenda() {
-  const { t } = useT();
+  const { t, locale } = useT();
   return (
     <div className="space-y-6">
       <header className="space-y-2">
@@ -177,6 +177,19 @@ function EmptyAgenda() {
       <div className="empty-state">
         <h2 className="empty-state-title">{t('agenda.empty.title')}</h2>
         <p className="empty-state-body">{t('agenda.empty.body')}</p>
+        {/* 🔴 Il n'y en avait aucune. L'ecran expliquait tres bien que le vide est normal —
+            une date n'existe qu'une fois la diffusion programmee — et **s'arretait la**. Or
+            c'est l'ecran d'arrivee de tout compte jeune sur cette face : la phrase repond a
+            « est-ce casse ? », le bouton repond a « et maintenant ? ». Un ecran vide porte
+            une action, sans exception depuis le 2026-08-11. */}
+        <div className="empty-state-actions">
+          <Link href={pathIn('/recherche', locale)} className="btn btn-primary">
+            {t('tallyPage.empty.search')}
+          </Link>
+          <Link href={pathIn('/moi', locale)} className="btn">
+            {t('gate.library')}
+          </Link>
+        </div>
       </div>
     </div>
   );

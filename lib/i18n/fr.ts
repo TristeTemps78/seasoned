@@ -754,6 +754,12 @@ export const FR = {
   'watch.rent': 'En location',
   'watch.buy': 'À l’achat',
   'watch.region': 'Disponibilité : {region}.',
+  // ⚠️ Elle dit **où l'on a cherché**, jamais « disponible nulle part » : le catalogue ignore
+  // des offres, et le pays de repli se déduit de la langue — donc un francophone hors de
+  // France voyait le vide d'un pays qui n'est pas le sien, sans jamais l'apprendre.
+  'watch.nowhere':
+    'Rien trouvé pour {regions}. Le catalogue ne connaît pas toutes les offres, et le pays est celui de votre langue tant que vous n’en avez pas choisi un.',
+  'watch.changeRegions': 'Choisir mes pays',
 
   // --- Regles et moderation (5.0a) -----------------------------------------
   //

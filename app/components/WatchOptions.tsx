@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
+import { pathIn } from '@/lib/routes';
 import type { MessageKey } from '@/lib/i18n';
 import type { WatchByRegion, WatchOption } from '@/src/catalog/provider';
 import { JUSTWATCH_ATTRIBUTION } from '@/src/catalog/provider';
@@ -65,11 +67,35 @@ export function WatchOptions({ byRegion, fallbackRegion }: {
     .map((region) => ({ region: region.toUpperCase(), options: byRegion[region.toUpperCase()] ?? [] }))
     .filter((one) => one.options.length > 0);
 
-  // Muet quand la serie n'est disponible dans aucun des pays choisis : c'est le cas
-  // courant, pas une erreur.
-  if (shown.length === 0) return null;
-
   const mine = new Set(journal.platforms ?? []);
+
+  // 🔴 **C'etait `return null`, et c'etait le silence le plus couteux de la fiche serie.**
+  //
+  // « Ou la voir » est le dernier maillon de la decision que toute la page prepare. Absent, il
+  // laissait le lecteur devant trois hypotheses indistinguables : le produit n'a pas cherche,
+  // la serie n'est nulle part, ou *mon pays n'est pas celui qu'il regarde*. La troisieme est
+  // la plus frequente — le pays de repli se deduit de la **langue**, donc un lecteur
+  // francophone hors de France lisait la disponibilite d'un pays qui n'est pas le sien, et un
+  // vide quand il n'y en avait pas. Et c'est la seule des trois qui se repare en un clic.
+  //
+  // ⚠️ La phrase ne promet pas que la serie est introuvable : elle dit **ou l'on a cherche**.
+  // Le catalogue ignore des offres, et affirmer « disponible nulle part » serait le genre
+  // d'affirmation que ce composant refuse deja pour le reste (voir « au moins » de `MyTally`).
+  if (shown.length === 0) {
+    const where = chosen.map((region) => regionName(region.toUpperCase(), locale)).join(', ');
+    return (
+      <section className="space-y-3" aria-label={t('watch.aria')}>
+        <h2 className="section-heading">{t('watch.title')}</h2>
+        <p className="prose-note">
+          {t('watch.nowhere', { regions: where })}{' '}
+          <Link className="underline hover:text-(--color-volt)" href={pathIn('/moi', locale)}>
+            {t('watch.changeRegions')}
+          </Link>
+        </p>
+        <p className="meta-sm">{JUSTWATCH_ATTRIBUTION}</p>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-3" aria-label={t('watch.aria')}>
