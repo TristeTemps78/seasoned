@@ -387,7 +387,13 @@
    * sur telephone, 3 contre 2,25 au-dela). L'ancienne note d'inquietude — « la premisse ne vaut
    * qu'au-dessus de 640 px » — ne s'applique plus : les deux crans montent ensemble.
    */
+  /* ⚠️ **Serif, et sans lueur.** Le chiffre du bilan est la plus grande ligne du produit
+     apres l'accroche : c'est une affirmation (« au moins 12 heures »), pas une mesure
+     tabulaire. En monospace il donnait un terminal, et le `glow` par-dessus une enseigne.
+     Quatrieme et dernier emploi de la voix editoriale. */
   .tally-figure {
+    font-family: var(--font-serif);
+    color: var(--color-bright);
     font-size: 2.25rem;
     line-height: 1.05;
     font-weight: 700;

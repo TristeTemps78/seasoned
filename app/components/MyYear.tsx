@@ -29,7 +29,7 @@ import { PosterChip } from '@/app/components/PosterChip';
  */
 export function MyYear() {
   const tr = useT();
-  const { t, tn, locale } = tr;
+  const { t, n, locale } = tr;
   const { journal } = useJournal();
 
   const years = useMemo(() => yearsWithActivity(journal), [journal]);
@@ -74,12 +74,29 @@ export function MyYear() {
 
       {thin ? <p className="meta">{t('year.thin')}</p> : null}
 
-      <ul className="space-y-1 text-sm">
-        {review.finished > 0 ? <li>{tn('year.finished', review.finished)}</li> : null}
-        {review.seasonsRated > 0 ? <li>{tn('year.rated', review.seasonsRated)}</li> : null}
-        {review.reviewsWritten > 0 ? <li>{tn('year.written', review.reviewsWritten)}</li> : null}
-        {review.liked > 0 ? <li>{tn('year.liked', review.liked)}</li> : null}
-      </ul>
+      {/* 🔴 C'etaient **quatre phrases dans une liste a puces** — « 1 série menée au bout. »,
+          « 2 saisons notées. » — sur l'ecran dont le sujet EST le chiffre. Une mesure ecrite
+          en prose ne se lit pas comme une mesure : elle se lit comme une remarque.
+          Les tuiles portent le nombre en grand et l'etiquette en petit, et chacune prend une
+          teinte differente (`.tile:nth-child`). C'est la seule bande de couleur de la page. */}
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {([
+          ['year.stat.finished', review.finished],
+          ['year.stat.rated', review.seasonsRated],
+          ['year.stat.written', review.reviewsWritten],
+          ['year.stat.liked', review.liked],
+        ] as const)
+          // ⚠️ Zero ne s'affiche pas : « 0 critique » annonce un manque, la ou l'absence de
+          // tuile ne dit rien. C'est la regle « mieux vaut se taire que compter zero »,
+          // deja appliquee au fil et au classement.
+          .filter(([, valeur]) => valeur > 0)
+          .map(([cle, valeur]) => (
+            <div key={cle} className="tile">
+              <dt className="label">{t(cle)}</dt>
+              <dd className="tile-value">{n(valeur)}</dd>
+            </div>
+          ))}
+      </dl>
 
       {/* ⚠️ « ce que pesent les series terminees », jamais « ce que vous avez regarde » :
           un visionnage acheve en janvier a pu commencer l'annee d'avant.

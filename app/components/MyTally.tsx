@@ -62,9 +62,12 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
     >
       <h2 className="row-title">{t('tally.title')}</h2>
 
-      {/* `glow` est reserve a ce chiffre : pose ailleurs, il perdrait son sens par
-          saturation. La taille et sa justification vivent avec `.tally-figure`. */}
-      <p className="tally-figure numeric glow">
+      {/* 🔴 Ce chiffre etait en **monospace vert avec une lueur**. Le monospace sert a aligner
+          des colonnes de nombres ; pose sur une phrase de 48 px il donne un terminal, et la
+          lueur par-dessus en faisait une enseigne. C'est la ligne la plus visible de la page,
+          donc celle qui rendait l'ecran laid.
+          Elle prend la voix editoriale — c'est une **affirmation**, pas une mesure tabulaire. */}
+      <p className="tally-figure">
         {t('tally.atLeast', { commitment: formatCommitment(tally.minutes, tr) })}
       </p>
 
