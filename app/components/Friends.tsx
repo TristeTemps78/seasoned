@@ -23,6 +23,7 @@ import { Discover } from '@/app/components/Discover';
 import { DailyRound } from '@/app/components/DailyRound';
 import { FriendQuiz } from '@/app/components/FriendQuiz';
 import { Avatar } from '@/app/components/Avatar';
+import { Poster } from '@/app/components/Poster';
 import { pathIn } from '@/lib/routes';
 import { socialFrom } from '@/app/social/socialFrom';
 
@@ -113,6 +114,13 @@ export function Friends() {
               text: review.text,
               throughSeason: review.throughSeason,
               lang: review.lang ?? 'fr',
+              // ⚠️ L'instantane part **avec** la critique (018) : sans lui, le fil affichait
+              // « a ecrit sur tmdb:94997 » a quiconque n'avait pas deja la serie dans son
+              // propre journal — c'est-a-dire a tous ceux pour qui le fil sert a decouvrir.
+              ...(entry.snapshot?.title !== undefined ? { title: entry.snapshot.title } : {}),
+              ...(entry.snapshot?.posterPath !== undefined
+                ? { posterPath: entry.snapshot.posterPath }
+                : {}),
             }),
           ),
         ),
@@ -426,7 +434,12 @@ export function Friends() {
                 // Le titre vient de **mon** instantane local, jamais d'un appel catalogue :
                 // une requete par ligne de fil est le cout par utilisateur que ce produit
                 // refuse. Sans instantane on montre la cle — le lien, lui, marche toujours.
-                const title = journal.entries[review.subject]?.snapshot?.title;
+                // ⚠️ L'instantane publie **d'abord**, le journal du lecteur ensuite. L'ordre
+                // inverse laissait « tmdb:94997 » a l'ecran pour toute serie que le lecteur
+                // n'avait pas deja — c'est-a-dire dans le seul cas ou un fil sert a decouvrir.
+                const title = review.title ?? journal.entries[review.subject]?.snapshot?.title;
+                const poster =
+                  review.posterPath ?? journal.entries[review.subject]?.snapshot?.posterPath;
 
                 return (
                   <li
@@ -440,6 +453,16 @@ export function Friends() {
                         qu'un element anonyme fait de blanc seul n'est pas rendu, donc ils ne
                         creusent aucun trou. */}
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      {/* L'affiche de la serie dont on parle. `w154` : elle est rendue a
+                          40 px de large, donc le plus petit fichier du CDN suffit — servir
+                          `w342` ferait payer quatre fois le poids pour rien. */}
+                      {poster === undefined ? null : (
+                        <span className="block w-10 shrink-0 overflow-hidden rounded panel">
+                          <span className="block aspect-2/3">
+                            <Poster path={poster} title={title ?? review.subject} size="w154" />
+                          </span>
+                        </span>
+                      )}
                       <Avatar handle={review.handle} face={review.face} />
                       <Link
                         href={pathIn(`/u/${review.handle}`, locale)}
@@ -477,11 +500,29 @@ export function Friends() {
               }
 
               const item = entry.fact;
+              // 🔴 Le bloc « fait » ne nommait **pas du tout** la serie : la ligne disait
+              // « @x a note la saison 1 — 4,5 ★ » sans jamais dire de quelle serie. Pire que
+              // la cle brute des critiques, et invisible au HTML — il faut le lire a l'ecran.
+              const factTitle = item.title ?? journal.entries[item.subject]?.snapshot?.title;
+              const factPoster =
+                item.posterPath ?? journal.entries[item.subject]?.snapshot?.posterPath;
+              const factParsed = parseJournalKey(item.subject);
               return (
                 <li
                   key={`${item.handle}-${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
                   className="panel flex flex-wrap items-center gap-x-2 gap-y-1 bg-(--color-surface)/50 px-4 py-3 text-sm"
                 >
+                  {factPoster === undefined ? null : (
+                    <span className="block w-10 shrink-0 overflow-hidden rounded panel">
+                      <span className="block aspect-2/3">
+                        <Poster
+                          path={factPoster}
+                          title={factTitle ?? item.subject}
+                          size="w154"
+                        />
+                      </span>
+                    </span>
+                  )}
                   <Avatar handle={item.handle} face={item.face} />{' '}
                   <Link
                     href={pathIn(`/u/${item.handle}`, locale)}
@@ -490,6 +531,19 @@ export function Friends() {
                     @{item.handle}
                   </Link>{' '}
                   {t(`friends.item.${item.kind}`)}{' '}
+                  {/* ⚠️ Le titre n'est rendu que s'il est **connu** : ecrire la cle a la place
+                      serait revenir au defaut qu'on corrige. Sans titre, la phrase reste
+                      « @x a termine » — incomplete, mais jamais absurde. */}
+                  {factTitle === undefined ? null : factParsed === undefined ? (
+                    <span className="font-medium">{factTitle}</span>
+                  ) : (
+                    <Link
+                      href={pathIn(`/serie/${factParsed.providerId}`, locale)}
+                      className="font-medium hover:text-(--color-volt)"
+                    >
+                      {factTitle}
+                    </Link>
+                  )}{' '}
                   {item.season !== undefined && item.stars !== undefined
                     ? t('friends.item.season', {
                         season: String(item.season),

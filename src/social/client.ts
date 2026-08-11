@@ -143,6 +143,17 @@ export interface PublishedReview {
   readonly authorId: string;
   /** La face de l'auteur, si elle en a une. Voir {@link Profile.face}. */
   readonly face?: FaceId;
+  /**
+   * L'instantane du titre et de l'affiche, publie avec la critique (018).
+   *
+   * 🔴 Sans eux, le fil affichait « @test wrote about **tmdb:94997** » : le lecteur ne
+   * resolvait le titre que depuis SON journal, donc jamais pour une serie qu'il ne connait
+   * pas — c'est-a-dire jamais dans le seul cas ou un fil sert a quelque chose.
+   *
+   * Optionnels : les critiques publiees avant le 2026-08-11 n'en ont pas.
+   */
+  readonly title?: string;
+  readonly posterPath?: string;
 }
 
 /**
@@ -527,7 +538,7 @@ export class SocialClient {
    */
   async #activity(filter: string, limit: number): Promise<readonly FeedItem[]> {
     const rows = await this.#rows<Record<string, unknown>>(
-      `activity?${filter}select=kind,subject,season,stars,happened_on,profiles!inner(handle,user_id,face)&order=happened_on.desc&limit=${limit}`,
+      `activity?${filter}select=kind,subject,season,stars,happened_on,title,poster_path,profiles!inner(handle,user_id,face)&order=happened_on.desc&limit=${limit}`,
     );
     return rows.flatMap((row) => {
       const author = row['profiles'] as
@@ -544,6 +555,11 @@ export class SocialClient {
 
       const season = row['season'];
       const stars = row['stars'];
+      // ⚠️ Verifies au type et non transtypes, comme le genre juste au-dessus : ces deux
+      // colonnes sont nulles pour tout fait publie avant le 2026-08-11, et un `as string`
+      // ferait afficher la chaine « null » a la place du titre.
+      const title = row['title'];
+      const posterPath = row['poster_path'];
       return [
         {
           kind: row['kind'],
@@ -552,6 +568,8 @@ export class SocialClient {
           handle: author.handle,
           authorId: author.user_id,
           ...(face !== undefined ? { face } : {}),
+          ...(typeof title === 'string' && title !== '' ? { title } : {}),
+          ...(typeof posterPath === 'string' && posterPath !== '' ? { posterPath } : {}),
           ...(typeof season === 'number' ? { season } : {}),
           ...(stars === null || stars === undefined
             ? {}
@@ -591,6 +609,11 @@ export class SocialClient {
               season: item.season ?? null,
               stars: item.stars ?? null,
               happened_on: item.happenedOn,
+              // ⚠️ `?? null` et non l'omission : `merge-duplicates` fait un `ON CONFLICT DO
+              // UPDATE`, et une cle absente du corps laisserait l'ancienne valeur en place.
+              // Un titre efface du journal doit s'effacer aussi du fil.
+              title: item.title ?? null,
+              poster_path: item.posterPath ?? null,
             })),
           ),
         },
@@ -728,7 +751,14 @@ export class SocialClient {
     userId: string,
     subject: string,
     target: string,
-    review: { readonly text: string; readonly throughSeason: number; readonly lang: string },
+    review: {
+      readonly text: string;
+      readonly throughSeason: number;
+      readonly lang: string;
+      /** L'instantane du catalogue, pour que le fil n'affiche plus « tmdb:94997 » (018). */
+      readonly title?: string;
+      readonly posterPath?: string;
+    },
   ): Promise<boolean> {
     try {
       const response = await this.#fetch(this.#url('reviews'), {
@@ -741,6 +771,10 @@ export class SocialClient {
           body: review.text,
           through_season: review.throughSeason,
           lang: review.lang,
+          // `?? null` : `merge-duplicates` est un `ON CONFLICT DO UPDATE`, donc une cle
+          // absente laisserait l'ancienne valeur en place a la republication.
+          title: review.title ?? null,
+          poster_path: review.posterPath ?? null,
         }),
       });
       if (!response.ok) this.#failed('reviews', response.status);
@@ -1003,7 +1037,7 @@ export class SocialClient {
     // et `reviews?&select=` est une URL que PostgREST accepte aujourd'hui sans qu'on ait
     // demande son avis. On ne construit pas une URL douteuse en pariant sur sa tolerance.
     const rows = await this.#rows<Record<string, unknown>>(
-      `reviews?${filter === '' ? '' : `${filter}&`}select=subject,target,body,through_season,lang,published_at,profiles!inner(handle,user_id,face)&order=published_at.desc&limit=${limit}`,
+      `reviews?${filter === '' ? '' : `${filter}&`}select=subject,target,body,through_season,lang,published_at,title,poster_path,profiles!inner(handle,user_id,face)&order=published_at.desc&limit=${limit}`,
     );
     return rows.flatMap((row) => {
       const author = row['profiles'] as
@@ -1012,6 +1046,10 @@ export class SocialClient {
       if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
       const through = row['through_season'];
       const face = readFace(author.face);
+      // Nuls pour toute critique d'avant le 2026-08-11 : verifies au type, jamais transtypes
+      // — `String(null)` afficherait « null » a la place du titre.
+      const title = row['title'];
+      const posterPath = row['poster_path'];
       return [
         {
           subject: String(row['subject']),
@@ -1023,6 +1061,8 @@ export class SocialClient {
           handle: author.handle,
           authorId: author.user_id,
           ...(face !== undefined ? { face } : {}),
+          ...(typeof title === 'string' && title !== '' ? { title } : {}),
+          ...(typeof posterPath === 'string' && posterPath !== '' ? { posterPath } : {}),
         },
       ];
     });

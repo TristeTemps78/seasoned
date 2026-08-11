@@ -857,6 +857,71 @@ begin
   if obtenu::int < attendu::int then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- 018 — le fait voyage avec le titre de sa serie
+  -- ---------------------------------------------------------------------------
+  --
+  -- 🔴 Sans ces colonnes, le fil affichait « @test wrote about tmdb:94997 » : le lecteur ne
+  -- resolvait le titre que depuis SON journal, donc jamais pour une decouverte. Le bloc des
+  -- faits, lui, ne nommait pas la serie du tout.
+  --
+  -- ⚠️ **Ce que ces trois scenarios protegent avant tout, c'est la publication elle-meme.**
+  -- Le client emet desormais `title` et `poster_path` a chaque envoi. Si la colonne manque —
+  -- 018 non applique — PostgREST rend 400 et **plus rien ne se publie**, ni les coeurs ni
+  -- les series terminees. Le correctif casserait alors ce qu'il vient reparer, et
+  -- `publish` rend `response.ok` : personne ne le saurait.
+
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims',
+                     json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+
+  -- 50 — La forme exacte que le client emet.
+  begin
+    insert into public.activity (user_id, kind, subject, season, stars, happened_on,
+                                 title, poster_path)
+    values (a, 'finished', tag || '_t', null, null, current_date, 'Breaking Bad', '/abc.jpg')
+    on conflict (user_id, kind, subject, season, happened_on) do update
+      set title = excluded.title, poster_path = excluded.poster_path;
+    obtenu := 'ok';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'ok';
+  rapport := rapport || format(E'  %s  %s. un fait s ecrit avec son titre et son affiche (018)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 51 — La borne de longueur mord. Sans elle, `activity` accepte un « titre » de dix
+  --      megaoctets : ce sont les premieres colonnes de texte libre de cette table.
+  begin
+    insert into public.activity (user_id, kind, subject, happened_on, title)
+    values (a, 'finished', tag || '_t2', current_date, repeat('x', 201));
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. un titre de plus de 200 caracteres est refuse (018)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 52 — ⚠️ Le seul des trois qui soit une question de securite. Le rendu concatene ce
+  --      chemin derriere `https://image.tmdb.org/t/p/<taille>` **sans le reverifier** : une
+  --      URL absolue acceptee ici ferait pointer une image du fil vers un domaine tiers,
+  --      c'est-a-dire un pisteur pose par n'importe quel compte dans le fil des autres.
+  begin
+    insert into public.activity (user_id, kind, subject, happened_on, poster_path)
+    values (a, 'finished', tag || '_t3', current_date, 'https://pisteur.example/x.jpg');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. une URL absolue en affiche est refusee (018)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);
