@@ -216,14 +216,14 @@ export async function SeriesView({ id, locale }: {
 
           ⚠️ **Le repli est la mise en page d'avant, au pixel pres** : sans banniere, ni
           `.bleed` ni `.art-bed`. C'est le cas courant, pas l'exception. */}
-      <header
-        className={
-          backdrop !== undefined ? 'bleed art-bed -mt-8 pt-8 pb-6 sm:pt-12 sm:pb-10' : ''
-        }
-      >
-        {backdrop !== undefined ? (
-          // Desormais le plus gros element de l'ecran, donc celui que Google chronometre.
-          // eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous.
+      {/* 🔴 **La banniere est une BANDE, plus un fond.** Elle etait posee derriere tout
+          l'en-tete, a moitie effacee, avec le titre par-dessus — ce qui donne un fond teinte
+          et pas une image. Elle occupe desormais toute la largeur, se dissout vers le bas, et
+          l'en-tete remonte **dedans**. C'est le chevauchement qui fait la fiche de film. */}
+      {backdrop !== undefined ? (
+        <div className="show-backdrop -mt-8" aria-hidden="true">
+          {/* Le plus gros element de l'ecran, donc celui que Google chronometre. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous. */}
           <img
             src={backdrop}
             srcSet={`${backdropUrl(detail.backdropPath, 'w780')} 780w, ${backdrop} 1280w`}
@@ -234,34 +234,37 @@ export async function SeriesView({ id, locale }: {
             width={backdropDimensions('w1280').width}
             height={backdropDimensions('w1280').height}
           />
-        ) : null}
+        </div>
+      ) : null}
 
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
+      <header
+        className={`show-header ${backdrop !== undefined ? 'show-header-overlap' : ''}`}
+      >
         {poster !== undefined ? (
           // Les dimensions declarees empechent la page de sauter quand l'affiche arrive.
           //
-          // ⚠️ **`sm:w-56` et non `w-36` : l'agrandissement ne coute pas un octet.** Mesure du
-          // 2026-08-07 sur la page servie : l'affiche etait rendue a **144 px de large, soit
-          // 14 % de la colonne**, alors que le fichier telecharge fait deja **342 px**. On
-          // payait donc une image 2,4 fois plus grande que ce qu'on montrait, sur la page dont
-          // la regle fondatrice est « l'affiche est l'interface ». A
-          // 224 px elle occupe 22 % de la colonne — l'ordre de grandeur de Letterboxd, la
-          // reference choisie — et reste **sous** la resolution du fichier, donc nette.
+          // ⚠️ **`sm:w-full` : c'est la GRILLE qui fixe la largeur desormais** (14 rem), plus
+          // l'image. L'ancienne version portait `sm:w-56` en dur a cote d'un conteneur en
+          // `flex` — deux endroits decidaient de la meme chose, et la colonne de texte se
+          // decalait d'une serie a l'autre selon que l'affiche existait ou non.
           //
-          // Le mobile garde `w-36` : sous 640 px la disposition passe en colonne, et cet
-          // ecran-la n'a pas encore ete regarde a l'oeil. On ne change pas ce qu'on n'a pas vu.
+          // Elle porte `.poster-frame` comme toutes les autres du produit : anneau clair,
+          // double ombre, puits sombre. Elle mord dans la banniere, donc elle doit se lire
+          // comme un objet POSE dessus — c'est tout l'effet recherche.
           //
           // ⚠️ `fetchPriority` est parti a la banniere : deux images en priorite haute ne
           // priorisent rien. `panel` porte la matiere commune, elevation comprise — c'est
           // elle qui decolle l'affiche du visuel derriere.
-          <img
-            src={poster}
-            alt=""
-            decoding="async"
-            width={posterDimensions('w342').width}
-            height={posterDimensions('w342').height}
-            className="panel w-36 shrink-0 self-start sm:w-56 sm:self-end"
-          />
+          <div className="poster-frame aspect-2/3 w-32 self-start sm:w-full">
+            <img
+              src={poster}
+              alt=""
+              decoding="async"
+              width={posterDimensions('w342').width}
+              height={posterDimensions('w342').height}
+              className="h-full w-full object-cover"
+            />
+          </div>
         ) : null}
 
         <div className="space-y-4">
@@ -315,7 +318,6 @@ export async function SeriesView({ id, locale }: {
               {detail.overview}
             </p>
           ) : null}
-        </div>
         </div>
       </header>
 

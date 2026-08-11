@@ -53,6 +53,95 @@
    * la seule contrainte qui reste, et elle est **mesurable** — le voile tient le contraste, il
    * ne bride pas l'image. L'opacite est d'ailleurs montee de 0,45 a 0,9 le meme jour.
    */
+  /**
+   * =============================================================================
+   * LA BANDE ET LE CHEVAUCHEMENT — le changement de STRUCTURE, pas de valeur
+   * =============================================================================
+   *
+   * 🔴 Cinq passes n'ont rien change a l'ecran, et voici pourquoi : je n'avais jamais touche
+   * a la **mise en page**. Un gris fonce remplace par un autre gris fonce ne se voit pas ;
+   * une page dont les sections gardent le meme ordre et le meme empilement reste la meme page.
+   *
+   * L'ancienne fiche serie posait la banniere **derriere** tout l'en-tete (`.art-bed`), a
+   * moitie effacee, avec le titre par-dessus. Ca donne un fond teinte, pas une image.
+   *
+   * Ici la banniere est une **bande** qui occupe toute la largeur et se dissout dans la page
+   * par le bas. L'en-tete remonte ensuite **dedans** de 100 px : l'affiche mord dans l'image,
+   * le titre commence sous elle. C'est ce chevauchement — et lui seul — qui fait la difference
+   * entre une page de contenu et une fiche de film.
+   */
+  .show-backdrop {
+    position: relative;
+    /* Plein cadre, **sans le rembourrage de `.bleed`** : une bande d'image ne se recentre pas
+       sur une colonne de lecture, elle va d'un bord a l'autre. */
+    margin-inline: calc(50% - 50vw);
+    height: 17rem;
+    overflow: hidden;
+  }
+
+  @media (width >= 40rem) {
+    .show-backdrop {
+      height: 25rem;
+    }
+  }
+
+  .show-backdrop > img {
+    width: 100%;
+    height: 100%;
+    /* Le sujet d'une banniere est presque toujours au-dessus du centre geometrique : cadrer
+       au milieu coupe les visages a la moitie du front. */
+    object-fit: cover;
+    object-position: center 20%;
+  }
+
+  /* ⚠️ Le degrade doit **dissoudre** l'image dans la page, jamais la couper net. Il finit sur
+     `--color-ink` opaque : sans ca, la bande garde une arete horizontale que l'oeil lit comme
+     une bordure oubliee. */
+  .show-backdrop::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      color-mix(in oklab, var(--color-ink) 45%, transparent) 55%,
+      var(--color-ink) 100%
+    );
+  }
+
+  /**
+   * L'en-tete qui mord dans la bande.
+   *
+   * ⚠️ Le chevauchement n'est pose **que** s'il y a une banniere (`.show-header-overlap`) :
+   * sans image, remonter de 100 px ferait passer le titre sous la barre de navigation. Le cas
+   * est courant — beaucoup de series du catalogue n'ont pas de visuel.
+   */
+  .show-header {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  @media (width >= 40rem) {
+    .show-header {
+      /* Deux colonnes : l'affiche a taille fixe, le reste prend ce qui reste. C'est la seule
+         disposition qui garde le titre a hauteur constante d'une serie a l'autre. */
+      grid-template-columns: 14rem 1fr;
+      gap: 1.5rem 2rem;
+    }
+  }
+
+  .show-header-overlap {
+    margin-top: -6.5rem;
+  }
+
+  @media (width >= 40rem) {
+    .show-header-overlap {
+      margin-top: -9rem;
+    }
+  }
+
   .art-bed {
     position: relative;
     isolation: isolate;
