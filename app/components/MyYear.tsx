@@ -109,8 +109,11 @@ export function MyYear() {
           ⚠️ Le temps **a venir** (« il vous reste ~9 h ») n'est PAS concerne : ce n'est pas
           un compte de ce qu'on a consomme, c'est le prix d'entree d'une decision. Le
           reglage porte sur le regard en arriere, pas sur le calcul. */}
+      {/* ⚠️ Plus de `numeric` ici : le monospace aligne des COLONNES de nombres. Sur une
+          phrase — « les séries terminées cette année-là pèsent 12 heures » — il donne du code,
+          et c'est ce que la capture du 2026-08-11 montrait juste sous les tuiles. */}
       {review.minutesOfFinished > 0 && journal.hideHours !== true ? (
-        <p className="numeric meta">
+        <p className="meta">
           {t('year.weight', {
             commitment: formatCommitment(review.minutesOfFinished, tr),
           })}

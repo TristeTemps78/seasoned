@@ -67,15 +67,44 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
           lueur par-dessus en faisait une enseigne. C'est la ligne la plus visible de la page,
           donc celle qui rendait l'ecran laid.
           Elle prend la voix editoriale — c'est une **affirmation**, pas une mesure tabulaire. */}
-      <p className="tally-figure">
-        {t('tally.atLeast', { commitment: formatCommitment(tally.minutes, tr) })}
-      </p>
+      {/* 🔴 Le chiffre, le decompte et « surtout » etaient **trois blocs empiles**, et
+          l'affiche flottait dans un quatrieme, plus bas, dans une petite rangee a elle. Sur
+          une page etroite ca donnait deux vignettes identiques a dix lignes d'ecart, chacune
+          perdue a cote de son bout de phrase.
+          Un seul bloc, l'affiche a gauche : elle sert enfin le chiffre au lieu de l'illustrer
+          plus loin, et la page occupe sa largeur. */}
+      <div className="flex items-start gap-5">
+        {heaviest !== undefined ? (
+          <PosterChip path={heaviest.posterPath} title={heaviest.title} wide />
+        ) : null}
 
-      <p className="meta">
-        {tn('tally.onSeries', tally.counted, {
-          episodes: tn('tally.episodes', tally.episodes),
-        })}
-      </p>
+        <div className="min-w-0 space-y-2">
+          <p className="tally-figure">
+            {t('tally.atLeast', { commitment: formatCommitment(tally.minutes, tr) })}
+          </p>
+
+          <p className="meta">
+            {tn('tally.onSeries', tally.counted, {
+              episodes: tn('tally.episodes', tally.episodes),
+            })}
+          </p>
+
+          {heaviest !== undefined ? (
+            <p className="text-sm">
+              <span className="label">{t('tally.heaviest')}</span>{' '}
+              {heaviest.passes > 1
+                ? tn('tally.heaviestPasses', heaviest.passes, {
+                    title: heaviest.title,
+                    commitment: formatCommitment(heaviest.minutes, tr),
+                  })
+                : t('tally.heaviestOnce', {
+                    title: heaviest.title,
+                    commitment: formatCommitment(heaviest.minutes, tr),
+                  })}
+            </p>
+          ) : null}
+        </div>
+      </div>
 
       {/* D'ou vient une partie du chiffre (9.0) — meme honnetete que le « au moins »,
           appliquee a la provenance plutot qu'a la couverture. Silencieux quand rien n'a
@@ -93,31 +122,6 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
         </p>
       ) : null}
 
-      {heaviest !== undefined ? (
-        // 🔴 L'ecran nommait la serie sans jamais la montrer — « Arcane : 12 heures », en
-        // texte gris. C'est le seul objet de la page qui ait un visage ; le cacher etait le
-        // defaut le plus cher de `/bilan`.
-        <div className="flex items-center gap-3">
-          <PosterChip path={heaviest.posterPath} title={heaviest.title} wide />
-          <div>
-          <p className="label">
-            {t('tally.heaviest')}
-          </p>
-          <p className="text-sm">
-            {heaviest.passes > 1
-              ? tn('tally.heaviestPasses', heaviest.passes, {
-                  title: heaviest.title,
-                  commitment: formatCommitment(heaviest.minutes, tr),
-                })
-              : t('tally.heaviestOnce', {
-                  title: heaviest.title,
-                  commitment: formatCommitment(heaviest.minutes, tr),
-                })}
-          </p>
-          </div>
-        </div>
-      ) : null}
-
       {/* Ce que le chiffre ne contient pas. Le taire ferait passer un minorant pour un
           total — exactement ce que le « au moins » ci-dessus s'emploie a eviter. */}
       {tally.uncounted > 0 ? (
@@ -126,8 +130,15 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
         </p>
       ) : null}
 
+      {/* 🔴 Ces deux textes etaient **concatenes**, et ca rendait « …this figure goes
+          nowhere. kept on this device, and on your account » — une phrase finie par un point,
+          suivie d'un fragment en minuscule. `lives.*` est ecrit pour SUIVRE une virgule (voir
+          `WhereItLives`), pas pour clore une phrase. Vu sur la capture du 2026-08-11 ; ni le
+          typage ni les tests ne peuvent voir une phrase mal assemblee.
+          Ils vivent desormais separes, comme dans `MyProgress`. */}
+      <p className="meta-sm">{t('tally.private')}</p>
       <p className="meta-sm">
-        {t('tally.private')} <WhereItLives className="" />
+        <WhereItLives className="" />
       </p>
 
       {/* ⚠️ Le bouton vit **avec le chiffre**, pas dans une page de reglages : c'est en le
