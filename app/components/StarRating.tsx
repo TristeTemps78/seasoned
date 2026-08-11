@@ -90,7 +90,10 @@ function Star({ filled, className }: { readonly filled: 0 | 0.5 | 1; readonly cl
         <defs>
           <linearGradient id={id}>
             <stop offset="50%" stopColor="var(--color-rating)" />
-            <stop offset="50%" stopColor="transparent" />
+            {/* ⚠️ `--color-faint` et non `transparent` : depuis que l'etoile eteinte est
+                pleine, une moitie transparente ferait de la demi-etoile la seule forme
+                trouee des cinq — elle se lirait comme un defaut de rendu. */}
+            <stop offset="50%" stopColor="var(--color-faint)" />
           </linearGradient>
         </defs>
       ) : null}
@@ -100,9 +103,11 @@ function Star({ filled, className }: { readonly filled: 0 | 0.5 | 1; readonly cl
           // ⚠️ `--color-rating` et non `--color-warn` : les etoiles etaient peintes dans la
           // couleur qui signifie « anomalie » partout ailleurs. Voir le jeton dans
           // `globals.css`.
-          filled === 1 ? 'var(--color-rating)' : filled === 0.5 ? `url(#${id})` : 'transparent'
+          filled === 1 ? 'var(--color-rating)' : filled === 0.5 ? `url(#${id})` : 'var(--color-faint)'
         }
-        stroke="var(--color-edge)"
+        // ⚠️ Plus de contour : l'etoile eteinte est **pleine et sourde** (brief, 4.7).
+        // Cinq contours vides se lisent comme un gabarit qui n'a pas fini de charger.
+        stroke="none"
         strokeWidth="1"
       />
     </svg>

@@ -27,8 +27,8 @@
   .poster-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: 0.625rem;
-    row-gap: 1rem;
+    column-gap: var(--gap-poster-grid);
+    row-gap: 1.25rem;
   }
   @media (width >= 40rem) {
     .poster-grid {
@@ -122,6 +122,48 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
+/**
+   * =============================================================================
+   * L'affiche comme OBJET — la piece maitresse, et elle n'existait pas
+   * =============================================================================
+   *
+   * Les affiches vivaient dans un `.panel` : une bordure grise de 1 px, un fond de carte, la
+   * meme matiere qu'un panneau de reglages. Cinq cadres differents dans cinq fichiers, tous
+   * plats. Or c'est **le** composant du produit — celui qui occupe la majorite de l'ecran sur
+   * l'accueil, la bibliotheque et le generique.
+   *
+   * Trois choses, et les trois comptent :
+   *
+   * 1. **Un anneau interne clair**, pas une bordure sombre. Une bordure grise creuse un
+   *    contour ; un liseré clair a l'interieur fait un **bord eclaire**, donc un objet pose
+   *    sur la page plutot qu'un trou decoupe dedans.
+   * 2. **Deux ombres portees**, une courte et une longue. Une seule ombre donne un autocollant ;
+   *    deux donnent une distance au fond.
+   * 3. **Une echelle au survol**, courte. C'est ce qui rend une grille vivante sans qu'aucune
+   *    couleur ne bouge.
+   *
+   * ⚠️ Les trois valeurs viennent **du brief, recopiees** (jetons `--poster-*`) : cinq passes
+   * d'equivalents juges proches n'ont pas suffi.
+   *
+   * ⚠️ **L'anneau est sur `::after` et non en `box-shadow: inset` sur le cadre.** Une ombre
+   * interne se peint sous le contenu : avec un `<img>` qui remplit la boite, elle serait
+   * entierement cachee. Le defaut serait invisible en relisant le CSS — la regle est la, elle
+   * ne rend simplement rien.
+   */
+  .poster-frame {
+    position: relative;
+    overflow: hidden;
+    /* Le rayon suit la taille : 8 px sur une affiche de 300 px et sur une vignette de 40 px
+       ne se lisent pas pareil — le second parait arrondi comme un bouton. */
+    border-radius: var(--radius-poster);
+    /* Le puits est **plus sombre** que la page : ce qu'on voit avant le chargement doit etre
+       un creux, pas une carte grise de la meme valeur que les panneaux. */
+    background-color: var(--color-well);
+    box-shadow: var(--poster-drop);
+    transition:
+      transform var(--dur-fast) ease-out,
+      box-shadow var(--dur-fast) ease-in;
+  }
   .poster-frame::after {
     content: '';
     position: absolute;
@@ -129,7 +171,7 @@
     z-index: 1;
     pointer-events: none;
     border-radius: inherit;
-    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-bright) 22%, transparent);
+    box-shadow: var(--poster-ring);
   }
   /* Le survol repond aussi bien au cadre qu'au lien qui l'enveloppe : la moitie des grilles
      posent le titre **sous** l'affiche, et survoler le titre doit animer l'affiche. */
@@ -137,10 +179,8 @@
   a:hover > .poster-frame,
   a:focus-visible > .poster-frame,
   .group:hover .poster-frame {
-    transform: scale(1.045);
-    box-shadow:
-      0 1px 5px rgb(0 0 0 / 0.25),
-      0 10px 28px rgb(0 0 0 / 0.45);
+    transform: scale(1.05);
+    box-shadow: var(--poster-hover-drop);
     z-index: 2;
   }
   /* L'anneau prend l'accent quand l'objet est cible au clavier — le focus doit se voir sur

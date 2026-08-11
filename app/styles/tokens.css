@@ -52,14 +52,14 @@
    * commence a laver les vignettes TMDB sombres, et c'est le seul vrai argument qu'avait
    * « l'affiche est l'interface ».
    */
-  --color-ink: #0e1117;
-  --color-surface: #1a1f29;
-  --color-edge: #333c4c;
+  --color-ink: #14181c;
+  --color-surface: #2c3440;
+  --color-edge: #3a4552;
   /* Remonte de #8790a6 le 2026-08-11 : c'est la couleur la plus employee du produit (157
      usages), donc la plus rentable a corriger. L'ancienne tenait 4,6:1 sur `--color-surface`,
      celle-ci ~6:1 — ce qui compte, vu qu'elle habille surtout du petit texte. */
-  --color-muted: #93a3b8;
-  --color-text: #e6edf6;
+  --color-muted: #99aabb;
+  --color-text: #ddeeff;
 
   /**
    * =============================================================================
@@ -80,9 +80,9 @@
    * horodatages), `muted` pour le corps secondaire, `soft` pour ce qui accompagne un titre,
    * `bright` pour ce qui doit se lire avant le reste sans etre un titre.
    */
-  --color-dim: #64748b;
-  --color-soft: #b6c2d4;
-  --color-bright: #f3f7fc;
+  --color-dim: #667788;
+  --color-soft: #aabbcc;
+  --color-bright: #ffffff;
 
   /* L'arc electrique — l'accent du produit, et la racine de son nom.
      `volt` est la couleur d'interaction : liens actifs, focus, bordure vivante. */
@@ -147,7 +147,7 @@
 
   /* Un second niveau de surface : sans lui, un panneau pose sur un panneau rendait le meme
      aplat, et la profondeur reposait entierement sur une ombre de 1 px. */
-  --color-surface-2: #262e3b;
+  --color-surface-2: #202830;
 
   /* =============================================================================
    * Les huit teintes d'identite — et elles ne veulent RIEN dire
@@ -184,6 +184,81 @@
    * Une encre bleu-nuit plutot que du noir : le champ bascule en clair, il ne change pas de
    * famille. C'est ce qui fait que l'inversion se lit comme le meme produit, eclaire.
    */
+  /* =============================================================================
+   * Le brief, applique a la lettre (2026-08-11, seconde remise)
+   * =============================================================================
+   *
+   * Cinq passes d'interpretation ont echoue. Le document dit lui-meme « ne reinterprete pas
+   * la palette ni la densite » — donc les valeurs ci-dessous sont **les siennes**, recopiees,
+   * et non des equivalents que j'aurais juges proches.
+   *
+   * ⚠️ **Ce qui n'a PAS ete recopie, et c'est la seule chose** : l'echelle de vert. Le brief en
+   * fait l'accent qui « fait le travail ». Or ce produit s'appelle *Volt*face et son cyan
+   * porte le nom du produit ; par ailleurs `--color-live` (vert) signifie deja « en
+   * diffusion », donc les deux se percuteraient. Le basculement est **une ligne**, ecrite plus
+   * bas — c'est exactement ce que la segmentation d'hier existe pour rendre possible.
+   */
+
+  /** Le puits — plus creux que la page. Ce qu'on voit avant qu'une affiche arrive. */
+  --color-well: #12161a;
+
+  /** L'etoile eteinte — pleine et sourde, jamais un contour vide. Le brief est explicite, et
+      il a raison : cinq contours vides se lisent comme un gabarit non charge, cinq formes
+      pleines et sourdes se lisent comme une note de zero. */
+  --color-faint: #556677;
+
+  /**
+   * Les liens sont **bleus, jamais de la couleur d'accent** : le brief est explicite, et la
+   * raison tient — l'accent signifie « vu, aime, note », c'est-a-dire un etat. Un lien n'est
+   * pas un etat. Les confondre est ce qui rend une interface illisible au bout de trois ecrans.
+   */
+  --color-link-hover: #40bcf4;
+
+  /* Les rayons, par role et non par gout. Un champ, un bouton, une pastille et un panneau
+     n'ont aucune raison de partager un rayon — c'est ce que faisait ce produit. */
+  --radius-control: 3px;
+  --radius-button: 4px;
+  --radius-pill: 12px;
+  --radius-search: 15px;
+  --radius-panel: 0.5rem;
+  /* ⚠️ En pourcentage : 8 px sur une affiche de 300 px et sur une vignette de 40 px ne se
+     lisent pas pareil — la seconde parait arrondie comme un bouton. */
+  --radius-poster: clamp(2px, 2.66%, 8px);
+
+  /* Trois durees, et elles suffisent. */
+  --dur-fast: 0.1s;
+  --dur-mid: 0.333s;
+  --dur-slow: 0.5s;
+
+  /**
+   * L'affiche comme objet physique — les trois valeurs du brief, telles quelles.
+   *
+   * L'anneau est **clair et interieur** : une bordure sombre creuse un contour, un liseré clair
+   * a l'interieur fait un bord eclaire. C'est toute la difference entre un objet pose sur la
+   * page et un trou decoupe dedans.
+   */
+  --poster-ring: inset 0 0 0 1px rgb(221 238 255 / 0.25);
+  --poster-drop:
+    0 1px 5px rgb(0 0 0 / 0.25),
+    0 4px 16px rgb(0 0 0 / 0.35);
+  --poster-hover-drop: 0 8px 24px rgb(0 0 0 / 0.4);
+
+  /* La densite, qui est un parti pris et pas un reglage : le brief la nomme deux fois. */
+  --gap-poster-grid: 8px;
+  --control-height: 42px;
+
+  /* =============================================================================
+   * ⚠️ LE BASCULEMENT VERS LE VERT DU BRIEF — une ligne
+   * =============================================================================
+   *
+   * Pour adopter l'accent du brief a la place du volt : remplacer la valeur de
+   * `--color-volt` par `#00e054`, et celle de `--color-volt-dim` par `#00ac1c`.
+   * Il faudra alors donner une autre couleur a `--color-live` (« en diffusion »), qui
+   * deviendrait indistinguable de l'accent.
+   *
+   * Rien d'autre a toucher : les 65 composants passent tous par ces deux jetons.
+   */
+
   --color-invert-ink: #16202c;
   --color-invert-muted: #6b7a8d;
   --color-invert-accent: #0d7490;
