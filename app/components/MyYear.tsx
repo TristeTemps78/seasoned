@@ -121,23 +121,29 @@ export function MyYear() {
       ) : null}
 
       {best !== undefined ? (
-        // La saison la mieux notee de l'annee est la seule mise en avant de cet ecran : elle
-        // porte donc son affiche, comme la serie la plus lourde de `/bilan`.
-        <div className="flex items-center gap-3">
+        // 🔴 C'etait une **petite affiche a cote d'une phrase de 14 px**, dans une rangee qui
+        // laissait les deux tiers de la largeur vides — et dix lignes plus bas, la meme
+        // affiche recommencait pour `MyTally`. Deux vignettes identiques, deux fois le meme
+        // vide a droite : c'est ce que montre la capture du 2026-08-11.
+        //
+        // Ici c'est une **mise en avant** : l'etiquette annonce, le titre porte, et il porte
+        // en gros. Le bloc n'est plus une ligne perdue mais le point d'arrivee du bilan de
+        // l'annee — et il ne ressemble plus a celui de `MyTally`, qui met en avant un CHIFFRE.
+        <div className="flex items-center gap-4">
           <PosterChip path={best.posterPath} title={best.title} wide />
-          <p className="text-sm">
-            {t('year.best')}{' '}
+          <div className="min-w-0">
+            <p className="label">{t('year.best')}</p>
             {parsed === undefined ? (
-              <span className="font-medium">{best.title}</span>
+              <p className="section-heading">{best.title}</p>
             ) : (
               <Link
-                className="font-medium hover:text-(--color-volt)"
+                className="section-heading block transition-colors hover:text-(--color-volt)"
                 href={pathIn(`/serie/${parsed.providerId}`, locale)}
               >
                 {best.title}
               </Link>
             )}
-          </p>
+          </div>
         </div>
       ) : null}
     </section>

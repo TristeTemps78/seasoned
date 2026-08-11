@@ -202,7 +202,7 @@ export const FR = {
   // visionnage achevé en janvier a pu commencer l'année d'avant. Le journal ne sait pas
   // quand chaque épisode a été vu, et ce produit ne comble pas ce qu'il ignore.
   'year.weight': 'Les séries terminées cette année-là pèsent {commitment}.',
-  'year.best': 'La saison que vous avez le mieux notée :',
+  'year.best': 'La saison que vous avez le mieux notée',
   'year.thin': 'Peu de choses cette année-là.',
 
   // --- Les listes (8.13) ---------------------------------------------------
@@ -808,7 +808,7 @@ export const FR = {
   // modèle, jamais sur la valeur interpolée.
   'tally.declared':
     'Dont {commitment} d’historique repris d’un import — du temps que vous n’avez pas passé ici.',
-  'tally.private': 'Calculé ici, sur cet appareil — ce chiffre ne part nulle part.',
+  'tally.private': 'Calculé ici — ce chiffre ne part nulle part,',
 
   // --- Saison en cours -----------------------------------------------------
   'season.aired.one': '{n} épisode sorti',

@@ -130,27 +130,33 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
         </p>
       ) : null}
 
-      {/* 🔴 Ces deux textes etaient **concatenes**, et ca rendait « …this figure goes
-          nowhere. kept on this device, and on your account » — une phrase finie par un point,
-          suivie d'un fragment en minuscule. `lives.*` est ecrit pour SUIVRE une virgule (voir
-          `WhereItLives`), pas pour clore une phrase. Vu sur la capture du 2026-08-11 ; ni le
-          typage ni les tests ne peuvent voir une phrase mal assemblee.
-          Ils vivent desormais separes, comme dans `MyProgress`. */}
-      <p className="meta-sm">{t('tally.private')}</p>
-      <p className="meta-sm">
-        <WhereItLives className="" />
-      </p>
+      {/* 🔴 **Deux corrections successives sur la meme phrase, et la premiere etait mauvaise.**
+          Elle etait d'abord concatenee : « …goes nowhere. kept on this device » — un point
+          suivi d'une minuscule. Je les ai alors separees en deux lignes, ce qui a donne deux
+          fragments orphelins empiles, visibles sur la capture du 2026-08-11 : pire que le
+          defaut d'origine.
+          La vraie cause etait dans le dictionnaire : `tally.private` finissait par un point
+          alors que `lives.*` est ecrit pour **suivre une virgule**. Corrige la, les deux se
+          recollent en une phrase.
+
+          ⚠️ Et le pied de page tient sur UNE rangee : la mention a gauche, le geste a droite.
+          Trois lignes grises empilees en bas d'un ecran se lisent comme des restes. */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 pt-1">
+        <p className="meta-sm">
+          {t('tally.private')} <WhereItLives className="" />
+        </p>
 
       {/* ⚠️ Le bouton vit **avec le chiffre**, pas dans une page de reglages : c'est en le
           voyant qu'on decide de ne plus le voir. Un reglage range ailleurs demande de
           savoir qu'il existe, donc il ne sert qu'a ceux que le chiffre ne derange pas. */}
-      <button
-        type="button"
-        className="quiet-action"
-        onClick={() => setHideHours(true)}
-      >
-        {t('tally.hide')}
-      </button>
+        <button
+          type="button"
+          className="quiet-action"
+          onClick={() => setHideHours(true)}
+        >
+          {t('tally.hide')}
+        </button>
+      </div>
     </section>
   );
 }
