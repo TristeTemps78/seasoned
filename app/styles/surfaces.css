@@ -311,11 +311,13 @@
    * une adresse au visiteur ; aligne a gauche, il se lit comme un contenu manquant. La
    * largeur est bornee parce qu'une phrase sur 1080 px ne se lit pas.
    *
-   * ## Il dit quoi faire, il ne constate pas
+   * ## Il dit quoi faire, il ne constate pas — et desormais il porte TOUJOURS une action
    *
-   * La regle vaut deja pour le fil d'amis (« mieux vaut se taire que compter zero ») :
-   * un ecran vide qui affiche « 0 element » a decrit l'etat sans rien ouvrir. Ceux qui
-   * portent une action lui donnent `.btn` — il n'y a pas de bouton special ici.
+   * Le texte precedent citait « mieux vaut se taire que compter zero » comme la regle dont
+   * cette forme decoule. C'est l'inverse qui est vrai, et c'est la correction du 2026-08-11 :
+   * un ecran vide qui **se tait** ne decrit meme plus l'etat, il ressemble a une panne. Ce
+   * qui est proscrit, c'est le compteur a zero ; ce qui est exige, c'est la phrase qui dit
+   * pourquoi c'est vide et le bouton qui en sort — `.empty-state-actions`, plus bas.
    */
   /* La forme (rayon, bordure, fond) est declaree une seule fois, plus haut, avec `.panel`.
      Ne restent ici que les choix propres a un ecran vide : centre, borne, aere. */
@@ -352,12 +354,27 @@
     color: var(--color-muted);
   }
   /*
-   * Pas de `.empty-state-actions` : la regle de ce fichier est de n'extraire qu'a partir de
-   * trois repetitions, et deux ecrans seulement portent des actions. Les deux alignent les
-   * **memes** utilitaires (`mt-5 flex flex-wrap justify-center gap-2`) — c'est cette
-   * identite, et non un decompte, qui les empeche de diverger. *Un garde-fou adosse a un
-   * decompte est un garde-fou qu'on defera au prochain ecran* : celui-ci l'a ete en un jour.
+   * 🔴 **La regle des trois repetitions a saute, et c'est le bon jour pour le dire.**
+   *
+   * Ce bloc portait un refus : *« pas de `.empty-state-actions` : on n'extrait qu'a partir de
+   * trois repetitions, et deux ecrans seulement portent des actions »*. Le refus prevoyait sa
+   * propre fin — *un garde-fou adosse a un decompte est un garde-fou qu'on defera au prochain
+   * ecran* — et le prochain ecran est arrive : les ecrans vides qui portent une action sont
+   * desormais **cinq** (bibliotheque, /amis, /listes, les critiques, la porte de compte).
+   *
+   * ⚠️ Le vrai enseignement n'est pas le decompte : c'est qu'un etat vide **doit** porter une
+   * action, donc que tout ecran vide finira ici. Compter les repetitions revenait a attendre
+   * qu'une regle de produit se prouve trois fois avant de l'ecrire une.
    */
+  .empty-state-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    /* Plus d'air que le `0.75rem` commun : ce qui separe une phrase d'un geste doit se voir,
+       sinon le bouton se lit comme la suite du paragraphe. */
+    margin-top: 1.25rem;
+  }
 
   /**
    * La tuile de mesure — un libelle en capitales, un chiffre en grille.

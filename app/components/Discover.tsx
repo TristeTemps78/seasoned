@@ -34,14 +34,25 @@ import { socialFrom } from '@/app/social/socialFrom';
  * sur une serie nous interesse, pas parce qu'on cherchait des gens. Ce composant ne fait que
  * couvrir le cas ou l'on n'a encore croise personne.
  *
- * **Se tait quand il n'y a personne** : « 0 profil » est pire que rien
- * (*mieux vaut se taire que compter zero*).
+ * ## 🔴 Il ne se tait plus quand il n'y a personne
+ *
+ * Il rendait `null` — *« 0 profil est pire que rien »*. Depuis le 2026-08-11 il est la seule
+ * chose que `/amis` montre a un visiteur **sans compte** ; se taire la, c'est rendre une page
+ * vide a la personne meme qu'on essaie de faire entrer. Et le vide a une cause interessante,
+ * qui n'est pas « personne n'utilise ce produit » mais *« la visibilite par defaut est
+ * `followers`, donc personne n'apparait ici par inadvertance »*. Cette phrase-la fait
+ * comprendre le produit ; le silence ne faisait rien comprendre du tout.
+ *
+ * ⚠️ Le vide n'est annonce qu'**apres** la lecture (`loaded`) : sans ca, la section clignotait
+ * « personne » une fraction de seconde avant de se remplir — c'est-a-dire qu'elle affirmait le
+ * contraire de la verite, ce que ce depot proscrit partout ailleurs (`Reviews`, `MyStats`).
  */
 export function Discover() {
   const { t, tn, locale } = useT();
   const { configured, account } = useAuth();
 
   const [people, setPeople] = useState<readonly Discoverable[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   const accessToken = account?.accessToken;
   const myId = account?.userId;
@@ -53,7 +64,9 @@ export function Discover() {
     const social = socialFrom(accessToken);
     if (social === undefined) return;
     void social.discoverable().then((rows) => {
-      if (alive) setPeople(rows);
+      if (!alive) return;
+      setPeople(rows);
+      setLoaded(true);
     });
     return () => {
       alive = false;
@@ -62,12 +75,15 @@ export function Discover() {
 
   // Se soi-meme n'est pas une decouverte.
   const others = people.filter((p) => p.userId !== myId);
-  if (!configured || others.length === 0) return null;
+  if (!configured || !loaded) return null;
 
   return (
     <section className="band" aria-label={t('discover.aria')}>
       <h2 className="row-title">{t('discover.title')}</h2>
       <p className="meta">{t('discover.why')}</p>
+      {others.length === 0 ? (
+        <p className="prose-note">{t('discover.nobody')}</p>
+      ) : (
       <ul className="flex flex-wrap gap-2">
         {others.map((person) => (
           <li key={person.userId} className="flex items-center gap-1">
@@ -91,6 +107,7 @@ export function Discover() {
           </li>
         ))}
       </ul>
+      )}
     </section>
   );
 }

@@ -182,6 +182,22 @@ export const FR = {
   // n'y a rien : on ne compte pas zéro.
   'discover.wrote.one': '{n} à lire',
   'discover.wrote.other': '{n} à lire',
+  // ⚠️ Le vide **explique le réglage**, il ne compte pas zéro. C'est la nuance qui a fait
+  // sauter la doctrine du silence : « 0 profil » n'apprend rien, « personne ne s'y met par
+  // inadvertance » explique pourquoi c'est vide ET pourquoi le produit est fait ainsi.
+  'discover.nobody':
+    'Personne pour l’instant : la visibilité par défaut est « seulement mes abonnés », donc on n’apparaît ici qu’en l’ayant demandé.',
+
+  // --- La porte du compte (2026-08-11) -------------------------------------
+  // Trois écrans la montrent : /amis, /listes, et le bilan vide. Elle ne dit jamais
+  // « inscrivez-vous pour continuer » — ce serait faux, et le mensonge se paie au clic
+  // suivant. Le second bouton mène toujours à quelque chose qui marche tout de suite.
+  'gate.create': 'Ouvrir un compte',
+  'gate.browse': 'Parcourir les séries',
+  'gate.search': 'Chercher une série',
+  'gate.library': 'Ma bibliothèque',
+  'gate.rest':
+    'Tout le reste — vos notes, votre position, vos critiques, le calendrier — marche sans compte et reste dans ce navigateur.',
 
   'year.aria': 'Mon année',
   'year.title': 'Votre {year}',
@@ -228,8 +244,17 @@ export const FR = {
   'lists.empty': 'Cette liste est vide. Ajoutez-y une série depuis sa fiche.',
   'lists.remove': 'Retirer',
   'lists.delete': 'Supprimer la liste',
-  'lists.needAccount':
-    'Créez un compte pour tenir des listes — c’est la seule partie du produit qui en demande un, parce qu’une liste que personne ne peut lire n’est pas une liste.',
+  // 🔴 `lists.needAccount` disait la bonne chose dans un paragraphe gris seul sur la page.
+  // Le texte est repris tel quel ; ce qui change est qu'il porte désormais un titre, deux
+  // boutons, et — juste dessous — la démonstration avec les séries du lecteur.
+  'lists.gate.title': 'Ranger des séries pour plus tard, ou pour quelqu’un',
+  'lists.gate.body':
+    'Une liste vit sur nos serveurs, parce qu’une liste que personne ne peut lire n’est pas une liste. C’est la seule partie du produit qui demande un compte.',
+  'lists.preview.title': 'Ce qu’une liste rangerait',
+  'lists.preview.body.one':
+    'La série que vous suivez déjà, ici, dans ce navigateur. Une liste la range, la nomme, et se tend à quelqu’un.',
+  'lists.preview.body.other':
+    'Les {n} séries que vous suivez déjà, ici, dans ce navigateur. Une liste les range, les nomme, et se tend à quelqu’un.',
   'lists.error.empty': 'Une liste a besoin d’un titre.',
   'lists.error.too_long': 'Ce titre est trop long.',
   'lists.error.note_too_long': 'Cette phrase est trop longue.',
@@ -240,11 +265,16 @@ export const FR = {
   'addToList.added': '{title} ✓',
   'addToList.none': 'Vous n’avez pas encore de liste.',
   'addToList.goToLists': 'En créer une',
+  // La porte, nommée. Elle remplace un `return null` qui rendait les listes invisibles à
+  // quiconque n'avait pas déjà de compte — c'est-à-dire à tous ceux qu'il fallait convaincre.
+  'addToList.locked': 'Ajouter à une liste demande un compte.',
+  'addToList.signIn': 'En ouvrir un',
   'friendsPage.title': 'Mes amis',
   'friendsPage.lede':
     'Ce que vos proches regardent, sans que rien ne vous dévoile la suite de ce que vous n’avez pas vu.',
-  'friends.signedOut':
-    'Créez un compte pour suivre vos proches. Tout le reste du site fonctionne sans.',
+  'friends.gate.title': 'Voir ce que regardent vos proches',
+  'friends.gate.body':
+    'Un compte sert à deux choses ici : porter votre nom, et suivre les gens qui vous intéressent. Rien de ce que vous écrivez ne devient visible sans que vous l’ayez décidé.',
   'friends.claim.title': 'Choisissez votre nom',
   'friends.claim.body':
     'C’est ainsi que vos proches vous trouveront. Trois à vingt caractères, lettres minuscules, chiffres et tirets bas. Il ne se change pas : un nom rendu ne peut pas être repris par quelqu’un d’autre sans casser les liens qui pointaient vers vous.',
@@ -372,6 +402,9 @@ export const FR = {
     '{n} séries sont suivies, mais le catalogue ne les a pas encore renseignées : ouvrez leur fiche une fois et les heures se comptent.',
   'tallyPage.empty.body':
     'Le bilan apparaît dès que vous avez noté ou positionné quelques séries. Il ne demande aucun compte et ne quitte pas cet appareil.',
+  // Un écran vide porte une action. Celui-ci n'en avait aucune : il constatait, et la page
+  // s'arrêtait là — sur la seule face qui parle du lecteur plutôt que des séries.
+  'tallyPage.empty.search': 'Trouver une série',
   'agenda.thisWeek': 'Cette semaine',
   'agenda.thisMonth': 'Ce mois-ci',
   'agenda.later': 'Plus tard',
@@ -492,7 +525,12 @@ export const FR = {
   'review.hidden': 'Écrit sur la saison {n} — au-delà de là où vous en êtes.',
   'review.hiddenSeries': 'Contient des révélations sur la suite.',
   'review.reveal': 'Afficher quand même',
+  // ⚠️ Cette chaîne était traduite dans les deux langues et **appelée nulle part** : l'écran
+  // qui aurait dû la rendre faisait `return null`. C'est la doctrine du silence prise en
+  // flagrant délit — deux traductions écrites pour un vide.
   'review.none': 'Personne n’a encore écrit sur cette série.',
+  'review.beFirst':
+    'La vôtre s’écrit dans « Où j’en suis », sans compte : elle reste dans ce navigateur tant que vous n’en ouvrez pas un.',
 
   // ⚠️ Une seule phrase pour « ce nom n'existe pas » ET « ce profil ne vous est pas
   // visible ». Les distinguer ferait de la page un oracle : on testerait des noms un par un

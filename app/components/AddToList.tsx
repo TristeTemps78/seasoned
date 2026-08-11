@@ -19,12 +19,19 @@ import { socialFrom } from '@/app/social/socialFrom';
  * bouton aurait produit exactement ce que ce depot a deja livre six fois : du code juste que
  * personne ne peut atteindre.
  *
- * ## Il se tait pour qui n'a pas de compte, et ne propose rien a qui n'a pas de liste
+ * ## 🔴 « Mieux vaut se taire que montrer une porte fermee » — la regle a saute
  *
  * Une liste vit sur le serveur (`007_lists.sql`), donc elle suppose un compte — contrairement
- * a tout le reste de la fiche serie, qui marche hors ligne. Plutot qu'un bouton qui ouvre une
- * invitation a s'inscrire au milieu d'une page de consultation, le composant **ne s'affiche
- * pas**. C'est la regle du produit : *mieux vaut se taire que montrer une porte fermee.*
+ * a tout le reste de la fiche serie, qui marche hors ligne. Ce fichier en tirait la conclusion
+ * inverse de la bonne : plutot qu'un bouton qui ne peut pas marcher, **rien**.
+ *
+ * Le raisonnement confondait deux choses. Un bouton qui echoue en silence ment, et il faut
+ * effectivement le retirer — c'est la regle du 2026-08-09, et elle vaut toujours (voir le
+ * bouton Google de `SignIn`). Mais une **porte nommee, avec sa condition dite et son chemin
+ * cliquable** ne ment pas : elle informe. Et sans elle, un visiteur sans compte ne voyait
+ * nulle part que ce produit sait tenir des listes — donc n'avait aucune raison d'ouvrir un
+ * compte pour en tenir une. C'est la decision de Tristan du 2026-08-11 : *« sinon les gens ne
+ * viendraient pas si on tait tout »*.
  */
 export function AddToList({ seriesId }: { readonly seriesId: string }) {
   const { t, locale } = useT();
@@ -71,8 +78,27 @@ export function AddToList({ seriesId }: { readonly seriesId: string }) {
     [userId, accessToken, subject],
   );
 
-  // Silencieux sans compte, sans configuration, ou tant qu'on ne sait pas.
-  if (!configured || !ready || userId === undefined || !loaded) return null;
+  // Tant qu'on ne sait pas, on ne dit rien — la seule retenue qui reste ici.
+  if (!configured || !ready || !loaded) return null;
+
+  // 🔴 **C'etait `return null`, et c'etait la regle citee en tete de ce fichier.** Sur toutes
+  // les fiches series, un visiteur sans compte ne voyait donc *aucune trace* que les listes
+  // existent — et n'avait par consequent aucune raison d'en ouvrir un. Une porte fermee qu'on
+  // ne voit pas n'est pas une porte, c'est un mur.
+  //
+  // ⚠️ Une ligne, pas un encart : la fiche serie est une page de consultation, et une
+  // invitation a s'inscrire en pleine page y serait le bandeau que tout le monde ferme. Le
+  // geste est nomme, la condition est dite, le chemin est cliquable — rien de plus.
+  if (userId === undefined) {
+    return (
+      <p className="meta">
+        {t('addToList.locked')}{' '}
+        <Link className="underline hover:text-(--color-volt)" href={pathIn('/compte', locale)}>
+          {t('addToList.signIn')}
+        </Link>
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-2">

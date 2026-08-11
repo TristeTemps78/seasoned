@@ -40,7 +40,17 @@ export function MyTally({ tally }: { readonly tally: Tally }) {
     return (
       <section className="band" aria-label={t('tally.aria')}>
         <h2 className="row-title">{t('tally.title')}</h2>
-        <p className="prose-note">{t('tally.pending', { n: n(tally.counted) })}</p>
+        {/* ⚠️ **Deux raisons distinctes**, et il fallait les separer : « rien de chiffrable »
+            et « pas assez de couverture » se corrigent par deux gestes differents. Le premier
+            cas est celui de quelqu'un qui vient d'importer son historique — l'import ne peut
+            pas inventer la forme des saisons — et lui dire « notez quelques series » serait
+            faux, puisqu'il a tout fait. Ce diagnostic vivait dans `MyStats` ; il descend ici,
+            aupres du chiffre qu'il explique, ou il reste atteignable. */}
+        <p className="prose-note">
+          {tally.counted === 0 && tally.uncounted > 0
+            ? tn('tallyPage.empty.uncounted', tally.uncounted)
+            : t('tally.pending', { n: n(tally.counted) })}
+        </p>
       </section>
     );
   }

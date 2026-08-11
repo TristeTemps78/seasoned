@@ -144,7 +144,9 @@ function EmptyLibrary() {
         <em>{t('library.empty.em')}</em>
         {t('library.empty.after')}
       </p>
-      <div className="mt-5 flex flex-wrap justify-center gap-2">
+      {/* Les utilitaires alignes a la main sont devenus `.empty-state-actions` : cinq ecrans
+          vides portent desormais des actions, et c'etait le dernier a les recopier. */}
+      <div className="empty-state-actions">
         <Link href={pathIn('/', locale)} className="btn">
           {t('library.empty.browse')}
         </Link>

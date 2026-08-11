@@ -6,10 +6,11 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { checkList, uniqueSlug, type ListRejection } from '@/src/domain/lists';
-import { parseJournalKey } from '@/src/domain/journal';
+import { parseJournalKey, seriesEntries, type Journal } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { type SeriesList } from '@/src/social/client';
 import { socialFrom } from '@/app/social/socialFrom';
+import { AccountGate } from '@/app/components/AccountGate';
 import { PosterChip } from '@/app/components/PosterChip';
 
 /**
@@ -34,6 +35,54 @@ import { PosterChip } from '@/app/components/PosterChip';
  * visible sur la liste de quelqu'un dont on ne suit aucune serie ; le prix de l'inverse
  * serait une base de metadonnees que le contrat nous interdit de constituer.
  */
+/**
+ * Ce qu'une liste rangerait — avec de **vraies** series, celles du lecteur.
+ *
+ * ## Pourquoi ce n'est pas du faux contenu
+ *
+ * `Faces.tsx` pose la regle et elle tient : *« on ne remplit pas une face de faux contenu »*.
+ * Une capture inventee, un exemple de liste fabrique, des pseudos plausibles — tout cela
+ * ment, et le mensonge se paie au premier clic. Ici rien n'est invente : ce sont les series
+ * du journal de **celui qui regarde**, lues dans son navigateur, sans compte et sans appel.
+ *
+ * C'est la difference entre *decrire* une fonctionnalite et la *montrer avec ce qu'on a deja*
+ * — et c'est la seule facon d'expliquer une liste a quelqu'un qui n'en a jamais tenu.
+ *
+ * ⚠️ **Silencieux quand le journal est vide**, et c'est un des rares silences qui restent
+ * justes : il n'y a alors litteralement rien a montrer, et la porte au-dessus dit deja tout.
+ */
+function ListPreview({ journal }: { readonly journal: Journal }) {
+  const { t, tn } = useT();
+
+  // Seules celles dont on connait le titre : sans instantane, la vignette serait un
+  // monogramme sur une cle brute — c'est-a-dire une demonstration qui dessert.
+  const shown = seriesEntries(journal)
+    .flatMap(([key, entry]) => {
+      const title = entry.snapshot?.title;
+      return title === undefined
+        ? []
+        : [{ key, title, posterPath: entry.snapshot?.posterPath }];
+    })
+    .slice(0, 8);
+
+  if (shown.length === 0) return null;
+
+  return (
+    <section className="band" aria-label={t('lists.preview.title')}>
+      <h2 className="row-title">{t('lists.preview.title')}</h2>
+      <p className="meta">{tn('lists.preview.body', shown.length)}</p>
+      <ul className="flex flex-wrap gap-x-5 gap-y-3">
+        {shown.map((item) => (
+          <li key={item.key} className="flex items-center gap-2">
+            <PosterChip path={item.posterPath} title={item.title} />
+            <span className="text-sm">{item.title}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function Lists({ ownerId }: { readonly ownerId?: string }) {
   const { t, tn, locale } = useT();
   const { configured, ready, account } = useAuth();
@@ -144,8 +193,22 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
   // Le silence tant qu'on ne sait pas : annoncer « aucune liste » avant d'avoir lu serait
   // le meme mensonge que le bandeau qui parlait avant d'avoir lu le journal.
   if (!ready || !loaded) return <div className="h-48" aria-hidden="true" />;
+  // 🔴 **C'etait une phrase grise, seule sur la page** — la deuxieme des six faces a mener a
+  // un cul-de-sac sans un bouton. Elle disait pourtant la bonne chose (*« une liste que
+  // personne ne peut lire n'est pas une liste »*) ; ce qui manquait n'etait pas l'explication,
+  // c'etait la porte, et de quoi voir a quoi elle mene.
   if (editable && myId === undefined) {
-    return <p className="prose-note">{t('lists.needAccount')}</p>;
+    return (
+      <div className="space-y-8">
+        <AccountGate
+          title={t('lists.gate.title')}
+          body={t('lists.gate.body')}
+          secondaryHref="/moi"
+          secondaryLabel={t('gate.library')}
+        />
+        <ListPreview journal={journal} />
+      </div>
+    );
   }
 
   return (

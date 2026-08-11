@@ -68,7 +68,32 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
 
   // Rien tant qu'on ne sait pas : annoncer « personne n'a rien ecrit » avant d'avoir lu
   // serait le meme mensonge que le bandeau qui parlait avant d'avoir lu le journal.
-  if (!ready || reviews === undefined || reviews.length === 0) return null;
+  // ⚠️ `reviews === undefined` couvre aussi l'installation sans base : `socialFrom` rend
+  // `undefined`, l'etat ne bouge jamais, et la section reste absente — ce qui est juste.
+  if (!ready || reviews === undefined) return null;
+
+  // 🔴 **A zero, c'etait `return null` — et la phrase existait deja.** `review.none`
+  // (« Personne n'a encore ecrit sur cette serie. ») etait ecrite dans les deux dictionnaires
+  // et **appelee nulle part** : une chaine traduite deux fois pour un ecran qui refusait de
+  // l'afficher. Le symptome exact de la doctrine qu'on demonte.
+  //
+  // Le cout etait le plus eleve du produit : sur une fiche serie sans critique — c'est-a-dire
+  // presque toutes aujourd'hui —, la colonne de droite commencait par du **vide**, donc rien
+  // n'indiquait nulle part que ce produit sache ecrire. Or ecrire est la moitie de la cible
+  // (*« un mix Letterboxd × Serializd × TV Time »*), et c'est la seule chose ici qui ne
+  // demande **aucun compte** : la critique se pose dans le journal, sur cette page, hors ligne.
+  if (reviews.length === 0) {
+    return (
+      <section className="space-y-3" aria-label={t('review.title')}>
+        <h2 className="section-heading">{t('review.title')}</h2>
+        <div className="empty-state">
+          <p className="empty-state-body">
+            {t('review.none')} {t('review.beFirst')}
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   const position = journal.entries[key]?.position;
   const visible = redactReviews(

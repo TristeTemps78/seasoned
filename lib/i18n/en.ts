@@ -154,6 +154,15 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
     'These people chose to make their profile public. Nobody else shows up here.',
   'discover.wrote.one': '{n} to read',
   'discover.wrote.other': '{n} to read',
+  'discover.nobody':
+    'Nobody yet: the default visibility is “my followers only”, so people only turn up here by asking to.',
+
+  'gate.create': 'Create an account',
+  'gate.browse': 'Browse series',
+  'gate.search': 'Find a series',
+  'gate.library': 'My library',
+  'gate.rest':
+    'Everything else — your ratings, your position, your reviews, the calendar — works without an account and stays in this browser.',
 
   'year.aria': 'My year',
   'year.title': 'Your {year}',
@@ -195,8 +204,14 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'lists.empty': 'This list is empty. Add a series from its page.',
   'lists.remove': 'Remove',
   'lists.delete': 'Delete the list',
-  'lists.needAccount':
-    'Create an account to keep lists — it is the only part of the product that needs one, because a list nobody can read is not a list.',
+  'lists.gate.title': 'Set series aside for later, or for someone',
+  'lists.gate.body':
+    'A list lives on our servers, because a list nobody can read is not a list. It is the only part of the product that needs an account.',
+  'lists.preview.title': 'What a list would hold',
+  'lists.preview.body.one':
+    'The series you already follow, right here, in this browser. A list holds it, names it, and gets handed to someone.',
+  'lists.preview.body.other':
+    'The {n} series you already follow, right here, in this browser. A list holds them, names them, and gets handed to someone.',
   'lists.error.empty': 'A list needs a title.',
   'lists.error.too_long': 'That title is too long.',
   'lists.error.note_too_long': 'That sentence is too long.',
@@ -207,10 +222,14 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'addToList.added': '{title} ✓',
   'addToList.none': 'You do not have any list yet.',
   'addToList.goToLists': 'Create one',
+  'addToList.locked': 'Adding to a list needs an account.',
+  'addToList.signIn': 'Create one',
   'friendsPage.title': 'Friends',
   'friendsPage.lede':
     'What the people close to you are watching, without anything revealing what you have not seen yet.',
-  'friends.signedOut': 'Create an account to follow people. Everything else works without one.',
+  'friends.gate.title': 'See what the people close to you are watching',
+  'friends.gate.body':
+    'An account does two things here: it carries your name, and it lets you follow the people you care about. Nothing you write becomes visible unless you decide it does.',
   'friends.claim.title': 'Choose your name',
   'friends.claim.body':
     'This is how people will find you. Three to twenty characters, lowercase letters, digits and underscores. It cannot be changed: a name given back can never be taken by somebody else without breaking the links that pointed to you.',
@@ -322,6 +341,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
     '{n} series are tracked, but the catalogue has not filled them in yet: open their pages once and the hours start counting.',
   'tallyPage.empty.body':
     'The tally shows up once you have rated or positioned a few shows. It needs no account and never leaves this device.',
+  'tallyPage.empty.search': 'Find a series',
   'agenda.thisWeek': 'This week',
   'agenda.thisMonth': 'This month',
   'agenda.later': 'Later',
@@ -426,6 +446,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'review.hiddenSeries': 'Contains spoilers for what comes next.',
   'review.reveal': 'Show it anyway',
   'review.none': 'Nobody has written about this series yet.',
+  'review.beFirst':
+    'Yours goes in “Where I am”, no account needed: it stays in this browser until you open one.',
 
   // Voir `fr.ts` : une seule phrase pour « inconnu » et « invisible », sans quoi la page
   // devient un oracle permettant d'enumerer les comptes.

@@ -107,7 +107,20 @@ describe('le bilan personnel, branche sur le journal', () => {
     });
   });
 
-  it('se tait sous le seuil de couverture', async () => {
+  /**
+   * 🔴 **Ces deux tests surveillaient un silence. Ils surveillent desormais une phrase.**
+   *
+   * Ils exigeaient l'absence de la section sous le seuil — c'etait la traduction fidele de
+   * la doctrine « mieux vaut se taire que compter zero ». La doctrine est tombee le
+   * 2026-08-11 : *« sinon les gens ne viendraient pas si on tait tout »*.
+   *
+   * ⚠️ **Ce qu'ils protegent n'a pas change d'un pouce** : le seuil tient toujours, et le
+   * chiffre reste interdit sous lui. Un minorant trop severe serait trompeur, et ca c'est un
+   * fait sur la mesure, pas une regle de gout. Ce qui change est la forme du refus — on
+   * n'affiche pas le total, **et on dit pourquoi**. C'est la seule assertion qui bouge, et
+   * c'est exactement la ligne entre les deux.
+   */
+  it('refuse le chiffre sous le seuil de couverture, mais dit pourquoi', async () => {
     // Une serie chiffrable sur trois vues. Le chiffre existe, son affichage est refuse.
     let j = watched(EMPTY_JOURNAL, '1396');
     for (const id of ['1405', '1402']) {
@@ -118,25 +131,45 @@ describe('le bilan personnel, branche sur le journal', () => {
     store(j);
     renderLibrary();
 
-    // ⚠️ Attendre que l'ecran soit **charge** avant de conclure a une absence : sans
-    // cela le test passerait sur le rendu vide, quel que soit le code du bilan. Le titre
-    // de la face est present des que le journal est lu.
+    // ⚠️ Attendre la condition **finale** avant de conclure a une absence : sans cela le test
+    // passerait sur le rendu vide, quel que soit le code du bilan.
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Mon bilan' })).toBeDefined();
+      expect(screen.getByText(/Le total s’affichera/)).toBeDefined();
     });
-    expect(screen.queryByRole('region', { name: 'Mon temps passé' })).toBeNull();
+    // Le seuil tient : aucun total n'est annonce.
+    expect(screen.queryByText(/Au moins/)).toBeNull();
   });
 
-  it('se tait quand rien n’a ete regarde', async () => {
+  it('n’annonce rien avec quarante minutes, et l’explique quand meme', async () => {
     // Une serie seulement souhaitee : ne pas savoir la chiffrer n'est pas un manque.
     store(setSnapshot(setPosition(EMPTY_JOURNAL, BB, 1, 1), BB, SHAPE));
     renderLibrary();
 
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Mon bilan' })).toBeDefined();
-    });
     // Quarante minutes : sous le seuil d'une heure.
+    await waitFor(() => {
+      expect(screen.getByText(/Le total s’affichera/)).toBeDefined();
+    });
+    expect(screen.queryByText(/Au moins/)).toBeNull();
+  });
+
+  /**
+   * Le seul silence qui reste sur cette face, et c'est celui qui se justifie : un journal
+   * **litteralement vide**. Trois sections qui expliquent chacune qu'elles n'ont rien valent
+   * moins qu'une phrase et deux boutons.
+   *
+   * ⚠️ Ce test est le garde-fou de la conversion : sans lui, on ne saurait pas distinguer
+   * « la doctrine est tombee au bon endroit » de « elle est tombee partout ».
+   */
+  it('garde un seul ecran vide — le journal ou rien ne s’est passe — et il mene quelque part', async () => {
+    store(EMPTY_JOURNAL);
+    renderLibrary();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Rien à mesurer pour l’instant' })).toBeDefined();
+    });
     expect(screen.queryByRole('region', { name: 'Mon temps passé' })).toBeNull();
+    // Un ecran vide porte une action, sans exception depuis le 2026-08-11.
+    expect(screen.getByRole('link', { name: 'Trouver une série' })).toBeDefined();
   });
 
   it('parle anglais sur une page anglaise', async () => {

@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
+import { pathIn } from '@/lib/routes';
 import { MyTally } from '@/app/components/MyTally';
 import { MyYear } from '@/app/components/MyYear';
 import { MyFaceCard } from '@/app/components/MyFaceCard';
@@ -26,13 +28,13 @@ import { buildTasteProfile } from '@/src/domain/taste';
  *
  * ## Aucun appel, comme partout dans cette couche
  *
- * Les deux calculs sont purs et lisent le seul journal. Le bilan **se tait** sous ses
- * seuils, et le profil de gout aussi — un ecran qui n'affiche rien est donc un etat
- * normal, pas une panne, et le texte le dit.
+ * Les deux calculs sont purs et lisent le seul journal. Aucune des deux cartes ne se tait
+ * plus sous ses seuils : elles disent ce qui manque pour parler. Voir `silent`, plus bas,
+ * pour le seul cas ou cette face garde encore un ecran vide — et pour ce qu'il a coute.
  */
 export function MyStats() {
   const { journal, ready } = useJournal();
-  const { t, tn } = useT();
+  const { t, locale } = useT();
 
   const tally = useMemo(() => buildTally(journal), [journal]);
   const taste = useMemo(() => buildTasteProfile(journal), [journal]);
@@ -42,29 +44,32 @@ export function MyStats() {
     return <div className="h-64" aria-hidden="true" />;
   }
 
-  // Les deux composants se taisent independamment. S'ils se taisent tous les deux, il
-  // faut dire pourquoi plutot que de laisser une page blanche.
-  const silent = !tally.worthShowing && !taste.speaks;
-
   /**
-   * 🔴 **Et « pourquoi » n'etait pas toujours la bonne raison.**
+   * 🔴 **Ce garde-fou annulait le correctif de la veille, et ca se voyait a l'ecran.**
    *
-   * Le texte du vide dit *« le bilan apparait quand vous aurez note ou situe quelques
-   * series »*. Constate au navigateur le 2026-08-11 sur un journal de six series, huit notes
-   * de saison et trois decisions : l'ecran l'affichait quand meme — donc il annoncait a
-   * quelqu'un qui a fait le geste qu'il ne l'a pas fait.
+   * Le 2026-08-11 au matin, `MyTally` et `TasteCard` ont cesse de rendre `null` : ils disent
+   * desormais **combien il manque**. Sauf que ce `silent`-ci les court-circuite *avant* qu'ils
+   * soient rendus — il valait `!tally.worthShowing && !taste.speaks`, c'est-a-dire exactement
+   * la conjonction ou les deux nouvelles phrases avaient quelque chose a dire. Les deux
+   * explications n'apparaissaient donc que si l'**autre** carte parlait deja : jamais pour un
+   * compte jeune, qui est le seul cas qu'elles visaient.
    *
-   * La vraie cause est ailleurs : `buildTally` a besoin de `seasonSizes` et
-   * `episodeMinutes`, qui viennent de l'**instantane du catalogue**. Un journal importe n'en
-   * a aucun — l'import ne peut pas les inventer — donc `uncounted` vaut le nombre de series
-   * et la couverture tombe a zero.
+   * Constate au navigateur le 2026-08-11 sur un journal de six series : « Rien a mesurer pour
+   * l'instant ». Le correctif de la veille etait vivant, teste, et invisible — c'est le motif
+   * que ce depot a paye sept fois, ici sous sa forme la plus discrete : **une garde en amont
+   * qui rend un correctif inatteignable**.
    *
-   * C'est exactement le cas de quelqu'un qui vient de reprendre son historique ailleurs,
-   * c'est-a-dire le parcours d'arrivee le plus important du produit. Lui dire « vous n'avez
-   * rien note » est faux ; lui dire ce qui manque est actionnable, et c'est la regle du
-   * depot : *on signale, on ne repare pas en silence.*
+   * ## Ce qui reste silencieux, et c'est le seul cas
+   *
+   * Un journal **litteralement vide** : ni serie chiffrable, ni serie non chiffrable, ni note.
+   * La, une phrase vaut mieux que trois sections qui expliquent chacune qu'elles n'ont rien —
+   * l'argument de la veille etait juste, il visait simplement le mauvais seuil.
+   *
+   * Des qu'il y a un geste, chaque section parle : celle du temps dit ce qu'elle ne peut pas
+   * compter (le cas de l'import, parcours d'arrivee le plus important du produit), celle du
+   * gout dit combien de series notees il manque.
    */
-  const missingSnapshots = tally.counted === 0 && tally.uncounted > 0;
+  const silent = tally.counted === 0 && tally.uncounted === 0 && taste.ratedSeries === 0;
 
   return (
     <div className="space-y-8">
@@ -83,11 +88,17 @@ export function MyStats() {
       {silent ? (
         <div className="empty-state">
           <h2 className="empty-state-title">{t('tallyPage.empty.title')}</h2>
-          <p className="empty-state-body">
-            {missingSnapshots
-              ? tn('tallyPage.empty.uncounted', tally.uncounted)
-              : t('tallyPage.empty.body')}
-          </p>
+          <p className="empty-state-body">{t('tallyPage.empty.body')}</p>
+          {/* Un ecran vide porte une action, sans exception depuis le 2026-08-11. Celui-ci
+              n'en avait aucune : il constatait, et laissait la page finir la. */}
+          <div className="empty-state-actions">
+            <Link href={pathIn('/recherche', locale)} className="btn btn-primary">
+              {t('tallyPage.empty.search')}
+            </Link>
+            <Link href={pathIn('/moi', locale)} className="btn">
+              {t('gate.library')}
+            </Link>
+          </div>
         </div>
       ) : (
         <>

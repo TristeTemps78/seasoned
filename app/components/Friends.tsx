@@ -18,6 +18,7 @@ import {
   type PublishedReview,
 } from '@/src/social/client';
 import { ReportButton } from '@/app/components/ReportButton';
+import { AccountGate } from '@/app/components/AccountGate';
 import { Discover } from '@/app/components/Discover';
 import { DailyRound } from '@/app/components/DailyRound';
 import { FriendQuiz } from '@/app/components/FriendQuiz';
@@ -149,7 +150,27 @@ export function Friends() {
 
   if (!configured) return <p className="text-(--color-muted)">{t('account.unavailable.body')}</p>;
   if (!ready) return <div className="h-64" aria-hidden="true" />;
-  if (account === undefined) return <p className="text-(--color-muted)">{t('friends.signedOut')}</p>;
+  // 🔴 **C'etait une phrase grise, seule sur la page.** Un des six onglets de la navigation
+  // menait donc, pour tout visiteur sans compte — c'est-a-dire tout le monde a la premiere
+  // visite —, a un cul-de-sac sans un seul bouton. Voir `AccountGate` pour la regle qui saute.
+  if (account === undefined) {
+    return (
+      <div className="space-y-8">
+        <AccountGate
+          title={t('friends.gate.title')}
+          body={t('friends.gate.body')}
+          secondaryHref="/recherche"
+          secondaryLabel={t('gate.search')}
+        />
+        {/* 🔴 Et `Discover` vivait 250 lignes plus bas, donc **derriere ce retour anticipe**.
+            Or il lit les profils publics SANS compte — c'est RLS qui tranche, et son propre
+            commentaire le revendique : *« construit meme sans compte »*. La seule chose de
+            cette face qui marchait sans compte etait donc inatteignable sans compte. C'est le
+            meme motif que `unfollow()` et `setVisibility()` : du code juste, sans chemin. */}
+        <Discover />
+      </div>
+    );
+  }
   if (!loaded) return <div className="h-64" aria-hidden="true" />;
 
   async function onClaim(event: React.FormEvent) {
