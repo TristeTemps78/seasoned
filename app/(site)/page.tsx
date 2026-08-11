@@ -190,17 +190,28 @@ function Featured({ item, label, locale, children }: {
       {summary === undefined ? null : (
       <div className="mt-10 flex flex-col gap-6 sm:mt-14 sm:flex-row sm:items-end">
         {poster !== undefined ? (
-          // eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous.
-          <img
-            src={poster}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            width={posterDimensions('w342').width}
-            height={posterDimensions('w342').height}
-            // `panel` : la matiere commune, elevation comprise. Voir la fiche serie.
-            className="panel hidden w-40 shrink-0 sm:block"
-          />
+          // 🔴 **C'etait `panel`, et c'etait la seule affiche du produit qui ne soit pas un
+          // objet.** Constate en mesurant le DOM le 2026-08-11 : les six premieres images de
+          // l'accueil, celle-ci a un parent `panel …`, les cinq suivantes un parent
+          // `poster-frame aspect-2/3`. Or `poster-frame` est ce que `editorial-voice` appelle
+          // « l'affiche est un objet, pas un rectangle » — anneau clair, double ombre, puits
+          // sombre, et le leger soulevement au survol.
+          //
+          // L'incoherence tombait au pire endroit : c'est la **premiere affiche qu'un visiteur
+          // voit**, la plus grande de la mise en avant, et la seule posee sur une banniere —
+          // c'est-a-dire celle qui a le plus besoin de se decoller du fond.
+          <div className="poster-frame aspect-2/3 hidden w-40 shrink-0 self-end sm:block">
+            {/* eslint-disable-next-line @next/next/no-img-element -- CDN TMDB, jamais nous. */}
+            <img
+              src={poster}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              width={posterDimensions('w342').width}
+              height={posterDimensions('w342').height}
+              className="h-full w-full object-cover"
+            />
+          </div>
         ) : null}
 
         <div className="max-w-2xl space-y-3">
