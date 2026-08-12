@@ -94,6 +94,8 @@ export const FR = {
   'nav.tagline': 'est-ce que ça vaut le coup ?',
   'nav.library': 'Ma bibliothèque',
   'nav.language.aria': 'Langue',
+  // Le premier lien de chaque page, invisible tant qu'on ne tabule pas dessus.
+  'nav.skip': 'Aller au contenu',
   // Les faces du cube. Une face existe si elle repond a une question qu'on se pose a un
   // moment different — pas a un contenu different.
   'face.discover': 'Découvrir',
@@ -454,6 +456,15 @@ export const FR = {
   'discovery.friends.subtitle': 'En attendant que vous suiviez quelqu’un, voici la version publique.',
   'discovery.search.title': 'Le temps de choisir',
   'discovery.search.subtitle': 'Celles sur lesquelles on revient.',
+  // La rangee d'un echec de recherche. Titre distinct de `discovery.search.*` : ici on ne
+  // choisit pas, on vient de rater — et distinct de `discovery.notFound.*`, qui parle a
+  // quelqu'un arrive sur une adresse morte sans avoir rien demande.
+  // ⚠️ Le nom de la rangee est dans le libelle : il y a trois rangees sur l'accueil, donc
+  // « Suivant » seul laisserait un lecteur d'ecran devant trois boutons identiques.
+  'rail.prev': 'Reculer dans « {row} »',
+  'rail.next': 'Avancer dans « {row} »',
+  'discovery.none.title': 'En attendant',
+  'discovery.none.subtitle': 'Ce que les autres regardent, le temps de retrouver le bon titre.',
 
   'safety.title': 'Ces notes ne vivent que dans ce navigateur',
   'safety.body':
@@ -524,6 +535,11 @@ export const FR = {
   'search.prompt': 'Tapez le nom d’une série.',
   'search.unavailable': 'Le catalogue est momentanément indisponible. Réessayez dans un instant.',
   'search.none': 'Aucun résultat pour « {q} ».',
+  // ⚠️ Le conseil dit ce que le catalogue **ne contient pas**. C'est la seule cause d'echec
+  // qu'on connaisse a l'avance et que le chercheur ne peut pas deviner : rien a l'ecran ne
+  // dit qu'un film n'a aucune chance d'etre trouve ici.
+  'search.none.hint':
+    'Vérifiez l’orthographe, ou essayez le titre original. Seules les séries sont référencées : un film ne s’y trouvera pas.',
   'search.count.one': '{n} résultat pour « {q} »',
   'search.count.other': '{n} résultats pour « {q} »',
 

@@ -84,6 +84,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'nav.tagline': 'is it worth watching?',
   'nav.library': 'My library',
   'nav.language.aria': 'Language',
+  'nav.skip': 'Skip to content',
   'face.discover': 'Discover',
   'face.library': 'My library',
   'face.calendar': 'Calendar',
@@ -435,6 +436,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'offline.open': 'Open my library',
   'notFound.heading': 'Nothing here.',
   'notFound.body': 'This series is not in the catalogue, or its identifier has changed.',
+  'rail.prev': 'Back in “{row}”',
+  'rail.next': 'Forward in “{row}”',
+  'discovery.none.title': 'In the meantime',
+  'discovery.none.subtitle': 'What everyone else is watching, while you find the right title.',
   'discovery.notFound.title': 'While you are here',
   'discovery.notFound.subtitle': 'The ones everyone has seen, in case you were after something else.',
 
@@ -445,6 +450,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'search.prompt': 'Type the name of a series.',
   'search.unavailable': 'The catalogue is temporarily unavailable. Try again in a moment.',
   'search.none': 'No results for “{q}”.',
+  'search.none.hint':
+    'Check the spelling, or try the original title. Only series are indexed: a film will not be here.',
   'search.count.one': '{n} result for “{q}”',
   'search.count.other': '{n} results for “{q}”',
 

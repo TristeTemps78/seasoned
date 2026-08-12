@@ -57,13 +57,6 @@ export async function SearchView({ query, locale }: {
   let total = 0;
   let unavailable = false;
 
-  // ⚠️ **Seulement sans requete**, et c'est ce qui rend le cout nul : des qu'on cherche
-  // quelque chose, cet appel n'a pas lieu. Sur la page vide, il traverse le meme cache que
-  // partout ailleurs (`throughDiscover`, memoise par TTL), donc il ne coute pas une requete
-  // TMDB par visite mais une par periode — comme les recherches repetees plus bas.
-  const suggestions =
-    query.length === 0 ? (await discover('popular', 3, locale)).slice(0, 12) : [];
-
   if (query.length > 0) {
     try {
       const found = await searchSeries(query, locale);
@@ -81,6 +74,26 @@ export async function SearchView({ query, locale }: {
       unavailable = true;
     }
   }
+
+  /*
+   * 🔴 **« Aucun resultat » etait le seul cul-de-sac du site**, constate le 2026-08-13.
+   *
+   * La page sans requete a recu sa rangee le 2026-08-12 — *« ce qui manquait n'est pas une
+   * explication, c'est de la matiere a cliquer »*. Le raisonnement n'avait pas ete porte
+   * jusqu'a la branche voisine, alors qu'elle est **pire** : la page vide accueille
+   * quelqu'un qui n'a rien demande, l'echec repond a quelqu'un qui vient d'agir. Il recevait
+   * une phrase de six mots, puis le pied de page.
+   *
+   * ⚠️ **Le cout reste borne aux deux cas ou il n'y a rien a montrer.** Une recherche qui
+   * aboutit — le cas de loin le plus frequent — ne declenche toujours aucun appel de
+   * decouverte : la condition porte sur `results.length`, evalue apres la recherche. Et
+   * `throughDiscover` etant memoise par TTL, meme une rafale d'echecs ne coute qu'un appel
+   * TMDB par periode, pas un par visite.
+   */
+  const suggestions =
+    !unavailable && results.length === 0
+      ? (await discover('popular', 3, locale)).slice(0, 12)
+      : [];
 
   return (
     <div className="space-y-8">
@@ -128,7 +141,25 @@ export async function SearchView({ query, locale }: {
       ) : unavailable ? (
         <p className="text-(--color-warn)">{t(locale, 'search.unavailable')}</p>
       ) : results.length === 0 ? (
-        <p className="text-(--color-muted)">{t(locale, 'search.none', { q: query })}</p>
+        /*
+         * ⚠️ La phrase **et** le conseil **et** la rangee, et aucun des trois ne remplace les
+         * autres : le constat dit ce qui s'est passe, le conseil donne la seule cause qu'on
+         * connaisse a l'avance (le catalogue ne porte pas les films), la rangee redonne de
+         * quoi cliquer. Le champ, lui, est deja en haut de page — c'est pourquoi il n'y a pas
+         * de bouton ici : la regle 4 demande un ecran sans issue, pas un ecran sans bouton.
+         */
+        <>
+          <div className="space-y-2">
+            <p className="text-(--color-muted)">{t(locale, 'search.none', { q: query })}</p>
+            <p className="meta-sm">{t(locale, 'search.none.hint')}</p>
+          </div>
+          <PosterRail
+            title={t(locale, 'discovery.none.title')}
+            subtitle={t(locale, 'discovery.none.subtitle')}
+            series={suggestions.map((summary) => ({ summary }))}
+            locale={locale}
+          />
+        </>
       ) : (
         <>
           <p className="meta">

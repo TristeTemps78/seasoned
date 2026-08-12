@@ -64,11 +64,28 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE, size = 'w3
   const firstYear = year(series.firstAirDate);
   const badge = status !== undefined ? shortStatus(status, translatorFor(locale)) : undefined;
 
+  /**
+   * 🔴 **Le nom du lien etait la concatenation crue de ses trois morceaux.** Lu au
+   * navigateur le 2026-08-13 sur `/serie/95396` : *« waiting · 17 monthsSeverance2022 »* —
+   * la pastille, le titre et l'annee se touchent, sans separateur, parce que rien dans le
+   * balisage ne dit ou finit l'un et ou commence l'autre. A l'oeil ce sont trois blocs sur
+   * trois lignes ; a la voix, c'est un seul mot-valise, et il y en a douze par rangee.
+   *
+   * ⚠️ Un `aria-label` **remplace** le contenu, il ne s'y ajoute pas : c'est ce qu'on veut
+   * ici, et c'est aussi pourquoi il doit porter les trois informations et pas seulement le
+   * titre — sinon on repare la lecture en supprimant ce qu'elle avait a lire.
+   */
+  const parts = [
+    firstYear !== undefined ? `${series.title} (${firstYear})` : series.title,
+    ...(badge !== undefined ? [badge] : []),
+  ];
+
   return (
     // Le lien reste dans la langue de la page : sans cela, chaque vignette de l'accueil
     // francais etait une sortie du francais.
     <Link
       href={seriesPath(series.providerId, locale)}
+      aria-label={parts.join(' — ')}
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-volt)"
     >
       {/* `--halo` : au survol la vignette gagne la lueur volt **sans recopier** l'elevation
