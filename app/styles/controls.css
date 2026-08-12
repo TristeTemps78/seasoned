@@ -216,10 +216,25 @@
    * Meme patron que `.btn` : base bureau, surcharge sous 640 px. Une seule declaration pour
    * les trois nœuds concernes (case vide, case pleine, bouton), qui **doivent** s'accorder —
    * sans quoi la boite et son bouton ont deux tailles, silencieusement.
+   *
+   * ## 2026-08-13 — 20 px devient 24, et la condition ci-dessus est levee
+   *
+   * Le paragraphe qui suivait disait : *« le jour ou une mesure montre que ca rate a la
+   * souris, c'est ici que ca se change — et pour les deux classes, pas pour une »*. La mesure
+   * n'est pas venue d'un ratage au pointage, elle est venue de la **regle** : WCAG 2.5.8
+   * (AA) fixe 24 x 24 px quel que soit le pointeur, et l'exception d'espacement ne s'applique
+   * pas ici — les cases sont a 2 px l'une de l'autre, soit un pas de 22 px pour un cercle qui
+   * en demande 24. Le depot appliquait deja ce seuil aux etoiles sous 640 px ; il ne
+   * l'appliquait pas a lui-meme au-dessus.
+   *
+   * 24 et pas 32 : sur un bureau la cible est pointee au pixel pres, donc on vise le minimum
+   * de la regle atteint et non approche, pas le confort tactile. La table passe de 375 a
+   * 450 px sur `/fr/serie/1396` — de la place qui existe sur un bureau et manquait sur un
+   * telephone, ce qui est exactement pourquoi les deux valeurs restent distinctes.
    */
   .grid-cell {
-    height: 1.25rem;
-    width: 1.25rem;
+    height: 1.5rem;
+    width: 1.5rem;
   }
   @media (width < 40rem) {
     .grid-cell {
@@ -261,26 +276,26 @@
    * autre, ce qui est un arbitrage de bureau. Un telephone n'a pas de place pour une version
    * discrete d'une cible tactile — il n'a que la place de la bonne taille.
    *
-   * ⚠️ **Au-dessus de 640 px la moitie reste a 10 px, et ce n'est pas un oubli.** C'est le
-   * meme arbitrage que `.grid-cell`, qui garde ses 20 px sur un bureau : la cible y est
-   * pointee au pixel pres, et le demi-cran pris sur la moitie gauche est la convention que
-   * les gens connaissent deja. Le jour ou une mesure montre que ca rate a la souris, c'est
-   * ici que ca se change — et pour les deux classes, pas pour une.
+   * ## 2026-08-13 — la moitie de 10 px passe a 24, et `sm` disparait
+   *
+   * Le paragraphe precedent disait que 10 px au-dessus de 640 px n'etait pas un oubli, et
+   * fixait sa condition : *« le jour ou une mesure montre que ca rate a la souris — et pour
+   * les deux classes, pas pour une »*. Elle est levee en meme temps que celle de
+   * `.grid-cell`, et par le meme fait : **WCAG 2.5.8 ne connait pas le type de pointeur.**
+   * La cible n'est pas l'etoile, c'est sa moitie ; pour que la moitie fasse 24 px, la boite
+   * doit en faire 48. Il n'y a pas de geometrie intermediaire — c'est pourquoi les deux
+   * valeurs de bureau rejoignent celle du telephone au lieu de s'en approcher.
+   *
+   * ⚠️ **`.star-box-sm` est retiree, elle ne pouvait plus rien vouloir dire.** Elle existait
+   * pour qu'une notation d'episode se fasse discrete a cote d'une autre ; en dessous de
+   * 48 px il n'y a plus de version conforme, donc « discrete » et « utilisable » ne peuvent
+   * plus etre vraies ensemble. Son unique appel — le panneau d'episode d'`EpisodeGrid` —
+   * n'etait d'ailleurs pas le cas dense qu'elle decrivait : une seule notation, a cote de
+   * trois `.btn` sur une ligne qui passe deja a la suivante.
    */
   .star-box {
-    height: 1.25rem;
-    width: 1.25rem;
-  }
-  .star-box-sm {
-    height: 1rem;
-    width: 1rem;
-  }
-  @media (width < 40rem) {
-    .star-box,
-    .star-box-sm {
-      height: 3rem;
-      width: 3rem;
-    }
+    height: 3rem;
+    width: 3rem;
   }
 
   /**
@@ -340,5 +355,120 @@
     .face-rail {
       scroll-behavior: auto;
     }
+  }
+
+  /**
+   * =============================================================================
+   * 🔴 L'ICONE DU COMPTE FAISAIT 14 x 14 SUR UN TELEPHONE
+   * =============================================================================
+   *
+   * Mesure au navigateur le 2026-08-13, `/fr/serie/95396`, fenetre de 375 px :
+   *
+   *     a[href="/fr/compte"]     14 x 14     l'icone seule, `padding: 0`
+   *     a[hreflang="fr"]         15 x 16     « FR », juste a cote
+   *     a[hreflang="en"]         16 x 16     « EN »
+   *
+   * Le libelle « Compte » passe en `sr-only` sous 640 px — decision du 2026-08-12, et elle
+   * n'est pas remise en cause : le mot volait 60 px au ruban d'onglets. Ce qui n'avait pas
+   * ete regarde, c'est ce qui restait **a toucher** une fois le mot parti. 14 px, c'est la
+   * plus petite cible du produit, et elle est sur le lien qui mene a la creation de compte.
+   *
+   * ## Pourquoi 24 et pas 44
+   *
+   * ⚠️ **La hauteur est gratuite, la largeur ne l'est pas.** L'en-tete fait deja 51 px : les
+   * onglets sont en `py-4`, donc porter ces trois liens a 44 px de haut ne deplace pas un
+   * pixel. En largeur, chaque pixel est repris au ruban d'onglets — on ne prend donc que le
+   * minimum de la regle, **24 px**, soit 10 px par lien la ou le mot en demandait 60. C'est
+   * ce qui rend ce correctif compatible avec la decision qu'il complete plutot qu'il annule.
+   *
+   * ⚠️ Les dimensions seulement, pas la disposition : les trois liens portent deja leur
+   * `flex`/`inline-flex` en utilitaire, et redeclarer `display` ici les mettrait en conflit
+   * de cascade avec Tailwind — a l'insu de tout le monde, puisque rien ne le verrait.
+   */
+  .nav-target {
+    min-width: 1.5rem;
+    min-height: 2.75rem;
+  }
+
+  /**
+   * =============================================================================
+   * ALLER AU CONTENU — le premier lien de chaque page
+   * =============================================================================
+   *
+   * 🔴 Mesure le 2026-08-13 : le premier `Tab` d'une page tombait sur la marque, le second
+   * sur « Decouvrir », et il en fallait **une quarantaine** pour depasser l'en-tete et les
+   * rangees d'affiches de l'accueil — chaque rangee etant douze liens. Quelqu'un qui navigue
+   * au clavier retraversait tout le chrome a chaque page.
+   *
+   * ⚠️ Visible **au focus seulement**, et c'est la seule forme acceptable : un lien
+   * d'evitement permanent est un ornement en haut a gauche de toutes les pages, et la
+   * direction artistique s'y refuserait a juste titre. `sr-only` le sort du flux sans le
+   * sortir de l'ordre de tabulation — c'est exactement ce qu'on veut, et c'est pourquoi il
+   * n'est pas simplement `display: none`.
+   */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    z-index: 30;
+  }
+
+  /**
+   * Les deux fleches d'une rangee d'affiches — voir `Rail` pour le pourquoi.
+   *
+   * ⚠️ **`pointer: coarse` les retire entierement.** Sur un ecran tactile, faire glisser une
+   * rangee est le geste natif : deux boutons de plus par rangee y prendraient de la largeur a
+   * ce qui compte, et personne ne les toucherait. La requete porte sur le **pointeur** et non
+   * sur la largeur — une tablette large reste tactile, un portable etroit reste a la souris.
+   *
+   * ⚠️ La cible fait 2 rem de cote, soit 32 px : au-dessus des 24 px de WCAG 2.5.8, sans
+   * peser dans une ligne de titre. Meme mesure que les cases d'episode le meme jour.
+   */
+  .rail-arrows {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.25rem;
+  }
+
+  @media (pointer: coarse) {
+    .rail-arrows {
+      display: none;
+    }
+  }
+
+  .rail-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    width: 2rem;
+    border: 1px solid var(--color-edge);
+    border-radius: 9999px;
+    color: var(--color-muted);
+    transition:
+      color 150ms,
+      border-color 150ms;
+  }
+
+  .rail-arrow:hover:not(:disabled) {
+    border-color: var(--color-volt);
+    color: var(--color-bright);
+  }
+
+  /* Le bout de la rangee : la fleche reste en place et cesse de repondre. La retirer ferait
+     sauter sa voisine d'un demi-pas a chaque extremite. */
+  .rail-arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .skip-link:focus-visible {
+    left: 0.5rem;
+    top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm, 0.375rem);
+    background: var(--color-ink);
+    color: var(--color-bright);
+    outline: 2px solid var(--color-volt);
+    outline-offset: 2px;
   }
 }

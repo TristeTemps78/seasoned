@@ -20,19 +20,21 @@ import type { Stars } from '@/src/domain/types';
  * rangee d'icones est intestable au clavier si on n'y prend pas garde : d'ou un vrai
  * groupe de boutons radio, chacun etiquete de sa valeur, navigable a la tabulation.
  */
-export function StarRating({ value, onChange, label, size = 'md' }: {
+export function StarRating({ value, onChange, label }: {
   readonly value: Stars | undefined;
   readonly onChange: (stars: Stars | undefined) => void;
   /** Ce que l'on note, pour les lecteurs d'ecran : « la saison 3 », « S3E7 ». */
   readonly label: string;
-  readonly size?: 'sm' | 'md';
 }) {
   const { t, n } = useT();
   // ⚠️ Une classe et non deux utilitaires : la taille de l'etoile decide de celle de la
   // **cible**, qui est sa moitie, et cette cible doit grossir sur un telephone. Ecrite en
   // `h-5 w-5` dans le JSX, la regle etait invisible a cote de `.grid-cell`, qui avait
   // pourtant deja mesure et corrige le meme defaut. Voir `controls.css`.
-  const box = size === 'sm' ? 'star-box-sm' : 'star-box';
+  // ⚠️ **Une seule taille depuis le 2026-08-13**, et la prop `size` a disparu avec sa
+  // variante : sous 48 px la moitie tombe sous les 24 px de WCAG 2.5.8, donc « discrete »
+  // n'etait plus une option, c'etait un defaut. Voir `.star-box`.
+  const box = 'star-box';
 
   return (
     <div
@@ -66,11 +68,8 @@ export function StarRating({ value, onChange, label, size = 'md' }: {
         ))}
       </div>
 
-      <span
-        className={`ml-1 tabular-nums text-(--color-muted) ${
-          size === 'sm' ? 'text-[11px]' : 'text-xs'
-        }`}
-      >
+      {/* La taille du chiffre suivait la variante `sm` disparue : il n'en reste qu'une. */}
+      <span className="ml-1 tabular-nums text-xs text-(--color-muted)">
         {value !== undefined ? n(value, 1) : '—'}
       </span>
     </div>

@@ -231,7 +231,6 @@ export function EpisodeGrid({ seriesId, seasons }: {
           </button>
 
           <StarRating
-            size="sm"
             value={myStars(selected)}
             label={t('rating.episode', {
               s: selected.seasonNumber,
