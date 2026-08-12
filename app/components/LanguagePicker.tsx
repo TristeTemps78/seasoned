@@ -47,22 +47,36 @@ export function LanguagePicker() {
     // l'audit i18n parce que `no-hardcoded-strings` ne detecte le francais que **par ses
     // accents** : une chaine anglaise lui echappe, et le fichier le dit lui-meme.
     <nav aria-label={t('nav.language.aria')} className="flex items-center gap-2 text-xs">
-      {languageLinks(bare === '/' ? '/' : bare, current).map((link) => (
-        <Link
-          key={link.locale}
-          href={link.href}
-          // `hrefLang` dit au navigateur et aux moteurs ce qu'il y a au bout du lien.
-          hrefLang={link.locale}
-          aria-current={link.current ? 'true' : undefined}
-          className={
-            link.current
-              ? 'font-semibold text-(--color-text)'
-              : 'text-(--color-muted) hover:text-(--color-text)'
-          }
-        >
-          {link.locale.toUpperCase()}
-        </Link>
-      ))}
+      {/*
+       * 🔴 **La langue courante etait un lien vers la page qu'on regarde deja.** Sur deux
+       * langues, ce selecteur en affichait donc toujours un pour rien : « FR » en gras quand
+       * on lisait le francais, dont le seul effet possible etait de recharger la meme page.
+       *
+       * Mesure du 2026-08-13, `/fr` en 375 px : le ruban des faces ne montrait **qu'un**
+       * libelle entier sur six (« Decouvrir »), 404 px caches sur 625. Les deux liens de
+       * langue prenaient 56 px de cette ligne, dont la moitie ne menait nulle part. On garde
+       * ceux vers lesquels on peut aller — la langue courante est deja dite par `<html lang>`,
+       * par l'URL et par la page elle-meme.
+       *
+       * ⚠️ Le filtre est sur `current`, pas sur un index : le jour ou une troisieme langue
+       * arrive, il en reste deux et la regle tient toujours.
+       */}
+      {languageLinks(bare === '/' ? '/' : bare, current)
+        .filter((link) => !link.current)
+        .map((link) => (
+          <Link
+            key={link.locale}
+            href={link.href}
+            // `hrefLang` dit au navigateur et aux moteurs ce qu'il y a au bout du lien.
+            hrefLang={link.locale}
+            // ⚠️ `.nav-target` : « FR » et « EN » faisaient 15 et 16 px de cote, mesures le
+            // 2026-08-13. Deux mots de deux lettres n'ont pas de cible naturelle — il faut la
+            // leur donner, comme a l'icone du compte juste a cote.
+            className="nav-target inline-flex items-center justify-center text-(--color-muted) hover:text-(--color-text)"
+          >
+            {link.locale.toUpperCase()}
+          </Link>
+        ))}
     </nav>
   );
 }

@@ -75,6 +75,12 @@ export function SiteChrome({ locale, Messages, children }: {
         {/* ⚠️ Sans l'ombre, le contenu **disparaissait** sous la barre au lieu de passer
             dessous. Le flou passe a `md` : a `sm`, une banniere restait lisible au travers
             et brouillait les onglets. */}
+        {/* Le tout premier noeud focalisable de la page — voir `.skip-link`. Invisible tant
+            qu'on ne tabule pas dessus, et il doit rester **avant** l'en-tete : place apres,
+            il ne ferait economiser aucun des liens qu'il sert a sauter. */}
+        <a href="#contenu" className="skip-link">
+          {t(locale, 'nav.skip')}
+        </a>
         <header className="border-b border-(--color-edge) bg-(--color-ink)/70 backdrop-blur-md shadow-[0_0.5rem_1.5rem_-0.5rem_rgb(0_0_0/0.8)] sticky top-0 z-20 edge-lit">
           {/* ⚠️ **Une seule rangee**, depuis le 2026-08-03. La marque et les faces
               vivaient sur deux lignes empilees : avec le bandeau de sauvegarde, le titre
@@ -87,7 +93,12 @@ export function SiteChrome({ locale, Messages, children }: {
               rangee pleine largeur — le genre de decalage que tout le monde voit sans
               savoir le nommer. C'est la meme valeur que `--w-bleed`, et c'est ce qui les
               tient ensemble. */}
-          <div className="mx-auto flex max-w-7xl items-center gap-4 px-4">
+          {/* ⚠️ `gap-2` sous 640 px, et c'est la contrepartie exacte du correctif de cible du
+              2026-08-13 : porter le compte et les deux langues a 24 px de large a repris
+              27 px au ruban d'onglets, qui n'en a aucun a perdre. Les trois gouttieres de
+              l'en-tete en rendent 24. Meme arbitrage que le `px-2` des onglets, et pour la
+              meme raison mesuree : sur un telephone, cette ligne est un budget en pixels. */}
+          <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 sm:gap-4">
             {/* Le logo ramene a l'accueil **de la langue courante** : renvoyer un
                 lecteur francais vers l'accueil anglais serait le sortir de sa langue
                 sans qu'il l'ait demande. */}
@@ -125,7 +136,9 @@ export function SiteChrome({ locale, Messages, children }: {
               // 2026-08-12 : il volait 60 px au ruban d'onglets, sur les 390 px d'un
               // telephone. L'icone reste seule mais reste **nommee**, sinon on remplace un
               // mot coupe par un pictogramme muet.
-              className="flex shrink-0 items-center gap-1.5 meta-sm hover:text-(--color-text)"
+              // ⚠️ `.nav-target` porte la **cible**, pas l'apparence : sans lui, une fois le
+              // mot parti, il ne restait que les 14 px de l'icone a toucher. Voir la classe.
+              className="nav-target flex shrink-0 items-center justify-center gap-1.5 meta-sm hover:text-(--color-text)"
             >
               <Icon name="user" />
               <span className="hidden sm:inline">{t(locale, 'account.nav')}</span>
@@ -139,7 +152,20 @@ export function SiteChrome({ locale, Messages, children }: {
             un tiers de l'ecran vide a droite sur un moniteur large — visible sur les trois
             captures. On ne va pas plus loin : au-dela de ~1150 px, une ligne de texte cesse
             d'etre lisible, et c'est `.bleed` qui existe pour laisser sortir les grilles. */}
-        <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-8">
+        {/* ⚠️ `tabIndex={-1}` avec l'ancre, et ce n'est pas decoratif : sans lui, plusieurs
+            navigateurs font defiler la page jusqu'a la cible **sans y deplacer le focus**,
+            donc le `Tab` suivant repart du haut de l'en-tete — le lien d'evitement paraissait
+            marcher a l'oeil et ne faisait rien pour qui l'utilise vraiment. */}
+        {/* ⚠️ `scroll-mt-16` mesure l'en-tete collante, elle ne l'approxime pas : sans elle,
+            « Aller au contenu » amenait le haut de `main` a `top: 0` — c'est-a-dire **sous**
+            les 51 px de la barre. Le lien marchait, le focus etait au bon endroit, et les
+            premieres lignes restaient cachees : le defaut que le lien devait corriger,
+            reproduit par son propre correctif. */}
+        <main
+          id="contenu"
+          tabIndex={-1}
+          className="flex-1 mx-auto w-full max-w-6xl scroll-mt-16 px-4 py-8"
+        >
           {/* Au-dessus du contenu, et sur toutes les pages : le risque de perte ne
               depend pas de l'endroit ou l'on se trouve. Ne rend rien tant qu'il n'y a
               rien a perdre, ni si l'application est deja installee. */}
