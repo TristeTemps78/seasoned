@@ -40,6 +40,19 @@ export interface SeriesSummary {
    * de filtrer une liste **sans un appel par element**.
    */
   readonly kind?: ProgramKind;
+  /**
+   * Combien de gens ont note ce programme chez le fournisseur.
+   *
+   * ⚠️ **Ce n'est pas une note, c'est une assise.** On ne s'en sert jamais pour classer ni
+   * pour afficher quoi que ce soit : uniquement pour savoir si une entree a ete vue par
+   * assez de monde pour meriter la vitrine (`isPopular`, `lib/catalog.ts`). Le classement
+   * `popular` de TMDB mesure le trafic sur *leur* site, pas la notoriete — d'ou des
+   * feuilletons regionaux et des journaux televises a 0 vote en page 1.
+   *
+   * Present dans toutes les reponses de liste comme sur la fiche, donc gratuit a porter ici.
+   * Optionnel malgre tout : une source qui ne le donnerait pas ne doit pas vider la vitrine.
+   */
+  readonly voteCount?: number;
 }
 
 /**

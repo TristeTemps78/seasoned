@@ -265,6 +265,9 @@ function toSummary(raw: unknown): SeriesSummary | undefined {
   // disponible partout sans un appel de plus. Voir `SeriesSummary.backdropPath`.
   const backdropPath = readString(source, 'backdrop_path');
   const overview = readString(source, 'overview');
+  // Presente partout ou `backdrop_path` l'est, et lue pour la meme raison : elle ne coute
+  // aucun appel de plus. Voir `SeriesSummary.voteCount` — c'est ce qui tient la vitrine.
+  const voteCount = readNumber(source, 'vote_count');
 
   return {
     providerId: String(id),
@@ -275,6 +278,7 @@ function toSummary(raw: unknown): SeriesSummary | undefined {
     ...(posterPath !== undefined ? { posterPath } : {}),
     ...(backdropPath !== undefined ? { backdropPath } : {}),
     ...(overview !== undefined ? { overview } : {}),
+    ...(voteCount !== undefined ? { voteCount } : {}),
   };
 }
 

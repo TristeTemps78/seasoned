@@ -314,6 +314,41 @@ export async function getSeriesDetail(
  * Degrade en liste vide plutot que de lever : l'accueil est la porte d'entree, il
  * doit s'afficher meme quand le catalogue est en panne.
  */
+/**
+ * Combien de gens doivent avoir note un programme pour qu'il entre en vitrine.
+ *
+ * 🔴 **`popular` chez TMDB ne veut pas dire connu.** Mesure contre l'API le 2026-08-13, sur
+ * `tv/popular?language=fr-FR`, les trois pages que sert ce produit :
+ *
+ *     page 1   10 entrees sur 20 sous 50 votes   « Hockey Psychology » = 0
+ *     page 3    9 entrees sur 20 sous 50 votes   « Capitao Furacao » = 0, « Rote Rosen » = 5
+ *     page 4    7 entrees sur 20 sous 50 votes   « CITV Breakfast » = 0
+ *
+ * Autrement dit **la moitie de la vitrine** etait des feuilletons quotidiens regionaux, de la
+ * telerealite et des journaux televises — le classement de TMDB mesure le trafic sur leur
+ * site, pas la notoriete. Le defaut se voyait le mieux la ou la promesse est ecrite noir sur
+ * blanc, sur la 404 : *« celles que tout le monde a vues »*, sous laquelle s'affichait
+ * *« Caresser les tetons de mon ours hibernant »* (7 votes).
+ *
+ * ⚠️ **50 et pas 200.** C'est un plancher contre le bruit, pas un jury de qualite : il coupe
+ * la grappe a 0-38 votes que la mesure isole nettement, et laisse passer ce qui est connu
+ * ailleurs qu'ici (« Kamen Rider », 104). Monte plus haut, il viderait les rangees — il en
+ * reste 10 a 13 par page, et les ecrans en demandent 12.
+ *
+ * ⚠️ **Le catalogue n'est pas touche.** Chercher « Rote Rosen » la trouve, sa fiche existe et
+ * s'ouvre : c'est la meme frontiere que `isShowcased`, et c'est la seule qui soit tenable —
+ * une vitrine choisit, un catalogue n'exclut pas.
+ */
+const MIN_SHOWCASE_VOTES = 50;
+
+/**
+ * ⚠️ L'absence de compte **laisse passer**. Une source qui ne porterait pas le champ viderait
+ * sinon toutes les rangees d'un coup, et ce serait un ecran noir pour une donnee manquante —
+ * exactement le patron de panne silencieuse que `kind === undefined` evite juste a cote.
+ */
+const isPopular = (s: SeriesSummary): boolean =>
+  s.voteCount === undefined || s.voteCount >= MIN_SHOWCASE_VOTES;
+
 export async function discover(
   kind: DiscoverKind,
   page = 1,
@@ -327,7 +362,7 @@ export async function discover(
     // n'importe quel programme si quelqu'un la cherche. Sans ce filtre, la rangee
     // « En attente » remontait le journal televise allemand et de la telerealite
     // (constate en production le 2026-08-01).
-    return all.filter((s) => s.kind === undefined || isShowcased(s.kind));
+    return all.filter((s) => (s.kind === undefined || isShowcased(s.kind)) && isPopular(s));
   } catch {
     return [];
   }
