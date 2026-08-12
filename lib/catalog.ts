@@ -743,6 +743,16 @@ export async function alsoByCreators(
     if (seen.has(series.providerId)) continue;
     // Meme regle de vitrine qu'ailleurs : on ne met pas en avant un journal televise.
     if (series.kind !== undefined && !isShowcased(series.kind)) continue;
+    // 🔴 **Sans affiche, la vignette est un rectangle noir.** Vu en bas de la fiche
+    // « Breaking Bad » le 2026-08-12 : la rangee « Du meme createur » rendait **six cadres
+    // vides** surmontant six titres — les credits d'un createur remontent des pilotes jamais
+    // diffuses et des programmes obscurs, dont TMDB n'a aucune image.
+    //
+    // ⚠️ Ce n'est pas le meme cas que `poster-void`, qui occupe la place d'une affiche
+    // manquante **dans une liste qu'on a demandee**. Ici la liste est une suggestion : une
+    // entree que le produit ne sait pas montrer n'a rien a y faire, et son titre seul ne
+    // donne a personne une raison de cliquer.
+    if (series.posterPath === undefined) continue;
     seen.add(series.providerId);
     out.push(series);
   }

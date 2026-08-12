@@ -161,6 +161,48 @@ it('les mesures de la serie ne dependent pas d un point de rupture de fenetre', 
   ).toBe(false);
 });
 
+it('un rail qui aimante ses affiches reserve la place de sa gouttiere', () => {
+  /*
+   * 🔴 Le defaut n°4, mesure en production le 2026-08-12 sur une fenetre de 1440 px :
+   *
+   *   rangee               titre a    1re affiche a   scrollLeft au chargement
+   *   « En attente »       160 px     16 px           0
+   *   « Cette semaine »    160 px     0 px            16
+   *   « En diffusion »     160 px     0 px            16
+   *
+   * Deux causes empilees, et c'est ce qui rendait le symptome illisible :
+   *
+   *   1. La gouttiere valait `calc(50vw - 45rem)`, soit **16 px** au lieu des 160 px de la
+   *      colonne de texte : la constante decrivait un conteneur de 90 rem, `main` fait
+   *      `max-w-6xl`. Le commentaire au-dessus promettait pourtant que *« son contenu commence
+   *      a l'alignement du texte »*.
+   *   2. `scroll-snap-align: start` aimante le premier enfant sur le bord du **conteneur**, en
+   *      ignorant son `padding`. Les deux rails assez longs pour defiler se decalaient donc
+   *      tout seuls des 16 px restants — d'ou une premiere affiche collee au bord de l'ecran,
+   *      et le troisieme rail, trop court pour defiler, qui gardait les siens.
+   *
+   * La loi : un conteneur qui aimante ses enfants au debut doit declarer un
+   * `scroll-padding-inline-start`, sinon son `padding-inline` est decoratif. C'est lisible
+   * dans la source, contrairement au `scrollLeft` qui, lui, se mesure au navigateur.
+   */
+  const fautes = blocks()
+    .filter(({ body }) => /scroll-snap-type:\s*x/.test(body))
+    .filter(({ body }) => /padding-inline:/.test(body))
+    .filter(({ body }) => !/scroll-padding-inline(-start)?:/.test(body))
+    .map(({ selector }) => selector);
+
+  expect(
+    fautes,
+    'sans scroll-padding, le magnetisme mange la gouttiere des le chargement',
+  ).toEqual([]);
+
+  // Ancrage : la garde ne vaut que si un rail existe vraiment et porte les deux declarations.
+  const rail = blocks().find(({ selector }) => selector === '.rail');
+  expect(rail, '.rail a disparu').toBeDefined();
+  expect(rail!.body).toMatch(/padding-inline:\s*var\(--rail-gutter\)/);
+  expect(rail!.body).toMatch(/scroll-padding-inline-start:\s*var\(--rail-gutter\)/);
+});
+
 it('aucune face ne redessine son en-tete a la main', () => {
   /*
    * 🔴 Le defaut, releve en comparant les six faces le 2026-08-11 :

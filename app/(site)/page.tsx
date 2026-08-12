@@ -11,8 +11,7 @@ import {
   type SeriesWithStatus,
 } from '@/lib/catalog';
 import { SearchForm } from '@/app/components/SearchForm';
-import { RowHeader } from '@/app/components/RowHeader';
-import { SeriesCard } from '@/app/components/SeriesCard';
+import { PosterRail } from '@/app/components/PosterRail';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { ResumeStrip } from '@/app/components/ResumeStrip';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
@@ -99,7 +98,7 @@ export async function Home({ locale }: { readonly locale: Locale }) {
           fait le produit. Les deux autres ne contiennent, par construction, que des
           series actives — verifie en ligne le 2026-08-01. `lead` lui donne des affiches
           de 300 px contre 190, ce qui dit par ou commencer sans l'ecrire. */}
-      <Row
+      <PosterRail
         title={t(locale, 'home.waiting.title')}
         subtitle={t(locale, 'home.waiting.subtitle')}
         series={rest}
@@ -107,14 +106,14 @@ export async function Home({ locale }: { readonly locale: Locale }) {
         lead
       />
 
-      <Row
+      <PosterRail
         title={t(locale, 'home.week.title')}
         subtitle={t(locale, 'home.week.subtitle')}
         series={trending}
         locale={locale}
       />
 
-      <Row
+      <PosterRail
         title={t(locale, 'home.airing.title')}
         subtitle={t(locale, 'home.airing.subtitle')}
         series={onTheAir}
@@ -237,39 +236,3 @@ function Featured({ item, label, locale, children }: {
   );
 }
 
-function Row({ title, subtitle, series, locale, lead = false }: {
-  readonly title: string;
-  readonly subtitle: string;
-  readonly series: readonly SeriesWithStatus[];
-  readonly locale: Locale;
-  /** La rangee de tete : moins de colonnes, donc des affiches nettement plus grandes. */
-  readonly lead?: boolean;
-}) {
-  if (series.length === 0) return null;
-
-  return (
-    // 🔴 **Un rail, plus une grille.** L'accueil rendait trois grilles identiques empilees :
-    // meme nombre de colonnes, meme rythme, meme hauteur. Trois fois le meme bloc, donc un
-    // seul objet visuel repete — c'est ca, « toutes mes pages se ressemblent ».
-    //
-    // Le rail defile horizontalement et **deborde du bord droit** : une rangee qui se termine
-    // pile au bord se lit comme finie, une rangee coupee dit qu'il y en a plus.
-    <section className="space-y-3" aria-label={title}>
-      <RowHeader title={title} subtitle={subtitle} />
-      <ul className={`rail ${lead ? 'rail-lead' : ''}`}>
-        {series.map(({ summary, status }) => (
-          <li key={summary.providerId}>
-            <SeriesCard
-              series={summary}
-              locale={locale}
-              // Les affiches du rail sont plus grandes que celles de l'ancienne grille : elles
-              // n'ont plus a rentrer toutes en meme temps.
-              size={lead ? 'w500' : 'w342'}
-              {...(status !== undefined ? { status } : {})}
-            />
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}

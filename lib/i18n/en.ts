@@ -357,7 +357,6 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'agenda.thisMonth': 'This month',
   'agenda.later': 'Later',
   'nav.convert': 'Coming from TV Time, Trakt or Simkl? Bring your history with you.',
-  'footer.disclaimer': 'This product uses the TMDB API but is not endorsed or certified by TMDB.',
 
   'home.h1': 'A series is not a long film.',
   'home.lede.before': 'You don’t ask a series whether it’s good. You ask ',
@@ -371,6 +370,19 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'home.airing.title': 'Currently airing',
   'home.airing.subtitle': 'The next episode is really coming.',
   'home.unavailable': 'The catalogue is temporarily unavailable. Search may still work.',
+
+  // Les rangees de decouverte des faces vides — voir `FaceDiscovery`. Chaque face tire d'une
+  // source differente du catalogue, et le sous-titre dit ce que la face fera de la serie une
+  // fois qu'on l'aura prise : c'est ce qui fait la difference entre montrer des affiches et
+  // expliquer a quoi sert l'ecran.
+  'discovery.library.title': 'Start with one of these',
+  'discovery.library.subtitle': 'Open one, say where you are, and it lands here.',
+  'discovery.calendar.title': 'Airing right now',
+  'discovery.calendar.subtitle': 'Follow one and its next date shows up on this page.',
+  'discovery.tally.title': 'You have finished one of these',
+  'discovery.tally.subtitle': 'Rate it, and the tally has something to measure.',
+  'discovery.lists.title': 'Enough to start a list',
+  'discovery.lists.subtitle': 'A list is a handful of series and a reason to put them together.',
 
   'safety.title': 'These notes live in this browser only',
   'safety.body':

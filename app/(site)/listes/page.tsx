@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { Lists } from '@/app/components/Lists';
 import { PageHeader } from '@/app/components/PageHeader';
+import { FaceDiscovery } from '@/app/components/FaceDiscovery';
+import { PosterRail } from '@/app/components/PosterRail';
+import { discover } from '@/lib/catalog';
 
 /**
  * La face « Mes listes ».
@@ -13,6 +16,9 @@ import { PageHeader } from '@/app/components/PageHeader';
  */
 export const dynamic = 'force-static';
 
+/** Un rendu par jour pour la rangee de decouverte — voir `/calendrier`. */
+export const revalidate = 86_400;
+
 export function listsMetadata(locale: Locale): Metadata {
   return {
     title: t(locale, 'listsPage.title'),
@@ -23,11 +29,25 @@ export function listsMetadata(locale: Locale): Metadata {
 
 export const metadata: Metadata = listsMetadata(DEFAULT_LOCALE);
 
-export function ListsView({ locale }: { readonly locale: Locale }) {
+export async function ListsView({ locale }: { readonly locale: Locale }) {
+  // ⚠️ `trending` **page 2** : la page 1 est la rangee « Cette semaine » de l'accueil. Une
+  // liste se compose de ce dont on parle, d'ou les tendances plutot que le fond de
+  // catalogue — qui est, lui, la matiere du bilan.
+  const talked = await discover('trending', 2, locale);
+
   return (
     <div className="space-y-8">
       <PageHeader title={t(locale, 'listsPage.title')} lede={t(locale, 'listsPage.intro')} />
       <Lists />
+
+      <FaceDiscovery>
+        <PosterRail
+          title={t(locale, 'discovery.lists.title')}
+          subtitle={t(locale, 'discovery.lists.subtitle')}
+          series={talked.slice(0, 12).map((summary) => ({ summary }))}
+          locale={locale}
+        />
+      </FaceDiscovery>
     </div>
   );
 }

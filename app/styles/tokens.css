@@ -306,6 +306,20 @@
   --gap-poster-grid: 8px;
   --control-height: 42px;
 
+  /**
+   * La gouttiere d'un rail — ou commence son contenu quand la bande, elle, va d'un bord a
+   * l'autre de l'ecran.
+   *
+   * ⚠️ **Elle depend de `main`**, qui est `max-w-6xl px-4` : 72 rem de colonne, plus 1 rem
+   * de marge, donc `50vw - 35rem`. Un jeton parce que trois declarations doivent bouger
+   * ensemble — le `padding` du rail, son `scroll-padding` et le retrait de son en-tete ;
+   * la version precedente en avait une seule, ecrite en dur, et fausse (`45rem`, soit une
+   * colonne de 90 rem qui n'a jamais existe ici).
+   *
+   * Si `main` change de largeur, c'est **la seule ligne** a suivre.
+   */
+  --rail-gutter: max(1rem, calc(50vw - 35rem));
+
   /* =============================================================================
    * ⚠️ LE BASCULEMENT VERS LE VERT DU BRIEF — une ligne
    * =============================================================================

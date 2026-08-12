@@ -104,7 +104,19 @@
        commence a l'alignement du texte : c'est ce qui fait qu'il « part » de la page au lieu
        d'y flotter. */
     margin-inline: calc(50% - 50vw);
-    padding-inline: max(1rem, calc(50vw - 45rem));
+    /* 🔴 **C'etait `45rem`, et le commentaire au-dessus etait donc faux depuis le debut.**
+       Mesure au navigateur le 2026-08-12, en 1440 px : le titre de la rangee commence a
+       160 px, la premiere affiche a 16 px. La constante decrivait une colonne de 90 rem ;
+       `main` fait `max-w-6xl px-4`, soit 72 rem plus 1 rem de marge. D'ou `35rem` — a
+       1440 px, `50vw - 35rem` vaut exactement les 160 px du texte. */
+    padding-inline: var(--rail-gutter);
+    /* ⚠️ Sans lui, `scroll-snap-align: start` colle la premiere affiche au bord du
+       conteneur **en ignorant son padding** : le navigateur defile tout seul de la valeur
+       de la gouttiere des le chargement, et la mange entierement. Mesure le meme jour —
+       les deux rails qui debordent avaient `scrollLeft: 16` sans que personne n'ait
+       touche a rien, le troisieme, trop court pour defiler, gardait ses 16 px. Le
+       symptome se lisait comme un defaut d'alignement, la cause etait le magnetisme. */
+    scroll-padding-inline-start: var(--rail-gutter);
     /* De la place pour l'ombre portee et le grossissement au survol, sinon les deux sont
        rognes par le conteneur qui defile. */
     padding-block: 0.5rem 1rem;

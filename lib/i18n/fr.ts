@@ -420,7 +420,6 @@ export const FR = {
   'agenda.thisMonth': 'Ce mois-ci',
   'agenda.later': 'Plus tard',
   'nav.convert': 'Vous venez de TV Time, Trakt ou Simkl ? Reprenez votre historique.',
-  'footer.disclaimer': 'Ce produit utilise l’API TMDB sans être approuvé ni certifié par TMDB.',
 
   'home.h1': 'Une série n’est pas un long film.',
   // Decoupe en trois parce que le milieu est en italique. Une seule chaine avec du
@@ -437,6 +436,20 @@ export const FR = {
   'home.airing.subtitle': 'Le prochain épisode arrive vraiment.',
   'home.unavailable':
     'Le catalogue est momentanément indisponible. La recherche fonctionne peut-être encore.',
+
+  // Les rangées de découverte des faces vides — voir `FaceDiscovery`. Chaque face tire d'une
+  // source différente du catalogue, et le sous-titre dit ce que la face fera de la série une
+  // fois qu'on l'aura prise : c'est ce qui fait la différence entre montrer des affiches et
+  // expliquer à quoi sert l'écran.
+  'discovery.library.title': 'Commencez par l’une d’elles',
+  'discovery.library.subtitle': 'Ouvrez-en une, dites où vous en êtes, elle atterrit ici.',
+  'discovery.calendar.title': 'Elles diffusent en ce moment',
+  'discovery.calendar.subtitle': 'Suivez-en une, et sa prochaine date s’affiche sur cette page.',
+  'discovery.tally.title': 'Vous en avez forcément fini une',
+  'discovery.tally.subtitle': 'Notez-la, et le bilan aura enfin quelque chose à mesurer.',
+  'discovery.lists.title': 'De quoi commencer une liste',
+  'discovery.lists.subtitle':
+    'Une liste, c’est une poignée de séries et une raison de les mettre ensemble.',
 
   'safety.title': 'Ces notes ne vivent que dans ce navigateur',
   'safety.body':

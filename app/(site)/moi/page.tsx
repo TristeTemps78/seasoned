@@ -3,6 +3,9 @@ import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { Library } from './Library';
 import { PageHeader } from '@/app/components/PageHeader';
 import { Quiz } from '@/app/components/Quiz';
+import { FaceDiscovery } from '@/app/components/FaceDiscovery';
+import { PosterRail } from '@/app/components/PosterRail';
+import { discover } from '@/lib/catalog';
 
 /**
  * Ma bibliotheque.
@@ -24,6 +27,15 @@ import { Quiz } from '@/app/components/Quiz';
 export const dynamic = 'force-static';
 
 /**
+ * Un rendu par jour pour la rangee de decouverte — voir `/calendrier`.
+ *
+ * ⚠️ Ca ne change rien a ce qui precede : la page ne lit toujours **aucune donnee
+ * personnelle cote serveur**. Ce qui se regenere est le catalogue propose a qui n'a pas
+ * encore de bibliotheque, identique pour tout le monde.
+ */
+export const revalidate = 86_400;
+
+/**
  * Les metadonnees, dans une langue.
  *
  * ⚠️ Exportee pour que `/fr/moi` serve **la meme page** dans une autre langue au lieu
@@ -43,7 +55,12 @@ export function libraryMetadata(locale: Locale): Metadata {
 
 export const metadata: Metadata = libraryMetadata(DEFAULT_LOCALE);
 
-export function LibraryView({ locale }: { readonly locale: Locale }) {
+export async function LibraryView({ locale }: { readonly locale: Locale }) {
+  // ⚠️ Le fond de catalogue **page 2** : la page 1 nourrit le bilan. Une bibliotheque vide se
+  // remplit de ce qu'on a deja vu, pas de ce qui sort cette semaine — c'est la difference
+  // entre « commencez par l'une d'elles » et une vitrine de nouveautes.
+  const known = await discover('popular', 2, locale);
+
   return (
     <div className="space-y-8">
       <PageHeader title={t(locale, 'library.title')} lede={t(locale, 'library.lede')} />
@@ -53,6 +70,15 @@ export function LibraryView({ locale }: { readonly locale: Locale }) {
       <Quiz />
 
       <Library />
+
+      <FaceDiscovery>
+        <PosterRail
+          title={t(locale, 'discovery.library.title')}
+          subtitle={t(locale, 'discovery.library.subtitle')}
+          series={known.slice(0, 12).map((summary) => ({ summary }))}
+          locale={locale}
+        />
+      </FaceDiscovery>
     </div>
   );
 }

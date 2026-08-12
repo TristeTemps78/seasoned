@@ -183,9 +183,17 @@ export function SiteChrome({ locale, Messages, children }: {
               </Link>
             </p>
             {/* Obligation contractuelle TMDB, pas un choix de mise en page :
-                le texte doit accompagner toute donnee TMDB affichee. */}
+                le texte doit accompagner toute donnee TMDB affichee.
+
+                🔴 **Elle s'affichait deux fois, sur toutes les pages du site.** Vu a
+                l'ecran le 2026-08-12 : cette ligne etait suivie de `footer.disclaimer`,
+                qui est la *traduction de la meme obligation*. En anglais les deux chaines
+                sont identiques au caractere pres (`lib/i18n/en.ts`), donc le visiteur
+                lisait deux fois la meme phrase ; en francais, une fois en francais puis une
+                fois en anglais. La clef traduite est retiree : la mention TMDB est
+                contractuelle et **verbatim en anglais**, exactement comme
+                `JUSTWATCH_ATTRIBUTION` — la traduire etait le defaut, pas l'oubli. */}
             <p>{TMDB_ATTRIBUTION}</p>
-            <p>{t(locale, 'footer.disclaimer')}</p>
           </div>
         </footer>
 
