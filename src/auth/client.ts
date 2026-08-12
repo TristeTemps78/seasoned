@@ -316,22 +316,57 @@ export async function finishSignIn(
     return errorCode === null ? { kind: 'nothing_to_do' } : { kind: 'expired' };
   }
 
+  /**
+   * 🔴 **Echantillonne AVANT l'echange, et c'est tout le correctif.**
+   *
+   * Mesure au navigateur le 2026-08-12 : une tentative d'echange **supprime le verificateur
+   * du `localStorage`, y compris quand elle echoue**. L'appeler apres coup, comme le faisait
+   * la version precedente, revenait donc a lire une valeur que l'appel venait de detruire :
+   * la reponse etait « pas de verificateur » **quel que soit** le vrai cas, et tout echec —
+   * lien expire, code deja brule, panne reseau — s'annoncait « vous avez ouvert le lien dans
+   * un autre navigateur ». Le seul message qui ne dise pas de redemander un lien etait donne
+   * a toutes les situations ou il en faut justement un nouveau.
+   */
+  const mine = hasVerifier();
+
   try {
     const auth = await authClient(config);
     const { error } = await auth.exchangeCodeForSession(code);
     if (error === null) return { kind: 'signed_in' };
     // Pas de verificateur range ici : le lien vient d'un autre navigateur.
-    return hasVerifier() ? { kind: 'expired' } : { kind: 'wrong_browser' };
+    return mine ? { kind: 'expired' } : { kind: 'wrong_browser' };
   } catch {
-    return hasVerifier() ? { kind: 'expired' } : { kind: 'wrong_browser' };
+    return mine ? { kind: 'expired' } : { kind: 'wrong_browser' };
   }
 }
 
-/** Le verificateur PKCE a-t-il ete depose par CE navigateur ? */
+/**
+ * Le verificateur PKCE a-t-il ete depose par CE navigateur ?
+ *
+ * ⚠️ **Toutes les cles, et pas seulement `<cle>-code-verifier`.** Releve au navigateur le
+ * 2026-08-12, apres deux demandes de lien depuis ce poste :
+ *
+ *     voltface.auth.v1-flow-192c08bf…-code-verifier
+ *     voltface.auth.v1-flow-ffbfee8c…-code-verifier
+ *     voltface.auth.v1-code-verifier
+ *     voltface.auth.v1-flows-code-verifier
+ *
+ * `@supabase/auth-js` range un verificateur **par flux** depuis qu'il en supporte plusieurs
+ * en parallele ; la cle historique n'est qu'un des quatre noms. Chercher celle-la seule
+ * repondait « non » a quelqu'un qui a pourtant demande son lien ici — donc « ouvert dans un
+ * autre navigateur » a qui est au bon endroit.
+ */
 function hasVerifier(): boolean {
   try {
-    return globalThis.localStorage?.getItem(`${STORAGE_KEY}-code-verifier`) !== null;
+    const store = globalThis.localStorage;
+    if (store === undefined || store === null) return false;
+    for (let i = 0; i < store.length; i++) {
+      const key = store.key(i);
+      if (key !== null && key.startsWith(STORAGE_KEY) && key.endsWith('code-verifier')) return true;
+    }
+    return false;
   } catch {
+    // Stockage refuse (navigation privee stricte, iframe cloisonnee).
     return false;
   }
 }

@@ -1,10 +1,33 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
 import { MINIMUM_AGE } from '@/src/domain/handles';
+
+/**
+ * Ou l'on note qu'un lien vient d'etre demande **depuis ce navigateur**.
+ *
+ * 🔴 Sans ca, le champ du code a six chiffres n'existait que dans l'onglet vivant qui avait
+ * demande le lien : un rechargement, une fermeture, un retour le lendemain, et il
+ * disparaissait. Or le cas que ce champ existe pour couvrir est precisement *« je lis mes
+ * e-mails sur mon telephone et je suis sur l'ordinateur »* — c'est-a-dire un aller-retour
+ * pendant lequel on quitte la page. Le repli n'etait donc offert qu'a ceux qui n'en avaient
+ * pas besoin.
+ *
+ * Ce qui restait a faire etait de redemander un lien pour retrouver le champ, ce qui **brule
+ * le code precedent** et se heurte au plafond d'envois du service integre de Supabase.
+ * Autrement dit : la seule issue disponible fermait l'autre.
+ *
+ * ⚠️ L'adresse est rangee en clair, dans le meme navigateur que le journal et pour la meme
+ * duree de vie qu'un code Supabase — une heure. C'est la personne elle-meme qui vient de la
+ * taper deux lignes plus haut ; ce qu'on evite ici, c'est de la lui redemander.
+ */
+const PENDING_KEY = 'voltface.auth.v1-pending-email';
+
+/** La duree de validite d'un code Supabase. Au-dela, le proposer serait mentir. */
+const PENDING_MAX_MS = 60 * 60 * 1000;
 
 /**
  * Se connecter — lien magique, code de secours, ou Google.
@@ -50,16 +73,61 @@ export function SignIn() {
       ? ''
       : new URL(pathIn('/compte/retour', locale), window.location.origin).toString();
 
+  /**
+   * Un lien a-t-il ete demande ici recemment ?
+   *
+   * ⚠️ Dans un effet et non au rendu : le HTML de `/compte` est statique et partage, donc
+   * lire le stockage pendant le rendu ferait diverger l'hydratation. Meme discipline que
+   * `useJournal` et `AuthProvider` — c'est ce qui garde la page `force-static`.
+   */
+  useEffect(() => {
+    try {
+      const raw = globalThis.localStorage?.getItem(PENDING_KEY);
+      if (raw === null || raw === undefined) return;
+      const saved = JSON.parse(raw) as { readonly email?: string; readonly at?: number };
+      if (typeof saved.email !== 'string' || typeof saved.at !== 'number') return;
+      if (Date.now() - saved.at > PENDING_MAX_MS) {
+        globalThis.localStorage?.removeItem(PENDING_KEY);
+        return;
+      }
+      setEmail(saved.email);
+      setState('sent');
+    } catch {
+      // Stockage refuse ou contenu illisible : on retombe sur le formulaire nu, qui marche.
+    }
+  }, []);
+
   async function onSend(event: React.FormEvent) {
     event.preventDefault();
     setState('sending');
-    const outcome = await sendLink(email.trim(), redirectTo());
+    const address = email.trim();
+    const outcome = await sendLink(address, redirectTo());
     setState(outcome.kind === 'sent' ? 'sent' : outcome.kind);
+    if (outcome.kind !== 'sent') return;
+    try {
+      globalThis.localStorage?.setItem(
+        PENDING_KEY,
+        JSON.stringify({ email: address, at: Date.now() }),
+      );
+    } catch {
+      // Sans stockage, le champ du code reste offert dans cet onglet — c'est le
+      // comportement d'avant, et il n'est pas pire.
+    }
   }
 
   async function onCode(event: React.FormEvent) {
     event.preventDefault();
-    setCodeFailed(!(await submitCode(email.trim(), code.trim())));
+    const ok = await submitCode(email.trim(), code.trim());
+    setCodeFailed(!ok);
+    // ⚠️ Efface **seulement** en cas de succes : un code mal recopie ne doit pas faire
+    // disparaitre le champ ou on le recopie.
+    if (ok) {
+      try {
+        globalThis.localStorage?.removeItem(PENDING_KEY);
+      } catch {
+        // Rien a faire : la session est ouverte, c'est ce qui compte.
+      }
+    }
   }
 
   const ready = oldEnough && email.trim().length > 3 && email.includes('@');

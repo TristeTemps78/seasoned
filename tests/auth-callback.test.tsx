@@ -8,17 +8,27 @@ import type { CallbackOutcome } from '@/src/auth/client';
 /**
  * Le retour du lien de connexion.
  *
- * Deux defauts gardes ici, tous deux invisibles en typage et en relecture :
- * le jeton qui reste dans la barre d'adresse, et l'echec **normal** de PKCE rendu comme
- * une panne.
+ * Trois defauts gardes ici, tous invisibles en typage et en relecture : le jeton qui reste
+ * dans la barre d'adresse, l'echec **normal** de PKCE rendu comme une panne, et l'echange
+ * rejoue sur une URL que la passe precedente venait de vider.
  */
 
+/**
+ * ⚠️ **`completeCallback` change d'identite a chaque rendu, et c'est fidele.**
+ *
+ * La premiere version de ce double le gardait stable, et c'est precisement pour ca qu'aucun
+ * des cinq tests ci-dessous n'a vu le defaut du 2026-08-12 : `AuthProvider` reconstruit son
+ * `value` — donc cette fonction — des que `ready`, `account` ou la liste des fournisseurs
+ * bouge, et la liste des fournisseurs arrive **pendant** le retour, puisqu'elle vient d'un
+ * `fetch` vers `/auth/v1/settings`. Un double plus stable que la vraie chose transforme le
+ * test en tautologie.
+ */
 vi.mock('@/app/auth/AuthProvider', () => ({
   useAuth: () => ({
     configured: true,
     ready: true,
     account: undefined,
-    completeCallback: mockComplete,
+    completeCallback: (href: string) => mockComplete(href),
     sendLink: async () => ({ kind: 'failed' as const }),
     submitCode: async () => false,
     withGoogle: async () => undefined,
@@ -31,8 +41,19 @@ let mockComplete: (href: string) => Promise<CallbackOutcome> = async () => ({
   kind: 'nothing_to_do',
 });
 
+/** Les URL sur lesquelles l'echange a ete tente, dans l'ordre. */
+let attempts: string[] = [];
+
 function renderCallback(outcome: CallbackOutcome, href: string) {
-  mockComplete = async () => outcome;
+  attempts = [];
+  mockComplete = async (seen: string) => {
+    attempts.push(seen);
+    // Le vrai `finishSignIn` ne rend `nothing_to_do` que sur une URL sans `code` : le double
+    // le reproduit, sans quoi une URL videe resterait indistinguable d'une bonne.
+    return new URL(seen).searchParams.get('code') === null && outcome.kind !== 'nothing_to_do'
+      ? { kind: 'nothing_to_do' }
+      : outcome;
+  };
   window.history.replaceState(null, '', href);
   return render(
     <LocaleProvider locale="en" messages={DICTIONARIES.en}>
@@ -85,5 +106,60 @@ describe('le retour du lien', () => {
     renderCallback({ kind: 'nothing_to_do' }, '/compte/retour');
 
     expect(await screen.findByText(/nothing to confirm/i)).toBeDefined();
+  });
+
+  it('🔴 l echange n a lieu qu une fois, sur l URL d arrivee', async () => {
+    /*
+     * 🔴 Reproduit au navigateur le 2026-08-12 : `/fr/compte/retour?code=…` ouvert deux fois
+     * de suite donnait **deux resultats differents pour la meme entree** — un echange puis
+     * zero — et, dans les deux cas, le message reserve a « la page a ete ouverte a la main ».
+     * Se connecter ne marchait pas, et le produit disait a la personne qu'elle n'avait rien
+     * demande.
+     *
+     * L'effet dependait de `completeCallback`, dont l'identite change en cours de route ; a
+     * la seconde passe il relisait `window.location.href`, que la premiere venait de vider
+     * de son `code`. Selon l'ordre gagne par la course, on ecrasait l'issue par
+     * `nothing_to_do` ou l'on rejouait l'echange avec un code deja brule.
+     *
+     * La loi : l'URL est lue **une fois**, au montage, et l'echange n'a lieu **qu'une fois**
+     * — quel que soit le nombre de rendus. Les `rerender` ci-dessous jouent exactement ce que
+     * faisait la reponse de `/auth/v1/settings`.
+     */
+    const view = renderCallback({ kind: 'signed_in' }, '/compte/retour?code=une-seule-fois');
+
+    const again = (
+      <LocaleProvider locale="en" messages={DICTIONARIES.en}>
+        <AuthCallback />
+      </LocaleProvider>
+    );
+    view.rerender(again);
+    view.rerender(again);
+
+    await waitFor(() => {
+      expect(window.location.search).toBe('');
+    });
+    view.rerender(again);
+
+    expect(attempts.length, 'un code ne s echange qu une fois').toBe(1);
+    expect(attempts[0], 'l URL lue doit encore porter le code').toContain('une-seule-fois');
+  });
+
+  it('🔴 l issue reelle survit aux rendus qui suivent', async () => {
+    // Le meme defaut, vu du seul endroit ou quelqu'un le remarque : l'ecran. Une connexion
+    // reussie s'annoncait « il n'y a rien a valider ici », parce que la seconde passe lisait
+    // une URL videe. Ce test echoue sur l'ancienne version.
+    const view = renderCallback({ kind: 'signed_in' }, '/compte/retour?code=abc');
+
+    await waitFor(() => {
+      expect(window.location.search).toBe('');
+    });
+    view.rerender(
+      <LocaleProvider locale="en" messages={DICTIONARIES.en}>
+        <AuthCallback />
+      </LocaleProvider>,
+    );
+
+    expect(await screen.findByText(/signed in|you are in|welcome/i)).toBeDefined();
+    expect(screen.queryByText(/nothing to confirm/i)).toBeNull();
   });
 });

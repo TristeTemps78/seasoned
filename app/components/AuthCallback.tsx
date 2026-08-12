@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
@@ -28,29 +28,77 @@ import type { CallbackOutcome } from '@/src/auth/client';
  * de qui partage le lien, et dans le `Referer` de la navigation suivante. `replaceState`
  * l'efface **sans** ajouter d'entree d'historique — donc le bouton « precedent » ne ramene
  * pas sur une URL qui contient un jeton.
+ *
+ * =============================================================================
+ * 🔴 SE CONNECTER NE MARCHAIT PAS — l'effet tournait deux fois, et la seconde
+ *    lisait une URL que la premiere venait de vider
+ * =============================================================================
+ *
+ * Reproduit au navigateur le 2026-08-12, en ouvrant `/fr/compte/retour?code=<au hasard>`
+ * deux fois de suite. **Meme entree, deux resultats differents** :
+ *
+ *     essai 1   1 appel a /auth/v1/token?grant_type=pkce   message « rien a valider »
+ *     essai 2   0 appel                                    message « rien a valider »
+ *
+ * Zero appel : le code recu par courriel n'etait tout simplement **jamais echange**. Et
+ * « rien a valider » est le message reserve a *« la page a ete ouverte a la main »* — donc
+ * quelqu'un qui clique son lien de connexion voit le produit lui dire qu'il n'a rien
+ * demande. C'est exactement le symptome rapporte : *« j'ai recu un lien et ensuite ca
+ * marche plus »*.
+ *
+ * ## La cause
+ *
+ * L'ancien effet dependait de `completeCallback`, dont l'identite change des que
+ * `AuthProvider` recalcule son `value` — ce qui arrive **pendant** le retour, parce que la
+ * lecture des fournisseurs externes (`/auth/v1/settings`) repond a ce moment-la et pose un
+ * `setProviders`. L'effet est donc rejoue, et il relit `window.location.href` :
+ *
+ *   - si la premiere passe avait deja nettoye l'URL → la seconde n'y trouve plus de `code`
+ *     et ecrase l'issue par `nothing_to_do` ;
+ *   - si elle ne l'avait pas encore nettoyee → la seconde rejoue l'echange avec un code
+ *     **deja brule**, et l'issue devient un echec.
+ *
+ * Les deux ordres sont mauvais, et lequel se produit depend d'une course reseau.
+ *
+ * ## La correction
+ *
+ * L'URL est lue **une fois**, au montage, avant que quoi que ce soit puisse la modifier ; et
+ * l'echange n'a lieu **qu'une fois**, garde par une reference. La fonction, elle, est lue
+ * dans une reference : son identite n'a plus a etre stable, ce que l'ancien commentaire
+ * supposait a tort (*« stable tant que la configuration ne change pas »* — elle depend aussi
+ * du compte, de `ready` et des fournisseurs).
  */
 export function AuthCallback() {
   const { t, locale } = useT();
   const { completeCallback, configured } = useAuth();
   const [outcome, setOutcome] = useState<CallbackOutcome | undefined>(undefined);
 
+  /**
+   * L'URL d'arrivee, figee au premier rendu.
+   *
+   * ⚠️ Un `useState` a initialisateur et non une lecture dans l'effet : entre le montage et
+   * l'effet, `replaceState` a pu passer. C'est la seule valeur de cette page qui ne se
+   * relit jamais.
+   */
+  const [href] = useState(() => (typeof window === 'undefined' ? '' : window.location.href));
+
+  /** L'echange a-t-il deja eu lieu ? Une reference survit au double montage de React. */
+  const started = useRef(false);
+  /** La fonction courante, sans la mettre en dependance de l'effet. */
+  const complete = useRef(completeCallback);
+  complete.current = completeCallback;
+
   useEffect(() => {
-    if (!configured) return;
-    let cancelled = false;
+    if (!configured || started.current) return;
+    started.current = true;
 
     void (async () => {
-      const result = await completeCallback(window.location.href);
-      if (cancelled) return;
+      const result = await complete.current(href);
       // Nettoye dans tous les cas, y compris en echec : un code brule reste un secret.
       window.history.replaceState(null, '', window.location.pathname);
       setOutcome(result);
     })();
-
-    return () => {
-      cancelled = true;
-    };
-    // `completeCallback` est stable tant que la configuration ne change pas.
-  }, [completeCallback, configured]);
+  }, [configured, href]);
 
   const message =
     outcome === undefined
