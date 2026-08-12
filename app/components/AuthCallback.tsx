@@ -114,17 +114,51 @@ export function AuthCallback() {
             ? t('account.callback.expired')
             : t('account.callback.nothing');
 
+  const entre = outcome?.kind === 'signed_in';
+
   return (
     <div className="space-y-4">
       <p aria-live="polite" className="leading-relaxed">
         {message}
       </p>
-      <Link
-        href={pathIn('/compte', locale)}
-        className="inline-block rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted)"
-      >
-        {t('account.callback.back')}
-      </Link>
+
+      {/**
+       * 🔴 **La derniere marche de l'inscription ne menait nulle part.**
+       *
+       * Mesure au navigateur le 2026-08-12, fenetre 1440 x 900 : `/fr/compte/retour` rendait
+       * **34,9 %** de surface portant quelque chose, avec une bande vide de **528 px** — soit
+       * une phrase, un lien, et les deux tiers de l'ecran en noir. Et le seul lien offert
+       * renvoyait a `/compte`, c'est-a-dire **a la page d'ou l'on venait de partir**.
+       *
+       * Quelqu'un qui vient d'ouvrir un compte n'a pas de question sur son compte : il a une
+       * question sur ce qu'il vient de debloquer. Les trois destinations sont exactement les
+       * trois promesses de `/compte` (`account.gives.*`) — les amis, les listes, et la
+       * bibliotheque qui le suit desormais d'un appareil a l'autre.
+       *
+       * ⚠️ **Seulement en cas de succes.** Sur un echec, proposer trois portes fermees serait
+       * la meme faute que le bouton Google affiche alors que le fournisseur n'existait pas :
+       * on renvoie alors a `/compte`, ou l'on peut redemander un lien — c'est-a-dire au seul
+       * endroit qui serve a quelque chose.
+       */}
+      <div className="flex flex-wrap gap-2">
+        {entre ? (
+          <>
+            <Link href={pathIn('/moi', locale)} className="btn btn-primary">
+              {t('nav.library')}
+            </Link>
+            <Link href={pathIn('/listes', locale)} className="btn">
+              {t('listsPage.title')}
+            </Link>
+            <Link href={pathIn('/amis', locale)} className="btn">
+              {t('friendsPage.title')}
+            </Link>
+          </>
+        ) : (
+          <Link href={pathIn('/compte', locale)} className="btn">
+            {t('account.callback.back')}
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

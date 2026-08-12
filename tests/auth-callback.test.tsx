@@ -162,4 +162,39 @@ describe('le retour du lien', () => {
     expect(await screen.findByText(/signed in|you are in|welcome/i)).toBeDefined();
     expect(screen.queryByText(/nothing to confirm/i)).toBeNull();
   });
+
+  it('🔴 une fois entre, la page mene ailleurs que la ou l on vient de partir', async () => {
+    /*
+     * 🔴 Mesure au navigateur le 2026-08-12 : `/fr/compte/retour` rendait 34,9 % de surface
+     * portant quelque chose, dont **528 px d'un seul tenant vides**, et son unique lien
+     * renvoyait a `/compte` — la page d'ou l'on venait de partir. La derniere marche de
+     * l'inscription ne menait nulle part.
+     *
+     * Les trois destinations sont les trois promesses de `/compte` : les listes, les amis, et
+     * la bibliotheque qui suit desormais d'un appareil a l'autre.
+     */
+    renderCallback({ kind: 'signed_in' }, '/compte/retour?code=abc');
+
+    await waitFor(() => {
+      expect(window.location.search).toBe('');
+    });
+
+    const cibles = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
+    expect(cibles).toContain('/moi');
+    expect(cibles).toContain('/listes');
+    expect(cibles).toContain('/amis');
+  });
+
+  it('un echec ne propose pas trois portes, il renvoie la ou l on peut agir', async () => {
+    // Un bouton qui ne peut pas marcher ne s'affiche pas — meme regle que le bouton Google
+    // du 2026-08-09. Apres un echec, la seule chose utile est de redemander un lien.
+    renderCallback({ kind: 'expired' }, '/compte/retour?code=x');
+
+    await waitFor(() => {
+      expect(window.location.search).toBe('');
+    });
+
+    const cibles = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
+    expect(cibles).toEqual(['/compte']);
+  });
 });

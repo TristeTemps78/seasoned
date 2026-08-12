@@ -322,6 +322,12 @@ it('aucune face ne redessine son en-tete a la main', () => {
     // ecran, pas la tete d'une face. Un `PageHeader` y ajouterait une seconde tete.
     'app/(site)/hors-ligne/page.tsx',
     'app/(site)/serie/[id]/page.tsx',
+    // Le corps **partage** des trois 404. Il porte le `<h1>` de l'ecran introuvable, et il
+    // est precisement ce qui empeche la triplication que cette garde redoute : les trois
+    // fichiers `not-found` doivent rester trois (un seul `<html>` par page), leur contenu
+    // non. L'exempter ici est donc le contraire d'un passe-droit — c'est la seule facon
+    // d'ecrire ce titre **une** fois.
+    'app/components/NotFoundView.tsx',
   ];
 
   /**

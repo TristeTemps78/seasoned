@@ -511,6 +511,8 @@ export const FR = {
   'offline.open': 'Ouvrir ma bibliothèque',
   'notFound.heading': 'Rien ici.',
   'notFound.body': 'Cette série n’existe pas dans le catalogue, ou son identifiant a changé.',
+  'discovery.notFound.title': 'Puisque vous êtes là',
+  'discovery.notFound.subtitle': 'Celles que tout le monde a vues, au cas où vous cherchiez autre chose.',
 
   // --- Recherche -----------------------------------------------------------
   'search.placeholder': 'Chercher une série…',

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { SiteChrome, siteMetadata, siteViewport } from '@/app/components/SiteChrome';
 import { MessagesEn } from '@/app/i18n/MessagesEn';
-import { SearchForm } from '@/app/components/SearchForm';
+import { NotFoundView } from '@/app/components/NotFoundView';
 import { DEFAULT_LOCALE, t } from '@/lib/i18n';
 import './globals.css';
 
@@ -53,13 +53,9 @@ export const viewport = siteViewport;
 export default function GlobalNotFound() {
   return (
     <SiteChrome locale={DEFAULT_LOCALE} Messages={MessagesEn}>
-      {/* La meme forme que les deux 404 de segment : le titre, la phrase, et le champ qui
-          repare la faute de frappe. Un ecran vide dit quoi faire — regle 4. */}
-      <div className="mx-auto max-w-2xl py-12 space-y-6">
-        <h1 className="page-title">{t(DEFAULT_LOCALE, 'notFound.heading')}</h1>
-        <p className="text-(--color-muted)">{t(DEFAULT_LOCALE, 'notFound.body')}</p>
-        <SearchForm locale={DEFAULT_LOCALE} />
-      </div>
+      {/* Exactement le meme corps que les deux 404 de segment — c'est tout l'objet de
+          `NotFoundView`. Un ecran vide dit quoi faire, et montre de quoi y repondre. */}
+      <NotFoundView locale={DEFAULT_LOCALE} />
     </SiteChrome>
   );
 }

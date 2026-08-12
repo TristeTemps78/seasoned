@@ -435,6 +435,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'offline.open': 'Open my library',
   'notFound.heading': 'Nothing here.',
   'notFound.body': 'This series is not in the catalogue, or its identifier has changed.',
+  'discovery.notFound.title': 'While you are here',
+  'discovery.notFound.subtitle': 'The ones everyone has seen, in case you were after something else.',
 
   'search.placeholder': 'Search for a series…',
   'search.submit': 'Search',

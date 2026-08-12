@@ -63,7 +63,26 @@ export function Agenda() {
             <h2 className="row-title">
               {t(labelKey)}
             </h2>
-            <ul className="divide-y divide-(--color-edge-quiet)">
+            {/**
+             * 🔴 **712 px entre une serie et sa date, sur la page qui existe pour les
+             * apparier.** Mesure au navigateur le 2026-08-12, fenetre 1440 :
+             *
+             *     ligne             x 160 → 1280   (1 120 px)
+             *     « The Simpsons »  x 240 → 346
+             *     « 27 septembre »  x 1058
+             *
+             * La liste heritait de la largeur de la colonne — celle qui porte des rangees
+             * d'affiches —, et son `justify-between` envoyait donc les deux moities du
+             * message aux deux bouts de l'ecran. C'est la meme mesure que la feuille applique
+             * deja au texte (*« une phrase sur 1 248 px ne se lit pas »*), et elle vaut pour
+             * une ligne de donnees autant que pour une phrase : l'oeil doit relier les deux,
+             * pas les chercher.
+             *
+             * ⚠️ Le titre de la bande, lui, garde toute la largeur : c'est son filet qui
+             * traverse la page et qui tient le rythme des autres faces. Seule la **liste** se
+             * borne.
+             */}
+            <ul className="max-w-3xl divide-y divide-(--color-edge-quiet)">
               {episodes.map((episode) => (
                 <Row
                   key={episode.key}
@@ -141,9 +160,22 @@ function Row({ episode, now, posterPath }: {
         <Poster path={posterPath} title={episode.title} size="w185" />
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-1">
         {title}
-        <span className="flex items-baseline gap-3">
+        {/* ⚠️ **Quel** episode revient, et il manquait. La ligne disait « The Simpsons » et
+            une date : de quoi noter le jour, pas de quoi savoir si c'est la reprise d'une
+            saison ou son avant-dernier episode. Le code vit deja en clair dans quatre autres
+            composants (`LibraryCard`, `EpisodeGrid`, la fiche serie) — ce n'est pas une
+            phrase a traduire, c'est une coordonnee. */}
+        {episode.seasonNumber !== undefined && episode.episodeNumber !== undefined ? (
+          <span className="numeric meta-sm">
+            S{episode.seasonNumber}E{episode.episodeNumber}
+          </span>
+        ) : null}
+        {/* `ml-auto` et non `justify-between` sur le parent : avec un troisieme element, ce
+            dernier repartissait les trois a intervalles egaux au lieu de tenir la date a
+            droite. */}
+        <span className="ml-auto flex items-baseline gap-3">
           <span className="meta">
             {formatDate(episode.airsOn, locale)}
           </span>
