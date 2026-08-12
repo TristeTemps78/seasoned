@@ -119,6 +119,26 @@
   .quiet-action:hover {
     color: var(--color-text);
   }
+  /**
+   * 🔴 **18 px de haut sur un telephone, et l'une d'elles supprime une liste.**
+   *
+   * Mesure au navigateur le 2026-08-12, `/fr/bilan` en 375 px : `button.quiet-action`
+   * (« Masquer ce chiffre ») rend **103 x 18**. Les quatre emplois de cette classe sont des
+   * gestes discrets — masquer un chiffre, ne plus suivre quelqu'un, **supprimer une liste**,
+   * qui est irreversible (la cascade est dans le SQL). Discret veut dire *peu voyant*, pas
+   * *difficile a atteindre*.
+   *
+   * ⚠️ La cible grandit, **le dessin ne bouge pas** : le rembourrage vertical est exactement
+   * compense par une marge negative, donc la ligne garde sa hauteur et l'aspect « lien en
+   * pointilles » reste intact. C'est la seule facon d'agrandir une cible sans defaire ce que
+   * la classe existe pour obtenir.
+   */
+  @media (width < 40rem) {
+    .quiet-action {
+      padding-block: 0.4375rem;
+      margin-block: -0.4375rem;
+    }
+  }
   /** Le champ de saisie — **le seul element qui s'enfonce** : meme lumiere venue d'en haut
       que les surfaces et les boutons, mais recue en dedans. ⚠️ L'anneau de focus est
       **volt** : il etait vert par endroits, la couleur qui signifie « en diffusion ». */
@@ -205,6 +225,61 @@
     .grid-cell {
       height: 2rem;
       width: 2rem;
+    }
+  }
+
+  /**
+   * =============================================================================
+   * 🔴 L'ETOILE FAISAIT 20 PX, DONC LA VRAIE CIBLE EN FAISAIT DIX
+   * =============================================================================
+   *
+   * Mesure au navigateur le 2026-08-12, sur `/fr/serie/1396`, fenetre de 375 px :
+   *
+   *     .relative.h-5.w-5           20 x 20     l'etoile dessinee
+   *     button.absolute.w-1/2       10 x 20     la zone qu'on touche — il y en a 50 sur la page
+   *
+   * Une note se prend en demi-crans, donc **la cible n'est pas l'etoile, c'est sa moitie**.
+   * Dix pixels de large sur un telephone, pour le geste que le modele de notation designe
+   * comme celui qui doit couter *« un tap, pas un formulaire »* : c'est la moitie de la
+   * hauteur minimale recommandee, dans l'autre sens.
+   *
+   * ⚠️ C'est **exactement le defaut deja corrige juste au-dessus** pour `.grid-cell`, et il
+   * avait survecu parce qu'il etait ecrit en utilitaires (`h-5 w-5`) dans le JSX plutot qu'en
+   * classe : rien ne reliait les deux, et la mesure qui a fait passer les cases d'episode de
+   * 20 a 32 px n'a jamais regarde les etoiles a cote.
+   *
+   * ## 48 px, et le seuil est atteint pour de bon
+   *
+   * A 48, chaque moitie fait **24 x 48** — le minimum de la regle, atteint et non approche.
+   * Cinq etoiles occupent 240 px sur les 343 utiles d'un telephone : c'est beaucoup, et c'est
+   * assume. Cet ecran existe pour recueillir une note ; le reste de la ligne (le libelle de
+   * saison, le bouton d'ecriture) passe a la ligne suivante, ce que son `flex-wrap` fait
+   * deja.
+   *
+   * ⚠️ **Les deux tailles se rejoignent sous 640 px**, et c'est une decision et non un
+   * raccourci : `sm` existe pour qu'une notation d'episode se fasse discrete a cote d'une
+   * autre, ce qui est un arbitrage de bureau. Un telephone n'a pas de place pour une version
+   * discrete d'une cible tactile — il n'a que la place de la bonne taille.
+   *
+   * ⚠️ **Au-dessus de 640 px la moitie reste a 10 px, et ce n'est pas un oubli.** C'est le
+   * meme arbitrage que `.grid-cell`, qui garde ses 20 px sur un bureau : la cible y est
+   * pointee au pixel pres, et le demi-cran pris sur la moitie gauche est la convention que
+   * les gens connaissent deja. Le jour ou une mesure montre que ca rate a la souris, c'est
+   * ici que ca se change — et pour les deux classes, pas pour une.
+   */
+  .star-box {
+    height: 1.25rem;
+    width: 1.25rem;
+  }
+  .star-box-sm {
+    height: 1rem;
+    width: 1rem;
+  }
+  @media (width < 40rem) {
+    .star-box,
+    .star-box-sm {
+      height: 3rem;
+      width: 3rem;
     }
   }
 

@@ -172,7 +172,14 @@ export function TrajectorySection({
             {hidden > 0 ? t('traj.seeMore') : t('traj.seeAll')}
           </span>
           <span className="hidden group-open:inline">{t('traj.srTitle')}</span>
-          <span className="ml-2 font-normal text-(--color-muted)">{t('traj.warning')}</span>
+          {/* 🔴 **Les deux libelles etaient colles, et pas seulement a l'oeil.** Releve au
+              navigateur le 2026-08-12 en lisant le texte rendu : « Voir la trajectoire saison
+              par saisoncontient un jugement sur les saisons suivantes ». `ml-2` est une marge,
+              donc elle separe le dessin et **rien d'autre** : le contenu textuel, lui, n'a
+              jamais eu d'espace, et c'est ce que lit un lecteur d'ecran. Le tiret cadratin
+              repare les deux d'un coup — il pose l'espace qui manquait et il empeche l'aparte
+              de se lire comme la suite de la phrase. */}
+          <span className="ml-2 font-normal text-(--color-muted)">— {t('traj.warning')}</span>
         </summary>
 
         <div className="border-t border-(--color-edge) px-4 py-5">

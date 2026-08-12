@@ -28,7 +28,11 @@ export function StarRating({ value, onChange, label, size = 'md' }: {
   readonly size?: 'sm' | 'md';
 }) {
   const { t, n } = useT();
-  const box = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
+  // ⚠️ Une classe et non deux utilitaires : la taille de l'etoile decide de celle de la
+  // **cible**, qui est sa moitie, et cette cible doit grossir sur un telephone. Ecrite en
+  // `h-5 w-5` dans le JSX, la regle etait invisible a cote de `.grid-cell`, qui avait
+  // pourtant deja mesure et corrige le meme defaut. Voir `controls.css`.
+  const box = size === 'sm' ? 'star-box-sm' : 'star-box';
 
   return (
     <div
