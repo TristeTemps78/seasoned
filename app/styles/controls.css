@@ -207,4 +207,63 @@
       width: 2rem;
     }
   }
+
+  /**
+   * =============================================================================
+   * LE RUBAN DES FACES — quatre faces sur six etaient invisibles
+   * =============================================================================
+   *
+   * 🔴 Mesure sur la production le 2026-08-12, fenetre de 390 px : la barre affichait
+   * « DISCOVER », puis « MY LIBRAR » **coupe au milieu du mot**, et rien d'autre. Le ruban
+   * defilait — mais un telephone n'affiche aucune barre de defilement tant qu'on ne l'a pas
+   * touche. Rien ne disait qu'il restait quatre faces a droite.
+   *
+   * ⚠️ La barre est masquee **ici comme sur `.rail`**, et pour la meme raison : sur un ruban
+   * horizontal, une barre de defilement traverserait la ligne de l'en-tete. Ce qui etait
+   * fautif n'est pas de la masquer, c'est de n'avoir rien mis a la place. C'est aussi
+   * pourquoi ce bloc ne tombe pas sous la garde de `layout-collisions` : elle ne vise que le
+   * defilement **vertical**, ou la barre est le seul indice possible.
+   *
+   * Le fondu suit `data-fade`, pose par mesure et non par point de rupture — voir `Faces`.
+   */
+  .face-rail {
+    /* ⚠️ `overflow-x` vit **ici** et non en utilitaire sur l'element : la garde de
+       `layout-collisions` lit la feuille, et une barre masquee dont le sens de defilement
+       est declare ailleurs lui est indistinguable d'une barre verticale masquee — c'est-a-
+       dire du defaut n°3, qui a cache 566 px de contenu. Les deux declarations doivent se
+       lire dans le meme bloc pour que la regle soit verifiable. */
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+  }
+
+  .face-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .face-rail[data-fade='right'] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  }
+
+  .face-rail[data-fade='left'] {
+    mask-image: linear-gradient(to left, #000 calc(100% - 2rem), transparent);
+  }
+
+  .face-rail[data-fade='both'] {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 2rem,
+      #000 calc(100% - 2rem),
+      transparent
+    );
+  }
+
+  /* ⚠️ Le defilement anime est un confort, pas une information : quelqu'un qui a demande
+     moins de mouvement recoit le meme saut, instantane. */
+  @media (prefers-reduced-motion: reduce) {
+    .face-rail {
+      scroll-behavior: auto;
+    }
+  }
 }

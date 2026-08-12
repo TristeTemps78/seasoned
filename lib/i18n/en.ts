@@ -383,6 +383,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'discovery.tally.subtitle': 'Rate it, and the tally has something to measure.',
   'discovery.lists.title': 'Enough to start a list',
   'discovery.lists.subtitle': 'A list is a handful of series and a reason to put them together.',
+  'discovery.friends.title': 'What people are watching',
+  'discovery.friends.subtitle': 'Until you follow anyone, here is the public version.',
+  'discovery.search.title': 'While you decide',
+  'discovery.search.subtitle': 'The ones people keep coming back to.',
 
   'safety.title': 'These notes live in this browser only',
   'safety.body':

@@ -120,10 +120,16 @@ export function SiteChrome({ locale, Messages, children }: {
                 est pas une. Un reglage se range avec les reglages. */}
             <Link
               href={pathIn('/compte', locale)}
+              // ⚠️ Le libelle disparait sous 640 px, l'icone reste — meme arbitrage que le
+              // mot « VOLTFACE » a cote du cube, et pour la meme raison mesuree le
+              // 2026-08-12 : il volait 60 px au ruban d'onglets, sur les 390 px d'un
+              // telephone. L'icone reste seule mais reste **nommee**, sinon on remplace un
+              // mot coupe par un pictogramme muet.
               className="flex shrink-0 items-center gap-1.5 meta-sm hover:text-(--color-text)"
             >
               <Icon name="user" />
-              {t(locale, 'account.nav')}
+              <span className="hidden sm:inline">{t(locale, 'account.nav')}</span>
+              <span className="sr-only sm:hidden">{t(locale, 'account.nav')}</span>
             </Link>
             <LanguagePicker />
           </div>

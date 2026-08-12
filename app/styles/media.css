@@ -307,6 +307,44 @@
 
   /**
    * =============================================================================
+   * LA COLONNE QUI VOUS APPARTIENT — collante, et cette fois sans rien cacher
+   * =============================================================================
+   *
+   * 🔴 Mesure le 2026-08-12 sur `/serie/1396`, fenetre de 1440 px : cette colonne rend
+   * **environ 300 px** de contenu — cinq boutons — a cote d'une colonne principale de
+   * 3 076 px. Soit **plus de 2 700 px** pendant lesquels la moitie gauche de l'ecran est
+   * vide, et pendant lesquels « ou j'en suis » — le seul geste que la page existe pour
+   * recueillir — n'est plus atteignable sans remonter.
+   *
+   * ## ⚠️ Pourquoi ce n'est PAS le retour du defaut n°3
+   *
+   * Cette colonne a deja ete collante, et ca a coute cher : `max-height: calc(100vh - 6rem)`
+   * + `overflow-y: auto` + **`scrollbar-width: none`** avaient mis 566 px de contenu hors
+   * de vue sans rien pour le dire. C'est la troisieme declaration qui etait fautive, pas les
+   * deux premieres — une colonne qui defile et le montre est honnete, une colonne qui defile
+   * en silence perd son contenu.
+   *
+   * La barre reste donc **visible**, et `layout-collisions` le verifie : masquer celle-ci
+   * ferait echouer la garde qui existe pour ce defaut precis.
+   *
+   * ## ⚠️ Et seulement a partir de 64 rem
+   *
+   * En dessous, `.series-split` retombe en une colonne : coller un bloc en tete d'une pile
+   * verticale le ferait flotter par-dessus le reste de la page. C'est le meme seuil que la
+   * grille, et il n'y en a qu'un.
+   */
+  @media (width >= 64rem) {
+    .series-aside {
+      position: sticky;
+      /* La hauteur de l'en-tete colle, plus l'air qui la separe du contenu. */
+      top: 5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+    }
+  }
+
+  /**
+   * =============================================================================
    * 🔴 CE QUE LA SERIE VOUS DEMANDE — quatre tuiles de 64 px de large
    * =============================================================================
    *

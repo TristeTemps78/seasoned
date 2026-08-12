@@ -69,9 +69,13 @@ it('aucune boite ne cache verticalement sa barre de defilement', () => {
    */
   const masquees = blocks().filter(({ body }) => /scrollbar-width:\s*none/.test(body));
 
-  // Ancrage : un test qui n'examine aucun bloc passe pour la pire des raisons. Il y a bien
-  // une barre masquee dans cette feuille, et c'est celle du rail — la seule permise.
-  expect(masquees.map(({ selector }) => selector)).toEqual(['.rail']);
+  // Ancrage : un test qui n'examine aucun bloc passe pour la pire des raisons. Les deux
+  // barres masquees de cette feuille sont des rubans **horizontaux** — les affiches, et les
+  // faces dans l'en-tete depuis le 2026-08-12. Cette liste est exhaustive a dessein : une
+  // troisieme barre masquee doit venir se justifier ici.
+  // Trie : l'ordre est celui des feuilles concatenees, et une garde ne doit pas tomber parce
+  // qu'un fichier de style a change de rang dans l'import.
+  expect(masquees.map(({ selector }) => selector).sort()).toEqual(['.face-rail', '.rail']);
 
   const fautes = masquees
     .filter(({ body }) => !/overflow-x:\s*(?:auto|scroll)/.test(body))

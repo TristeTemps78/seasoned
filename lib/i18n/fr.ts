@@ -450,6 +450,10 @@ export const FR = {
   'discovery.lists.title': 'De quoi commencer une liste',
   'discovery.lists.subtitle':
     'Une liste, c’est une poignée de séries et une raison de les mettre ensemble.',
+  'discovery.friends.title': 'Ce que les gens regardent',
+  'discovery.friends.subtitle': 'En attendant que vous suiviez quelqu’un, voici la version publique.',
+  'discovery.search.title': 'Le temps de choisir',
+  'discovery.search.subtitle': 'Celles sur lesquelles on revient.',
 
   'safety.title': 'Ces notes ne vivent que dans ce navigateur',
   'safety.body':

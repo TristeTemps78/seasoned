@@ -3,6 +3,9 @@ import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { legalIsComplete } from '@/lib/legal';
 import { Friends } from '@/app/components/Friends';
 import { PageHeader } from '@/app/components/PageHeader';
+import { FaceDiscovery } from '@/app/components/FaceDiscovery';
+import { PosterRail } from '@/app/components/PosterRail';
+import { discover } from '@/lib/catalog';
 
 /**
  * La face « Mes amis » — la premiere qui montre le contenu de quelqu'un d'autre.
@@ -21,6 +24,9 @@ import { PageHeader } from '@/app/components/PageHeader';
  */
 export const dynamic = 'force-static';
 
+/** Un rendu par jour pour la rangee de decouverte — voir `/calendrier`. */
+export const revalidate = 86_400;
+
 export function friendsMetadata(locale: Locale): Metadata {
   return {
     title: t(locale, 'friendsPage.title'),
@@ -31,7 +37,13 @@ export function friendsMetadata(locale: Locale): Metadata {
 
 export const metadata: Metadata = friendsMetadata(DEFAULT_LOCALE);
 
-export function FriendsView({ locale }: { readonly locale: Locale }) {
+export async function FriendsView({ locale }: { readonly locale: Locale }) {
+  // ⚠️ `trending` **page 3** — les pages 1 et 2 nourrissent l'accueil et les listes. Et c'est
+  // la source qui va a cette face : « ce que les gens regardent en ce moment » est
+  // exactement ce que mesure une tendance. Sans compte, la face promet le contenu des
+  // autres et n'en montrait aucun ; elle en montre au moins la version publique.
+  const watched = await discover('trending', 3, locale);
+
   return (
     // ⚠️ Pas de conteneur ici : `<main>` porte deja la largeur et les marges de toutes
     // les pages. En ajouter un second decalait cet ecran par rapport aux quatre autres —
@@ -45,6 +57,15 @@ export function FriendsView({ locale }: { readonly locale: Locale }) {
           {t(locale, 'legal.incomplete.body')}
         </p>
       )}
+
+      <FaceDiscovery>
+        <PosterRail
+          title={t(locale, 'discovery.friends.title')}
+          subtitle={t(locale, 'discovery.friends.subtitle')}
+          series={watched.slice(0, 12).map((summary) => ({ summary }))}
+          locale={locale}
+        />
+      </FaceDiscovery>
     </div>
   );
 }

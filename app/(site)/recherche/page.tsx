@@ -13,6 +13,8 @@ const HYDRATED_RESULTS = 8;
 import { SearchForm } from '@/app/components/SearchForm';
 import { PageHeader } from '@/app/components/PageHeader';
 import { SeriesCard } from '@/app/components/SeriesCard';
+import { PosterRail } from '@/app/components/PosterRail';
+import { discover } from '@/lib/catalog';
 
 interface PageProps {
   readonly searchParams: Promise<{ readonly q?: string }>;
@@ -54,6 +56,14 @@ export async function SearchView({ query, locale }: {
   let results: readonly SeriesWithStatus[] = [];
   let total = 0;
   let unavailable = false;
+
+  // ⚠️ **Seulement sans requete**, et c'est ce qui rend le cout nul : des qu'on cherche
+  // quelque chose, cet appel n'a pas lieu. Sur la page vide, il traverse le meme cache que
+  // partout ailleurs (`throughDiscover`, memoise par TTL), donc il ne coute pas une requete
+  // TMDB par visite mais une par periode — comme les recherches repetees plus bas.
+  const suggestions =
+    query.length === 0 ? (await discover('popular', 3, locale)).slice(0, 12) : [];
+
   if (query.length > 0) {
     try {
       const found = await searchSeries(query, locale);
@@ -92,7 +102,29 @@ export async function SearchView({ query, locale }: {
       </PageHeader>
 
       {query.length === 0 ? (
-        <p className="text-(--color-muted)">{t(locale, 'search.prompt')}</p>
+        /*
+         * 🔴 **Le pire ecran du site, mesure le 2026-08-12** : un titre, un champ, cette
+         * phrase, puis **660 px de noir** jusqu'au pied de page. 0 % d'image sur une page
+         * dont le sujet est de trouver une serie.
+         *
+         * La phrase reste — elle dit quoi faire, et c'est la regle 4. Ce qui manquait n'est
+         * pas une explication, c'est de la matiere a cliquer : un champ vide ne donne aucune
+         * prise a qui ne sait pas encore quoi chercher.
+         *
+         * ⚠️ **Aucune condition sur le journal ici**, contrairement aux cinq faces. Une
+         * recherche sans requete est vide pour tout le monde, y compris pour qui a deja
+         * trois cents series — la rangee n'est donc pas un rattrapage de premier jour mais
+         * l'etat normal de cette page.
+         */
+        <>
+          <p className="text-(--color-muted)">{t(locale, 'search.prompt')}</p>
+          <PosterRail
+            title={t(locale, 'discovery.search.title')}
+            subtitle={t(locale, 'discovery.search.subtitle')}
+            series={suggestions.map((summary) => ({ summary }))}
+            locale={locale}
+          />
+        </>
       ) : unavailable ? (
         <p className="text-(--color-warn)">{t(locale, 'search.unavailable')}</p>
       ) : results.length === 0 ? (
