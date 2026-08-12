@@ -50,15 +50,15 @@ export async function FriendsView({ locale }: { readonly locale: Locale }) {
     // un demi-centimetre que personne ne sait nommer et que tout le monde voit.
     <div className="space-y-8">
       <PageHeader title={t(locale, 'friendsPage.title')} lede={t(locale, 'friendsPage.lede')} />
-      {legalIsComplete() ? (
-        <Friends />
-      ) : (
-        <p className="max-w-prose rounded-lg border border-(--color-warn)/40 px-4 py-4 leading-relaxed text-(--color-muted)">
-          {t(locale, 'legal.incomplete.body')}
-        </p>
-      )}
 
-      <FaceDiscovery>
+      {/* ⚠️ **Avant la porte, et pas apres.** Deux raisons mesurees le 2026-08-12 :
+          `gate="account"` — ce qui vide cette face n'est pas le journal mais l'absence de
+          compte, donc la rangee restait cachee des la premiere serie suivie ; et **au-dessus**
+          de `Friends`, parce que posee en dernier elle commencait a `y = 887` sur une fenetre de
+          900 : la face montrait douze affiches que personne ne voyait sans defiler, et son
+          premier ecran restait un cartouche de 512 px dans 1 120. Montrer d'abord, demander
+          ensuite. */}
+      <FaceDiscovery gate="account">
         <PosterRail
           title={t(locale, 'discovery.friends.title')}
           subtitle={t(locale, 'discovery.friends.subtitle')}
@@ -66,6 +66,14 @@ export async function FriendsView({ locale }: { readonly locale: Locale }) {
           locale={locale}
         />
       </FaceDiscovery>
+
+      {legalIsComplete() ? (
+        <Friends />
+      ) : (
+        <p className="max-w-prose rounded-lg border border-(--color-warn)/40 px-4 py-4 leading-relaxed text-(--color-muted)">
+          {t(locale, 'legal.incomplete.body')}
+        </p>
+      )}
     </div>
   );
 }

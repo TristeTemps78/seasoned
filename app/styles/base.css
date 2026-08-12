@@ -49,6 +49,40 @@
 
 html {
   color-scheme: dark;
+
+  /**
+   * 🔴 **Le produit defilait de 7,5 px sur le cote, sur toutes les pages qui portent une
+   * bande** — mesure au navigateur le 2026-08-12, fenetre 1280 :
+   *
+   *     scrollTo(9999, 0)  →  scrollX  7.5
+   *     .bleed             →  left -7.5, right 1272.5, pour un `documentElement` de 1265
+   *
+   * La cause est arithmetique et non accidentelle : `.bleed`, `.show-backdrop` et
+   * `.face-hero` sortent de la colonne par `calc(50% - 50vw)`, et **`vw` compte la barre de
+   * defilement**. Une bande fait donc toujours 100vw pour une zone visible de `100vw - 15px`,
+   * et deborde de la moitie de la barre de chaque cote. C'est voulu a gauche comme a droite —
+   * une bande va d'un bord a l'autre — mais ca ne doit pas rendre la **fenetre** defilable.
+   *
+   * ⚠️ **Le commentaire de `body` disait exactement l'inverse, et il etait faux.** Il
+   * affirmait : *« sur `body` et pas sur `html` : verifie au navigateur le 2026-08-10,
+   * `overflow: clip` ne se propage pas a la fenetre comme `hidden` le ferait — pose sur
+   * `html` la regle etait inerte »*. Remesure le 2026-08-12, les quatre combinaisons, sur la
+   * meme page :
+   *
+   *     html —      body clip   →  scrollX  7.5     (l'etat qu'on croyait corrige)
+   *     html clip   body clip   →  scrollX  0
+   *     html clip   body —      →  scrollX  0
+   *     html hidden body clip   →  scrollX  0
+   *
+   * C'est `html` qui tranche, et `body` seul qui etait inerte. La declaration de `body` reste
+   * quand meme : elle clot les bandes a l'interieur du document, la ou celle-ci clot la
+   * fenetre.
+   *
+   * ⚠️ `clip` et non `hidden` : `hidden` sur `html` ferait de la fenetre un conteneur de
+   * defilement et **casserait le `sticky` de l'en-tete** — verifie apres coup, la barre colle
+   * toujours.
+   */
+  overflow-x: clip;
 }
 
 body {
@@ -60,9 +94,10 @@ body {
      pleine largeur depasse la zone visible de ~15 px. `clip` et non `hidden`, qui se
      propagerait a la fenetre et casserait le `sticky` de l'en-tete.
 
-     ⚠️ Sur `body` et **pas** sur `html` : verifie au navigateur le 2026-08-10, `overflow:
-     clip` ne se propage pas a la fenetre comme `hidden` le ferait — pose sur `html` la regle
-     etait inerte, le defilement horizontal restait possible. */
+     ⚠️ **Elle ne suffit pas seule** : mesure le 2026-08-12, cette declaration laissait la
+     fenetre defiler de 7,5 px. C'est `html` qui l'en empeche — voir le releve des quatre
+     combinaisons, plus haut. Les deux se gardent : celle-ci clot le document, celle de `html`
+     clot la fenetre. */
   overflow-x: clip;
 
   /*
@@ -145,34 +180,63 @@ body::before {
  * Le liseré superieur est ce qui distingue une carte cyberpunk d'une carte sombre : un
  * seul trait lumineux, en haut, qui s'allume au survol. Rien d'autre ne bouge — pas
  * d'echelle, pas d'ombre portee, pour que le regard reste sur les affiches.
+ *
+ * =============================================================================
+ * 🔴 CE BLOC N'ETAIT DANS AUCUNE COUCHE — ET IL DECOLLAIT L'EN-TETE DU SITE
+ * =============================================================================
+ *
+ * Mesure au navigateur le 2026-08-12, sur `/fr`, fenetre 1440 x 900 :
+ *
+ *     header.classList                     "… sticky top-0 z-20 edge-lit"
+ *     getComputedStyle(header).position    "relative"
+ *     header.top a scrollY=0               0
+ *     header.top a scrollY=600             -600      → elle s'en va avec la page
+ *
+ * `position: relative` ecrit ici **gagnait sur l'utilitaire `sticky`** de l'en-tete. Pas par
+ * specificite — les deux sont une classe — mais parce que ce bloc etait **hors couche** :
+ * en CSS, tout ce qui n'est declare dans aucun `@layer` bat tout ce qui est declare dans un,
+ * quelle que soit la specificite. Les utilitaires de Tailwind vivent dans `@layer utilities`,
+ * donc `.edge-lit` les battait tous — silencieusement, et pour n'importe quelle propriete
+ * qu'il aurait declaree.
+ *
+ * ⚠️ La barre de navigation ne collait donc **sur aucune page**, alors que trois commentaires
+ * du depot decrivent ce qu'elle floute en remontant dessous (`.show-hero`, `.face-hero`,
+ * `.series-aside` et son `top: 5rem`). Personne ne pouvait le voir en relisant le CSS : la
+ * regle est juste, l'utilitaire est juste, c'est leur **rang de couche** qui tranchait.
+ *
+ * La couche `components` le remet a sa place : il garde son effet partout ou l'element ne
+ * declare rien (les `.card panel-lit`, qui n'ont pas d'utilitaire de position), et cede a
+ * l'element qui, lui, a demande autre chose.
  */
-.edge-lit,
-.panel-lit {
-  position: relative;
-  isolation: isolate;
-}
+@layer components {
+  .edge-lit,
+  .panel-lit {
+    position: relative;
+    isolation: isolate;
+  }
 
-.edge-lit::before,
-.panel-lit::before {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklab, var(--color-volt) 60%, transparent),
-    transparent
-  );
-  opacity: 0.35;
-  transition: opacity 200ms ease;
-  pointer-events: none;
-}
+  .edge-lit::before,
+  .panel-lit::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--color-volt) 60%, transparent),
+      transparent
+    );
+    opacity: 0.35;
+    transition: opacity 200ms ease;
+    pointer-events: none;
+  }
 
-.edge-lit:hover::before,
-.panel-lit:hover::before {
-  opacity: 1;
+  .edge-lit:hover::before,
+  .panel-lit:hover::before {
+    opacity: 1;
+  }
 }
 
 

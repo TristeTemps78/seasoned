@@ -198,8 +198,26 @@ export async function SeriesView({ id, locale }: {
     numberOfEpisodes: episodeCount,
   };
 
+  /*
+   * 🔴 **`space-y-10` a fait exactement au parent ce qu'il avait fait a l'enfant.** Mesure au
+   * DOM le 2026-08-12, sur `/fr/serie/1396` :
+   *
+   *     article.space-y-10 > enfants   margin-block-start  0px   (tous, le PREMIER compris)
+   *     .show-hero                     margin-top          0px   au lieu de -2rem
+   *
+   * L'utilitaire de Tailwind 4 ne pose pas son espacement sur « chaque enfant suivant » : il
+   * pose `margin-block-start: 0` **et** `margin-block-end` sur chaque enfant sauf le dernier.
+   * Le premier enfant est donc remis a zero lui aussi — et `.show-hero`, cree le 2026-08-11
+   * precisement pour sortir `.show-header-overlap` de ce piege, y est tombe a son tour, un
+   * niveau plus haut. Le `-2rem` qui doit faire partir la banniere sous la barre translucide
+   * n'avait jamais ete rendu.
+   *
+   * `gap` et non `space-y` : un ecart de disposition ne se negocie pas avec les marges des
+   * enfants, donc il n'y a plus rien a ecraser. C'est la meme correction structurelle qu'au
+   * 2026-08-11, portee cette fois au bon niveau.
+   */
   return (
-    <article className="space-y-10">
+    <article className="flex flex-col gap-10">
       <script
         type="application/ld+json"
         // ⚠️ `serializeJsonLd` et non `JSON.stringify` : ce dernier n'echappe pas `<`,

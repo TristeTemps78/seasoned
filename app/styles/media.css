@@ -455,6 +455,36 @@
   }
 
   /**
+   * =============================================================================
+   * 🔴 LES DEUX HEROS MORDAIENT DANS LE BANDEAU DU JOURNAL
+   * =============================================================================
+   *
+   * Les deux remontees ci-dessus (`.show-hero`, `.face-hero`) partent du meme postulat : au-
+   * dessus d'elles il n'y a que la barre de navigation, translucide, qui les floute. Le `-2rem`
+   * annule le `py-8` de `<main>` pour qu'elles la touchent.
+   *
+   * Ce postulat est faux des que `JournalSync` rend son bandeau — c'est-a-dire pour **toute
+   * personne qui a deja note quelque chose**, donc la majorite des visites au-dela de la
+   * premiere. Mesure au navigateur le 2026-08-12 sur `/fr/bilan`, fenetre 1440 x 900 :
+   *
+   *     aside (le bandeau)   y  83 → 196
+   *     .face-hero           y 188 → 412
+   *     → 8 px de cartouche gris POSES sur la bande d'affiches
+   *
+   * Une remontee n'a de sens que s'il y a quelque chose sous quoi passer. Quand le bandeau est
+   * la, elle n'a plus de barre a border : elle mord dans une carte.
+   *
+   * ⚠️ `main > aside` est le seul element qui puisse preceder un hero — c'est le bandeau, et
+   * il n'y en a qu'un. Ecrit en `:has()` sur le parent plutot qu'en `:first-child` sur chaque
+   * chaine : les deux heros ne sont pas a la meme profondeur (`article > .show-hero` d'un cote,
+   * `div > .face-hero-wrap > .face-hero` de l'autre), donc la forme positive demanderait une
+   * regle par page et en oublierait une a la prochaine.
+   */
+  main:has(> aside) :is(.show-hero, .face-hero) {
+    margin-top: 0;
+  }
+
+  /**
    * L'en-tete qui mord dans la bande.
    *
    * ⚠️ Le chevauchement n'est pose **que** s'il y a une banniere (`.show-header-overlap`) :

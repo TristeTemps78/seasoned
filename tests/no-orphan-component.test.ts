@@ -55,7 +55,13 @@ const FILES = filesUnder('app').map((file) => ({ path: pathOf(file), code: codeO
  * Ce ne sont pas des oublis tolerés : ce sont des composants que **Next monte lui-meme**,
  * par convention de nom de fichier. Aucun code du depot ne les reference, et c'est normal.
  */
-const MOUNTED_BY_THE_FRAMEWORK = /(^|\/)(page|layout|not-found|error|loading|template)\.tsx$/;
+/**
+ * ⚠️ `global-not-found` s'ajoute a la liste le 2026-08-12, et c'est bien la meme famille : Next
+ * le monte lui-meme pour une adresse qui ne correspond a **aucune** route — cas qu'aucune des
+ * deux `not-found.tsx` ne couvre, faute de segment ou entrer.
+ */
+const MOUNTED_BY_THE_FRAMEWORK =
+  /(^|\/)(page|layout|not-found|global-not-found|error|loading|template)\.tsx$/;
 
 it('tout composant de app/ est monte quelque part', () => {
   const orphans = FILES.filter(({ path }) => !MOUNTED_BY_THE_FRAMEWORK.test(path)).flatMap(

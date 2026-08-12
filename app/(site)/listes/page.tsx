@@ -38,9 +38,11 @@ export async function ListsView({ locale }: { readonly locale: Locale }) {
   return (
     <div className="space-y-8">
       <PageHeader title={t(locale, 'listsPage.title')} lede={t(locale, 'listsPage.intro')} />
-      <Lists />
 
-      <FaceDiscovery>
+      {/* ⚠️ Meme place et meme condition que sur `/amis`, pour la meme mesure : cette face est
+          fermee par le **compte** et non par le journal, et la rangee posee en dernier tombait
+          sous le pli. Voir `FaceDiscovery`. */}
+      <FaceDiscovery gate="account">
         <PosterRail
           title={t(locale, 'discovery.lists.title')}
           subtitle={t(locale, 'discovery.lists.subtitle')}
@@ -48,6 +50,8 @@ export async function ListsView({ locale }: { readonly locale: Locale }) {
           locale={locale}
         />
       </FaceDiscovery>
+
+      <Lists />
     </div>
   );
 }

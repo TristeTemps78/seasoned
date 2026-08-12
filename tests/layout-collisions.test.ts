@@ -54,6 +54,77 @@ function blocks(): readonly { readonly selector: string; readonly body: string }
   }));
 }
 
+/**
+ * Ce qui reste de la feuille une fois **toutes les couches retirees**.
+ *
+ * ⚠️ `blocks()` ne peut pas servir ici : sa regex ne capture que les blocs sans accolade
+ * interne, donc elle rend les regles d'une couche exactement comme celles de dehors — c'est
+ * precisement la distinction qu'on veut lire. On retire donc les `@layer nom { … }` en
+ * comptant les accolades, et ce qui subsiste est le hors-couche.
+ */
+function outsideLayers(): string {
+  const code = CSS.replace(/\/\*[\s\S]*?\*\//g, '');
+  let out = '';
+  for (let i = 0; i < code.length; i++) {
+    const rest = code.slice(i);
+    const at = /^@layer[^{]*\{/.exec(rest);
+    if (at === null) {
+      out += code[i];
+      continue;
+    }
+    // Sauter jusqu'a l'accolade fermante correspondante.
+    let depth = 0;
+    let j = i + at[0].length - 1;
+    for (; j < code.length; j++) {
+      if (code[j] === '{') depth += 1;
+      else if (code[j] === '}' && (depth -= 1) === 0) break;
+    }
+    i = j;
+  }
+  return out;
+}
+
+it('aucune regle hors couche ne fixe la position d un element', () => {
+  /*
+   * 🔴 Le defaut n°5, mesure au navigateur le 2026-08-12 sur `/fr`, fenetre 1440 x 900 :
+   *
+   *     header.classList                     "… sticky top-0 z-20 edge-lit"
+   *     getComputedStyle(header).position    "relative"
+   *     header.top a scrollY=600             -600
+   *
+   * **La barre de navigation du site ne collait sur aucune page.** `.edge-lit` declarait
+   * `position: relative` et gagnait sur l'utilitaire `sticky` — non par specificite, les deux
+   * sont une classe, mais parce que la regle etait ecrite **hors de toute `@layer`**. En CSS,
+   * le hors-couche bat tout le contenu des couches, quelle que soit la specificite ; les
+   * utilitaires de Tailwind vivent dans `@layer utilities`, donc une classe hors couche les
+   * bat **tous**, en silence.
+   *
+   * ⚠️ C'est la meme famille que le defaut n°1 (`space-y` qui annule un `margin-top`) et il
+   * est encore plus discret : la regle est juste, l'utilitaire est juste, rien dans les deux
+   * lignes ne dit laquelle gagne. Trois commentaires du depot decrivaient pourtant ce que la
+   * barre floute en remontant dessous — `.show-hero`, `.face-hero`, le `top: 5rem` de
+   * `.series-aside` — c'est-a-dire un effet decrit trois fois et rendu zero fois.
+   *
+   * La loi : la position d'un element se decide sur l'element (utilitaire) ou dans une couche,
+   * jamais dans le hors-couche qui les surclasse tous.
+   */
+  const hors = outsideLayers();
+
+  // Ancrage : si la decoupe rendait le vide, la loi ci-dessous ne lirait rien. `html` et
+  // `body` sont hors couche a dessein — ce sont les elements racines, pas des composants.
+  expect(hors, 'la decoupe hors-couche a tout avale').toMatch(/\bbody\s*\{/);
+
+  const fautes = [...hors.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, , body]) => /(?:^|[;\s])position:/.test(body ?? ''))
+    .map(([, selector]) => (selector ?? '').trim())
+    // ⚠️ Les pseudo-elements sont hors de portee du defaut, et il faut le dire : aucun
+    // utilitaire ne peut se poser sur un `::before`, donc rien n'est surclasse. Le
+    // quadrillage de fond (`body::before`, `position: fixed`) est le seul concerne.
+    .filter((selector) => !selector.includes('::'));
+
+  expect(fautes, 'une position hors couche bat tous les utilitaires, sans le dire').toEqual([]);
+});
+
 it('aucune boite ne cache verticalement sa barre de defilement', () => {
   /*
    * 🔴 Le defaut n°3. Une barre masquee sur un rail **horizontal** est legitime : le
@@ -258,8 +329,12 @@ it('aucune face ne redessine son en-tete a la main', () => {
    * page, donc les deux langues ne partagent pas le fichier. Les nommer une par une ferait
    * oublier la troisieme le jour ou une langue s'ajoute, et la garde accuserait alors une page
    * correcte. Meme raisonnement que `MOUNTED_BY_THE_FRAMEWORK` dans `no-orphan-component`.
+   *
+   * ⚠️ **Et elle existe en triple depuis le 2026-08-12** : `global-not-found.tsx` couvre
+   * l'adresse qui ne correspond a aucune route, donc a aucun segment et a aucune disposition
+   * racine. Le prefixe l'avait sortie de la famille alors qu'elle en est le troisieme membre.
    */
-  const MEME_FAMILLE = /(^|\/)not-found\.tsx$/;
+  const MEME_FAMILLE = /(^|\/)(global-)?not-found\.tsx$/;
 
   const fautes = filesUnder('app')
     .filter((file) => pathOf(file).endsWith('.tsx'))
