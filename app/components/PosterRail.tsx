@@ -1,5 +1,5 @@
 import type { SeriesWithStatus } from '@/lib/catalog';
-import { RowHeader } from '@/app/components/RowHeader';
+import { Rail } from '@/app/components/Rail';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 
@@ -46,8 +46,10 @@ export function PosterRail({ title, subtitle, series, locale = DEFAULT_LOCALE, l
 
   return (
     <section className="space-y-3" aria-label={title}>
-      <RowHeader title={title} subtitle={subtitle} />
-      <ul className={`rail ${lead ? 'rail-lead' : ''}`}>
+      {/* L'en-tete, le fondu de bord et les deux fleches vivent dans `Rail`, qui est le seul
+          morceau client de cette rangee. Les vignettes lui sont passees **en enfants**, donc
+          elles restent rendues par le serveur : voir la prop `children` de `Rail`. */}
+      <Rail title={title} subtitle={subtitle} lead={lead}>
         {series.map(({ summary, status }) => (
           <li key={summary.providerId}>
             <SeriesCard
@@ -60,7 +62,7 @@ export function PosterRail({ title, subtitle, series, locale = DEFAULT_LOCALE, l
             />
           </li>
         ))}
-      </ul>
+      </Rail>
     </section>
   );
 }

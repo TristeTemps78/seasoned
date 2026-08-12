@@ -131,6 +131,44 @@
     scroll-snap-align: start;
   }
 
+  /**
+   * =============================================================================
+   * CE QUI DIT QU'IL Y A UNE SUITE, ET COMMENT Y ALLER
+   * =============================================================================
+   *
+   * 🔴 Mesure au navigateur le 2026-08-13, accueil en 1280 px : **1112 px** caches sur la
+   * rangee de tete, **1176** sur les deux suivantes — autant que de visible, a chaque fois.
+   * Sans barre (masquee juste au-dessus, et c'est un choix), sans fleche, sans rien.
+   *
+   * Le debordement au bord droit — decrit dans `PosterRail` comme *l'*affordance — dit bien
+   * qu'il y a une suite. Il ne dit pas comment y aller : au trackpad le geste horizontal
+   * existe, a la souris a molette verticale il n'existe pas. D'ou les deux ajouts, qui ne se
+   * remplacent pas l'un l'autre :
+   *
+   *   - le **fondu**, qui parle a tout le monde avant qu'on touche a quoi que ce soit ;
+   *   - les **fleches**, qui ne servent qu'a la souris — d'ou `pointer: fine`.
+   *
+   * ⚠️ Meme `mask-image` et memes 2 rem que `.face-rail` : c'est le meme signal, il n'avait
+   * aucune raison d'avoir deux aspects selon la rangee ou il apparait.
+   */
+  .rail[data-fade='right'] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  }
+
+  .rail[data-fade='left'] {
+    mask-image: linear-gradient(to left, #000 calc(100% - 2rem), transparent);
+  }
+
+  .rail[data-fade='both'] {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 2rem,
+      #000 calc(100% - 2rem),
+      transparent
+    );
+  }
+
   @media (width >= 40rem) {
     .rail {
       grid-auto-columns: 11.5rem;

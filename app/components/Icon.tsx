@@ -108,6 +108,10 @@ const PATHS = {
 
   /** Fermer, retirer. */
   close: <path d="M6.25 6.25 17.75 17.75M17.75 6.25 6.25 17.75" />,
+
+  /** La suite d'une rangee qui defile, a gauche et a droite — voir `Rail`. */
+  chevronLeft: <path d="M15 5.5 8.5 12 15 18.5" />,
+  chevronRight: <path d="M9 5.5 15.5 12 9 18.5" />,
 } as const;
 
 export type IconName = keyof typeof PATHS;
