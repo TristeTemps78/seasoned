@@ -678,6 +678,21 @@ export const FR = {
   'review.none': 'Personne n’a encore écrit sur cette série.',
   'review.beFirst':
     'La vôtre s’écrit dans « Où j’en suis », sans compte : elle reste dans ce navigateur tant que vous n’en ouvrez pas un.',
+  'review.sort': 'Trier',
+  'review.sortRecent': 'Les plus récentes',
+  'review.sortLiked': 'Les plus aimées',
+  'review.audience': 'Montrer',
+  'review.audienceEveryone': 'Tout le monde',
+  'review.audienceFollowing': 'Les gens que je suis',
+  'review.audienceMine': 'Les miennes',
+  // ⚠️ « parmi ceux que vous suivez », et surtout pas « personne n'a écrit » : la série a des
+  // critiques — c'est le filtre qui n'en trouve pas. Confondre le vide d'un filtre avec celui
+  // du contenu est ce qui ferait croire le produit désert à qui suit trois personnes.
+  'review.noneFollowing': 'Personne parmi ceux que vous suivez n’a écrit sur cette série.',
+  'review.noneMine': 'Vous n’avez rien écrit sur cette série.',
+  'review.showEveryone': 'Voir toutes les critiques',
+  'review.count.one': '{n} critique',
+  'review.count.other': '{n} critiques',
 
   // ⚠️ Une seule phrase pour « ce nom n'existe pas » ET « ce profil ne vous est pas
   // visible ». Les distinguer ferait de la page un oracle : on testerait des noms un par un
@@ -723,7 +738,12 @@ export const FR = {
   'people.title': 'Qui d’autre l’a vue',
   'people.liked': 'l’aime',
   'people.finished': 'l’a terminée',
-  'review.title': 'Ce qu’en disent les gens que vous suivez',
+  // 🔴 C'était « Ce qu'en disent les gens que vous suivez » — un titre qui annonçait un filtre
+  // qui n'a jamais existé. `reviewsFor()` demande les critiques de la série et RLS décide qui
+  // peut les lire : un visiteur sans compte, qui ne suit personne, en voyait donc sous une
+  // phrase qui prétendait le contraire. Le filtre existe désormais pour de bon, dans la rangée
+  // « Montrer » — et c'est lui qui porte cette promesse-là, une fois qu'on la choisit.
+  'review.title': 'Ce qu’en disent les gens',
   'progress.start': 'Je l’ai commencée',
   'progress.season': 'Saison',
   'progress.episode': 'Épisode',

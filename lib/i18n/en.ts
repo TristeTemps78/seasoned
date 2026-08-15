@@ -580,6 +580,19 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'review.none': 'Nobody has written about this series yet.',
   'review.beFirst':
     'Yours goes in “Where I am”, no account needed: it stays in this browser until you open one.',
+  'review.sort': 'Sort',
+  'review.sortRecent': 'Most recent',
+  'review.sortLiked': 'Most liked',
+  'review.audience': 'Show',
+  'review.audienceEveryone': 'Everyone',
+  'review.audienceFollowing': 'People I follow',
+  'review.audienceMine': 'Mine',
+  // Voir `fr.ts` : le vide du **filtre**, jamais celui de la serie.
+  'review.noneFollowing': 'Nobody you follow has written about this series.',
+  'review.noneMine': 'You have not written about this series.',
+  'review.showEveryone': 'Show every review',
+  'review.count.one': '{n} review',
+  'review.count.other': '{n} reviews',
 
   // Voir `fr.ts` : une seule phrase pour « inconnu » et « invisible », sans quoi la page
   // devient un oracle permettant d'enumerer les comptes.
@@ -609,7 +622,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'people.title': 'Who else has watched it',
   'people.liked': 'loves it',
   'people.finished': 'finished it',
-  'review.title': 'What the people you follow say',
+  // Voir `fr.ts` : le titre annoncait un filtre qui n'existait pas. Il existe maintenant,
+  // dans la rangee « Show », et c'est lui qui porte cette promesse quand on la choisit.
+  'review.title': 'What people say',
   'progress.start': 'I’ve started it',
   'progress.season': 'Season',
   'progress.episode': 'Episode',
