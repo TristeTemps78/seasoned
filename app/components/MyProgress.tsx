@@ -7,6 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { WhereItLives } from '@/app/components/WhereItLives';
 import { StarRating } from '@/app/components/StarRating';
 import { ReviewEditor } from '@/app/components/ReviewEditor';
+import { Tags } from '@/app/components/Tags';
 import {
   completionCount,
   favoritesOf,
@@ -472,6 +473,12 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
           plus que n'importe quel geste au-dessus, et personne ne doit tomber dessus avant
           d'avoir eu la version a un tap. */}
       <ReviewEditor seriesId={seriesId} canPublish={canPublish} />
+
+      {/* Vos mots, tout en bas et **apres** la critique : taguer est du rangement, pas une
+          etape du parcours. Quelqu'un qui arrive sur la fiche n'a rien a y faire ; quelqu'un
+          qui vient de finir d'ecrire, si. Aucune condition de position — on range une serie
+          qu'on n'a pas commencee, c'est meme un des usages (« pour cet hiver »). */}
+      <Tags seriesId={seriesId} />
     </section>
   );
 }

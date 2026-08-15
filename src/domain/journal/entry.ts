@@ -65,7 +65,17 @@ export function hasContent(entry: JournalEntry | undefined): boolean {
     // le choix disparaissait aussitot pose, pour une serie qu'on n'a pas encore commencee.
     // C'est precisement l'usage vise : preparer sa bibliotheque avant de regarder.
     entry.poster !== undefined ||
-    entry.backdrop !== undefined
+    entry.backdrop !== undefined ||
+    // ⚠️ **Le meme piege pour la troisieme fois**, et il s'est referme aussitot : la
+    // premiere version des tags a ete ecrite sans cette ligne, et onze tests sur vingt-six
+    // ont echoue d'un coup — poser un mot sur une serie qu'on n'a pas commencee ne laissait
+    // rien du tout. C'est pourtant l'usage principal (« pour cet hiver »), exactement comme
+    // pour l'affiche choisie deux lignes plus haut.
+    //
+    // Le motif est desormais net : **tout geste explicite doit figurer ici**, et l'oubli ne
+    // se manifeste jamais par une erreur — seulement par un geste qui ne laisse pas de
+    // trace.
+    Object.keys(entry.tags ?? {}).length > 0
   );
 }
 

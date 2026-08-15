@@ -10,6 +10,7 @@ import {
   serializeJournal,
   markCompleted as markCompletedIn,
   toggleFavorite as toggleFavoriteIn,
+  setTag as setTagIn,
   setDecision as setDecisionIn,
   setEpisodeRating as setEpisodeRatingIn,
   setPlatforms as setPlatformsIn,
@@ -228,6 +229,18 @@ export function useJournal() {
      */
     toggleFavorite: useCallback(
       (key: JournalKey) => mutate((j) => toggleFavoriteIn(j, key)),
+      [mutate],
+    ),
+    /**
+     * Pose ou retire un mot sur une serie.
+     *
+     * ⚠️ Rend le journal inchange sur une saisie vide ou trop longue : c'est un champ de
+     * texte libre, donc une frappe malheureuse ne doit rien lever. `normalizeTag` tranche,
+     * une seule fois, dans le domaine.
+     */
+    setTag: useCallback(
+      (key: JournalKey, tag: string, present: boolean) =>
+        mutate((j) => setTagIn(j, key, tag, present)),
       [mutate],
     ),
     setWanted: useCallback(

@@ -113,6 +113,20 @@ export const FR = {
   // Le journal daté. ⚠️ « Journal » et non « Historique » : un historique se subit, un
   // journal se tient. Le mot est le même dans les deux langues, donc l'URL aussi.
   'library.toJournal': 'Voir mon journal, par date →',
+  'tags.title': 'Mes mots',
+  'tags.why': 'Rangés par vous, pour vous.',
+  'tags.placeholder': 'à revoir, le dimanche, avec Léa…',
+  'tags.add': 'Ajouter',
+  'tags.remove': 'Retirer le mot « {tag} »',
+  'tags.reuse': 'Des mots que vous employez déjà :',
+  'tags.usedOn.one': 'sur {n} série',
+  'tags.usedOn.other': 'sur {n} séries',
+  'library.noTagTitle': 'Rien sous ce mot',
+  'library.noTagBody':
+    'Aucune série de votre bibliothèque ne porte ce mot pour l’instant. Choisissez « Tous » juste au-dessus, ou posez-le depuis une fiche.',
+  'tags.filter': 'Mot',
+  'tags.all': 'Tous',
+  'tags.none': 'Aucun mot posé pour l’instant.',
   'favorites.title': 'Ma carte de visite',
   'favorites.why': 'Quatre séries, pas une de plus.',
   'favorites.slot': 'à choisir',

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
@@ -11,6 +11,7 @@ import { LibraryCard } from '@/app/components/LibraryCard';
 import { MyPlatforms } from '@/app/components/MyPlatforms';
 import { MyRegions } from '@/app/components/MyRegions';
 import { buildLibrary, type LibraryItem } from '@/src/domain/library';
+import { tagCounts } from '@/src/domain/journal';
 import { RowHeader } from '@/app/components/RowHeader';
 
 /**
@@ -37,11 +38,31 @@ import { RowHeader } from '@/app/components/RowHeader';
  */
 export function Library() {
   const { journal, ready, exportJournal, importJournal } = useJournal();
-  const { t } = useT();
+  const { t, tn } = useT();
+  const [tag, setTag] = useState<string | undefined>(undefined);
+
+  const tags = useMemo(() => tagCounts(journal), [journal]);
+
+  /* Le filtre s'applique au **journal**, pas au resultat : `buildLibrary` range en quatre
+     rangees selon des regles qui lui appartiennent, et refiltrer apres coup obligerait a
+     les connaitre ici. Filtrer avant, c'est reutiliser le rangement tel quel (regle 3). */
+  const shown = useMemo(() => {
+    if (tag === undefined) return journal;
+    return {
+      ...journal,
+      entries: Object.fromEntries(
+        Object.entries(journal.entries).filter(([, e]) => e.tags?.[tag] !== undefined),
+      ),
+    };
+  }, [journal, tag]);
 
   // Recalcule seulement quand le journal change : le rangement traverse toutes les
   // entrees, et il n'a aucune raison de recommencer a chaque rendu.
-  const library = useMemo(() => buildLibrary(journal), [journal]);
+  const library = useMemo(() => buildLibrary(shown), [shown]);
+  // ⚠️ Compte sur le journal **entier**, pas sur la vue filtree : sans ca, choisir un mot
+  // qui ne rend rien afficherait « votre bibliotheque est vide » a quelqu'un qui suit
+  // quarante series. Deux vides differents, deux phrases differentes.
+  const total = useMemo(() => buildLibrary(journal).total, [journal]);
 
   if (!ready) {
     // Ne rien affirmer avant d'avoir lu : annoncer « votre bibliotheque est vide » a
@@ -49,10 +70,53 @@ export function Library() {
     return <div className="h-64" aria-hidden="true" />;
   }
 
-  if (library.total === 0) return <EmptyLibrary />;
+  if (total === 0) return <EmptyLibrary />;
 
   return (
     <div className="space-y-12">
+      {/* Le filtre par mot. Absent tant qu'aucun mot n'existe : un filtre a une seule
+          option (« Tous ») est un bouton qui ne fait rien, et il apprendrait a ignorer la
+          ligne le jour ou elle servira. */}
+      {tags.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="label">{t('tags.filter')}</span>
+          <button
+            type="button"
+            aria-pressed={tag === undefined}
+            onClick={() => setTag(undefined)}
+            className="btn rounded-full text-xs"
+          >
+            {t('tags.all')}
+          </button>
+          {tags.map(({ tag: name, count }) => (
+            <button
+              key={name}
+              type="button"
+              aria-pressed={tag === name}
+              onClick={() => setTag(tag === name ? undefined : name)}
+              className="btn rounded-full text-xs"
+              title={tn('tags.usedOn', count, { n: count })}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {/* Le vide **du filtre**, qui n'est pas le vide de la bibliotheque : le geste pour en
+          sortir est deja a l'ecran, juste au-dessus. Une phrase suffit.
+
+          ⚠️ Verifie au navigateur le 2026-08-15 : **cette branche n'est pas atteignable
+          aujourd'hui** — les pastilles ne listent que des mots existants, et toute entree de
+          serie taguee tombe dans l'une des quatre rangees. Elle n'est pas morte pour autant :
+          `tagCounts` parcourt **toutes** les entrees, la bibliotheque ne montre que les
+          series (`seriesEntries`), donc un mot pose sur un film — A13 — rendra une pastille
+          qui ne montre rien. C'est exactement le decalage que `seriesEntries` existe pour
+          signaler, et le jour ou il arrivera il ne faudra pas afficher « votre bibliotheque
+          est vide » a quelqu'un qui suit quarante series. */}
+      {library.total === 0 ? (
+        <EmptyState title={t('library.noTagTitle')}>{t('library.noTagBody')}</EmptyState>
+      ) : null}
       {/* Meme decision que sur l'accueil : la rangee de tete repond a la question qu'on se
           pose en ouvrant l'ecran. Quatre rangees identiques ne disaient pas laquelle lire. */}
       <Row

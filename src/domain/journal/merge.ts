@@ -186,6 +186,11 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
   // effacer une note effacerait sinon la marque du meme episode, du meme geste.
   const episodeMarks = mergeDated(a.episodeMarks, b.episodeMarks, removed, (k) => `mark:${k}`);
   const reviews = mergeDated(a.reviews, b.reviews, removed, (k) => `review:${k}`);
+  // ⚠️ Prefixe `tag:` : un tag est une chaine libre, donc il peut valoir « series » ou
+  // « decision » et entrer en collision avec une pierre tombale existante. Chaque famille de
+  // cles a la sienne dans ce fichier, et c'est ici que ca compte le plus — les autres cles
+  // sont fabriquees par le code, celle-ci est tapee par quelqu'un.
+  const tags = mergeDated(a.tags, b.tags, removed, (k) => `tag:${k}`);
   const unknownFields = mergeUnknown(a.unknownFields, b.unknownFields);
 
   return {
@@ -205,6 +210,7 @@ function mergeEntries(a: JournalEntry, b: JournalEntry): JournalEntry {
     ...(Object.keys(episodeRatings).length > 0 ? { episodeRatings } : {}),
     ...(Object.keys(episodeMarks).length > 0 ? { episodeMarks } : {}),
     ...(Object.keys(reviews).length > 0 ? { reviews } : {}),
+    ...(Object.keys(tags).length > 0 ? { tags } : {}),
     ...(Object.keys(removed).length > 0 ? { removed } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };

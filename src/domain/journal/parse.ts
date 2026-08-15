@@ -19,6 +19,7 @@ import {
   JOURNAL_VERSION,
   MAX_FAVORITES,
   journalKey,
+  normalizeTag,
   parseJournalKey,
   TOMBSTONE_TTL_MS,
   type FaceAnnouncement,
@@ -34,6 +35,7 @@ import {
   type JournalRating,
   type JournalReview,
   type JournalSnapshot,
+  type JournalTag,
   type JournalTombstones,
 } from './types';
 import { dedupeByDay, worthKeeping } from './entry';
@@ -275,6 +277,30 @@ function parseReviews(raw: unknown): Record<string, JournalReview> {
   return out;
 }
 
+/**
+ * Lit les tags, en **renormalisant chaque cle**.
+ *
+ * ⚠️ La renormalisation n'est pas une precaution de style : un journal ecrit par une version
+ * anterieure a `normalizeTag` — ou par une extension tierce, ou a la main — peut porter
+ * `Comfort` et `comfort` cote a cote. Les laisser passer tels quels rendrait le filtre par
+ * tag inutile precisement chez les gens qui en ont le plus, et le defaut serait invisible
+ * pour quiconque n'a jamais tape de majuscule.
+ *
+ * A collision, **la date la plus recente gagne** — meme regle que partout ailleurs dans ce
+ * fichier, et le seul arbitrage qui ne depende pas de l'ordre des cles d'un objet JSON.
+ */
+function parseTags(raw: unknown): Record<string, JournalTag> {
+  const out: Record<string, JournalTag> = {};
+  for (const [key, value] of Object.entries(asRecord(raw))) {
+    const tag = normalizeTag(key);
+    if (tag === undefined) continue;
+    const at = readInstant(asRecord(value), 'at', UNDATED);
+    const current = out[tag];
+    if (current === undefined || at > current.at) out[tag] = { at };
+  }
+  return out;
+}
+
 const SEASON_KEY = /^[0-9]+$/;
 const EPISODE_KEY = /^[0-9]+:[0-9]+$/;
 
@@ -343,6 +369,7 @@ const KNOWN_ENTRY_FIELDS = [
   'liked',
   'episodeMarks',
   'reviews',
+  'tags',
   'completions',
   'poster',
   'backdrop',
@@ -435,6 +462,7 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
 
   const episodeMarks = parseEpisodeMarks(source['episodeMarks']);
   const reviews = parseReviews(source['reviews']);
+  const tags = parseTags(source['tags']);
   const completions = parseCompletions(source['completions']);
   // ⚠️ Relus ici, sinon ils seraient **ecrits puis effaces a la premiere sauvegarde** —
   // le defaut de 10.4bis. Un chemin TMDB commence toujours par `/` : une valeur d'une
@@ -450,6 +478,7 @@ function parseEntry(raw: unknown, at: Date): JournalEntry | undefined {
     ...(liked !== undefined ? { liked } : {}),
     ...(Object.keys(episodeMarks).length > 0 ? { episodeMarks } : {}),
     ...(Object.keys(reviews).length > 0 ? { reviews } : {}),
+    ...(Object.keys(tags).length > 0 ? { tags } : {}),
     ...(completions.length > 0 ? { completions } : {}),
     ...(poster !== undefined && poster.startsWith('/') ? { poster } : {}),
     ...(backdrop !== undefined && backdrop.startsWith('/') ? { backdrop } : {}),

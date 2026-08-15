@@ -15,6 +15,7 @@ import type { FaceId } from '../face';
 import {
   episodeKey,
   MAX_FAVORITES,
+  normalizeTag,
   type FactOrigin,
   type Journal,
   type JournalEntry,
@@ -55,12 +56,30 @@ function withoutTombstone(entry: JournalEntry, field: string): JournalTombstones
   return Object.keys(rest).length > 0 ? rest : undefined;
 }
 
-function reviseTombstone(
-  entry: JournalEntry,
-  field: string,
-): { readonly removed?: JournalTombstones } {
+/**
+ * L'entree, **debarrassee de la pierre tombale portant sur ce champ**.
+ *
+ * ## 🔴 Ce qu'elle rendait avant, et pourquoi c'etait faux
+ *
+ * Elle rendait un **fragment** (`{ removed }` ou `{}`), que les sept appelants epandaient
+ * *apres* `...entry`. Quand la pierre tombale retiree etait **la derniere**,
+ * {@link withoutTombstone} rendait `undefined`, le fragment valait `{}` — et le `...entry`
+ * qui precedait **reinstallait la table complete**. Le retrait n'avait donc lieu que si
+ * l'entree portait au moins deux traces.
+ *
+ * Consequence reelle mais discrete : une trace perimee survivait a la reecriture du champ.
+ * La fusion ne s'y trompait pas (`survives` compare les dates, et l'ecriture neuve est
+ * forcement la plus recente), donc rien de visible ; la trace disparaissait d'elle-meme au
+ * bout de quatre-vingt-dix jours. Ce n'etait pas une perte de donnees, c'etait du bruit
+ * qu'un test finissait forcement par attraper. Celui des tags l'a fait.
+ *
+ * Rendre l'entree entiere plutot qu'un fragment supprime le probleme **par construction** :
+ * il n'y a plus de `...entry` a placer avant, donc plus d'ordre a retenir.
+ */
+function reviseTombstone(entry: JournalEntry, field: string): JournalEntry {
   const removed = withoutTombstone(entry, field);
-  return removed !== undefined ? { removed } : {};
+  const { removed: _stale, ...rest } = entry;
+  return removed !== undefined ? { ...rest, removed } : rest;
 }
 
 /**
@@ -106,9 +125,8 @@ export function setSeasonRating(
 
   seasonRatings[String(seasonNumber)] = { stars, at: now.toISOString() };
   return withEntry(journal, key, {
-    ...entry,
-    seasonRatings,
     ...reviseTombstone(entry, field),
+    seasonRatings,
   });
 }
 
@@ -144,9 +162,8 @@ export function setEpisodeRating(
 
   episodeRatings[cell] = { stars, at: now.toISOString() };
   return withEntry(journal, key, {
-    ...entry,
-    episodeRatings,
     ...reviseTombstone(entry, field),
+    episodeRatings,
   });
 }
 
@@ -170,7 +187,7 @@ export function setDecision(
   // fera la carte des abandons.
   const at = entry.position;
   return withEntry(journal, key, {
-    ...entry,
+    ...reviseTombstone(entry, 'decision'),
     decision: {
       kind,
       at: now.toISOString(),
@@ -178,7 +195,6 @@ export function setDecision(
         ? { atSeason: at.seasonNumber, atEpisode: at.episodeNumber }
         : {}),
     },
-    ...reviseTombstone(entry, 'decision'),
   });
 }
 
@@ -287,9 +303,8 @@ function setDatedFlag(
     });
   }
   return withEntry(journal, key, {
-    ...entry,
-    [field]: { at: now.toISOString() },
     ...reviseTombstone(entry, field),
+    [field]: { at: now.toISOString() },
   });
 }
 
@@ -335,7 +350,7 @@ export function setReview(
   }
 
   return withEntry(journal, key, {
-    ...entry,
+    ...reviseTombstone(entry, field),
     reviews: {
       ...rest,
       [target]: {
@@ -345,7 +360,6 @@ export function setReview(
         ...(review.lang !== undefined ? { lang: review.lang } : {}),
       },
     },
-    ...reviseTombstone(entry, field),
   });
 }
 
@@ -396,10 +410,97 @@ export function setEpisodeMark(
   }
 
   return withEntry(journal, key, {
-    ...entry,
-    episodeMarks: { ...rest, [at]: { kind, at: now.toISOString() } },
     ...reviseTombstone(entry, field),
+    episodeMarks: { ...rest, [at]: { kind, at: now.toISOString() } },
   });
+}
+
+/**
+ * Pose ou retire un tag sur une serie.
+ *
+ * ## Ce que ce geste ajoute que rien d'autre ne fait
+ *
+ * Le produit sait deja ranger par **fait** : ou j'en suis, ce que j'en pense, si je l'ai
+ * finie. Il ne savait pas ranger par **raison** — « a revoir avec Lea », « le dimanche »,
+ * « j'ai lache mais je devrais reprendre ». Ce sont des categories que seul le lecteur peut
+ * nommer, et qu'aucune taxonomie de catalogue ne remplacera : TMDB connait « Drame », pas
+ * « quand je n'ai pas la tete a suivre une intrigue ».
+ *
+ * ⚠️ Le tag est **normalise** ({@link normalizeTag}). Une saisie vide ou trop longue rend le
+ * journal inchange plutot que de lever : c'est un champ de texte libre, et une frappe
+ * malheureuse ne doit rien casser.
+ *
+ * Meme mecanique que {@link setEpisodeMark} : le tag est la cle, la date la valeur, et le
+ * retrait pose une pierre tombale prefixee `tag:` — sans quoi retirer un tag sur le
+ * telephone le verrait revenir a la premiere synchronisation avec l'ordinateur qui
+ * l'ignorait (decision n°3).
+ */
+export function setTag(
+  journal: Journal,
+  key: JournalKey,
+  raw: string,
+  present: boolean,
+  now = new Date(),
+): Journal {
+  const tag = normalizeTag(raw);
+  if (tag === undefined) return journal;
+
+  const entry = journal.entries[key] ?? {};
+  const field = `tag:${tag}`;
+  const { [tag]: _current, ...rest } = entry.tags ?? {};
+
+  if (!present) {
+    // La cle est **retiree**, jamais posee a `undefined` : `exactOptionalPropertyTypes`
+    // distingue les deux, et une table vide qui traine reapparaitrait dans l'export.
+    const { tags: _dropped, ...withoutTags } = entry;
+    return withEntry(journal, key, {
+      ...withoutTags,
+      ...(Object.keys(rest).length > 0 ? { tags: rest } : {}),
+      removed: withTombstone(entry, field, now.toISOString()),
+    });
+  }
+
+  return withEntry(journal, key, {
+    ...reviseTombstone(entry, field),
+    tags: { ...rest, [tag]: { at: now.toISOString() } },
+  });
+}
+
+/** Les tags d'une serie, tries — un ordre stable, sans quoi la rangee danserait au rendu. */
+export function tagsOf(entry: JournalEntry | undefined): readonly string[] {
+  return Object.keys(entry?.tags ?? {}).sort();
+}
+
+/** Un tag et le nombre de series qui le portent. */
+export interface TagCount {
+  readonly tag: string;
+  readonly count: number;
+}
+
+/**
+ * Tous les tags du journal, du plus employe au moins employe.
+ *
+ * ## Pourquoi le compte, et pourquoi cet ordre
+ *
+ * C'est ce qui fait la difference entre une saisie libre et un vocabulaire. Sans la liste,
+ * chacun retape ses tags de memoire et fabrique `a revoir`, `à revoir` et `revoir` — trois
+ * categories pour une intention. Presentee par frequence, la liste **propose le mot qu'on
+ * emploie deja**, ce qui est la seule facon de faire converger un vocabulaire libre sans
+ * l'imposer.
+ *
+ * A egalite, l'ordre alphabetique : il n'a aucun sens metier, et c'est sa qualite — il faut
+ * seulement qu'il soit **stable**, sinon la rangee change d'ordre a chaque rendu.
+ */
+export function tagCounts(journal: Journal): readonly TagCount[] {
+  const counts = new Map<string, number>();
+  for (const entry of Object.values(journal.entries)) {
+    for (const tag of Object.keys(entry.tags ?? {})) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 }
 
 /**

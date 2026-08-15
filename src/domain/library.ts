@@ -120,6 +120,10 @@ const GESTURE_DATES: {
   reviews: (e) => Object.values(e.reviews ?? {}).map((r) => instant(r.at)),
   // Mener une serie au bout est le geste le plus fort du produit. Il manquait.
   completions: (e) => (e.completions ?? []).map((c) => instant(c.at)),
+  // Poser un mot sur une serie est un geste : c'est du rangement, et le rangement est
+  // precisement ce qu'on fait quand on s'occupe de sa bibliotheque. Sans cette ligne, une
+  // serie qu'on vient de taguer ne remonterait pas dans « Reprendre ».
+  tags: (e) => Object.values(e.tags ?? {}).map((t) => instant(t.at)),
 };
 
 /** Date du dernier geste porte sur une serie. */

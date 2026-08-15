@@ -321,6 +321,51 @@ export function reviewKey(seasonNumber?: number): string {
 }
 
 /**
+ * Un mot que **vous** avez pose sur une serie.
+ *
+ * ## Pourquoi un enregistrement date plutot qu'un simple tableau
+ *
+ * Un `readonly string[]` serait plus court a lire et faux a fusionner : deux appareils
+ * n'auraient aucun moyen de departager « j'ai ajoute *comfort* ici » de « je l'ai retire
+ * la-bas », et l'union — le seul recours sans date — **ressusciterait** chaque tag retire a
+ * la premiere synchronisation. C'est la decision n°3 du format, et elle ne se contourne pas.
+ *
+ * Sous cette forme, le tag est la **cle** et la date la valeur : `mergeDated` et les pierres
+ * tombales fonctionnent tels quels, exactement comme pour {@link JournalEpisodeMark} et
+ * {@link JournalReview}. Aucune mecanique de fusion nouvelle n'a ete ecrite pour les tags.
+ *
+ * ## Le tag est normalise, et ce n'est pas cosmetique
+ *
+ * `Comfort`, `comfort` et ` comfort ` doivent etre **le meme** tag, sans quoi un filtre par
+ * tag rendrait trois listes disjointes et la fonctionnalite entiere ne servirait a rien. La
+ * normalisation vit dans {@link normalizeTag}, en un seul endroit — le domaine tranche, et
+ * la saisie n'a qu'a l'appeler.
+ *
+ * ⚠️ **On garde ce que la personne a ecrit, en minuscules et sans espaces superflus.** On ne
+ * retire ni les accents ni les espaces internes : « science-fiction » et « a revoir » sont
+ * des tags legitimes, et les mutiler serait reecrire son vocabulaire.
+ */
+export interface JournalTag {
+  readonly at: string;
+}
+
+/** Longueur maximale d'un tag. Un tag qui ne tient pas sur une pastille n'est pas un tag. */
+export const MAX_TAG_CHARS = 30;
+
+/**
+ * La forme canonique d'un tag, ou `undefined` s'il n'en reste rien.
+ *
+ * Minuscules et espaces reduits : c'est le minimum qui fasse de `Comfort` et `comfort` un
+ * seul tag. `toLocaleLowerCase` et non `toLowerCase` — le turc mettrait sinon un `I` sur un
+ * `i` sans point, et le produit vise l'international.
+ */
+export function normalizeTag(raw: string): string | undefined {
+  const tag = raw.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+  if (tag.length === 0 || tag.length > MAX_TAG_CHARS) return undefined;
+  return tag;
+}
+
+/**
  * Le coeur : « celle-la compte pour moi ».
  *
  * ## Pourquoi il n'est pas une note de plus
@@ -544,6 +589,13 @@ export interface JournalEntry {
   readonly episodeMarks?: Readonly<Record<string, JournalEpisodeMark>>;
   /** Ce qu'on a ecrit, par cible. Voir {@link JournalReview}. */
   readonly reviews?: Readonly<Record<string, JournalReview>>;
+  /**
+   * Vos mots, indexes par le tag lui-meme. Voir {@link JournalTag}.
+   *
+   * ⚠️ Les cles sont **normalisees** ({@link normalizeTag}) : c'est ce qui fait qu'un filtre
+   * par tag rend une liste et non trois.
+   */
+  readonly tags?: Readonly<Record<string, JournalTag>>;
   /**
    * Chaque fois que la serie a ete menee au bout. Voir {@link JournalCompletion}.
    *
