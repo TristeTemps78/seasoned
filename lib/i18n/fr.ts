@@ -647,6 +647,9 @@ export const FR = {
 
   // --- Ma progression ------------------------------------------------------
   'progress.aria': 'Ma progression',
+  // Le panneau de l'en-tete. Un nom **different** de `progress.aria` : deux reperes de page
+  // portant le meme nom ne se distinguent pas dans la liste d'un lecteur d'ecran.
+  'progress.quickAria': 'Où j’en suis — les gestes à un tap',
   'progress.title': 'Où j’en suis',
   'lives.local': 'gardé sur cet appareil, rien n’est envoyé',
   'lives.synced': 'gardé sur cet appareil, et sur votre compte',

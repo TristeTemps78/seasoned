@@ -44,6 +44,7 @@ import { Cast } from '@/app/components/Cast';
 import { Reviews } from '@/app/components/Reviews';
 import { SeriesPeople } from '@/app/components/SeriesPeople';
 import { AddToList } from '@/app/components/AddToList';
+import { ProgressSummary } from '@/app/components/ProgressSummary';
 import { ChooseArtwork } from '@/app/components/ChooseArtwork';
 import { legalIsComplete } from '@/lib/legal';
 
@@ -291,7 +292,7 @@ export async function SeriesView({ id, locale }: {
           // ⚠️ `fetchPriority` est parti a la banniere : deux images en priorite haute ne
           // priorisent rien. `panel` porte la matiere commune, elevation comprise — c'est
           // elle qui decolle l'affiche du visuel derriere.
-          <div className="poster-frame aspect-2/3 w-32 self-start sm:w-full">
+          <div className="show-poster poster-frame aspect-2/3 w-32 self-start sm:w-full">
             <img
               src={poster}
               alt=""
@@ -303,7 +304,7 @@ export async function SeriesView({ id, locale }: {
           </div>
         ) : null}
 
-        <div className="space-y-4">
+        <div className="show-lede space-y-4">
           <div>
             {/* `.hero-title` : sur une image de 1248 px, les 1,75 rem de `.page-title` se
                 perdent. */}
@@ -354,10 +355,34 @@ export async function SeriesView({ id, locale }: {
               {detail.overview}
             </p>
           ) : null}
+        </div>
 
-          {/* =============================================================================
-              🔴 CE QUE LA SERIE VOUS DEMANDE — remonte de 830 px, et cesse d'etre illisible
-              =============================================================================
+        {/* =============================================================================
+            🔴 LE GESTE ETAIT A 156 PX SOUS LA LIGNE DE FLOTTAISON
+            =============================================================================
+
+            Mesure au navigateur le 2026-08-15, `/serie/1396`, fenetre 1440 x 619, bandeau du
+            journal deja renvoye : la banniere fait 400 px, le `<h1>` tombe a `y = 307`, et le
+            premier bouton de « Ou j'en suis » a `y = 775`. La page existe pour recueillir un
+            geste, et ce geste n'etait jamais visible a l'arrivee.
+
+            Letterboxd pose le sien a cote du titre. La troisieme colonne de `.show-header`
+            fait la meme chose — et sur telephone, ou la grille retombe en une colonne, elle
+            arrive **avant** les mesures : l'ordre du DOM est l'ordre lu, aucun `order` CSS.
+
+            ⚠️ Ces commandes ont ete **deplacees** depuis `MyProgress`, pas copiees. Un geste,
+            un endroit. */}
+        <ProgressSummary
+          seriesId={id}
+          seasons={seasons.rateable.map((s) => ({
+            seasonNumber: s.ref.seasonNumber,
+            episodeCount: s.episodeCount,
+          }))}
+        />
+
+        {/* =============================================================================
+            🔴 CE QUE LA SERIE VOUS DEMANDE — remonte de 830 px, et cesse d'etre illisible
+            =============================================================================
 
               Ce bloc vivait dans la colonne laterale, et les deux defauts s'additionnaient :
 
@@ -368,13 +393,16 @@ export async function SeriesView({ id, locale }: {
                 - **il etait illisible.** Quatre tuiles de 64 px de large dans une colonne de
                   304, libelles coupes. Voir `.series-measures` pour la mesure complete.
 
-              Il ferme donc l'en-tete : *qu'est-ce que c'est → dans quel etat → quand revient
-              le prochain → de quoi ca parle → **ce que ca vous coute***. La derniere ligne est
-              la chute, et elle touche « Ou j'en suis » qui commence juste dessous.
+            Il ferme donc l'en-tete : *qu'est-ce que c'est → dans quel etat → quand revient
+            le prochain → de quoi ca parle → le geste → **ce que ca vous coute***.
 
-              ⚠️ Il reste un `<section>` avec son titre pour lecteur d'ecran : le remonter ne
-              doit pas le sortir de la hierarchie du document, que les moteurs lisent. */}
-          <section aria-label={t(locale, 'series.demands')}>
+            ⚠️ Il reste un `<section>` avec son titre pour lecteur d'ecran : le remonter ne
+            doit pas le sortir de la hierarchie du document, que les moteurs lisent.
+
+            ⚠️ **Enfant direct de `.show-header` depuis le 2026-08-15**, et non plus enfant du
+            bloc de texte : c'est ce qui lui permet de courir sous les deux colonnes de droite
+            au lieu de retrecir la colonne de texte a cote du panneau de gestes. */}
+        <section className="show-measures" aria-label={t(locale, 'series.demands')}>
             {/* Titre masque visuellement : les chiffres se lisent d'eux-memes, mais la
                 structure du document doit rester coherente pour qui navigue au clavier
                 ou au lecteur d'ecran — et pour les moteurs, qui lisent la hierarchie. */}
@@ -421,8 +449,7 @@ export async function SeriesView({ id, locale }: {
                 />
               ) : null}
             </dl>
-          </section>
-        </div>
+        </section>
       </header>
       </div>
 

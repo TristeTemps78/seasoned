@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
@@ -10,9 +9,7 @@ import { ReviewEditor } from '@/app/components/ReviewEditor';
 import { Tags } from '@/app/components/Tags';
 import {
   completionCount,
-  favoritesOf,
   hasCompletionOn,
-  MAX_FAVORITES,
   isRewatching,
   journalKey,
   marksOf,
@@ -23,7 +20,6 @@ import { catchUpPlan } from '@/src/domain/catch-up';
 import { seasonToRate } from '@/src/domain/nudge';
 import { remainingAfter } from '@/src/domain/remaining';
 import { formatCommitment } from '@/lib/format';
-import { pathIn } from '@/lib/routes';
 
 export interface SeasonShape {
   readonly seasonNumber: number;
@@ -81,14 +77,10 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
     setPosition,
     setSeasonRating,
     setDecision,
-    setWanted,
-    setLiked,
-    watchAgain,
-    toggleFavorite,
     rememberSnapshot,
   } = useJournal();
   const tr = useT();
-  const { t, tn, n, locale } = tr;
+  const { t, tn, n } = tr;
 
   // Jamais l'identifiant nu : les cles du journal portent leur fournisseur, pour qu'un
   // changement de catalogue reste un remappage et non une perte (`journal.ts`).
@@ -166,11 +158,6 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
   // insidieuse du bouton mort, et celle que la regle du 2026-08-09 vise sans la nommer.
   const passedToday = hasCompletionOn(entry, new Date());
 
-  // La carte de visite : quatre au plus, donc l'interface doit connaitre l'etat courant
-  // avant de proposer le geste.
-  const favorites = favoritesOf(journal);
-  const pinned = favorites.includes(key);
-
   // « 14 episodes en 12 jours » : ce qui reste, rapporte a la date de retour. Croiser
   // les deux transforme une bibliotheque en plan — et ne coute rien, tout est deja la.
   const plan = catchUpPlan(
@@ -208,98 +195,15 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
         </p>
       ) : null}
 
-      {/* Le carnet — le premier champ de texte libre du produit. Place ici, sous les
-          gestes, parce qu'ecrire demande plus que tout le reste : personne ne doit tomber
-          dessus avant d'avoir eu le geste a un tap. */}
-      {/* Niveau 0 — le geste qui ne suppose rien. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          aria-pressed={entry?.wanted !== undefined}
-          onClick={() => setWanted(key, entry?.wanted === undefined)}
-          // ⚠️ Aucune classe conditionnelle : `.btn[aria-pressed='true']` porte l'etat
-          // choisi. L'apparence derive donc de l'attribut d'accessibilite au lieu de le
-          // doubler — deux sources pour un meme etat finissent toujours par diverger, et
-          // c'est l'attribut, pas la classe, qui dit la verite a un lecteur d'ecran.
-          className="btn rounded-full"
-        >
-          {entry?.wanted !== undefined ? t('progress.wanted') : t('progress.want')}
-        </button>
+      {/* 🔴 **Les gestes de niveau 0 ont quitte ce bloc le 2026-08-15**, pour l'en-tete :
+          voir {@link ProgressSummary}. Mesure au navigateur, fenetre 1440 x 619, le premier
+          bouton d'action de cette section etait a `y = 775` — 156 px sous la ligne de
+          flottaison, sur la page qui existe pour recueillir ce geste.
 
-        {/* Le coeur — l'attachement, qui n'est pas la note.
-            Il est offert **sans condition de position** : on peut aimer une serie qu'on n'a
-            pas finie, et meme une qu'on n'a pas commencee mais qu'on connait deja. Le
-            reserver a ceux qui ont pose une position en ferait une recompense de fin de
-            parcours, ce qu'il n'est pas. */}
-        <button
-          type="button"
-          aria-pressed={entry?.liked !== undefined}
-          onClick={() => setLiked(key, entry?.liked === undefined)}
-          className="btn rounded-full"
-        >
-          <span aria-hidden="true">{entry?.liked !== undefined ? '♥' : '♡'}</span>{' '}
-          {entry?.liked !== undefined ? t('progress.liked') : t('progress.like')}
-        </button>
-
-        {/* 🔴 Le revisionnage : le format le retient depuis la v3 (`completions` est une
-            LISTE de dates), et rien ne savait en ecrire une seconde. Le seul chemin etait
-            `setDecision(key, 'completed')` — donc une fois, au moment ou l'on declare la
-            serie finie. Revoir *The Office* une troisieme fois n'avait aucun endroit ou
-            aller, alors que c'est le fait le plus difficile a falsifier du produit.
-
-            Condition : au moins un passage acheve. « Revue » ne veut rien dire avant
-            d'avoir ete vue une fois, et le geste de la premiere fois existe deja plus bas
-            (la decision « terminee »). Deux boutons pour le meme fait dedoubleraient la
-            question sans rien ajouter.
-
-            Absent le jour ou un passage est deja enregistre : voir `passedToday`. */}
-        {/* Epingler — la carte de visite. Le geste vit ici et **pas** sur `/moi` : on decide
-            qu'une serie vous represente en la regardant, pas en parcourant une grille. Ce
-            qui reste sur `/moi`, c'est l'affichage et le decrochage.
-
-            ⚠️ Le bouton disparait quand quatre series sont deja epinglees ET que celle-ci
-            n'en fait pas partie : `toggleFavorite` rend alors le journal inchange, donc le
-            proposer donnerait un bouton qui a l'air de marcher — exactement ce que
-            `passedToday` evite deux lignes plus bas. La phrase qui le remplace dit la
-            condition et ou la lever (regle 4 : une porte nommee n'est pas un bouton mort). */}
-        {pinned || favorites.length < MAX_FAVORITES ? (
-          <button
-            type="button"
-            aria-pressed={pinned}
-            onClick={() => toggleFavorite(key)}
-            className="btn rounded-full"
-          >
-            {pinned ? t('favorites.pinned') : t('favorites.pin')}
-          </button>
-        ) : (
-          <span className="meta-sm">
-            {t('favorites.full')}{' '}
-            <Link href={pathIn('/moi', locale)} className="tap-line underline hover:text-(--color-text)">
-              {t('favorites.manage')}
-            </Link>
-          </span>
-        )}
-
-        {passes > 0 && !passedToday ? (
-          <button
-            type="button"
-            onClick={() => watchAgain(key)}
-            className="btn rounded-full"
-          >
-            {t('rewatch.mark')}
-          </button>
-        ) : null}
-
-        {position === undefined ? (
-          <button
-            type="button"
-            onClick={() => setPosition(key, seasons[0]?.seasonNumber ?? 1, 1)}
-            className="btn rounded-full"
-          >
-            {t('progress.start')}
-          </button>
-        ) : null}
-      </div>
+          Deplaces, pas copies : « je veux la voir », le coeur, l'epinglage, le revisionnage
+          et « j'ai commence » ne sont plus rendus ici. Ce qui reste dans cette colonne est
+          ce qui **coute** — changer de saison, la grille, la decision, la critique, les
+          mots —, et qui n'a rien a faire au-dessus de la ligne de flottaison. */}
 
       {/* Le chiffre du produit, enfin soustrait. « ~62 h » ne parle qu'a un arrivant :
           des qu'on a commence, c'est un cout deja paye en partie. Or c'est au milieu

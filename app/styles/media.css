@@ -430,6 +430,20 @@
     }
   }
 
+  /**
+   * ⚠️ **Un palier sur la HAUTEUR, et il manquait.** Les deux paliers ci-dessus ne regardent
+   * que la largeur, donc une fenetre large et basse — un portable a 1440 x 619, mesure le
+   * 2026-08-15 — recevait 400 px de banniere pour 619 px de pli : 65 % du premier ecran
+   * donnes a une image decorative, avant le titre.
+   *
+   * Un telephone en paysage est le meme cas, et il n'etait pas couvert non plus.
+   */
+  @media (height < 46rem) {
+    .show-backdrop {
+      height: 16rem;
+    }
+  }
+
   .show-backdrop > img {
     width: 100%;
     height: 100%;
@@ -540,9 +554,112 @@
     .show-header {
       /* Deux colonnes : l'affiche a taille fixe, le reste prend ce qui reste. C'est la seule
          disposition qui garde le titre a hauteur constante d'une serie a l'autre. */
-      grid-template-columns: 14rem 1fr;
+      grid-template-columns: 14rem minmax(0, 1fr);
       gap: 1.5rem 2rem;
     }
+
+    /* ⚠️ Placement **explicite**, et c'est ce qui a change le 2026-08-15. L'en-tete portait
+       deux enfants, donc le placement automatique suffisait ; il en porte quatre (affiche,
+       texte, gestes, mesures) et l'automatique poserait le troisieme sous l'affiche. */
+    .show-header > .show-poster {
+      grid-row: 1 / -1;
+      grid-column: 1;
+    }
+    .show-header > :not(.show-poster) {
+      grid-column: 2;
+    }
+
+    /* Beaucoup de series du catalogue n'ont aucun visuel : sans affiche, reserver 14 rem
+       laisserait une colonne vide au lieu d'une marge. */
+    .show-header:not(:has(> .show-poster)) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .show-header:not(:has(> .show-poster)) > * {
+      grid-column: 1;
+    }
+  }
+
+  /**
+   * =============================================================================
+   * 🔴 LA TROISIEME COLONNE — le geste cesse d'etre sous la ligne de flottaison
+   * =============================================================================
+   *
+   * Mesure au navigateur le 2026-08-15 sur `/serie/1396`, fenetre 1440 x 619, bandeau du
+   * journal deja renvoye :
+   *
+   *     .show-backdrop                       400 px de haut
+   *     <h1>                                 y = 307
+   *     section[aria-label="My progress"]    y = 714
+   *     premier bouton d'action              y = 775   → 156 px sous la ligne de flottaison
+   *
+   * La page existe pour recueillir un geste, et ce geste n'etait jamais visible a l'arrivee.
+   * Letterboxd pose le sien — vu / aime / a voir, puis les etoiles — **a cote du titre**.
+   *
+   * ⚠️ Le seuil est 64 rem, le meme que `.series-split`. Il n'y en a qu'un dans cette page,
+   * et en ajouter un troisieme rendrait la fiche impossible a se representer.
+   *
+   * ⚠️ En dessous, la grille retombe et les gestes arrivent **avant** les mesures parce que
+   * c'est leur rang dans le document : aucun `order` CSS, qui deplacerait le dessin sans
+   * deplacer la lecture au clavier ni au lecteur d'ecran.
+   */
+  @media (width >= 64rem) {
+    .show-header {
+      grid-template-columns: 14rem minmax(0, 1fr) minmax(15rem, 18rem);
+    }
+    .show-header > .show-poster {
+      grid-row: 1 / -1;
+      grid-column: 1;
+    }
+    .show-header > .show-lede {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .show-header > .show-actions {
+      grid-column: 3;
+      grid-row: 1;
+    }
+    /* Les mesures courent sous les deux colonnes de droite : les serrer a cote du panneau de
+       gestes ramenerait les quatre tuiles de 64 px que `.series-measures` documente. */
+    .show-header > .show-measures {
+      grid-column: 2 / -1;
+      grid-row: 2;
+    }
+
+    .show-header:not(:has(> .show-poster)) {
+      grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem);
+    }
+    .show-header:not(:has(> .show-poster)) > .show-lede {
+      grid-column: 1;
+    }
+    .show-header:not(:has(> .show-poster)) > .show-actions {
+      grid-column: 2;
+    }
+    .show-header:not(:has(> .show-poster)) > .show-measures {
+      grid-column: 1 / -1;
+    }
+  }
+
+  /**
+   * Le panneau se cale en haut de sa colonne, a hauteur du titre — pas etire sur la hauteur
+   * du synopsis, qui varie de trois lignes a douze d'une serie a l'autre.
+   *
+   * ⚠️ **`.panel`, et c'est le meme raisonnement que pour l'affiche** : ce bloc est pose sur
+   * une photographie dont on ne sait rien — un ciel clair, un mur blanc, un visage. Des
+   * boutons flottants y seraient lisibles sur *Breaking Bad* et perdus sur la suivante. Une
+   * matiere derriere rend la lisibilite independante de l'image, comme `.poster-frame` rend
+   * l'affiche independante de ce qu'il y a dessous.
+   */
+  .show-actions {
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    /* La forme, la bordure et l'elevation viennent de `.panel` ; il ne manque que le
+       rembourrage, que `.panel` ne pose volontairement pas. */
+    padding: 1rem;
+    /* Deux rangees de boutons plus le rembourrage : la hauteur du panneau d'une serie qu'on
+       ne suit pas, donc celle du gabarit d'attente. Les deux coincident, rien ne saute. */
+    min-height: 7.5rem;
   }
 
   .show-header-overlap {

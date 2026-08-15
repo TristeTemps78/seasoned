@@ -550,6 +550,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'rating.episode': 'episode S{s}E{e}',
 
   'progress.aria': 'My progress',
+  // Le panneau de l'en-tete. Un nom **different** de `progress.aria` : deux reperes de page
+  // portant le meme nom ne se distinguent pas dans la liste d'un lecteur d'ecran.
+  'progress.quickAria': 'Where I am — the one-tap gestures',
   'progress.title': 'Where I am',
   'lives.local': 'kept on this device, nothing is sent',
   'lives.synced': 'kept on this device, and on your account',

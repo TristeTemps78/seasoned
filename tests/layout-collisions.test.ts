@@ -360,3 +360,62 @@ it('aucune face ne redessine son en-tete a la main', () => {
     expect(codeOf(file!)).toMatch(/\bpage-title\b/);
   }
 });
+
+it('tout enfant de l en-tete serie recoit un placement explicite', () => {
+  /*
+   * 🔴 Le defaut n°5, fait et vu le 2026-08-15 en ajoutant la troisieme colonne.
+   *
+   * `.show-header` a porte deux enfants — l'affiche et le texte — pendant toute sa vie, donc
+   * le placement automatique de la grille suffisait. Il en porte quatre depuis que le geste
+   * est remonte dans l'en-tete : l'affiche, le texte, le panneau de gestes, les mesures.
+   *
+   * Le placement automatique remplit alors ligne par ligne, et le troisieme enfant tombe
+   * **sous l'affiche**, dans la colonne de 14 rem. Constate a l'ecran : le gabarit d'attente
+   * de `ProgressSummary`, qui ne portait pas encore `.show-actions`, se posait par-dessus le
+   * titre dans le HTML servi et jusqu'a l'hydratation.
+   *
+   * ⚠️ Rien ne pouvait le dire : jsdom n'a pas de moteur de grille, le typage ne connait pas
+   * le CSS, et le build ne rend aucune page. Ce qui se lit dans la source, en revanche, c'est
+   * que **chaque classe posee sur un enfant direct doit avoir sa regle `grid-column`**.
+   */
+  const page = codeOf(
+    filesUnder('app').find((file) => pathOf(file) === 'app/(site)/serie/[id]/page.tsx')!,
+  );
+
+  const summary = codeOf(
+    filesUnder('app').find((file) => pathOf(file) === 'app/components/ProgressSummary.tsx')!,
+  );
+
+  // Les quatre enfants directs de la grille, avec le fichier qui pose la classe. ⚠️ Trois
+  // viennent de la page, le quatrieme de son propre composant : chercher les quatre dans la
+  // page rendrait la garde rouge pour une bonne raison — et pour la mauvaise.
+  const ENFANTS = [
+    ['show-poster', page],
+    ['show-lede', page],
+    ['show-measures', page],
+    ['show-actions', summary],
+  ] as const;
+  for (const [classe, source] of ENFANTS) {
+    expect(source, `${classe} n'est plus pose dans l'en-tete`).toContain(classe);
+    expect(
+      // ⚠️ La forme `.show-header > .classe`, **enfant direct et rien d'autre**. La premiere
+      // version acceptait n'importe quel selecteur contenant les deux noms : retirer le
+      // `grid-column` de la regle principale la laissait verte, parce que la variante « sans
+      // affiche » quelques lignes plus bas en portait un. Verifie par mutation.
+      //
+      // ⚠️ `String.raw`, comme la garde de `no-dead-class` plus haut : dans un gabarit
+      // ordinaire, `\.` devient un point qui matche tout et `\b` un caractere de retour
+      // arriere. La regex passait alors pour fausse sur une feuille correcte.
+      new RegExp(String.raw`\.show-header\s*>\s*\.${classe}\s*\{[^}]*grid-column`).test(CSS),
+      `${classe} est un enfant de la grille sans regle grid-column : la grille le placera toute seule`,
+    ).toBe(true);
+  }
+
+  // Le gabarit d'attente porte la meme classe que le bloc rendu — sinon il n'est place nulle
+  // part pendant tout le temps ou il est le seul a l'ecran.
+  const attente = summary.slice(0, summary.indexOf('<section'));
+  expect(
+    attente,
+    'le gabarit d’attente doit porter `show-actions`, faute de quoi il se pose sur le titre',
+  ).toContain('show-actions');
+});
