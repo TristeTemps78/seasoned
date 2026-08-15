@@ -856,6 +856,10 @@ export const FR = {
   'resume.inDays.other': 'dans {n} jours',
   'resume.at': 'vous en étiez à S{s}E{e}',
   'resume.library': 'ma bibliothèque →',
+  // ⚠️ Le bouton **nomme l'épisode** au lieu de dire « suivant » : c'est le seul endroit du
+  // produit où l'on écrit dans le journal sans voir la série, et un tracker qui avance la
+  // mauvaise chose est pire qu'un tracker qu'on n'utilise pas.
+  'resume.watched': 'J’ai vu S{s}E{e}',
 
   // --- Sauvegarde ----------------------------------------------------------
   'backup.aria': 'Sauvegarde',

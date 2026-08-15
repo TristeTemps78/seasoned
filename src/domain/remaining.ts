@@ -184,3 +184,62 @@ export function remainingAfter(
       : {}),
   };
 }
+
+/**
+ * L'episode juste apres la position — **celui qu'on va voir**.
+ *
+ * ## Ce que ca debloque, et pourquoi ca vit ici
+ *
+ * Le produit est un mix Letterboxd × Serializd × **TV Time**, et le geste central du
+ * troisieme est « j'ai vu le suivant ». Au 2026-08-16 il coutait trois navigations :
+ * l'accueil dit ou l'on en est (`ResumeStrip`), mais c'est un **lien** — il faut ouvrir la
+ * fiche, descendre jusqu'a la grille, trouver la case. C'est exactement la friction que
+ * `setPosition` documente comme *« la cause n°1 d'abandon des trackers »*, et le pointeur
+ * l'avait resolue pour la saisie sans la resoudre pour le retour.
+ *
+ * ⚠️ **Dans ce module et pas ailleurs** : `SeasonSize` et `WatchPosition` y sont deja
+ * definis, et `remainingAfter` repond a la question jumelle (« combien reste-t-il »). Ecrire
+ * l'arithmetique des saisons une seconde fois ailleurs, c'est se garantir que les deux
+ * divergeront le jour ou un decoupage change chez le fournisseur.
+ *
+ * ## Ce qu'elle ne fait PAS
+ *
+ * **Elle ne saute pas les exceptions.** Si l'episode suivant est deja marque « vu en
+ * avance », elle le rend quand meme : avancer la position dessus est juste — la marque
+ * devient simplement redondante, et `classifyMarks` cesse de la compter comme etant en
+ * avance. Sauter par-dessus ferait avancer de deux d'un seul clic, ce qu'un bouton nomme
+ * « J'ai vu S3E8 » ne doit pas faire.
+ *
+ * **Elle ne devine pas le debut.** Sans position, elle rend `undefined` plutot que « saison
+ * 1, episode 1 » : commencer une serie est un autre geste, il a son propre bouton sur la
+ * fiche, et le confondre avec « continuer » ferait avancer une serie qu'on n'a jamais
+ * ouverte.
+ *
+ * @param seasons saisons notables, dans n'importe quel ordre. Vides ou inconnues, la
+ *   question n'a pas de reponse — et l'appelant doit alors **ne pas afficher de bouton**,
+ *   plutot qu'en afficher un qui ne peut pas marcher.
+ */
+export function nextAfter(
+  seasons: readonly SeasonSize[],
+  position: WatchPosition | undefined,
+): WatchPosition | undefined {
+  if (position === undefined) return undefined;
+
+  const known = [...seasons]
+    .filter((s) => Number.isFinite(s.seasonNumber) && s.episodeCount > 0)
+    .sort((a, b) => a.seasonNumber - b.seasonNumber);
+  if (known.length === 0) return undefined;
+
+  const current = known.find((s) => s.seasonNumber === position.seasonNumber);
+  // ⚠️ `>=` et non `===` : une position peut **depasser** le compte connu — decoupage revise
+  // chez le fournisseur, ou instantane plus vieux que la saison. On passe alors a la saison
+  // suivante au lieu de rendre un episode qui n'existe pas.
+  if (current !== undefined && position.episodeNumber < current.episodeCount) {
+    return { seasonNumber: current.seasonNumber, episodeNumber: position.episodeNumber + 1 };
+  }
+
+  const after = known.find((s) => s.seasonNumber > position.seasonNumber);
+  return after === undefined
+    ? undefined
+    : { seasonNumber: after.seasonNumber, episodeNumber: 1 };
+}

@@ -304,6 +304,12 @@
 
   /* La densite, qui est un parti pris et pas un reglage : le brief la nomme deux fois. */
   --gap-poster-grid: 8px;
+  /**
+   * La hauteur d'un bouton principal a la souris. Au doigt elle passe a 44 px, et cette
+   * valeur-la ne peut PAS vivre ici : `@theme` n'accepte que des proprietes personnalisees,
+   * pas une media query (Tailwind refuse le fichier). Voir `.btn-primary` dans
+   * `controls.css`, ou la regle de telephone est posee — et pourquoi elle y est **apres**.
+   */
   --control-height: 42px;
 
   /**

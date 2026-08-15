@@ -720,6 +720,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'resume.inDays.other': 'in {n} days',
   'resume.at': 'you were at S{s}E{e}',
   'resume.library': 'my library →',
+  'resume.watched': 'I watched S{s}E{e}',
 
   'backup.aria': 'Backup',
   'backup.title': 'Back up, or switch device',

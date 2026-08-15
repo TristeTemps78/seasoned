@@ -48,21 +48,8 @@
     border-color: color-mix(in oklab, var(--color-volt) 55%, transparent);
     color: var(--color-volt);
   }
-  /*
-   * ⚠️ La hauteur tactile, mesuree le 2026-08-04 a 360 px : les boutons faisaient **38 px**.
-   * Apple recommande 44 px, Android 48 px. Le rembourrage seul ne peut pas y suffire sans
-   * grossir le texte, d'ou une hauteur minimale — et **seulement sur mobile**, parce qu'un
-   * bouton de 44 px de haut a la souris est simplement gros.
-   *
-   * Le rembourrage vertical descend a `0.375rem` pour que le libelle reste centre sans que
-   * la boite ne depasse la hauteur demandee sur deux lignes.
-   */
-  @media (width < 40rem) {
-    .btn {
-      min-height: 2.75rem;
-      padding-block: 0.375rem;
-    }
-  }
+  /* La hauteur tactile n'est plus ici : voir le bloc `@media` **apres** `.btn-primary`, qui
+     explique pourquoi il a du y descendre. */
   .btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -88,6 +75,48 @@
     background-color: color-mix(in oklab, var(--color-volt) 70%, white);
     /* ⚠️ Sans cette ligne, `.btn:hover` repeindrait le libelle en volt — sur un fond volt. */
     color: var(--color-ink);
+  }
+  /**
+   * =============================================================================
+   * LA HAUTEUR AU DOIGT — et pourquoi ce bloc est **ici**, apres les deux boutons
+   * =============================================================================
+   *
+   * ⚠️ La hauteur tactile, mesuree le 2026-08-04 a 360 px : les boutons faisaient **38 px**.
+   * Apple recommande 44 px, Android 48 px. Le rembourrage seul ne peut pas y suffire sans
+   * grossir le texte, d'ou une hauteur minimale — et **seulement sur mobile**, parce qu'un
+   * bouton de 44 px de haut a la souris est simplement gros. Le rembourrage vertical descend
+   * a `0.375rem` pour que le libelle reste centre sans que la boite ne depasse la hauteur
+   * demandee sur deux lignes.
+   *
+   * ## 🔴 Ce bloc etait plus haut, et `.btn-primary` l'annulait
+   *
+   * Mesure au navigateur le 2026-08-16 sur `/fr/amis` en 375 px : « Ouvrir un compte »
+   * (`.btn btn-primary`) rendait **42 px**, « Chercher une serie » juste en dessous (`.btn`)
+   * **44**. L'action affirmative etait le plus petit des deux boutons, sur la page dont
+   * l'objet entier est d'ouvrir un compte — alors que le commentaire de `.btn-primary`
+   * demande le contraire : *« elle doit avoir une masse »*.
+   *
+   * La cause n'est ni la specificite ni une faute de valeur : **une media query n'ajoute
+   * aucune specificite**. `.btn-primary { min-height: var(--control-height) }` etait declaree
+   * plus bas, a poids egal, donc l'ordre source tranchait en sa faveur.
+   *
+   * ⚠️ **Et le premier correctif etait vert au test et faux a l'ecran.** Ajouter
+   * `.btn-primary` au bloc sans le deplacer ne changeait rien : mesure a nouveau, le bouton
+   * restait a 42 px. La correction n'est donc pas d'elargir le selecteur, c'est de **poser le
+   * bloc apres les deux regles qu'il doit surcharger**. Deuxieme fois de la session qu'un
+   * correctif de mise en page passe la relecture et tombe a la mesure — jsdom n'a pas de
+   * moteur de rendu, et l'ordre de cascade n'est visible qu'a l'ecran.
+   *
+   * ⚠️ Le jeton ne pouvait pas porter la valeur : `@theme` n'accepte que des proprietes
+   * personnalisees, une media query dedans fait echouer la compilation Tailwind — essaye,
+   * constate, ecrit ici pour que personne ne le retente.
+   */
+  @media (width < 40rem) {
+    .btn,
+    .btn-primary {
+      min-height: 2.75rem;
+      padding-block: 0.375rem;
+    }
   }
   /** Le bouton d'un geste qu'on ne defait pas. */
   .btn-danger {
