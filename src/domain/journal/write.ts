@@ -14,6 +14,7 @@ import type { EpisodeMark } from '../remaining';
 import type { FaceId } from '../face';
 import {
   episodeKey,
+  MAX_FAVORITES,
   type FactOrigin,
   type Journal,
   type JournalEntry,
@@ -460,6 +461,67 @@ export function setPlatforms(
   platforms: readonly string[],
 ): Journal {
   return { ...journal, platforms: [...new Set(platforms)].sort() };
+}
+
+/**
+ * Choisit les series epinglees en tete de profil.
+ *
+ * ## ⚠️ Ce qu'on ne fait PAS, et c'est le contraire de {@link setPlatforms}
+ *
+ * Pas de `.sort()`. La ligne d'a cote en pose un, et le recopier ici reordonnerait la carte
+ * de visite de quelqu'un a chaque sauvegarde : `platforms` est un **ensemble** de
+ * preferences, `favorites` est une **suite** choisie. Le tri est correct pour l'un et faux
+ * pour l'autre, et rien dans le typage ne les distingue — d'ou ce paragraphe.
+ *
+ * On deduplique quand meme : la meme serie deux fois volerait un emplacement sur quatre. Et
+ * on tronque a {@link MAX_FAVORITES}, parce qu'un appelant qui en passerait cinq doit voir
+ * la contrainte s'appliquer plutot que la decouvrir a l'affichage.
+ *
+ * ## Une liste vide RETIRE le champ
+ *
+ * Et non « ecrit un tableau vide ». Un `favorites: { keys: [], at }` serait un fait date qui
+ * ne dit rien, et il **gagnerait la fusion** contre un vrai choix pose plus tot sur l'autre
+ * appareil — donc vider ses favoris ici les viderait la-bas, ce qui est correct, mais un
+ * document vide reecrit a chaque sauvegarde le referait indefiniment. L'absence est le
+ * defaut, et l'ecrire serait du bruit ({@link setHideHours} tranche pareil).
+ */
+export function setFavorites(
+  journal: Journal,
+  keys: readonly JournalKey[],
+  now = new Date(),
+): Journal {
+  const kept = [...new Set(keys.filter((k) => k.length > 0))].slice(0, MAX_FAVORITES);
+  if (kept.length === 0) {
+    const { favorites: _dropped, ...rest } = journal;
+    return rest;
+  }
+  return { ...journal, favorites: { keys: kept, at: now.toISOString() } };
+}
+
+/** Les series epinglees, ou une liste vide. Le seul lecteur a connaitre la forme du champ. */
+export function favoritesOf(journal: Journal): readonly JournalKey[] {
+  return journal.favorites?.keys ?? [];
+}
+
+/**
+ * Epingle ou decroche une serie, en preservant l'ordre des autres.
+ *
+ * Rend le journal **inchange** quand on demande d'en epingler une cinquieme : le plafond est
+ * une regle du format, et l'interface doit deja avoir cesse de proposer le geste. Echouer en
+ * silence serait pire — c'est le bouton qui a l'air de marcher, celui que
+ * {@link hasCompletionOn} existe pour eviter ailleurs.
+ */
+export function toggleFavorite(
+  journal: Journal,
+  key: JournalKey,
+  now = new Date(),
+): Journal {
+  const current = favoritesOf(journal);
+  if (current.includes(key)) {
+    return setFavorites(journal, current.filter((k) => k !== key), now);
+  }
+  if (current.length >= MAX_FAVORITES) return journal;
+  return setFavorites(journal, [...current, key], now);
 }
 
 /**

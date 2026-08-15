@@ -17,6 +17,7 @@ import type { DecisionKind, Stars } from '../types';
 import {
   EMPTY_JOURNAL,
   JOURNAL_VERSION,
+  MAX_FAVORITES,
   journalKey,
   parseJournalKey,
   TOMBSTONE_TTL_MS,
@@ -27,6 +28,7 @@ import {
   type JournalDecision,
   type JournalEntry,
   type JournalEpisodeMark,
+  type JournalFavorites,
   type JournalKey,
   type JournalPosition,
   type JournalRating,
@@ -359,6 +361,7 @@ const KNOWN_JOURNAL_FIELDS = [
   'hideHours',
   'keepStopsPrivate',
   'announcedFace',
+  'favorites',
   'entries',
 ] as const;
 
@@ -567,6 +570,7 @@ function readJournal(
     : [];
 
   const announcedFace = parseAnnouncedFace(source['announcedFace']);
+  const favorites = parseFavorites(source['favorites']);
 
   const unknownFields = unknownFieldsOf(source, KNOWN_JOURNAL_FIELDS);
 
@@ -588,8 +592,46 @@ function readJournal(
     // Meme regle encore : relu, sinon efface a la premiere sauvegarde — et une annonce
     // effacee est une annonce qui se rejoue a chaque chargement.
     ...(announcedFace !== undefined ? { announcedFace } : {}),
+    // Meme regle, pour la neuvieme fois dans ce fichier : un champ que `parseJournal` ne
+    // relit pas est **efface a la premiere sauvegarde**. Ici la personne verrait sa carte
+    // de visite se vider toute seule, sans avoir rien touche.
+    ...(favorites !== undefined ? { favorites } : {}),
     ...(unknownFields !== undefined ? { unknownFields } : {}),
   };
+}
+
+/**
+ * Les series epinglees, ou **rien**.
+ *
+ * Trois exigences, et chacune ecarte plutot que de reparer :
+ *
+ *   - une date lisible — sans elle le choix ne peut pas etre fusionne, et un choix qui ne
+ *     fusionne pas ferait diverger deux appareils en silence ;
+ *   - des cles non vides, dedupliquees — la meme serie deux fois volerait un emplacement
+ *     sur quatre ;
+ *   - au plus {@link MAX_FAVORITES}, en **tronquant par la fin**. Un document ecrit par une
+ *     version future qui en accepterait six ne doit pas faire deborder la rangee ici ; garder
+ *     les quatre premiers respecte l'ordre voulu par la personne.
+ *
+ * ⚠️ L'ordre est **preserve**, jamais trie : c'est la carte de visite de quelqu'un, et la
+ * premiere affiche est la premiere.
+ */
+function parseFavorites(source: unknown): JournalFavorites | undefined {
+  if (typeof source !== 'object' || source === null) return undefined;
+  const record = source as Record<string, unknown>;
+
+  const at = record['at'];
+  if (typeof at !== 'string' || Number.isNaN(Date.parse(at))) return undefined;
+
+  const raw = record['keys'];
+  if (!Array.isArray(raw)) return undefined;
+
+  const keys = [
+    ...new Set(raw.filter((k): k is string => typeof k === 'string' && k.length > 0)),
+  ].slice(0, MAX_FAVORITES);
+
+  if (keys.length === 0) return undefined;
+  return { keys, at };
 }
 
 /**
@@ -639,6 +681,7 @@ export function serializeJournal(journal: Journal): string {
     ...(journal.hideHours === true ? { hideHours: true } : {}),
     ...(journal.keepStopsPrivate === true ? { keepStopsPrivate: true } : {}),
     ...(journal.announcedFace !== undefined ? { announcedFace: journal.announcedFace } : {}),
+    ...(journal.favorites !== undefined ? { favorites: journal.favorites } : {}),
     entries,
   });
 }

@@ -9,6 +9,7 @@ import {
   parseJournal,
   serializeJournal,
   markCompleted as markCompletedIn,
+  toggleFavorite as toggleFavoriteIn,
   setDecision as setDecisionIn,
   setEpisodeRating as setEpisodeRatingIn,
   setPlatforms as setPlatformsIn,
@@ -216,6 +217,17 @@ export function useJournal() {
      */
     watchAgain: useCallback(
       (key: JournalKey) => mutate((j) => markCompletedIn(j, key)),
+      [mutate],
+    ),
+    /**
+     * Epingle ou decroche une serie de la carte de visite.
+     *
+     * ⚠️ Rend le journal inchange au-dela de quatre : le plafond appartient au format, et
+     * l'interface doit avoir cesse de proposer le geste avant d'y arriver
+     * ({@link MAX_FAVORITES}).
+     */
+    toggleFavorite: useCallback(
+      (key: JournalKey) => mutate((j) => toggleFavoriteIn(j, key)),
       [mutate],
     ),
     setWanted: useCallback(

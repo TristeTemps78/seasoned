@@ -392,6 +392,39 @@
 
   /**
    * =============================================================================
+   * UN LIEN DE TEXTE QUI ATTEINT 24 PX — la regle ecrite une fois, pas comptee
+   * =============================================================================
+   *
+   * 🔴 Mesure au navigateur le 2026-08-15, sur trois liens ecrits le meme jour : le titre
+   * d'une ligne du journal **20 px**, la porte du journal depuis `/moi` **17 px**, le lien
+   * « en decrocher une » de la carte de visite **15 px**. Chacun avait ete corrige a la main
+   * par un `inline-block py-1`, et la quatrieme occurrence allait etre ecrite de la meme
+   * facon.
+   *
+   * ⚠️ **On n'attend pas la troisieme repetition.** `surfaces.css` dit pourquoi, a propos de
+   * `.empty-state-actions` : *compter les repetitions revenait a attendre qu'une regle de
+   * produit se prouve trois fois avant de l'ecrire une*. Ici la regle est deja ecrite — WCAG
+   * 2.5.8 (AA), 24 px quel que soit le pointeur, appliquee au depot le 2026-08-13 sur
+   * `.grid-cell` et `.star-box`. Elle ne s'appliquait simplement pas aux liens de texte.
+   *
+   * `inline-flex` et non `inline-block` : le rembourrage vertical d'un `inline-block`
+   * **deplace** la ligne de base, donc un lien au milieu d'une phrase la fait sauter.
+   * L'alignement centre garde le texte exactement ou il etait et n'ajoute que de la surface
+   * cliquable au-dessus et en dessous — c'est le point : la cible grandit, la mise en page
+   * ne bouge pas.
+   *
+   * ⚠️ Reserve aux liens qui sont **une cible a part entiere**. WCAG exempte le lien inline
+   * dans un paragraphe de prose, et l'appliquer partout gonflerait l'interligne de tous les
+   * textes du site pour rien.
+   */
+  .tap-line {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+  }
+
+  /**
+   * =============================================================================
    * ALLER AU CONTENU — le premier lien de chaque page
    * =============================================================================
    *

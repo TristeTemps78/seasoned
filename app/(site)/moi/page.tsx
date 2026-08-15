@@ -4,6 +4,7 @@ import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { Library } from './Library';
 import { PageHeader } from '@/app/components/PageHeader';
 import { Quiz } from '@/app/components/Quiz';
+import { Favorites } from '@/app/components/Favorites';
 import { FaceDiscovery } from '@/app/components/FaceDiscovery';
 import { PosterRail } from '@/app/components/PosterRail';
 import { discover } from '@/lib/catalog';
@@ -77,21 +78,25 @@ export async function LibraryView({ locale }: { readonly locale: Locale }) {
             Toujours affiche, meme sans un seul fait : la page d'arrivee dit alors quoi faire
             (regle 4), ce qu'un lien absent ne dirait pas. */}
         <p className="pt-2">
-          {/* ⚠️ `inline-block py-1` : `.meta` seul rendait un lien de **17 px** de haut
-              (mesure au navigateur), sous les 24 px de la regle du depot. Meme correctif
-              que les titres du journal, et pour la meme raison — la hauteur est gratuite
-              ici, la ligne est seule. */}
+          {/* ⚠️ `.tap-line` : `.meta` seul rendait un lien de **17 px** de haut (mesure au
+              navigateur), sous les 24 px de la regle du depot. */}
           <Link
             href={pathIn('/journal', locale)}
-            className="meta inline-block py-1 hover:text-(--color-text)"
+            className="meta tap-line hover:text-(--color-text)"
           >
             {t(locale, 'library.toJournal')}
           </Link>
         </p>
       </PageHeader>
 
-      {/* Avant la bibliotheque : c'est le rendez-vous, et il doit se voir en arrivant. Se
-          tait tout seul tant qu'il n'y a pas assez d'histoire pour poser une question. */}
+      {/* La carte de visite, **avant** tout le reste : c'est la seule chose de cette page
+          qui dise qui vous etes plutot que ce que vous avez regarde. Toujours rendue, meme
+          vide — quatre emplacements qui disent quoi y mettre apprennent que la chose
+          existe, un bloc absent n'apprend rien (regle 4). */}
+      <Favorites />
+
+      {/* Puis le rendez-vous, qui doit se voir en arrivant. Se tait tout seul tant qu'il n'y
+          a pas assez d'histoire pour poser une question. */}
       <Quiz />
 
       <Library />

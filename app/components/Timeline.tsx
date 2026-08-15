@@ -216,15 +216,12 @@ function Row({ event }: { readonly event: TimelineEvent }) {
     ) : (
       // La cle porte son fournisseur : on ne fabrique jamais une URL depuis un identifiant
       // nu, meme ici.
-      // ⚠️ `inline-block py-1` : le lien nu mesurait **20 px de haut** (mesure au navigateur
-      // le 2026-08-15), sous les 24 px que le depot s'est fixes le 2026-08-13. Le rembourrage
-      // vertical est gratuit ici — la ligne fait 84 px et le titre n'en occupe qu'un tiers —,
-      // donc on l'ajoute plutot que d'invoquer l'exception d'espacement de WCAG 2.5.8. Le
-      // depot a deja refuse cette exception une fois (`.grid-cell`), pour une bonne raison :
-      // elle se perd des que la mise en page bouge, un `min-height` non.
+      // ⚠️ `.tap-line` : le lien nu mesurait **20 px de haut** (mesure au navigateur), sous
+      // les 24 px que le depot s'est fixes le 2026-08-13. La classe porte la regle une fois
+      // pour tout le site plutot qu'un rembourrage recopie a chaque lien.
       <Link
         href={seriesPath(parsed.providerId, locale)}
-        className="inline-block py-1 font-medium hover:text-(--color-volt)"
+        className="tap-line font-medium hover:text-(--color-volt)"
       >
         {title}
       </Link>

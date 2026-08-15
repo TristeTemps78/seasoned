@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
@@ -8,7 +9,9 @@ import { StarRating } from '@/app/components/StarRating';
 import { ReviewEditor } from '@/app/components/ReviewEditor';
 import {
   completionCount,
+  favoritesOf,
   hasCompletionOn,
+  MAX_FAVORITES,
   isRewatching,
   journalKey,
   marksOf,
@@ -19,6 +22,7 @@ import { catchUpPlan } from '@/src/domain/catch-up';
 import { seasonToRate } from '@/src/domain/nudge';
 import { remainingAfter } from '@/src/domain/remaining';
 import { formatCommitment } from '@/lib/format';
+import { pathIn } from '@/lib/routes';
 
 export interface SeasonShape {
   readonly seasonNumber: number;
@@ -79,10 +83,11 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
     setWanted,
     setLiked,
     watchAgain,
+    toggleFavorite,
     rememberSnapshot,
   } = useJournal();
   const tr = useT();
-  const { t, tn, n } = tr;
+  const { t, tn, n, locale } = tr;
 
   // Jamais l'identifiant nu : les cles du journal portent leur fournisseur, pour qu'un
   // changement de catalogue reste un remappage et non une perte (`journal.ts`).
@@ -159,6 +164,11 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
   // peut rien ecrire donnerait un bouton **qui a l'air de marcher** — la forme la plus
   // insidieuse du bouton mort, et celle que la regle du 2026-08-09 vise sans la nommer.
   const passedToday = hasCompletionOn(entry, new Date());
+
+  // La carte de visite : quatre au plus, donc l'interface doit connaitre l'etat courant
+  // avant de proposer le geste.
+  const favorites = favoritesOf(journal);
+  const pinned = favorites.includes(key);
 
   // « 14 episodes en 12 jours » : ce qui reste, rapporte a la date de retour. Croiser
   // les deux transforme une bibliotheque en plan — et ne coute rien, tout est deja la.
@@ -242,6 +252,33 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
             question sans rien ajouter.
 
             Absent le jour ou un passage est deja enregistre : voir `passedToday`. */}
+        {/* Epingler — la carte de visite. Le geste vit ici et **pas** sur `/moi` : on decide
+            qu'une serie vous represente en la regardant, pas en parcourant une grille. Ce
+            qui reste sur `/moi`, c'est l'affichage et le decrochage.
+
+            ⚠️ Le bouton disparait quand quatre series sont deja epinglees ET que celle-ci
+            n'en fait pas partie : `toggleFavorite` rend alors le journal inchange, donc le
+            proposer donnerait un bouton qui a l'air de marcher — exactement ce que
+            `passedToday` evite deux lignes plus bas. La phrase qui le remplace dit la
+            condition et ou la lever (regle 4 : une porte nommee n'est pas un bouton mort). */}
+        {pinned || favorites.length < MAX_FAVORITES ? (
+          <button
+            type="button"
+            aria-pressed={pinned}
+            onClick={() => toggleFavorite(key)}
+            className="btn rounded-full"
+          >
+            {pinned ? t('favorites.pinned') : t('favorites.pin')}
+          </button>
+        ) : (
+          <span className="meta-sm">
+            {t('favorites.full')}{' '}
+            <Link href={pathIn('/moi', locale)} className="tap-line underline hover:text-(--color-text)">
+              {t('favorites.manage')}
+            </Link>
+          </span>
+        )}
+
         {passes > 0 && !passedToday ? (
           <button
             type="button"

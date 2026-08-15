@@ -11,6 +11,7 @@
 
 import {
   type FaceAnnouncement,
+  type JournalFavorites,
   type Journal,
   type JournalEntry,
   type JournalKey,
@@ -270,7 +271,36 @@ const DOCUMENT_MERGE: {
   // `deviceId` de `sameJournal`. Ici la consequence serait visible : rejouer sur le
   // telephone une bascule deja vue sur l'ordinateur, ou pire, taire la seule qui comptait.
   announcedFace: (a, b) => derniere(a.announcedFace, b.announcedFace),
+  // ⚠️ **Le plus recent gagne EN ENTIER**, et surtout pas l'union — qui est pourtant la
+  // regle des deux listes juste au-dessus. La difference tient a ce qu'est cette liste :
+  // elle est **plafonnee et ordonnee**, donc en retirer une est un geste aussi ordinaire
+  // que d'en ajouter une. Une union ferait revenir la serie qu'on vient de decrocher sur
+  // l'autre appareil, et depasserait quatre par-dessus le marche.
+  //
+  // C'est la meme forme que `announcedFace`, y compris le departage a egalite de date :
+  // par le contenu, jamais par l'ordre des arguments. Le battement infini que ce fichier
+  // raconte deux paragraphes plus bas est arrive **le jour ou la regle a ete ecrite**.
+  favorites: (a, b) => dernierChoix(a.favorites, b.favorites),
 };
+
+/**
+ * Le plus recent des deux choix de favoris.
+ *
+ * A egalite de date, on departage sur les cles jointes — un ordre lexical qui n'a aucun sens
+ * metier, et c'est exactement sa qualite : il n'en faut pas. Il doit seulement rendre le
+ * **meme** verdict des deux cotes, sans quoi deux appareils se renvoient leurs journaux
+ * indefiniment ({@link derniere} raconte cette histoire-la).
+ */
+function dernierChoix(
+  a: JournalFavorites | undefined,
+  b: JournalFavorites | undefined,
+): JournalFavorites | undefined {
+  if (a === undefined) return b;
+  if (b === undefined) return a;
+  const parDate = b.at.localeCompare(a.at);
+  if (parDate !== 0) return parDate > 0 ? b : a;
+  return b.keys.join(' ').localeCompare(a.keys.join(' ')) < 0 ? b : a;
+}
 
 /**
  * La plus recente des deux annonces. `at` est une chaine ISO : l'ordre lexical suffit.

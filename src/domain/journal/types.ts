@@ -704,9 +704,63 @@ export interface Journal {
    * Champ **additif** : un client plus ancien l'ignore et le preserve.
    */
   readonly announcedFace?: FaceAnnouncement;
+  /**
+   * Les series epinglees en tete de profil. Voir {@link JournalFavorites}.
+   *
+   * Absent = aucune. C'est le defaut, et il se voit : un profil sans favoris affiche quatre
+   * emplacements vides qui disent quoi y mettre, plutot que rien du tout (regle 4).
+   */
+  readonly favorites?: JournalFavorites;
   readonly entries: Readonly<Record<JournalKey, JournalEntry>>;
   /** Champs de document inconnus, preserves. Voir {@link JournalEntry.unknownFields}. */
   readonly unknownFields?: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * Combien de series on epingle. Quatre, comme Letterboxd.
+ *
+ * ## Pourquoi un plafond, et pourquoi celui-la
+ *
+ * Une carte de visite qui accepte trente series n'est plus une carte de visite, c'est une
+ * seconde bibliotheque — et la bibliotheque existe deja (regle 3). La contrainte **est** la
+ * fonctionnalite : devoir en retirer une pour en mettre une autre est ce qui fait que le
+ * choix veut dire quelque chose.
+ *
+ * Quatre et pas cinq parce que c'est ce qui tombe juste sur une rangee d'affiches en 2:3,
+ * sur un telephone comme sur un bureau — mesure faite avec `PosterChip wide` a 112 px.
+ */
+export const MAX_FAVORITES = 4;
+
+/**
+ * Les series epinglees — **et pourquoi c'est un fait date**.
+ *
+ * ## Pourquoi pas un simple tableau, comme {@link Journal.platforms}
+ *
+ * Les plateformes se fusionnent par **union** : une preference declaree deux fois n'a jamais
+ * fait de mal, et garder la liste la plus fournie ne perd rien. Ici l'union serait fausse
+ * dans les deux sens — elle depasserait quatre, et surtout elle **ressusciterait** une serie
+ * qu'on venait de retirer sur l'autre appareil. Or retirer est le geste principal d'une
+ * liste plafonnee.
+ *
+ * Un choix ordonne et plafonne ne se fusionne donc que d'une facon : le plus recent gagne,
+ * en entier. Ce qui suppose une date sur le fait — la meme mecanique que
+ * {@link Journal.announcedFace}, et pour la meme raison ecrite la-bas : sans date, la
+ * fusion trancherait par l'ordre des arguments, ce qui est le defaut du `deviceId` de
+ * `sameJournal`.
+ *
+ * ## L'ordre compte, et il est celui de la personne
+ *
+ * `keys` n'est pas un ensemble : la premiere affiche est la premiere. Une normalisation par
+ * tri — le reflexe de `setPlatforms` — reordonnerait la carte de visite de quelqu'un a
+ * chaque sauvegarde.
+ *
+ * Champ **additif** : un client plus ancien l'ignore et le preserve (decision n°4).
+ */
+export interface JournalFavorites {
+  /** Dans l'ordre voulu, au plus {@link MAX_FAVORITES}. */
+  readonly keys: readonly JournalKey[];
+  /** ISO 8601. C'est ce champ qui tranche la fusion. */
+  readonly at: string;
 }
 
 /** Une annonce de face : laquelle, et quand on l'a montree. */

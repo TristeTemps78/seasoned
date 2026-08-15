@@ -113,6 +113,17 @@ export const FR = {
   // Le journal daté. ⚠️ « Journal » et non « Historique » : un historique se subit, un
   // journal se tient. Le mot est le même dans les deux langues, donc l'URL aussi.
   'library.toJournal': 'Voir mon journal, par date →',
+  'favorites.title': 'Ma carte de visite',
+  'favorites.why': 'Quatre séries, pas une de plus.',
+  'favorites.slot': 'à choisir',
+  'favorites.unpin': 'Décrocher',
+  'favorites.pin': 'Épingler au profil',
+  'favorites.pinned': 'Épinglée',
+  'favorites.full': 'Vos quatre emplacements sont pris.',
+  'favorites.manage': 'En décrocher une',
+  'favorites.empty':
+    'Rien d’épinglé pour l’instant. Le geste est sur la fiche d’une série, sous « Où j’en suis ».',
+  'favorites.find': 'Chercher une série',
   'timeline.title': 'Mon journal',
   'timeline.lede': 'Ce que vous avez fait, dans l’ordre où vous l’avez fait.',
   'timeline.emptyTitle': 'Rien à raconter pour l’instant',
