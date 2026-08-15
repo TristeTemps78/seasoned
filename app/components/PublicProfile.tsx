@@ -10,7 +10,8 @@ import { useJournal } from '@/app/journal/useJournal';
 import { redactReviewsAcross } from '@/src/domain/spoiler';
 import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
-import { type Profile, type PublishedReview } from '@/src/social/client';
+import { formatDate } from '@/lib/format';
+import { type FeedItem, type Profile, type PublishedReview } from '@/src/social/client';
 import { Lists } from '@/app/components/Lists';
 import { Avatar } from '@/app/components/Avatar';
 import { EmptyState } from '@/app/components/EmptyState';
@@ -56,6 +57,19 @@ import { socialFrom } from '@/app/social/socialFrom';
  * position s'applique a quelle critique » est une decision de spoiler, et la regle 7 exige
  * qu'elle vive dans `src/domain/`, jamais dans la couche de rendu.
  */
+/**
+ * « season:3 » → 3.
+ *
+ * ⚠️ Le repli est `0` et non une exception : une cible malformee vient de la base, donc
+ * d'ailleurs, et une page de profil ne doit pas se casser parce qu'une ligne est bizarre.
+ * Le libelle dira « saison 0 », ce qui est visiblement faux — donc lisible comme un defaut,
+ * ce qu'un ecran blanc n'est pas.
+ */
+function seasonOf(target: string): number {
+  const n = Number(target.split(':')[1]);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function PublicProfile({ handle }: { readonly handle: string }) {
   const { t, tn, locale } = useT();
   const { configured, ready, account } = useAuth();
@@ -63,6 +77,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
 
   const [profile, setProfile] = useState<Profile | undefined>(undefined);
   const [reviews, setReviews] = useState<readonly PublishedReview[]>([]);
+  const [loved, setLoved] = useState<readonly FeedItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [following, setFollowing] = useState(false);
   const [followsMe, setFollowsMe] = useState(false);
@@ -89,7 +104,14 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     setProfile(found);
     setLoaded(true);
     if (found === undefined) return;
-    setReviews(await social.reviewsBy(found.userId));
+    // Les deux ensemble : c'est ce que la page montre l'un sous l'autre, et les enchainer
+    // ferait apparaitre le gout apres les mots, dans une page qui commence par le gout.
+    const [written, hearts] = await Promise.all([
+      social.reviewsBy(found.userId),
+      social.lovedBy(found.userId),
+    ]);
+    setReviews(written);
+    setLoved(hearts);
     if (userId === undefined) return;
     // Les trois d'un coup : elles decident **ensemble** de ce que la zone d'action affiche —
     // le bouton, la mention « vous suit », ou l'invitation a prendre un nom. Les enchainer
@@ -234,6 +256,47 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           Consequence pratique mesuree : sur un profil sans liste — le cas de tous les profils
           aujourd'hui —, la page s'ouvrait sur « Rien a lire ici pour l'instant » avant de
           montrer ce que la personne avait ecrit. */}
+      {/* =============================================================================
+          🔴 LE GESTE S'APPELLE « EPINGLER SUR SON PROFIL », ET LE PROFIL NE MONTRAIT RIEN
+          =============================================================================
+
+          Mesure a l'ecran le 2026-08-15 : cette page portait un avatar, un nom, les critiques
+          et les listes — rien du gout de la personne. `favorites.pin` s'intitule pourtant
+          « Pin to profile », et `<Favorites />` n'est monte qu'a un endroit du depot : `/moi`.
+
+          ⚠️ **Ce sont les coeurs, pas les quatre epinglees**, et l'ecart est assume : les
+          epinglees vivent dans le journal, donc dans le navigateur, et les faire voyager
+          demande une colonne sur `profiles` plus un chemin de publication — comme `face` en a
+          un. Les coeurs sont deja publies depuis `005_liked.sql` et n'etaient lus que serie
+          par serie (`watchersOf`), jamais par personne. C'est donc la meme reponse — *ce que
+          cette personne aime* — pour zero migration.
+
+          En tete, et avant les mots : une affiche se lit sans rien savoir de quelqu'un, une
+          phrase suppose qu'on connaisse la serie. C'est l'argument qui rangeait les listes en
+          premier avant le 2026-08-11 ; il etait faux pour du texte, il reste vrai pour des
+          images. */}
+      {loved.length > 0 ? (
+        <section className="space-y-3" aria-label={t('profile.loves')}>
+          <h2 className="section-heading">{t('profile.loves')}</h2>
+          <ul className="flex flex-wrap gap-3">
+            {loved.map((one) => {
+              const parsed = parseJournalKey(one.subject);
+              const title = one.title ?? journal.entries[one.subject]?.snapshot?.title ?? one.subject;
+              const posterPath =
+                one.posterPath ?? journal.entries[one.subject]?.snapshot?.posterPath;
+              if (parsed === undefined) return null;
+              return (
+                <li key={`${one.subject}:${one.happenedOn}`}>
+                  <Link href={pathIn(`/serie/${parsed.providerId}`, locale)} className="block">
+                    <PosterChip path={posterPath} title={title} wide />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+
       <section className="space-y-3" aria-label={t('profile.reviews')}>
         <h2 className="section-heading">{t('profile.reviews')}</h2>
 
@@ -297,6 +360,27 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
                         {shownTitle}
                       </Link>
                     )}
+
+                    {/* 🔴 **Deux critiques d'*Arcane*, le meme lien, et rien pour les
+                        distinguer.** Constate a l'ecran le 2026-08-15 sur `/u/tristetemps78` :
+                        « even better » et « insane », toutes deux vers `/serie/94605`, sans
+                        qu'on sache laquelle porte sur la serie et laquelle sur une saison.
+
+                        `target` porte la reponse depuis `006_reviews.sql` et `publishedAt`
+                        aussi — c'est le meme defaut que la fiche serie a corrige pour la date
+                        le 2026-08-15 : une colonne lue, triee par la base, jamais montree. Une
+                        critique sans date et sans cible ne se situe ni dans le temps ni dans
+                        l'oeuvre, et c'est tout ce qu'on veut savoir d'un avis qu'on decouvre. */}
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 meta-sm">
+                      <span>
+                        {review.target === 'series'
+                          ? t('review.onSeries')
+                          : t('review.onSeason', { n: seasonOf(review.target) })}
+                      </span>
+                      <time dateTime={review.publishedAt}>
+                        {formatDate(new Date(review.publishedAt), locale)}
+                      </time>
+                    </p>
 
                     <ReviewBody
                       hidden={shown.hidden === true}

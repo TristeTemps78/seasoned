@@ -486,6 +486,48 @@ export class SocialClient {
   }
 
   /**
+   * Chercher quelqu'un par son nom — **l'annuaire qui manquait**.
+   *
+   * ## 🔴 Le defaut
+   *
+   * `/recherche` ne trouve que des series : 20 resultats, pas de page 2, aucun filtre. Et
+   * `/amis` propose de suivre en **tapant un nom exact**, ce qui suppose de le connaitre
+   * d'avance. Un produit social sans annuaire ne se peuple pas : chez la reference, la
+   * recherche separe films, critiques, listes, membres, mots et journal.
+   *
+   * ## ⚠️ Ce que ceci n'ouvre PAS, et il faut le dire
+   *
+   * `PublicProfile` explique pourquoi « ce nom n'existe pas » et « ce profil ne vous est pas
+   * visible » ont la meme reponse : les distinguer ferait de la page un **oracle**, donc un
+   * moyen d'enumerer les comptes. Une recherche par prefixe pourrait sembler pire.
+   *
+   * Elle ne l'est pas, et pour une raison structurelle : `profiles_select_visible` ne rend
+   * que ce que le lecteur a le droit de voir. Un profil `private` ou `followers` reste donc
+   * introuvable ici, et l'absence d'un nom dans les resultats **ne dit pas** qu'il est
+   * disponible. L'oracle reste ferme ; ce qui s'ouvre est ce qui a choisi d'etre public.
+   *
+   * ## ⚠️ Le motif est reconstruit, jamais recopie
+   *
+   * La saisie part dans une chaine PostgREST. On la ramene donc a l'alphabet que
+   * `profiles_handle_shape` autorise — minuscules, chiffres, soulignes — avant de la
+   * composer. Sans ca, une virgule ou une parenthese tapees dans le champ deviendraient de
+   * la syntaxe de requete, et non du texte cherche.
+   */
+  async searchProfiles(query: string, limit = 12): Promise<readonly Profile[]> {
+    const safe = query.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    // Sous trois caracteres, on se tait : c'est le minimum d'un handle, et une lettre seule
+    // rendrait la moitie de l'annuaire — ce qui est une enumeration, pas une recherche.
+    if (safe.length < 3) return [];
+    const rows = await this.#rows<Record<string, unknown>>(
+      `profiles?handle=ilike.*${safe}*&select=*&order=handle.asc&limit=${limit}`,
+    );
+    return rows.flatMap((row) => {
+      const profile = rowToProfile(row);
+      return profile === undefined ? [] : [profile];
+    });
+  }
+
+  /**
    * 🔴 **`ignore-duplicates` et non `merge-duplicates`** — mesure du 2026-08-11 : suivre
    * deux fois rendait **42501**.
    *
@@ -583,6 +625,33 @@ export class SocialClient {
    */
   async feed(limit = 50): Promise<readonly FeedItem[]> {
     return this.#activity('', limit);
+  }
+
+  /**
+   * Ce que quelqu'un **aime** — la carte de visite de son profil.
+   *
+   * ## 🔴 Le geste s'appelle « epingler sur son profil », et le profil ne montrait rien
+   *
+   * Constate a l'ecran le 2026-08-15 : `/u/<nom>` porte un avatar, un nom, les critiques et
+   * les listes. Rien du gout de la personne. Or `favorites.pin` s'intitule *« Pin to
+   * profile »* depuis toujours, et `<Favorites />` n'est monte qu'a un endroit du depot —
+   * `/moi`. On epinglait quatre series sur un profil que personne ne verrait.
+   *
+   * ⚠️ **Ce n'est PAS l'epinglage, et il ne faut pas le confondre.** Les quatre epinglees
+   * vivent dans le journal, donc dans le navigateur : les faire voyager demande une colonne
+   * de plus sur `profiles` et un chemin de publication, comme `face` en a un. Les coeurs,
+   * eux, sont **deja publies** (`005_liked.sql` a ouvert le genre `liked` sur `activity`) et
+   * n'etaient lus que par {@link watchersOf}, serie par serie — jamais par personne.
+   *
+   * Zero table neuve, zero migration, zero route serveur : `activity_select_visible` porte
+   * `can_see(user_id)`, donc RLS decide de ce qu'un lecteur voit, exactement comme pour les
+   * critiques juste au-dessus.
+   */
+  async lovedBy(userId: string, limit = 8): Promise<readonly FeedItem[]> {
+    return this.#activity(
+      `user_id=eq.${encodeURIComponent(userId)}&kind=eq.liked&`,
+      limit,
+    );
   }
 
   /**

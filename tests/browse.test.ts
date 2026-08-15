@@ -41,6 +41,9 @@ function providerOf(items: readonly SeriesSummary[]): CatalogProvider {
       seen.push({ query, page });
       return items;
     },
+    async personName() {
+      return undefined;
+    },
     async seriesByCreator() {
       return [];
     },

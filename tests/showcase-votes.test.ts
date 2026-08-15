@@ -46,6 +46,9 @@ function providerOf(items: readonly SeriesSummary[]): CatalogProvider {
     async browse() {
       return items;
     },
+    async personName() {
+      return undefined;
+    },
     async seriesByCreator() {
       return [];
     },

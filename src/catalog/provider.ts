@@ -425,6 +425,20 @@ export interface CatalogProvider {
     page?: number,
   ): Promise<readonly SeriesSummary[]>;
 
+  /**
+   * Le nom d'une personne, et son visage.
+   *
+   * 🔴 **Le generique etait un cul-de-sac.** Douze acteurs affiches sur chaque fiche, aucun
+   * cliquable, aucune page derriere. Le `CLAUDE.md` rangeait `Cast` parmi les silences
+   * assumes — « ce qui n'a litteralement rien derriere » — mais le classement ne tenait pas :
+   * `seriesByCreator` interroge deja `/person/{id}/tv_credits` pour « du meme createur »,
+   * donc la donnee existe et sait produire une page. Ce n'etait pas « rien derriere », c'etait
+   * « pas encore construit ».
+   */
+  personName(
+    personId: string,
+  ): Promise<{ readonly name: string; readonly profilePath?: string } | undefined>;
+
   /** Les autres series d'une personne creditee a la creation. */
   seriesByCreator(
     personId: string,

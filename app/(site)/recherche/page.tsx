@@ -14,6 +14,7 @@ import { SearchForm } from '@/app/components/SearchForm';
 import { PageHeader } from '@/app/components/PageHeader';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { PosterRail } from '@/app/components/PosterRail';
+import { PeopleResults } from '@/app/components/PeopleResults';
 import { discover } from '@/lib/catalog';
 
 interface PageProps {
@@ -181,6 +182,15 @@ export async function SearchView({ query, locale }: {
           </ul>
         </>
       )}
+
+      {/* 🔴 **On ne pouvait pas trouver quelqu'un.** La recherche ne rendait que des series,
+          et `/amis` demandait un nom exact — donc de le connaitre d'avance. Il n'existait
+          aucun chemin de « je ne connais personne » vers « je suis quelqu'un ».
+
+          ⚠️ Sous les series et non au-dessus : on vient ici avec un titre en tete dans la
+          quasi-totalite des cas. Et il se tait quand il n'y a personne — la page porte deja
+          son propre « aucun resultat », une seconde phrase par recherche serait du bruit. */}
+      {query.length > 0 ? <PeopleResults query={query} /> : null}
     </div>
   );
 }

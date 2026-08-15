@@ -85,6 +85,18 @@ export const FR = {
   'series.trailer': 'Bande-annonce',
   'cast.title': 'À l’écran',
   'cast.why': 'Les rôles principaux, toutes saisons confondues.',
+  'person.unknownTitle':
+    'Nom inconnu',
+  'person.description':
+    'Les séries avec {name}, et où chacune en est.',
+  'person.count.one':
+    '{n} série',
+  'person.count.other':
+    '{n} séries',
+  'person.noneTitle':
+    'Rien à montrer ici',
+  'person.noneBody':
+    'Le catalogue crédite ce nom, mais sur aucune série — c’est courant pour quelqu’un qui travaille au cinéma. Ce produit ne connaît que la télévision.',
   'stat.seasons': 'Saisons',
   'stat.episodes': 'Épisodes',
   'stat.commitment': 'Engagement',
@@ -643,6 +655,7 @@ export const FR = {
   'search.prompt': 'Tapez le nom d’une série.',
   'search.unavailable': 'Le catalogue est momentanément indisponible. Réessayez dans un instant.',
   'search.none': 'Aucun résultat pour « {q} ».',
+  'search.people': 'Des gens',
   // ⚠️ Le conseil dit ce que le catalogue **ne contient pas**. C'est la seule cause d'echec
   // qu'on connaisse a l'avance et que le chercheur ne peut pas deviner : rien a l'ecran ne
   // dit qu'un film n'a aucune chance d'etre trouve ici.
@@ -686,6 +699,10 @@ export const FR = {
   // qui aurait dû la rendre faisait `return null`. C'est la doctrine du silence prise en
   // flagrant délit — deux traductions écrites pour un vide.
   'review.none': 'Personne n’a encore écrit sur cette série.',
+  'reviews.discover.title':
+    'Ce que les gens écrivent',
+  'reviews.discover.none':
+    'Personne n’a encore publié de critique. La vôtre serait la première — le geste vit sur n’importe quelle fiche série, sous « Où j’en suis ».',
   'review.beFirst':
     'La vôtre s’écrit dans « Où j’en suis », sans compte : elle reste dans ce navigateur tant que vous n’en ouvrez pas un.',
   'review.sort': 'Trier',
@@ -715,6 +732,7 @@ export const FR = {
   'profile.title': 'Profil',
   'profile.lists': 'Ses listes',
   'profile.reviews': 'Ce qu’elle ou il a écrit',
+  'profile.loves': 'Ce qu’il ou elle aime',
   'profile.none': 'Rien de public à lire ici pour l’instant.',
   // ⚠️ Absente à zéro, et c'est une exception assumée à la règle 4 : sur /bilan « 0 critique »
   // est une porte — votre écran, votre geste ; ici le lecteur ne peut rien pour ce que

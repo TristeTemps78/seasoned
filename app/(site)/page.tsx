@@ -12,6 +12,7 @@ import {
 } from '@/lib/catalog';
 import { SearchForm } from '@/app/components/SearchForm';
 import { PosterRail } from '@/app/components/PosterRail';
+import { DiscoverReviews } from '@/app/components/DiscoverReviews';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { ResumeStrip } from '@/app/components/ResumeStrip';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
@@ -132,6 +133,16 @@ export async function Home({ locale }: { readonly locale: Locale }) {
         series={onTheAir}
         locale={locale}
       />
+
+      {/* 🔴 **Rien ne menait aux ecrits des autres.** `<Reviews />` n'etait monte qu'a une
+          ligne du depot — la fiche serie — donc lire quelqu'un supposait de savoir d'avance
+          sur quelle serie regarder. Les listes ont eu leur vitrine, les critiques non, alors
+          qu'elles sont la moitie de la cible.
+
+          En bas de l'accueil et non en haut : les trois rangees au-dessus repondent a « quoi
+          regarder », qui est la question qu'on se pose en arrivant. Celle-ci repond a « qui
+          suivre », qui vient apres — et se tait tant qu'il n'y a rien a lire. */}
+      <DiscoverReviews />
 
       {trending.length === 0 && onTheAir.length === 0 && waiting.length === 0 ? (
         <p className="text-(--color-warn)">{t(locale, 'home.unavailable')}</p>

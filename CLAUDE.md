@@ -36,7 +36,13 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
 - **Trois silences restent, et ce sont des fonctionnalités** : `stop_map()` sous cinq
   contributeurs (c'est de l'anonymat, un compte se déduirait du chiffre), le spoiler
   (`mieux vaut masquer à tort`), et ce qui n'a littéralement rien derrière sur une page
-  par ailleurs pleine (`FaceDot`, `Cast`, le compteur de cœurs à zéro).
+  par ailleurs pleine (`FaceDot`, le compteur de cœurs à zéro).
+
+  ⚠️ **`Cast` a quitté cette liste le 2026-08-15**, et l'erreur mérite d'être notée parce
+  qu'elle se refera : il y était rangé sous « rien derrière », alors que la donnée existait
+  — `alsoByCreators` interroge `/person/{id}/tv_credits` depuis toujours pour « du même
+  créateur ». Ce n'était pas *rien derrière*, c'était *pas encore construit*, et les deux
+  se ressemblent à l'écran. Le générique est cliquable depuis `/personne/[id]`.
 
 ## Pour travailler
 

@@ -75,6 +75,18 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'series.trailer': 'Trailer',
   'cast.title': 'On screen',
   'cast.why': 'The main roles, across every season.',
+  'person.unknownTitle':
+    'Unknown name',
+  'person.description':
+    'Series with {name}, and where each one stands.',
+  'person.count.one':
+    '{n} series',
+  'person.count.other':
+    '{n} series',
+  'person.noneTitle':
+    'Nothing to show here',
+  'person.noneBody':
+    'The catalogue credits this name, but on no series — often the case for someone who works in film. This product only knows television.',
   'stat.seasons': 'Seasons',
   'stat.episodes': 'Episodes',
   'stat.commitment': 'Commitment',
@@ -551,6 +563,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'search.prompt': 'Type the name of a series.',
   'search.unavailable': 'The catalogue is temporarily unavailable. Try again in a moment.',
   'search.none': 'No results for “{q}”.',
+  'search.people': 'People',
   'search.none.hint':
     'Check the spelling, or try the original title. Only series are indexed: a film will not be here.',
   'search.count.one': '{n} result for “{q}”',
@@ -586,6 +599,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'review.hiddenSeries': 'Contains spoilers for what comes next.',
   'review.reveal': 'Show it anyway',
   'review.none': 'Nobody has written about this series yet.',
+  'reviews.discover.title':
+    'What people are writing',
+  'reviews.discover.none':
+    'Nobody has published a review yet. Yours would be the first — the gesture lives on any series page, under “Where I am”.',
   'review.beFirst':
     'Yours goes in “Where I am”, no account needed: it stays in this browser until you open one.',
   'review.sort': 'Sort',
@@ -608,6 +625,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'profile.title': 'Profile',
   'profile.lists': 'Their lists',
   'profile.reviews': 'What they have written',
+  'profile.loves': 'What they love',
   'profile.none': 'Nothing public to read here yet.',
   'profile.count.one': '{n} review published',
   'profile.count.other': '{n} reviews published',

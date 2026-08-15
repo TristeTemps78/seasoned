@@ -805,6 +805,46 @@ export async function waitingSeries(
  * qu'un, quand elles en declarent. Degrade en liste vide sans bruit : beaucoup de
  * series, surtout hors des Etats-Unis, n'ont aucun credit de creation.
  */
+/**
+ * Une personne : son nom, et les series ou on la trouve.
+ *
+ * 🔴 **Le generique etait un cul-de-sac.** Douze visages par fiche, aucun cliquable. Le
+ * commentaire de `Cast.tsx` disait pourquoi — *« cette route n'existe pas […] douze liens
+ * morts sur la fiche la plus visitee auraient ete pires que l'absence de generique »* — et
+ * finissait par *« le jour ou une page personne existera, c'est ici que le lien reviendra »*.
+ *
+ * ⚠️ **Le meme cache que `alsoByCreators`**, et c'est le point : `seriesByCreator` interroge
+ * `/person/{id}/tv_credits`, deja appele pour « du meme createur ». Une page personne ouverte
+ * depuis une fiche dont le createur est cette personne ne coute donc **aucun appel de plus**.
+ * Le nom, lui, en coute un — et c'est le seul.
+ *
+ * Degrade en `undefined` plutot que de lever : une identite inconnue est une 404 legitime,
+ * une panne de catalogue ne doit pas en devenir une.
+ */
+export async function person(
+  personId: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<
+  | { readonly name: string; readonly profilePath?: string; readonly series: readonly SeriesSummary[] }
+  | undefined
+> {
+  if (!/^[0-9]+$/.test(personId)) return undefined;
+  try {
+    const [identity, credits] = await Promise.all([
+      getProvider(locale).personName(personId),
+      throughCreator(keyIn(locale, personId), () => getProvider(locale).seriesByCreator(personId)),
+    ]);
+    if (identity === undefined) return undefined;
+    return {
+      ...identity,
+      // Meme regle de vitrine qu'ailleurs : on ne met pas en avant un journal televise.
+      series: credits.filter((one) => one.kind === undefined || isShowcased(one.kind)),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 export async function alsoByCreators(
   detail: SeriesDetail,
   limit = 6,

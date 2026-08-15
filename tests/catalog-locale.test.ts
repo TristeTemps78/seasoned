@@ -64,6 +64,9 @@ function fake(): { provider: CatalogProvider; calls: string[] } {
       calls.push(`browse:${query.genre ?? '-'}:${query.decade ?? '-'}:${query.sort ?? '-'}:${page}`);
       return [summary('1')];
     },
+    async personName() {
+      return undefined;
+    },
     async seriesByCreator(personId) {
       calls.push(`creator:${personId}`);
       return [];

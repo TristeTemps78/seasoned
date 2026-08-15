@@ -651,6 +651,22 @@ export class TmdbProvider implements CatalogProvider {
     return mapEpisodeGroups(raw);
   }
 
+  async personName(
+    personId: string,
+  ): Promise<{ readonly name: string; readonly profilePath?: string } | undefined> {
+    try {
+      const source = asRecord(await this.#get(`/person/${encodeURIComponent(personId)}`, {}));
+      const name = readString(source, 'name');
+      if (name === undefined) return undefined;
+      const profilePath = readString(source, 'profile_path');
+      return { name, ...(profilePath === undefined ? {} : { profilePath }) };
+    } catch {
+      // Une page de personne sans son nom reste utile — elle porte ses series. Lever ici
+      // rendrait une 404 pour une identite manquante, alors que le contenu est la.
+      return undefined;
+    }
+  }
+
   async seriesByCreator(
     personId: string,
   ): Promise<readonly SeriesSummary[]> {
