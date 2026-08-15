@@ -117,7 +117,7 @@ export function Timeline() {
           </label>
           <select
             id="timeline-year"
-            className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1.5 text-sm"
+            className="menu"
             value={year ?? ''}
             onChange={(e) => setYear(e.target.value === '' ? undefined : Number(e.target.value))}
           >
@@ -137,7 +137,7 @@ export function Timeline() {
           </label>
           <select
             id="timeline-kind"
-            className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1.5 text-sm"
+            className="menu"
             value={kind ?? ''}
             onChange={(e) =>
               setKind(e.target.value === '' ? undefined : (e.target.value as TimelineKind))

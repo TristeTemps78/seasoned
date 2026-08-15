@@ -9,6 +9,7 @@ import { parseJournalKey } from '@/src/domain/journal';
 import { buildYearReview, yearsWithActivity } from '@/src/domain/year';
 import { pathIn } from '@/lib/routes';
 import { PosterChip } from '@/app/components/PosterChip';
+import { Menu } from '@/app/components/Menu';
 
 /**
  * « Votre annee » — le bilan annuel.
@@ -61,18 +62,26 @@ export function MyYear() {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="row-title">{t('year.title', { year: String(review.year) })}</h2>
         {years.length > 1 ? (
-          <select
-            className="field"
-            value={review.year}
-            aria-label={t('year.pick')}
-            onChange={(e) => setChosen(Number(e.target.value))}
-          >
-            {years.map((candidate) => (
-              <option key={candidate} value={candidate}>
-                {candidate}
-              </option>
-            ))}
-          </select>
+          // ⚠️ C'etait `.field`, la classe des champs de **saisie** : pleine largeur, sans
+          // chevron, donc un menu qui ne se donnait pas pour tel. Le produit avait ainsi
+          // trois dessins de `<select>` — celui-ci, la chaine d'utilitaires recopiee quatre
+          // fois, et rien de commun entre eux. `.menu` les rassemble.
+          //
+          // ⚠️ `hideLabel` : le titre « Votre 2026 » est a cote, sur la meme ligne. Le
+          // libelle reste dans le DOM pour les lecteurs d'ecran — c'est ce que faisait
+          // l'`aria-label`, en moins bien : un `<label>` est aussi une cible qui ouvre le
+          // menu, un `aria-label` n'est qu'un nom.
+          <Menu
+            id="year-pick"
+            label={t('year.pick')}
+            hideLabel
+            value={String(review.year)}
+            onChange={(value) => setChosen(Number(value))}
+            options={years.map((candidate) => ({
+              value: String(candidate),
+              label: String(candidate),
+            }))}
+          />
         ) : null}
       </div>
 

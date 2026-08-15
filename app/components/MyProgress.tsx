@@ -344,7 +344,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
           </label>
           <select
             id="season"
-            className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1.5 text-sm"
+            className="menu"
             value={position.seasonNumber}
             onChange={(e) => {
               const season = Number(e.target.value);
@@ -366,7 +366,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
               </label>
               <select
                 id="episode"
-                className="rounded-md border border-(--color-edge) bg-(--color-ink) px-2 py-1.5 text-sm"
+                className="menu"
                 value={position.episodeNumber}
                 onChange={(e) =>
                   setPosition(key, current.seasonNumber, Number(e.target.value))
