@@ -141,7 +141,6 @@ export const FR = {
   'browse.genre.sciFi': 'SF & fantastique',
   'browse.genre.war': 'Guerre & politique',
   'browse.genre.western': 'Western',
-  'nav.browse': 'Parcourir',
   'tags.title': 'Mes mots',
   'tags.why': 'Rangés par vous, pour vous.',
   'tags.placeholder': 'à revoir, le dimanche, avec Léa…',
@@ -155,7 +154,6 @@ export const FR = {
     'Aucune série de votre bibliothèque ne porte ce mot pour l’instant. Choisissez « Tous » juste au-dessus, ou posez-le depuis une fiche.',
   'tags.filter': 'Mot',
   'tags.all': 'Tous',
-  'tags.none': 'Aucun mot posé pour l’instant.',
   'favorites.title': 'Ma carte de visite',
   'favorites.why': 'Quatre séries, pas une de plus.',
   'favorites.slot': 'à choisir',
@@ -320,18 +318,9 @@ export const FR = {
   'year.stat.rated': 'Saisons notées',
   'year.stat.written': 'Critiques',
   'year.stat.liked': 'Coups de cœur',
-  'year.finished.one': '{n} série menée au bout.',
-  'year.finished.other': '{n} séries menées au bout.',
-  'year.rated.one': '{n} saison notée.',
-  'year.rated.other': '{n} saisons notées.',
-  'year.written.one': '{n} critique écrite.',
-  'year.written.other': '{n} critiques écrites.',
-  'year.liked.one': '{n} coup de cœur.',
-  'year.liked.other': '{n} coups de cœur.',
   // ⚠️ « ce que pèsent les séries terminées », jamais « ce que vous avez regardé » : un
   // visionnage achevé en janvier a pu commencer l'année d'avant. Le journal ne sait pas
   // quand chaque épisode a été vu, et ce produit ne comble pas ce qu'il ignore.
-  'year.weight': 'Les séries terminées cette année-là pèsent {commitment}.',
   'year.best': 'La saison que vous avez le mieux notée',
   'year.thin': 'Peu de choses cette année-là.',
 
@@ -409,7 +398,6 @@ export const FR = {
   'friends.follow.submit': 'Suivre',
   'friends.follow.notFound':
     'Personne sous ce nom. On ne cherche que par nom exact : il n’y a pas d’annuaire ici, et c’est voulu.',
-  'friends.following': 'Vous suivez {list}',
   'friends.feed.title': 'Ce qu’ils font',
   'friends.feed.empty':
     'Rien pour l’instant. Suivez quelqu’un, ou donnez-lui votre nom — le fil se remplit à mesure.',
