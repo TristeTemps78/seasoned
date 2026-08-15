@@ -6,8 +6,20 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { checkList, uniqueSlug, type ListRejection } from '@/src/domain/lists';
+import {
+  ALL_LIST_SORTS,
+  DEFAULT_LIST_SORT,
+  orderLists,
+  type ListSort,
+} from '@/src/domain/list-order';
 import { parseJournalKey, seriesEntries, type Journal } from '@/src/domain/journal';
+import { formatDate } from '@/lib/format';
+// ⚠️ Le moteur, jamais `@/lib/i18n` : celui-ci importe les deux dictionnaires, et ce
+// composant est client — il les remettrait tous les deux dans le paquet de `/listes` (8.10,
+// `i18n-split.test.ts`, qui l'a effectivement attrape ici).
+import { localeTag } from '@/lib/i18n/engine';
 import { pathIn } from '@/lib/routes';
+import { Menu } from '@/app/components/Menu';
 import { type SeriesList } from '@/src/social/client';
 import { socialFrom } from '@/app/social/socialFrom';
 import { AccountGate } from '@/app/components/AccountGate';
@@ -88,6 +100,17 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
   const { t, tn, locale } = useT();
   const { configured, ready, account } = useAuth();
   const { journal } = useJournal();
+
+  /**
+   * Le tri demande — voir `src/domain/list-order.ts` pour le defaut qu'il repare.
+   *
+   * ⚠️ Dans l'etat React et **pas dans l'adresse**, contrairement a `/parcourir` : les listes
+   * sont deja toutes dans le navigateur au moment ou l'on descend jusqu'a elles. Trier
+   * cinquante cartes en memoire ne coute aucun appel et ne peut pas faire sortir `/listes` de
+   * `○ Static` — c'est le meme arbitrage que les commandes de critiques, et pour les memes
+   * raisons mesurees.
+   */
+  const [sort, setSort] = useState<ListSort>(DEFAULT_LIST_SORT);
 
   const [lists, setLists] = useState<readonly SeriesList[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -280,6 +303,28 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
         )
       ) : null}
 
+      {/* Le tri, absent tant qu'il n'y a qu'une liste : un menu qui ne peut rien reordonner
+          est un bouton qui ne fait rien, et il apprendrait a ignorer la ligne le jour ou elle
+          servira. Meme condition que le filtre par mot de la bibliotheque.
+
+          ⚠️ **Il ne va PAS sur les listes des autres** (`DiscoverLists`), et ce n'est pas un
+          oubli : cette section est deja un choix editorial — les douze listes publiques les
+          plus recemment modifiees, c'est-a-dire ce qui est vivant. Les trier par taille
+          montrerait « la plus grande des douze plus recentes », un classement qui a l'air
+          d'en etre un et n'en est pas. */}
+      {lists.length > 1 ? (
+        <Menu
+          id="lists-sort"
+          label={t('browse.sort')}
+          value={sort}
+          onChange={(value) => setSort(value as ListSort)}
+          options={ALL_LIST_SORTS.map((option) => ({
+            value: option,
+            label: t(`lists.sort.${option}`),
+          }))}
+        />
+      ) : null}
+
       {lists.length === 0 ? (
         // ⚠️ Sans action pour le proprietaire : le formulaire de creation est deploye juste
         // au-dessus, sur cette meme page. *Un ecran sans issue, pas un ecran sans bouton.*
@@ -291,7 +336,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
         // pour choisir, pas un article qu'on lit de haut en bas. Empilees pleine largeur, dix
         // listes demandent dix ecrans de defilement pour en trouver une.
         <ul className="grid gap-3 sm:grid-cols-2">
-          {lists.map((list) => {
+          {orderLists(lists, sort, localeTag(locale)).map((list) => {
             const shown = items[list.slug] ?? [];
             const isOpen = open === list.slug;
 
@@ -303,6 +348,16 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
                     {tn('lists.count', list.count)}
                   </span>
                 </div>
+
+                {/* 🔴 **La date etait demandee a la base et jetee.** `listsBy` selectionne
+                    `updated_at` et ordonne dessus, le type le porte, et aucun `.tsx` du depot
+                    ne le lisait au 2026-08-16 : l'ordre des cartes changeait sous les yeux du
+                    lecteur — ajouter une serie remonte sa liste — sans que rien ne dise
+                    pourquoi. Meme forme que la note du public, le creux de la trajectoire et
+                    la date d'une critique : la donnee etait deja payee. */}
+                <p className="meta-sm">
+                  {t('lists.updated', { date: formatDate(new Date(list.updatedAt), locale) })}
+                </p>
 
                 {list.note !== undefined ? (
                   <p className="meta">{list.note}</p>

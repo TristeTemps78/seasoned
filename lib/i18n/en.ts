@@ -323,6 +323,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'lists.count.other': '{n} series',
   'lists.open': 'Open',
   'lists.close': 'Collapse',
+  'lists.updated': 'Updated {date}',
+  'lists.sort.updated': 'Recently updated',
+  'lists.sort.title': 'Title',
+  'lists.sort.size': 'Number of series',
   'lists.discover.title': 'What other people keep',
   // Voir `fr.ts` : la phrase dit **pourquoi** c'est vide, sinon la page a l'air cassee.
   'lists.discover.none':

@@ -372,6 +372,13 @@ export const FR = {
   'lists.count.other': '{n} séries',
   'lists.open': 'Voir',
   'lists.close': 'Replier',
+  // La date que la base rendait depuis toujours et que personne n'affichait — voir
+  // `src/domain/list-order.ts`. Les trois tris se lisent avec le libellé `browse.sort`
+  // (« Classer par »), déjà écrit pour `/parcourir` : la même question, le même mot.
+  'lists.updated': 'Modifiée le {date}',
+  'lists.sort.updated': 'Modification récente',
+  'lists.sort.title': 'Titre',
+  'lists.sort.size': 'Nombre de séries',
   'lists.discover.title': 'Ce que rangent les autres',
   // ⚠️ Dit **pourquoi** c'est vide, et pas seulement que ça l'est : la cause est que personne
   // n'a rendu son profil public, pas que personne ne range rien. Sans elle, quelqu'un dont
