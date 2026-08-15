@@ -578,17 +578,22 @@
        une page de texte.
 
        ⚠️ La lisibilite ne tient PAS a l'opacite : elle tient au voile de `::after`, qui pose
-       de l'encre pleine a gauche exactement la ou le texte vit. C'est lui qui permet de
-       monter l'image a 0,9 sans qu'un seul mot devienne difficile — verifie sur la banniere
-       la plus claire du catalogue. */
+       de l'encre sur la bande haute, exactement la ou le texte vit. C'est lui qui permet de
+       monter l'image a 0,9 sans qu'un seul mot devienne difficile.
+
+       ⚠️ **« a gauche » ici pendant quatre jours, et c'est ce qui a laisse passer le
+       defaut** : l'accroche a ete centree le 2026-08-11, la phrase est restee, et le voile
+       suivant a ete regle sur elle. Un commentaire qui decrit une version anterieure ne se
+       trompe pas tout seul — il fait regler le calque suivant sur une carte perimee. */
     opacity: 0.9;
 
     /* Le masque ne s'ouvre plus qu'a la toute fin : a 35 %, l'image disparaissait avant le
        bas du bloc, donc un hero un peu haut n'avait d'image que dans son premier tiers. */
     mask-image: linear-gradient(to bottom, black 0%, black 78%, transparent 100%);
   }
-  /* Deux encres : depuis la gauche, ou vit le texte, et depuis le bas, ou la page reprend.
-     Le visuel respire en haut a droite — le seul quart ou il ne gene rien. */
+  /* Trois encres : depuis le haut, ou vit le bloc centre ; depuis la gauche, ou vit le bloc
+     du bas ; depuis le bas, ou la page reprend. L'ordre compte — la premiere couche est
+     au-dessus —, mais aucune n'est opaque, donc elles s'ajoutent la ou elles se croisent. */
   .art-bed::after {
     content: '';
     position: absolute;
@@ -601,38 +606,46 @@
        texte lisible — les deux ne s'echangent pas, ils vivent a des endroits differents. */
     background-image:
       /*
-       * 🔴 **L'ENCRE ETAIT A GAUCHE, ET L'ACCROCHE EST CENTREE DEPUIS LE 2026-08-11.**
+       * 🔴 **UNE ELLIPSE EN POURCENTAGE NE PEUT PAS SUIVRE UN BLOC EN PIXELS.**
        *
-       * Le commentaire ci-dessus affirme que l'encre pleine couvre « toute la zone ou vivent
-       * le titre, le paragraphe et le champ de recherche ». C'etait vrai quand l'accroche
-       * etait alignee a gauche ; Tristan l'a fait centrer le meme jour, et la phrase est
-       * restee. Mesure au navigateur le 2026-08-15, fenetre 1440 :
+       * Ici vivait une ellipse centree (`34% 32% at 50% 28%`), posee le 2026-08-15 pour
+       * rattraper une encre restee a gauche alors que l'accroche avait ete centree. Elle
+       * corrigeait le cas mesure — une fenetre de 1440 — et **elle seule** : le bloc de texte
+       * fait **672 px fixes**, tandis que le rayon de l'ellipse vaut 34 % de la fenetre. Les
+       * deux ne coincident qu'a une largeur, et c'est celle qui avait ete regardee.
        *
-       *     encre pleine            x   0 →  30 %
-       *     bloc centre (h1, accroche, recherche)
-       *                             x  27 →  73 %   y  9 → 47 %
-       *     bloc du bas (aligne a gauche)
-       *                             x   1 →  99 %   y 55 → 91 %
+       * Mesure au navigateur le 2026-08-15, pire cas (affiche entierement blanche, l'image
+       * etant a 0,9 sur l'encre), ratio de l'accroche a son bord droit — seuil WCAG 4,5 :
        *
-       * Soit **93 % du bloc centre pose sur l'image nue**, dont 120 px en transparence
-       * totale. Et l'accroche y est en `--color-muted` (#99aabb, 16 px) — un gris concu pour
-       * un fond plat, pas pour un champ ensoleille. Constate a l'oeil sur *Midsomer Murders*,
-       * dont la banniere est un pre en plein soleil.
+       *      375 px   1,65      le texte occupe 4 → 96 %, l'ellipse 16 → 84 %
+       *      768 px   1,58
+       *     1024 px   1,02      le bord du texte tombe pile sur le bord de l'ellipse
+       *     1440 px   3,10      le seul cas approchant, et il echoue encore
        *
-       * Cette ellipse-ci suit donc le bloc **centre**, et elle seule : rayon 34 % en largeur
-       * (couvre 16 → 84 %), 32 % en hauteur autour de y = 28 % (couvre -4 → 60 %). Le
-       * degrade lateral d'origine reste, car il fait correctement son travail sur le bloc du
-       * bas, qui est bien aligne a gauche.
+       * Le titre tombait a 1,22 en 375 px. Aucun reglage de l'ellipse ne s'en sort : la
+       * remonter en unites absolues (28rem, stop a 75 %) plafonne a 4,17 — un degrade radial
+       * retombe a zero sur son bord, et le texte va jusqu'au bord.
        *
-       * ⚠️ Elle ne va pas jusqu'a l'encre pleine (88 % au centre) : le but est de rendre le
-       * texte lisible, pas de revenir a la tache sombre que le bloc precedent raconte avoir
-       * corrigee. Le quart haut droit reste degage.
+       * ## Donc un voile horizontal, sur toute la largeur
+       *
+       * Il ne depend plus d'aucune correspondance entre deux geometries : la bande ou vit le
+       * texte est encree, quelle que soit la largeur. Plein jusqu'a 34 % — le bas de
+       * l'accroche en 375 px, ou le bloc descend le plus bas —, nul a 52 %.
+       *
+       * Verifie aux memes tailles : accroche 5,04 (375) et 6,13 (1440), titre 10,14 et 12,33,
+       * a leurs trois points. Le bloc du bas ne bouge pas (5,69), il vit sous le fondu.
+       *
+       * ⚠️ **Ce que ca coute, et c'est le bloc du dessus qui l'a rendu chiffrable** : l'image
+       * visible en moyenne passe de **23,6 % a 13,3 %** en 1440. Le quart haut droit degage,
+       * revendique plus haut, disparait — il etait la moitie du probleme, puisque c'est
+       * exactement la que le texte se posait sur l'image nue. C'est un arbitrage, pas un
+       * oubli : entre une banniere vive et une accroche a 1,65:1, la lisibilite passe devant.
        */
-      radial-gradient(
-        ellipse 34% 32% at 50% 28%,
-        color-mix(in oklab, var(--color-ink) 88%, transparent) 0%,
-        color-mix(in oklab, var(--color-ink) 70%, transparent) 55%,
-        transparent 100%
+      linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--color-ink) 85%, transparent) 0%,
+        color-mix(in oklab, var(--color-ink) 85%, transparent) 34%,
+        transparent 52%
       ),
       linear-gradient(
         to right,
