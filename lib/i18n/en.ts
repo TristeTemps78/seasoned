@@ -729,6 +729,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'rewatch.done.other': 'Watched {n} times, all the way through.',
   'rewatch.again.one': 'You are watching it again.',
   'rewatch.again.other': 'Watch number {n}.',
+  'rewatch.mark': 'I’ve watched it again',
+  'rewatch.today': 'recorded today',
   'taste.rewatched': 'My comfort show',
   'taste.rewatchedTimes.one': 'watched {n} time',
   'taste.rewatchedTimes.other': 'watched {n} times',

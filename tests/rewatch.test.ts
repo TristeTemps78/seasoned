@@ -3,6 +3,7 @@ import {
   EMPTY_JOURNAL,
   JOURNAL_VERSION,
   completionCount,
+  hasCompletionOn,
   isRewatching,
   markCompleted,
   mergeJournals,
@@ -249,5 +250,64 @@ describe('la duree memorisee dans l’instantane', () => {
       },
     });
     expect(parseJournal(raw, DAY_ONE).entries[KEY]?.snapshot?.episodeMinutes).toBeUndefined();
+  });
+});
+
+/**
+ * Le predicat sans lequel le geste explicite est un bouton mort.
+ *
+ * `markCompleted` est idempotent dans la journee — c'est ce que verifie « ne compte qu'une
+ * fois par jour » plus haut, et c'est ce qui protege la bascule de la decision. Correct pour
+ * l'appel automatique, **piegeux pour un geste volontaire** : « je l'ai revue » clique le
+ * jour meme ou l'on vient de declarer la serie terminee ne changerait rien et ne dirait
+ * rien. Le compteur ne bougerait pas, et la personne conclurait que son geste a ete perdu —
+ * la forme la plus insidieuse du bouton mort, celui qui a l'air de marcher.
+ *
+ * L'interface interroge donc {@link hasCompletionOn} avant de proposer le geste. Le predicat
+ * vit dans le domaine parce que la regle qu'il lit — un passage par jour — appartient au
+ * format, pas a l'ecran.
+ */
+describe('hasCompletionOn', () => {
+  it('est faux sur une entree qui n’existe pas', () => {
+    expect(hasCompletionOn(EMPTY_JOURNAL.entries[KEY], DAY_ONE)).toBe(false);
+  });
+
+  it('est vrai le jour du passage', () => {
+    const j = markCompleted(EMPTY_JOURNAL, KEY, DAY_ONE);
+    expect(hasCompletionOn(j.entries[KEY], DAY_ONE)).toBe(true);
+  });
+
+  it('repond par JOUR et non par instant — meme question que la deduplication', () => {
+    const j = markCompleted(EMPTY_JOURNAL, KEY, DAY_ONE);
+    expect(hasCompletionOn(j.entries[KEY], SAME_DAY)).toBe(true);
+  });
+
+  it('redevient faux le lendemain, donc le geste redevient proposable', () => {
+    const j = markCompleted(EMPTY_JOURNAL, KEY, DAY_ONE);
+    expect(hasCompletionOn(j.entries[KEY], DAY_TWO)).toBe(false);
+  });
+
+  it('le pire cas concret : terminer puis revoir le meme jour ne compte qu une fois', () => {
+    // ⚠️ Les deux ecritures dans cet ordre, c'est ce que fait `useJournal.setDecision`.
+    // `setDecision` SEUL n'enregistre aucun passage — l'enchainement vit dans le hook.
+    let j = markCompleted(setDecision(EMPTY_JOURNAL, KEY, 'completed', DAY_ONE), KEY, DAY_ONE);
+    j = markCompleted(j, KEY, SAME_DAY);
+
+    expect(completionCount(j.entries[KEY])).toBe(1);
+    expect(hasCompletionOn(j.entries[KEY], DAY_ONE)).toBe(true);
+  });
+
+  it('l ancrage : a un jour d ecart, les deux gestes comptent bien deux fois', () => {
+    let j = markCompleted(setDecision(EMPTY_JOURNAL, KEY, 'completed', DAY_ONE), KEY, DAY_ONE);
+    j = markCompleted(j, KEY, DAY_TWO);
+
+    expect(completionCount(j.entries[KEY])).toBe(2);
+  });
+
+  it('poser la decision « terminee » n enregistre a soi seul aucun passage', () => {
+    // Garde ici parce que la premiere version de ces tests supposait le contraire : la
+    // decision et le passage sont deux ecritures, et seule l'interface les enchaine.
+    expect(completionCount(setDecision(EMPTY_JOURNAL, KEY, 'completed', DAY_ONE).entries[KEY]))
+      .toBe(0);
   });
 });

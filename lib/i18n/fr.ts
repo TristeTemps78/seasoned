@@ -877,6 +877,8 @@ export const FR = {
   'rewatch.done.other': 'Vue {n} fois, en entier.',
   'rewatch.again.one': 'Vous la revoyez.',
   'rewatch.again.other': '{n}e visionnage.',
+  'rewatch.mark': 'Je l’ai revue',
+  'rewatch.today': 'enregistré aujourd’hui',
   'taste.rewatched': 'Ma série-refuge',
   'taste.rewatchedTimes.one': 'vue {n} fois',
   'taste.rewatchedTimes.other': 'vue {n} fois',

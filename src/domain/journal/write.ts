@@ -222,6 +222,30 @@ export function completionCount(entry: JournalEntry | undefined): number {
 }
 
 /**
+ * Un passage est-il deja enregistre **ce jour-la** ?
+ *
+ * ## Pourquoi cette question doit etre posable depuis l'exterieur
+ *
+ * {@link markCompleted} rend le journal **inchange** quand la journee porte deja un
+ * passage — c'est {@link dedupeByDay}, et c'est ce qui empeche une bascule repetee de la
+ * decision de compter dix visionnages. Correct pour l'appel automatique ; piegeux pour un
+ * geste explicite.
+ *
+ * Sans ce predicat, un bouton « je l'ai revue » clique le jour meme ou l'on vient de
+ * declarer la serie terminee **ne changerait rien et ne dirait rien** : le compteur ne
+ * bougerait pas, et la personne conclurait que le produit a perdu son geste. C'est la forme
+ * la plus insidieuse du bouton mort — celui qui a l'air de marcher.
+ *
+ * L'interface s'en sert donc pour ne pas proposer le geste ce jour-la, et pour dire
+ * pourquoi. Le predicat vit ici et non dans le composant parce que la regle qu'il
+ * interroge — « un passage par jour » — est une regle du **format**, pas de l'ecran.
+ */
+export function hasCompletionOn(entry: JournalEntry | undefined, day: Date): boolean {
+  const iso = day.toISOString().slice(0, 10);
+  return (entry?.completions ?? []).some((c) => c.at.slice(0, 10) === iso);
+}
+
+/**
  * Est-on en train de la revoir ?
  *
  * Vrai quand la serie a deja ete achevee **et** qu'une position courante existe. C'est

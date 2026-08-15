@@ -195,6 +195,29 @@ export function useJournal() {
         }),
       [mutate],
     ),
+    /**
+     * Enregistre un passage de plus, **sans toucher a la decision**.
+     *
+     * ## Pourquoi ce geste existe separement
+     *
+     * `setDecision(key, 'completed')` enregistrait le seul passage que le produit savait
+     * compter, et il ne le faisait qu'**une fois** : une serie deja terminee n'a plus de
+     * decision a poser, donc revoir *The Office* une troisieme fois n'avait aucun endroit
+     * ou s'ecrire. Le format savait le retenir depuis la v3 (`completions` est une liste),
+     * l'interface ne savait pas l'ecrire — septieme « une fonctionnalite ecrite n'est pas
+     * une fonctionnalite qui marche ».
+     *
+     * Et c'est le fait le plus difficile a falsifier du produit : une note de cinq etoiles
+     * se pose en un clic, un troisieme visionnage se merite.
+     *
+     * ⚠️ Idempotent dans la journee ({@link dedupeByDay}). L'appelant doit donc demander
+     * {@link hasCompletionOn} **avant** de proposer le geste, sans quoi il rend un bouton
+     * qui a l'air de marcher et ne fait rien.
+     */
+    watchAgain: useCallback(
+      (key: JournalKey) => mutate((j) => markCompletedIn(j, key)),
+      [mutate],
+    ),
     setWanted: useCallback(
       (key: JournalKey, wanted: boolean) => mutate((j) => setWantedIn(j, key, wanted)),
       [mutate],

@@ -8,6 +8,7 @@ import { StarRating } from '@/app/components/StarRating';
 import { ReviewEditor } from '@/app/components/ReviewEditor';
 import {
   completionCount,
+  hasCompletionOn,
   isRewatching,
   journalKey,
   marksOf,
@@ -77,6 +78,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
     setDecision,
     setWanted,
     setLiked,
+    watchAgain,
     rememberSnapshot,
   } = useJournal();
   const tr = useT();
@@ -153,6 +155,10 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
   // est bien plus difficile a falsifier.
   const passes = completionCount(entry);
   const again = isRewatching(entry);
+  // ⚠️ `markCompleted` est idempotent dans la journee. Proposer le geste un jour ou il ne
+  // peut rien ecrire donnerait un bouton **qui a l'air de marcher** — la forme la plus
+  // insidieuse du bouton mort, et celle que la regle du 2026-08-09 vise sans la nommer.
+  const passedToday = hasCompletionOn(entry, new Date());
 
   // « 14 episodes en 12 jours » : ce qui reste, rapporte a la date de retour. Croiser
   // les deux transforme une bibliotheque en plan — et ne coute rien, tout est deja la.
@@ -184,6 +190,10 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
       {passes > 0 ? (
         <p className="text-sm text-(--color-volt)">
           {again ? tn('rewatch.again', passes + 1) : tn('rewatch.done', passes)}
+          {/* Dire que le passage du jour est enregistre, faute de quoi l'absence du bouton
+              juste en dessous se lirait comme une fonctionnalite manquante et non comme un
+              geste deja fait. */}
+          {passedToday ? <span className="meta-sm"> · {t('rewatch.today')}</span> : null}
         </p>
       ) : null}
 
@@ -219,6 +229,28 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
           <span aria-hidden="true">{entry?.liked !== undefined ? '♥' : '♡'}</span>{' '}
           {entry?.liked !== undefined ? t('progress.liked') : t('progress.like')}
         </button>
+
+        {/* 🔴 Le revisionnage : le format le retient depuis la v3 (`completions` est une
+            LISTE de dates), et rien ne savait en ecrire une seconde. Le seul chemin etait
+            `setDecision(key, 'completed')` — donc une fois, au moment ou l'on declare la
+            serie finie. Revoir *The Office* une troisieme fois n'avait aucun endroit ou
+            aller, alors que c'est le fait le plus difficile a falsifier du produit.
+
+            Condition : au moins un passage acheve. « Revue » ne veut rien dire avant
+            d'avoir ete vue une fois, et le geste de la premiere fois existe deja plus bas
+            (la decision « terminee »). Deux boutons pour le meme fait dedoubleraient la
+            question sans rien ajouter.
+
+            Absent le jour ou un passage est deja enregistre : voir `passedToday`. */}
+        {passes > 0 && !passedToday ? (
+          <button
+            type="button"
+            onClick={() => watchAgain(key)}
+            className="btn rounded-full"
+          >
+            {t('rewatch.mark')}
+          </button>
+        ) : null}
 
         {position === undefined ? (
           <button
