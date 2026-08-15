@@ -15,7 +15,16 @@ import {
 } from '@/lib/catalog';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { formatCommitment, formatDate, statusLabel, year } from '@/lib/format';
-import { DEFAULT_LOCALE, localeTag, t, tn, watchRegion, type Locale, translatorFor } from '@/lib/i18n';
+import {
+  DEFAULT_LOCALE,
+  formatNumberIn,
+  localeTag,
+  t,
+  tn,
+  watchRegion,
+  type Locale,
+  translatorFor,
+} from '@/lib/i18n';
 import { judgeCurrentSeason } from '@/src/domain/current-season';
 import { findEntryPoint } from '@/src/domain/entry-point';
 import { stopPointAdvice } from '@/src/domain/stop-point';
@@ -23,6 +32,7 @@ import { serializeJsonLd } from '@/lib/jsonld';
 import { alternatesFor } from '@/lib/routes';
 import { TmdbError } from '@/src/catalog/tmdb';
 import { starsFromTen } from '@/src/domain/rating-scale';
+import { MAX_STARS } from '@/src/domain/types';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { SeasonList } from '@/app/components/SeasonList';
 import { StopMap } from '@/app/components/StopMap';
@@ -388,6 +398,28 @@ export async function SeriesView({ id, locale }: {
                   value={formatDate(detail.lastAiredAt, locale)}
                 />
               ) : null}
+              {/* 🔴 Le chiffre etait calcule et jete. `publicStars` existait vingt lignes
+                  plus haut, ne servait qu'a garnir l'instantane du journal, et n'etait donc
+                  visible **qu'apres** avoir dit « je l'ai commencee » — c'est-a-dire jamais
+                  pour quelqu'un qui se demande s'il doit la commencer. Une page pleine qui
+                  tait ce qu'elle sait deja : le cas exact que vise la regle 4.
+
+                  Sur l'echelle en etoiles et non sur dix : `starsFromTen` convertit une
+                  seule fois, et c'est la meme echelle que les notes du lecteur — sans quoi
+                  « le public dit 8,4, vous dites 4 » ne se compare a rien. */}
+              {publicStars !== undefined ? (
+                <Stat
+                  label={t(locale, 'stat.public')}
+                  value={`${formatNumberIn(publicStars, locale, 1)} / ${MAX_STARS}`}
+                  {...(detail.voteCount !== undefined && detail.voteCount > 0
+                    ? {
+                        hint: tn(locale, 'stat.publicVotes', detail.voteCount, {
+                          n: formatNumberIn(detail.voteCount, locale),
+                        }),
+                      }
+                    : {})}
+                />
+              ) : null}
             </dl>
           </section>
         </div>
@@ -728,9 +760,18 @@ async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCoun
  * trois autres restent volontairement plates. Mettre deux chiffres en avant reviendrait a
  * n'en mettre aucun.
  */
-function Stat({ label, value, emphasis = false }: {
+function Stat({ label, value, hint, emphasis = false }: {
   readonly label: string;
   readonly value: string;
+  /**
+   * Ce qui qualifie le chiffre, en plus petit dessous.
+   *
+   * ⚠️ Reserve a ce **sans quoi le chiffre ment**. Une moyenne sans son effectif en est le
+   * cas type : `MIN_SHOWCASE_VOTES` existe precisement parce que `8,4` sur trois votes et
+   * `8,4` sur trente mille ne sont pas la meme information. Ce n'est pas un emplacement a
+   * commentaire libre — les trois autres tuiles se passent tres bien d'en avoir un.
+   */
+  readonly hint?: string;
   readonly emphasis?: boolean;
 }) {
   return (
@@ -753,6 +794,7 @@ function Stat({ label, value, emphasis = false }: {
       >
         {value}
       </dd>
+      {hint !== undefined ? <dd className="meta-sm text-(--color-muted)">{hint}</dd> : null}
     </div>
   );
 }

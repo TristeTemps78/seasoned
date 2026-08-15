@@ -78,6 +78,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'stat.episodes': 'Episodes',
   'stat.commitment': 'Commitment',
   'stat.lastEpisode': 'Last episode',
+  'stat.public': 'Public rating',
+  'stat.publicVotes.one': '{n} vote',
+  'stat.publicVotes.other': '{n} votes',
 
   'meta.description':
     'Where a series stands, how much time it asks of you, and how long it stays good.',

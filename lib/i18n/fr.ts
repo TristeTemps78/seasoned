@@ -88,6 +88,12 @@ export const FR = {
   'stat.episodes': 'Épisodes',
   'stat.commitment': 'Engagement',
   'stat.lastEpisode': 'Dernier épisode',
+  'stat.public': 'Note du public',
+  // ⚠️ L'effectif n'est pas decoratif : une moyenne sans son nombre de votants ne se
+  // compare a rien, et c'est exactement le defaut que `MIN_SHOWCASE_VOTES` corrige deja
+  // dans la vitrine. Le dire ici evite de le redecouvrir a chaque fiche.
+  'stat.publicVotes.one': '{n} vote',
+  'stat.publicVotes.other': '{n} votes',
 
   'meta.description':
     'Où en est une série, combien de temps elle demande, et jusqu’où elle reste bonne.',
