@@ -53,9 +53,29 @@ export function pathOf(file: string): string {
  */
 export function codeIn(source: string): string {
   return source
+    // 🔴 **Les commentaires de LIGNE partent en premier, et l'ordre est tout le defaut.**
+    //
+    // Il etait en dernier. Une ligne comme ``// le SEO vit sur `/serie/*` `` porte donc un
+    // `/*` que le passage suivant prenait pour l'ouverture d'un bloc — et il mangeait tout
+    // jusqu'au prochain `*/`, souvent des centaines de lignes plus bas.
+    //
+    // Mesure du 2026-08-15 sur `parcourir/page.tsx` : **9 622 caracteres reduits a 2 668**,
+    // dont tout le corps de la page. La garde qui le lisait n'accusait pas a tort par exces
+    // de zele — elle lisait un fichier amputé, et concluait que sept cles traduites
+    // n'etaient appelees nulle part.
+    //
+    // ⚠️ Le piege est present dans **cinq fichiers** du depot, tous pour la meme raison :
+    // ils citent la route `/serie/*` en prose. `AuthProvider.tsx` en fait partie — c'est-a-dire
+    // le fichier meme que `no-ssr-auth` surveille. Onze gardes lisent par ici ; elles
+    // travaillaient toutes sur du code tronque sans que rien ne le dise, et une garde qui
+    // ne voit pas le code ne garde rien.
+    //
+    // ⚠️ L'inverse ne peut pas arriver : le motif est **ancre en debut de ligne**
+    // (`^[ \t]*//`), donc un `http://` cite au milieu d'une phrase n'ouvre rien, et une
+    // ligne `//` a l'interieur d'un bloc disparait avec le bloc de toute facon.
+    .replace(/^[ \t]*\/\/.*$/gm, '')
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^[ \t]*\/\/.*$/gm, '');
+    .replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
 /** Le code d'un fichier du depot, commentaires retires. */

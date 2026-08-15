@@ -105,6 +105,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'browse.sort.popular': 'Popularity',
   'browse.sort.rating': 'Rating',
   'browse.sort.recent': 'Newest',
+  'browse.apply': 'Show',
   'browse.count.one': '{n} series',
   'browse.count.other': '{n} series',
   'browse.noneTitle': 'Nothing under this combination',

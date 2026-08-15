@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { browse } from '@/lib/catalog';
 import { DEFAULT_LOCALE, t, tn, type Locale } from '@/lib/i18n';
+import { Menu } from '@/app/components/Menu';
 import { PageHeader } from '@/app/components/PageHeader';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { EmptyState } from '@/app/components/EmptyState';
@@ -139,61 +139,63 @@ export async function BrowseView({ params, locale }: {
     locale,
   );
 
-  /** L'adresse de cette page avec **un** critere change, les autres preserves. */
-  const withFacet = (
-    change: { readonly genre?: string; readonly annees?: string; readonly tri?: string },
-  ): string => {
-    const next = new URLSearchParams();
-    const g = 'genre' in change ? change.genre : genre;
-    const a = 'annees' in change ? change.annees : decade?.toString();
-    const s = 'tri' in change ? change.tri : sort;
-    if (g !== undefined && g !== '') next.set('genre', g);
-    if (a !== undefined && a !== '') next.set('annees', a);
-    // `popular` est le defaut : ne pas l'ecrire garde l'adresse courte et rend une seule
-    // URL canonique pour l'etat par defaut, au lieu de deux qui donnent la meme page.
-    if (s !== undefined && s !== 'popular') next.set('tri', s);
-    const query = next.toString();
-    return `${pathIn('/parcourir', locale)}${query.length > 0 ? `?${query}` : ''}`;
-  };
-
   return (
     <div className="space-y-8">
       <PageHeader title={t(locale, 'browse.title')} lede={t(locale, 'browse.lede')}>
-        <div className="space-y-3 pt-3">
-          <Facets
+        {/*
+         * 🔴 **C'etaient vingt-quatre boutons empiles, et ils prenaient l'ecran entier.**
+         * Mesure au navigateur le 2026-08-15, en 375 px : **803 px de commandes avant le
+         * premier resultat, pour une fenetre de 812**. La page qui existe pour parcourir ne
+         * montrait pas une seule serie sans defiler. Treize genres a 252 px, huit epoques a
+         * 148, trois tris a 96.
+         *
+         * ⚠️ **Un `<form method="get">`, donc toujours zero etat React.** L'en-tete de ce
+         * fichier tient : l'adresse porte la question, elle se partage, se met en favori et
+         * revient en arriere — c'est l'envoi du formulaire qui la construit au lieu d'un
+         * lien par combinaison. La page reste un composant **serveur pur** et marche le
+         * JavaScript coupe, ce qu'un menu branche sur `router.push` ne ferait pas.
+         *
+         * ⚠️ Ce qu'on perd, et c'est assume : l'adresse porte desormais les criteres vides
+         * (`?genre=&annees=&tri=popular`). Le commentaire d'origine tenait a une URL
+         * canonique — un souci de moteur, or cette page est `robots: { index: false }`.
+         * L'enjeu n'existe pas ici.
+         */}
+        <form method="get" action={pathIn('/parcourir', locale)} className="flex flex-wrap items-center gap-2 pt-3">
+          <Menu
+            id="browse-genre"
             label={t(locale, 'browse.genre')}
-            all={t(locale, 'browse.any')}
-            allHref={withFacet({ genre: '' })}
-            allActive={genre === undefined}
-            options={ALL_BROWSE_GENRES.map((g) => ({
-              key: g,
-              label: t(locale, GENRE_LABEL[g]),
-              href: withFacet({ genre: g }),
-              active: genre === g,
-            }))}
+            name="genre"
+            defaultValue={genre ?? ''}
+            options={[
+              { value: '', label: t(locale, 'browse.any') },
+              ...ALL_BROWSE_GENRES.map((g) => ({ value: g, label: t(locale, GENRE_LABEL[g]) })),
+            ]}
           />
-          <Facets
+          <Menu
+            id="browse-decade"
             label={t(locale, 'browse.decade')}
-            all={t(locale, 'browse.any')}
-            allHref={withFacet({ annees: '' })}
-            allActive={decade === undefined}
-            options={DECADES.map((d) => ({
-              key: String(d),
-              label: t(locale, 'browse.decadeLabel', { d }),
-              href: withFacet({ annees: String(d) }),
-              active: decade === d,
-            }))}
+            name="annees"
+            defaultValue={decade === undefined ? '' : String(decade)}
+            options={[
+              { value: '', label: t(locale, 'browse.any') },
+              ...DECADES.map((d) => ({ value: String(d), label: t(locale, 'browse.decadeLabel', { d }) })),
+            ]}
           />
-          <Facets
+          <Menu
+            id="browse-sort"
             label={t(locale, 'browse.sort')}
-            options={ALL_BROWSE_SORTS.map((s) => ({
-              key: s,
-              label: t(locale, SORT_LABEL[s]),
-              href: withFacet({ tri: s }),
-              active: sort === s,
-            }))}
+            name="tri"
+            defaultValue={sort}
+            options={ALL_BROWSE_SORTS.map((s) => ({ value: s, label: t(locale, SORT_LABEL[s]) }))}
           />
-        </div>
+          {/* ⚠️ Le bouton reste **visible**, il ne se cache pas quand JavaScript repond. Le
+              faire disparaitre demanderait de savoir si JS tourne — donc du JS —, et laisser
+              un envoi automatique **sans** bouton casserait la page pour qui n'en a pas. Un
+              geste explicite, le meme pour tout le monde. */}
+          <button type="submit" className="btn btn-primary">
+            {t(locale, 'browse.apply')}
+          </button>
+        </form>
       </PageHeader>
 
       {results.length === 0 ? (
@@ -219,50 +221,6 @@ export async function BrowseView({ params, locale }: {
           </ul>
         </>
       )}
-    </div>
-  );
-}
-
-/** Une ligne de facettes : un libelle, puis des liens dont un seul est actif. */
-function Facets({ label, all, allHref, allActive, options }: {
-  readonly label: string;
-  /** Le libelle du choix « aucun filtre ». Absent quand la facette en a toujours un (le tri). */
-  readonly all?: string;
-  readonly allHref?: string;
-  readonly allActive?: boolean;
-  readonly options: readonly {
-    readonly key: string;
-    readonly label: string;
-    readonly href: string;
-    readonly active: boolean;
-  }[];
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="label shrink-0">{label}</span>
-      {all !== undefined && allHref !== undefined ? (
-        // ⚠️ `aria-current` et pas une classe : l'etat vit dans l'attribut d'accessibilite,
-        // et l'apparence en derive (`.btn[aria-current='true']`). Deux sources pour un meme
-        // etat finissent toujours par diverger, et c'est l'attribut qui dit la verite a un
-        // lecteur d'ecran.
-        <Link
-          href={allHref}
-          aria-current={allActive === true ? 'true' : undefined}
-          className="btn rounded-full text-xs"
-        >
-          {all}
-        </Link>
-      ) : null}
-      {options.map((option) => (
-        <Link
-          key={option.key}
-          href={option.href}
-          aria-current={option.active ? 'true' : undefined}
-          className="btn rounded-full text-xs"
-        >
-          {option.label}
-        </Link>
-      ))}
     </div>
   );
 }

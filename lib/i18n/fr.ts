@@ -124,6 +124,7 @@ export const FR = {
   'browse.sort.popular': 'Popularité',
   'browse.sort.rating': 'Note',
   'browse.sort.recent': 'Plus récentes',
+  'browse.apply': 'Voir',
   'browse.count.one': '{n} série',
   'browse.count.other': '{n} séries',
   'browse.noneTitle': 'Rien sous cette combinaison',

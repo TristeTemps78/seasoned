@@ -153,6 +153,61 @@
       margin-block: -0.4375rem;
     }
   }
+  /**
+   * =============================================================================
+   * LE MENU DEROULANT — un choix qui ne coute pas la hauteur d'un ecran
+   * =============================================================================
+   *
+   * 🔴 **Mesure au navigateur le 2026-08-15, `/parcourir` en 375 px : 803 px de commandes
+   * pour un ecran de 812.** La page qui existe pour parcourir ne montrait pas une seule
+   * serie avant de defiler — treize genres a 252 px, huit epoques a 148, trois tris a 96.
+   * Une rangee de boutons dit tout d'un coup d'oeil, et c'est sa qualite ; au-dela d'une
+   * poignee d'options elle prend la place du contenu qu'elle sert a trouver.
+   *
+   * 🔴 **Et les cinq `<select>` du produit recopiaient la meme chaine d'utilitaires** —
+   * `rounded-md border ... px-2 py-1.5 text-sm` — dans `Timeline`, `MyYear` et
+   * `MyProgress`. Cinq copies d'un meme dessin, c'est cinq occasions de diverger : le motif
+   * exact qui a fait extraire `.poster-grid` le jour ou une affiche changeait de taille
+   * selon la page d'ou l'on venait.
+   *
+   * ⚠️ **Ils faisaient 33 px de haut, quand tout bouton du produit en fait 44.** WCAG 2.5.8
+   * est tenu (24 px), mais la cible que ce depot s'est donnee le 2026-08-13 ne l'etait pas —
+   * et un menu est *plus* difficile a viser qu'un bouton, pas moins : rater un `<select>`
+   * ouvre la liste au mauvais endroit.
+   *
+   * ⚠️ `appearance: none` retire la fleche du systeme, donc on la redessine — sinon rien ne
+   * dit que c'est un menu. Elle est en fond `background-image` et non en pseudo-element : un
+   * `<select>` ne peut pas porter de `::after`.
+   */
+  .menu {
+    appearance: none;
+    min-height: 2.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-edge);
+    background-color: color-mix(in oklab, var(--color-surface) 70%, transparent);
+    box-shadow: inset 0 2px 4px -2px rgb(0 0 0 / 0.7);
+    /* La place de la fleche est reservee a droite, sinon un libelle long passe dessous. */
+    padding: 0.5rem 2.25rem 0.5rem 0.875rem;
+    color: var(--color-text);
+    font-size: 0.875rem;
+    transition: border-color 160ms ease;
+    /* Le chevron, dessine dans le fond. `currentColor` est impossible en `url()` : la
+       couleur est donc celle du texte, ecrite en dur, et le bloc de jetons la gouverne. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23dbe9f8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 0.75rem;
+  }
+  .menu:hover {
+    border-color: color-mix(in oklab, var(--color-volt) 35%, transparent);
+  }
+  /* ⚠️ La liste ouverte est dessinee par le systeme, pas par nous : sur fond sombre, un
+     `<option>` sans couleur explicite sort en noir sur blanc chez certains navigateurs, et
+     en blanc sur blanc chez d'autres. Les deux se declarent. */
+  .menu option {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
   /** Le champ de saisie — **le seul element qui s'enfonce** : meme lumiere venue d'en haut
       que les surfaces et les boutons, mais recue en dedans. ⚠️ L'anneau de focus est
       **volt** : il etait vert par endroits, la couleur qui signifie « en diffusion ». */
