@@ -600,6 +600,40 @@
        le paragraphe et le champ de recherche. C'est ce qui rend la banniere vive **et** le
        texte lisible — les deux ne s'echangent pas, ils vivent a des endroits differents. */
     background-image:
+      /*
+       * 🔴 **L'ENCRE ETAIT A GAUCHE, ET L'ACCROCHE EST CENTREE DEPUIS LE 2026-08-11.**
+       *
+       * Le commentaire ci-dessus affirme que l'encre pleine couvre « toute la zone ou vivent
+       * le titre, le paragraphe et le champ de recherche ». C'etait vrai quand l'accroche
+       * etait alignee a gauche ; Tristan l'a fait centrer le meme jour, et la phrase est
+       * restee. Mesure au navigateur le 2026-08-15, fenetre 1440 :
+       *
+       *     encre pleine            x   0 →  30 %
+       *     bloc centre (h1, accroche, recherche)
+       *                             x  27 →  73 %   y  9 → 47 %
+       *     bloc du bas (aligne a gauche)
+       *                             x   1 →  99 %   y 55 → 91 %
+       *
+       * Soit **93 % du bloc centre pose sur l'image nue**, dont 120 px en transparence
+       * totale. Et l'accroche y est en `--color-muted` (#99aabb, 16 px) — un gris concu pour
+       * un fond plat, pas pour un champ ensoleille. Constate a l'oeil sur *Midsomer Murders*,
+       * dont la banniere est un pre en plein soleil.
+       *
+       * Cette ellipse-ci suit donc le bloc **centre**, et elle seule : rayon 34 % en largeur
+       * (couvre 16 → 84 %), 32 % en hauteur autour de y = 28 % (couvre -4 → 60 %). Le
+       * degrade lateral d'origine reste, car il fait correctement son travail sur le bloc du
+       * bas, qui est bien aligne a gauche.
+       *
+       * ⚠️ Elle ne va pas jusqu'a l'encre pleine (88 % au centre) : le but est de rendre le
+       * texte lisible, pas de revenir a la tache sombre que le bloc precedent raconte avoir
+       * corrigee. Le quart haut droit reste degage.
+       */
+      radial-gradient(
+        ellipse 34% 32% at 50% 28%,
+        color-mix(in oklab, var(--color-ink) 88%, transparent) 0%,
+        color-mix(in oklab, var(--color-ink) 70%, transparent) 55%,
+        transparent 100%
+      ),
       linear-gradient(
         to right,
         var(--color-ink) 0%,

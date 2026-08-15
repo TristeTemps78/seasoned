@@ -183,7 +183,11 @@ export function DataSafety() {
       className="mb-6 panel px-4 py-3"
     >
       <details className="group">
-        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold marker:content-none">
+        {/* ⚠️ `min-h-6` : mesure a **20 px** de haut le 2026-08-15, sous les 24 px de la
+            regle. Un `summary` est la cible qui ouvre le panneau — la meme exigence qu'un
+            bouton. `.tap-line` ne convient pas ici : il est `inline-flex`, et ce
+            `summary`-la est deja `flex` sur toute la largeur. */}
+        <summary className="flex min-h-6 cursor-pointer list-none items-center gap-2 text-sm font-semibold marker:content-none">
           <span aria-hidden="true" className="text-(--color-warn)">
             ●
           </span>

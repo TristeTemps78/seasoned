@@ -190,7 +190,7 @@ export function SiteChrome({ locale, Messages, children }: {
                 pas encore de bibliotheque. Et un moteur ne trouve une page que si
                 quelque chose y mene — c'est la lecon de l'audit SEO du 2026-08-01. */}
             <p>
-              <Link href={pathIn('/convertir', locale)} className="hover:text-(--color-text)">
+              <Link href={pathIn('/convertir', locale)} className="tap-line hover:text-(--color-text)">
                 {t(locale, 'nav.convert')}
               </Link>
             </p>
@@ -201,16 +201,16 @@ export function SiteChrome({ locale, Messages, children }: {
                 signaler quelque chose, et une voie de signalement introuvable n'est pas
                 une voie de signalement. */}
             <p className="flex flex-wrap gap-x-4">
-              <Link href={pathIn('/mentions', locale)} className="hover:text-(--color-text)">
+              <Link href={pathIn('/mentions', locale)} className="tap-line hover:text-(--color-text)">
                 {t(locale, 'legal.title')}
               </Link>
               <Link
                 href={pathIn('/confidentialite', locale)}
-                className="hover:text-(--color-text)"
+                className="tap-line hover:text-(--color-text)"
               >
                 {t(locale, 'privacy.title')}
               </Link>
-              <Link href={pathIn('/regles', locale)} className="hover:text-(--color-text)">
+              <Link href={pathIn('/regles', locale)} className="tap-line hover:text-(--color-text)">
                 {t(locale, 'rules.title')}
               </Link>
             </p>

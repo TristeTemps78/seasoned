@@ -93,7 +93,7 @@ export function AddToList({ seriesId }: { readonly seriesId: string }) {
     return (
       <p className="meta">
         {t('addToList.locked')}{' '}
-        <Link className="underline hover:text-(--color-volt)" href={pathIn('/compte', locale)}>
+        <Link className="tap-line underline hover:text-(--color-volt)" href={pathIn('/compte', locale)}>
           {t('addToList.signIn')}
         </Link>
       </p>
@@ -112,7 +112,7 @@ export function AddToList({ seriesId }: { readonly seriesId: string }) {
           // d'accord avec celui de `/listes`. Un lien y mene.
           <p className="meta">
             {t('addToList.none')}{' '}
-            <Link className="underline hover:text-(--color-volt)" href={pathIn('/listes', locale)}>
+            <Link className="tap-line underline hover:text-(--color-volt)" href={pathIn('/listes', locale)}>
               {t('addToList.goToLists')}
             </Link>
           </p>
