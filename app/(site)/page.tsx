@@ -15,7 +15,7 @@ import { PosterRail } from '@/app/components/PosterRail';
 import { StatusBadge } from '@/app/components/StatusBadge';
 import { ResumeStrip } from '@/app/components/ResumeStrip';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
-import { alternatesFor, seriesPath } from '@/lib/routes';
+import { alternatesFor, pathIn, seriesPath } from '@/lib/routes';
 import type { Metadata } from 'next';
 
 /**
@@ -87,6 +87,19 @@ export async function Home({ locale }: { readonly locale: Locale }) {
         </div>
 
         <SearchForm locale={locale} />
+
+        {/* ⚠️ **La seconde porte, et le produit n'en avait qu'une.** Le champ ci-dessus exige
+            de connaitre le titre ; c'est la moitie des envies de serie, pas toutes. Sous le
+            champ et non a cote : chercher reste le geste principal, parcourir est ce qu'on
+            fait quand on n'a pas de titre en tete. */}
+        <p className="text-center">
+          <Link
+            href={pathIn('/parcourir', locale)}
+            className="meta tap-line hover:text-(--color-text)"
+          >
+            {t(locale, 'home.browse')}
+          </Link>
+        </p>
 
         {/* Le rappel que le produit s'interdit d'envoyer par notification : il ne
             coute rien, ne reveille personne, et ne s'affiche que pour qui a deja un

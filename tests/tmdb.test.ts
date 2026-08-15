@@ -443,3 +443,111 @@ describe('TmdbProvider', () => {
     await expect(provider.getSeries('999')).rejects.toThrow(/inexploitable/);
   });
 });
+
+/**
+ * Le parcours a facettes — **ce qui part reellement chez TMDB**.
+ *
+ * ## Pourquoi ce test-la et pas un test de composant
+ *
+ * Une facette mal traduite ne leve jamais. `with_genres=28` est une chaine parfaitement
+ * valide, le serveur repond 200, et la page rend une grille vide : c'est le genre
+ * « Action » des **films**, envoye a `/discover/tv`. Aucun typage, aucun build et aucune
+ * capture ne distinguent ce cas d'un genre reellement pauvre.
+ *
+ * L'URL construite est donc la seule chose qui merite d'etre verifiee ici.
+ */
+describe('TmdbProvider.browse — les parametres envoyes', () => {
+  function capture(): { provider: TmdbProvider; url: () => URL | undefined } {
+    let captured: URL | undefined;
+    const provider = new TmdbProvider({
+      accessToken: 'jeton-de-test',
+      language: 'en-US',
+      fetchImpl: (async (url: URL) => {
+        captured = url;
+        return new Response(JSON.stringify({ results: [] }), { status: 200 });
+      }) as unknown as typeof fetch,
+    });
+    return { provider, url: () => captured };
+  }
+
+  it('vise /discover/tv', async () => {
+    const { provider, url } = capture();
+    await provider.browse({});
+
+    expect(url()?.pathname).toBe('/3/discover/tv');
+  });
+
+  it('🔴 « action » vaut 10759, l identifiant SERIE — jamais 28, celui des films', async () => {
+    const { provider, url } = capture();
+    await provider.browse({ genre: 'action' });
+
+    expect(url()?.searchParams.get('with_genres')).toBe('10759');
+    expect(url()?.searchParams.get('with_genres')).not.toBe('28');
+  });
+
+  it('borne la decennie des deux cotes, sur la PREMIERE diffusion', async () => {
+    // Une serie commencee en 1999 et finie en 2007 appartient aux annees 1990 : c'est la
+    // decennie ou on l'a decouverte. La classer sur sa derniere saison rendrait *Friends*
+    // contemporain de *Lost*.
+    const { provider, url } = capture();
+    await provider.browse({ decade: 2000 });
+
+    expect(url()?.searchParams.get('first_air_date.gte')).toBe('2000-01-01');
+    expect(url()?.searchParams.get('first_air_date.lte')).toBe('2009-12-31');
+  });
+
+  it('🔴 pose TOUJOURS un plancher de votes, y compris sans tri par note', async () => {
+    // Sans lui, `vote_average.desc` rend exclusivement des series a 10/10 sur deux votes —
+    // le defaut que `MIN_SHOWCASE_VOTES` corrige sur la vitrine, en pire : ici le tri les
+    // fait remonter EN TETE au lieu de les noyer.
+    const { provider, url } = capture();
+    await provider.browse({});
+
+    expect(Number(url()?.searchParams.get('vote_count.gte'))).toBeGreaterThanOrEqual(300);
+  });
+
+  it('traduit les trois tris', async () => {
+    for (const [sort, expected] of [
+      ['popular', 'popularity.desc'],
+      ['rating', 'vote_average.desc'],
+      ['recent', 'first_air_date.desc'],
+    ] as const) {
+      const { provider, url } = capture();
+      await provider.browse({ sort });
+      expect(url()?.searchParams.get('sort_by')).toBe(expected);
+    }
+  });
+
+  it('sans tri demande, classe par popularite', async () => {
+    const { provider, url } = capture();
+    await provider.browse({});
+
+    expect(url()?.searchParams.get('sort_by')).toBe('popularity.desc');
+  });
+
+  it('n envoie pas de genre ni de date quand on n en demande pas', async () => {
+    // Un `with_genres=` vide ou un `first_air_date.gte=NaN-01-01` rendrait zero resultat
+    // sans erreur — la panne la plus difficile a voir.
+    const { provider, url } = capture();
+    await provider.browse({});
+
+    expect(url()?.searchParams.has('with_genres')).toBe(false);
+    expect(url()?.searchParams.has('first_air_date.gte')).toBe(false);
+  });
+
+  it('exclut explicitement les programmes adultes', async () => {
+    // TMDB les exclut par defaut. On le dit quand meme : un defaut du fournisseur n'est pas
+    // une decision du produit, et il peut changer sans prevenir.
+    const { provider, url } = capture();
+    await provider.browse({});
+
+    expect(url()?.searchParams.get('include_adult')).toBe('false');
+  });
+
+  it('pagine, et refuse une page absurde', async () => {
+    const { provider, url } = capture();
+    await provider.browse({}, 0);
+
+    expect(url()?.searchParams.get('page')).toBe('1');
+  });
+});

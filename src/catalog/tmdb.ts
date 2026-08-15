@@ -15,6 +15,9 @@
 import type {
   CastMember,
   CatalogProvider,
+  BrowseGenre,
+  BrowseQuery,
+  BrowseSort,
   Creator,
   DiscoverKind,
   EpisodeDetail,
@@ -517,6 +520,56 @@ export class TmdbProvider implements CatalogProvider {
     return mapSearchResults(raw);
   }
 
+  /**
+   * Parcourt le catalogue. **Seul endroit qui connaisse `/discover/tv` et ses parametres.**
+   *
+   * ## 🔴 Le plancher de votes n'est pas une precaution, c'est la condition
+   *
+   * `lib/catalog.ts` raconte comment `tv/popular` remontait *« Caresser les tetons de mon
+   * ours hibernant »* (7 votes) sur la 404. Trier par note **aggrave** ce defaut au lieu de
+   * le diluer : `vote_average.desc` sans plancher rend exclusivement des series a 10/10 sur
+   * un ou deux votes, donc la premiere page entiere est du bruit. C'est le classement le
+   * plus attendu du parcours, et sans `vote_count.gte` il serait le plus inutilisable.
+   *
+   * ⚠️ Le plancher est **plus haut** ici que celui de la vitrine (50) : la vitrine ecarte le
+   * bruit d'une liste deja triee par popularite, alors qu'ici on demande explicitement a
+   * remonter les mieux notes. Le meme chiffre laisserait passer les series a 9,8/10 sur
+   * 51 votes, qui sont exactement ce que le classement doit ne pas montrer.
+   *
+   * Le filtre s'applique aux trois tris, et pas seulement au tri par note : une decennie
+   * lointaine ou un genre rare renverraient sinon la meme grappe d'obscurites.
+   */
+  async browse(
+    query: BrowseQuery,
+    page = 1,
+  ): Promise<readonly SeriesSummary[]> {
+    const params: Record<string, string> = {
+      page: String(Math.max(1, Math.floor(page))),
+      sort_by: BROWSE_SORT[query.sort ?? 'popular'] ?? BROWSE_SORT.popular,
+      'vote_count.gte': String(BROWSE_MIN_VOTES),
+      // Les programmes adultes n'ont rien a faire dans une vitrine sans compte ni age
+      // declare. TMDB les exclut par defaut, on le dit quand meme : un defaut du
+      // fournisseur n'est pas une decision du produit.
+      include_adult: 'false',
+    };
+
+    if (query.genre !== undefined) {
+      params['with_genres'] = String(TMDB_GENRE[query.genre]);
+    }
+
+    if (query.decade !== undefined) {
+      // Bornes **inclusives des deux cotes**, sur la premiere diffusion : une serie
+      // commencee en 1999 et finie en 2007 appartient aux annees 1990, parce que c'est la
+      // decennie ou on l'a decouverte. Le classer sur sa derniere saison rendrait
+      // *Friends* contemporain de *Lost*.
+      params['first_air_date.gte'] = `${query.decade}-01-01`;
+      params['first_air_date.lte'] = `${query.decade + 9}-12-31`;
+    }
+
+    const raw = await this.#get('/discover/tv', params);
+    return mapSearchResults(raw);
+  }
+
   async watchOptions(
     providerId: string,
     regions: readonly string[],
@@ -700,6 +753,49 @@ export function mapPersonSeriesCredits(raw: unknown): readonly SeriesSummary[] {
   }
   return out;
 }
+
+/**
+ * Les identifiants de genre TMDB, **second et dernier endroit ou ils existent**.
+ *
+ * Distinct de {@link KIND_BY_TMDB_GENRE}, qui traduit dans l'autre sens et pour une autre
+ * question : celui-la dit *quelle nature de programme est-ce*, celui-ci dit *quel sujet
+ * demande-t-on*. Les fondre obligerait a inverser une table faite pour etre lue dans un seul
+ * sens, et a decider ce que devient « Action & Adventure » qui vaut `scripted` a l'aller.
+ *
+ * ⚠️ « Action » vaut 10759 chez TMDB (« Action & Adventure ») et non 28, qui est le genre
+ * des **films**. L'endpoint est `/discover/tv` : lui passer un identifiant de film rend zero
+ * resultat sans erreur, ce qui est la panne la plus difficile a voir.
+ */
+const TMDB_GENRE: Readonly<Record<BrowseGenre, number>> = {
+  action: 10759,
+  animation: 16,
+  comedy: 35,
+  crime: 80,
+  documentary: 99,
+  drama: 18,
+  family: 10751,
+  kids: 10762,
+  mystery: 9648,
+  sci_fi: 10765,
+  war: 10768,
+  western: 37,
+};
+
+/** Les ordres de tri de TMDB, pour {@link BrowseSort}. */
+const BROWSE_SORT: Readonly<Record<BrowseSort, string>> = {
+  popular: 'popularity.desc',
+  rating: 'vote_average.desc',
+  recent: 'first_air_date.desc',
+};
+
+/**
+ * Plancher de votes du parcours.
+ *
+ * Plus haut que le `MIN_SHOWCASE_VOTES` de la vitrine (50), et la raison est ecrite sur
+ * {@link TmdbCatalog.browse} : trier explicitement par note fait remonter en tete ce que la
+ * vitrine se contentait de noyer.
+ */
+const BROWSE_MIN_VOTES = 300;
 
 const DISCOVER_ENDPOINT: Readonly<Record<DiscoverKind, string>> = {
   trending: '/trending/tv/week',

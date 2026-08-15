@@ -60,6 +60,10 @@ function fake(): { provider: CatalogProvider; calls: string[] } {
       calls.push(`discover:${kind}:${page}`);
       return [summary('1')];
     },
+    async browse(query, page = 1) {
+      calls.push(`browse:${query.genre ?? '-'}:${query.decade ?? '-'}:${query.sort ?? '-'}:${page}`);
+      return [summary('1')];
+    },
     async seriesByCreator(personId) {
       calls.push(`creator:${personId}`);
       return [];

@@ -249,6 +249,80 @@ export interface SeasonDetail {
  * par l'audit du 2026-08-01 : sitemap a une seule URL, `/recherche` en `Disallow`,
  * zero lien sortant depuis l'accueil.
  */
+/**
+ * Les genres qu'on peut demander en parcourant.
+ *
+ * ## Des slugs, jamais des identifiants de fournisseur
+ *
+ * `KIND_BY_TMDB_GENRE` dit la regle noir sur blanc : les nombres propres a TMDB
+ * n'existent que dans `tmdb.ts`. Le domaine et l'interface raisonnent sur ces mots-la, et
+ * c'est ce qui rend le parcours portable si le fournisseur change — la traduction est un
+ * tableau de correspondance a reecrire, pas une fonctionnalite.
+ *
+ * ⚠️ **Ce n'est pas {@link ProgramKind}.** Celui-la dit la *nature* d'un programme (une
+ * telerealite n'est pas une fiction) et sert a decider ce qui entre en vitrine. Celui-ci dit
+ * le *sujet*, et sert a chercher. Les confondre ferait disparaitre « Documentaire » du
+ * parcours au motif qu'il est deja une nature.
+ *
+ * Douze, et pas les seize de TMDB : `news`, `talk`, `reality` et `soap` sont precisement ce
+ * que `isShowcased` ecarte de la vitrine. Les proposer au parcours rendrait des rangees que
+ * le reste du produit refuse d'afficher.
+ */
+export type BrowseGenre =
+  | 'action'
+  | 'animation'
+  | 'comedy'
+  | 'crime'
+  | 'documentary'
+  | 'drama'
+  | 'family'
+  | 'kids'
+  | 'mystery'
+  | 'sci_fi'
+  | 'war'
+  | 'western';
+
+/** Toutes les valeurs de {@link BrowseGenre}, dans l'ordre d'affichage. */
+export const ALL_BROWSE_GENRES: readonly BrowseGenre[] = [
+  'action',
+  'animation',
+  'comedy',
+  'crime',
+  'documentary',
+  'drama',
+  'family',
+  'kids',
+  'mystery',
+  'sci_fi',
+  'war',
+  'western',
+];
+
+/**
+ * Comment classer ce qu'on parcourt.
+ *
+ * ⚠️ `rating` demande un plancher de votes cote fournisseur, sans quoi il rend des series
+ * a 10/10 sur deux votes — c'est le meme defaut que `MIN_SHOWCASE_VOTES` corrige sur la
+ * vitrine, en pire, puisqu'ici le tri le fait remonter **en tete** au lieu de le noyer.
+ */
+export type BrowseSort = 'popular' | 'rating' | 'recent';
+
+/** Toutes les valeurs de {@link BrowseSort}, dans l'ordre d'affichage. */
+export const ALL_BROWSE_SORTS: readonly BrowseSort[] = ['popular', 'rating', 'recent'];
+
+/**
+ * Ce qu'on demande en parcourant le catalogue.
+ *
+ * Tout est facultatif : sans rien, on rend le plus populaire, ce qui est exactement ce que
+ * la vitrine montre deja. Le parcours n'est donc jamais un ecran vide.
+ */
+export interface BrowseQuery {
+  readonly genre?: BrowseGenre;
+  /** Premiere annee d'une decennie : `1990`, `2000`, `2010`, `2020`. */
+  readonly decade?: number;
+  readonly sort?: BrowseSort;
+}
+
 export type DiscoverKind =
   /** Ce qui bouge cette semaine. Renouvelle la page d'accueil sans effort. */
   | 'trending'
@@ -279,6 +353,24 @@ export interface CatalogProvider {
   /** @param page 1-indexee, comme chez tous les fournisseurs. */
   discover(
     kind: DiscoverKind,
+    page?: number,
+  ): Promise<readonly SeriesSummary[]>;
+
+  /**
+   * Parcourt le catalogue selon des criteres.
+   *
+   * ⚠️ **Une methode de plus sur cette interface, donc un cout de portabilite assume.** La
+   * regle en tete du bloc dit que le prix doit rester bas ; celui-ci l'est, parce que tout
+   * catalogue serieux sait filtrer par genre, par periode et par ordre — c'est la premiere
+   * chose qu'un fournisseur expose apres la recherche.
+   *
+   * L'alternative etait pire : composer le parcours a partir de `discover()` et filtrer en
+   * memoire. Ca aurait demande de rapatrier des milliers de fiches pour en montrer douze,
+   * et rendu des rangees creuses des qu'un genre est rare — un cout par utilisateur, ce que
+   * le produit refuse.
+   */
+  browse(
+    query: BrowseQuery,
     page?: number,
   ): Promise<readonly SeriesSummary[]>;
 

@@ -99,7 +99,21 @@
     color: var(--color-warn);
   }
   /** Un bouton deja choisi — l'etat, pas l'action. */
-  .btn[aria-pressed='true'] {
+  /**
+   * L'etat choisi d'un `.btn`, **quel que soit l'attribut qui le porte**.
+   *
+   * `aria-pressed` pour un bouton qui bascule (le coeur, « je veux la voir ») ;
+   * `aria-current` pour un lien qui dit ou l'on est (les facettes de `/parcourir`, qui sont
+   * des liens et non des boutons — voir l'en-tete de cette page-la). Ce sont deux
+   * semantiques differentes et **une seule apparence** : ce qui est choisi se voit pareil,
+   * qu'on y soit arrive par un clic ou par une URL.
+   *
+   * ⚠️ Les deux dans le meme bloc, et pas deux regles jumelles : c'est exactement le point de
+   * depart de `SeriesCard` et `LibraryCard`, qui ont diverge jusqu'a ce que l'une affiche
+   * trois rectangles gris.
+   */
+  .btn[aria-pressed='true'],
+  .btn[aria-current='true'] {
     border-color: color-mix(in oklab, var(--color-volt) 55%, transparent);
     color: var(--color-volt);
     background-color: color-mix(in oklab, var(--color-volt) 10%, transparent);

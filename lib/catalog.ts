@@ -12,6 +12,7 @@
 
 import { TmdbProvider } from '../src/catalog/tmdb';
 import type {
+  BrowseQuery,
   CatalogProvider,
   DiscoverKind,
   EpisodeGrouping,
@@ -362,6 +363,41 @@ export async function discover(
     // n'importe quel programme si quelqu'un la cherche. Sans ce filtre, la rangee
     // « En attente » remontait le journal televise allemand et de la telerealite
     // (constate en production le 2026-08-01).
+    return all.filter((s) => (s.kind === undefined || isShowcased(s.kind)) && isPopular(s));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Parcourt le catalogue selon des criteres.
+ *
+ * ## Ce que ca ajoute a `discover`, et pourquoi ce n'est pas la meme fonction
+ *
+ * `discover` sert **la vitrine** : trois listes editorialisees, choisies par nous, dont le
+ * contenu ne depend de personne. Celle-ci sert **une question posee** — « les policiers
+ * britanniques des annees 2000 » —, et sa reponse depend entierement de qui demande. Les
+ * fondre obligerait `DiscoverKind` a porter une combinatoire, alors qu'il porte une
+ * editorialisation.
+ *
+ * ⚠️ Le meme cache et le meme filtre de vitrine s'appliquent : une facette n'est pas une
+ * derogation. La cle de cache porte les trois criteres **et la langue** — sans quoi
+ * `/parcourir?genre=crime` en francais servirait le resultat anglais, exactement le defaut
+ * que `keyIn` existe pour empecher (`tests/catalog-locale.test.ts`).
+ *
+ * Degrade en liste vide plutot que de lever, comme `discover` : une facette en panne doit
+ * rendre un ecran qui dit « rien ici », pas une page d'erreur.
+ */
+export async function browse(
+  query: BrowseQuery,
+  page = 1,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<readonly SeriesSummary[]> {
+  const key = `browse:${query.genre ?? ''}:${query.decade ?? ''}:${query.sort ?? ''}:${page}`;
+  try {
+    const all = await throughDiscover(keyIn(locale, key), () =>
+      getProvider(locale).browse(query, page),
+    );
     return all.filter((s) => (s.kind === undefined || isShowcased(s.kind)) && isPopular(s));
   } catch {
     return [];

@@ -43,6 +43,9 @@ function providerOf(items: readonly SeriesSummary[]): CatalogProvider {
     async discover() {
       return items;
     },
+    async browse() {
+      return items;
+    },
     async seriesByCreator() {
       return [];
     },
