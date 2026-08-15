@@ -600,6 +600,13 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
+
+    /* Le voile du haut, en trois nombres. Voir leur justification sous `background-image` —
+       ce sont les seuls reglages a toucher, et ils se mesurent au navigateur, jamais a l'oeil
+       seul : le fond est une photo qu'on ne choisit pas. */
+    --veil-ink: 85%;
+    --veil-full: 34%;
+    --veil-end: 52%;
     /* ⚠️ Le voile est **renforce a gauche** depuis que l'image monte a 0,9 : l'encre reste
        pleine jusqu'a 30 % de la largeur, c'est-a-dire sur toute la zone ou vivent le titre,
        le paragraphe et le champ de recherche. C'est ce qui rend la banniere vive **et** le
@@ -629,23 +636,35 @@
        * ## Donc un voile horizontal, sur toute la largeur
        *
        * Il ne depend plus d'aucune correspondance entre deux geometries : la bande ou vit le
-       * texte est encree, quelle que soit la largeur. Plein jusqu'a 34 % — le bas de
-       * l'accroche en 375 px, ou le bloc descend le plus bas —, nul a 52 %.
+       * texte est encree, quelle que soit la largeur.
        *
-       * Verifie aux memes tailles : accroche 5,04 (375) et 6,13 (1440), titre 10,14 et 12,33,
-       * a leurs trois points. Le bloc du bas ne bouge pas (5,69), il vit sous le fondu.
+       * ## Deux reglages, parce que le texte ne se comporte pas pareil des deux cotes
        *
-       * ⚠️ **Ce que ca coute, et c'est le bloc du dessus qui l'a rendu chiffrable** : l'image
-       * visible en moyenne passe de **23,6 % a 13,3 %** en 1440. Le quart haut droit degage,
-       * revendique plus haut, disparait — il etait la moitie du probleme, puisque c'est
-       * exactement la que le texte se posait sur l'image nue. C'est un arbitrage, pas un
-       * oubli : entre une banniere vive et une accroche a 1,65:1, la lisibilite passe devant.
+       * ⚠️ **Ce n'est pas la meme regle rendue deux fois** — les trois nombres viennent de
+       * deux geometries reellement differentes, et les recopier a l'identique gacherait de
+       * l'image pour rien :
+       *
+       *   - **En dessous de 64rem**, le bloc de 672 px ne rentre pas : il occupe la largeur
+       *     entiere (4 → 96 % en 375 px), donc l'encre laterale ne l'atteint plus a droite et
+       *     le voile doit tenir seul les 4,5:1. Il descend aussi plus bas — l'accroche s'y
+       *     enroule sur trois lignes et finit a 35 %.
+       *   - **Au-dessus**, le bloc est centre et borne : son bord droit revient sous
+       *     l'encre laterale (0,27 d'alpha a 1024, 0,42 a 1440), qui fait donc une part du
+       *     travail. Et le bloc s'arrete a 28 % au lieu de 35 %.
+       *
+       * D'ou 78 % plutot que 85, sur 30 % de hauteur plutot que 34. Le pire cas du regime
+       * large est **1024 px** — c'est la que le bord du texte est le plus a droite en
+       * pourcentage —, pas la fenetre la plus grande.
+       *
+       * ⚠️ Les trois nombres sont des **variables** et non trois couches recopiees : deux
+       * copies d'un meme degre finissent par se repondre differemment le jour ou l'une est
+       * corrigee, ce que `.btn[aria-current]` raconte deja plus haut.
        */
       linear-gradient(
         to bottom,
-        color-mix(in oklab, var(--color-ink) 85%, transparent) 0%,
-        color-mix(in oklab, var(--color-ink) 85%, transparent) 34%,
-        transparent 52%
+        color-mix(in oklab, var(--color-ink) var(--veil-ink), transparent) 0%,
+        color-mix(in oklab, var(--color-ink) var(--veil-ink), transparent) var(--veil-full),
+        transparent var(--veil-end)
       ),
       linear-gradient(
         to right,
@@ -655,6 +674,15 @@
         transparent 100%
       ),
       linear-gradient(to top, var(--color-ink) 0%, transparent 55%);
+  }
+  /* Le regime large : le bloc de 672 px rentre enfin, donc l'encre laterale l'atteint et le
+     voile peut s'alleger. 64rem est le seuil ou il cesse d'occuper toute la largeur. */
+  @media (width >= 64rem) {
+    .art-bed::after {
+      --veil-ink: 78%;
+      --veil-full: 30%;
+      --veil-end: 44%;
+    }
   }
 
 /**

@@ -151,17 +151,32 @@ it('le voile de la banniere ne depend pas de la largeur de la fenetre', () => {
   ).toBe(true);
 
   /*
-   * L'encre demandee, et jusqu'ou elle tient.
+   * L'encre demandee, et jusqu'ou elle tient — **deux jeux, un par regime**.
    *
-   * 82 % est le minimum mesure au navigateur pour que `--color-muted` (16 px) tienne 4,5:1
-   * sur une affiche entierement blanche ; 34 % est le bas de l'accroche en 375 px, la ou le
-   * bloc descend le plus. Descendre l'un ou l'autre ramene le defaut, en silence.
+   * Mesure au navigateur le 2026-08-15, pire cas (affiche blanche), bord droit de
+   * l'accroche en `--color-muted` 16 px, seuil 4,5 :
+   *
+   *      375 px   encre 0,85   accroche 5,27   titre 10,61
+   *     1023 px   encre 0,85   accroche 5,80   titre 11,67   (dernier du regime etroit)
+   *     1024 px   encre 0,78   accroche 4,92   titre  9,90   (pire cas du regime large)
+   *     1440 px   encre 0,78   accroche 5,48   titre 11,03
+   *
+   * Les planchers sont sous ces valeurs, pas dessus : ils disent ce qui casse, pas ce qui
+   * est joli. 75 / 28 pour le regime large, ou l'encre laterale aide ; 82 / 34 pour l'etroit,
+   * ou le voile tient seul et ou l'accroche descend a 35 %.
    */
-  const premiereCouche = premiere.slice(versLeBas, premiere.indexOf('),', versLeBas));
-  const arrets = [...premiereCouche.matchAll(/var\(--color-ink\)\s*(\d+)%,\s*transparent\)\s*(\d+)%/g)];
-  expect(arrets.length, 'deux arrets d encre attendus sur la couche du haut').toBeGreaterThanOrEqual(2);
-  for (const arret of arrets) {
-    expect(Number(arret[1]), 'l encre du voile').toBeGreaterThanOrEqual(82);
-  }
-  expect(Number(arrets.at(-1)![2]), 'l encre pleine doit couvrir le bas de l accroche').toBeGreaterThanOrEqual(34);
+  const veils = (nom: string): number[] =>
+    [...styleSheet().replace(/\/\*[\s\S]*?\*\//g, '').matchAll(new RegExp(String.raw`--${nom}:\s*(\d+)%`, 'g'))]
+      .map((m) => Number(m[1]));
+
+  const encres = veils('veil-ink');
+  const couvertures = veils('veil-full');
+  // Ancrage : sans lui, une variable renommee ferait passer toutes les comparaisons a vide.
+  expect(encres.length, 'les deux regimes du voile').toBe(2);
+  expect(couvertures.length, 'les deux couvertures du voile').toBe(2);
+
+  expect(Math.min(...encres), 'l encre du regime large').toBeGreaterThanOrEqual(75);
+  expect(Math.max(...encres), 'l encre du regime etroit').toBeGreaterThanOrEqual(82);
+  expect(Math.min(...couvertures), 'la couverture du regime large').toBeGreaterThanOrEqual(28);
+  expect(Math.max(...couvertures), 'la couverture du regime etroit').toBeGreaterThanOrEqual(34);
 });
