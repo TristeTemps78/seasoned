@@ -8,7 +8,9 @@ import { EmptyState } from '@/app/components/EmptyState';
 import { pathIn } from '@/lib/routes';
 import {
   ALL_BROWSE_GENRES,
+  ALL_BROWSE_RUNS,
   ALL_BROWSE_SORTS,
+  type BrowseRun,
   type BrowseGenre,
   type BrowseSort,
 } from '@/src/catalog/provider';
@@ -52,6 +54,8 @@ interface PageProps {
     readonly genre?: string;
     readonly annees?: string;
     readonly tri?: string;
+    readonly etat?: string;
+    readonly page?: string;
   }>;
 }
 
@@ -80,6 +84,11 @@ const GENRE_LABEL = {
   western: 'browse.genre.western',
 } as const satisfies Record<BrowseGenre, MessageKey>;
 
+const RUN_LABEL: Readonly<Record<BrowseRun, MessageKey>> = {
+  ended: 'browse.run.ended',
+  running: 'browse.run.running',
+};
+
 const SORT_LABEL = {
   popular: 'browse.sort.popular',
   rating: 'browse.sort.rating',
@@ -93,6 +102,22 @@ function readGenre(raw: string | undefined): BrowseGenre | undefined {
 
 function readSort(raw: string | undefined): BrowseSort | undefined {
   return ALL_BROWSE_SORTS.find((s) => s === raw);
+}
+
+function readRun(raw: string | undefined): BrowseRun | undefined {
+  return ALL_BROWSE_RUNS.find((r) => r === raw);
+}
+
+/**
+ * Le numero de page, borne des deux cotes.
+ *
+ * ⚠️ Le plafond n'est pas de la prudence : TMDB refuse `page` au-dela de 500, et une adresse
+ * fabriquee a la main ne doit pas transformer un parcours en erreur de fournisseur.
+ */
+function readPage(raw: string | undefined): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(500, Math.max(1, Math.floor(n)));
 }
 
 /**
@@ -122,22 +147,49 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export async function BrowseView({ params, locale }: {
-  readonly params: { readonly genre?: string; readonly annees?: string; readonly tri?: string };
+  readonly params: {
+    readonly genre?: string;
+    readonly annees?: string;
+    readonly tri?: string;
+    readonly etat?: string;
+    readonly page?: string;
+  };
   readonly locale: Locale;
 }) {
   const genre = readGenre(params.genre);
   const decade = readDecade(params.annees);
   const sort = readSort(params.tri) ?? 'popular';
+  const run = readRun(params.etat);
+  const page = readPage(params.page);
 
-  const results = await browse(
+  const { items: results, hasMore } = await browse(
     {
       ...(genre !== undefined ? { genre } : {}),
       ...(decade !== undefined ? { decade } : {}),
+      ...(run !== undefined ? { run } : {}),
       sort,
     },
-    1,
+    page,
     locale,
   );
+
+  /**
+   * L'adresse d'une autre page, **avec la question intacte**.
+   *
+   * ⚠️ Reconstruite depuis les criteres lus, jamais depuis `params` brut : recopier ce qui
+   * arrive reinjecterait dans un `href` une valeur qu'on n'a pas validee, et suffirait a
+   * faire de cette page un relais pour n'importe quelle chaine.
+   */
+  const pageHref = (n: number) => {
+    const query = new URLSearchParams();
+    if (genre !== undefined) query.set('genre', genre);
+    if (decade !== undefined) query.set('annees', String(decade));
+    if (run !== undefined) query.set('etat', run);
+    if (sort !== 'popular') query.set('tri', sort);
+    if (n > 1) query.set('page', String(n));
+    const suffix = query.toString();
+    return `${pathIn('/parcourir', locale)}${suffix === '' ? '' : `?${suffix}`}`;
+  };
 
   return (
     <div className="space-y-8">
@@ -181,6 +233,20 @@ export async function BrowseView({ params, locale }: {
               ...DECADES.map((d) => ({ value: String(d), label: t(locale, 'browse.decadeLabel', { d }) })),
             ]}
           />
+          {/* 🔴 La facette que personne d'autre n'offre, et la seule qui parle de la these du
+              produit : « montre-moi des choses qui **se terminent** ». Genre, epoque et tri
+              sont ce que tous les catalogues proposent ; celle-ci est ce que cette page
+              existe pour rendre possible, et elle n'etait posable nulle part. */}
+          <Menu
+            id="browse-run"
+            label={t(locale, 'browse.run')}
+            name="etat"
+            defaultValue={run ?? ''}
+            options={[
+              { value: '', label: t(locale, 'browse.any') },
+              ...ALL_BROWSE_RUNS.map((r) => ({ value: r, label: t(locale, RUN_LABEL[r]) })),
+            ]}
+          />
           <Menu
             id="browse-sort"
             label={t(locale, 'browse.sort')}
@@ -208,7 +274,15 @@ export async function BrowseView({ params, locale }: {
         </EmptyState>
       ) : (
         <>
-          <p className="meta">{tn(locale, 'browse.count', results.length)}</p>
+          <p className="meta">
+            {tn(locale, 'browse.count', results.length)}
+            {page > 1 ? (
+              <span className="text-(--color-muted)">
+                {' · '}
+                {t(locale, 'browse.page', { n: page })}
+              </span>
+            ) : null}
+          </p>
           {/* La grille partagee, jamais une grille locale : c'est le defaut pour lequel
               `.poster-grid` a ete extraite — une affiche changeait de taille selon la page
               d'ou l'on venait. */}
@@ -219,6 +293,32 @@ export async function BrowseView({ params, locale }: {
               </li>
             ))}
           </ul>
+
+          {/* 🔴 **La page s'arretait a dix-huit series, sans page 2.** Un catalogue de dizaines
+              de milliers de titres rendait dix-huit reponses et n'avait aucune suite : la seule
+              facon d'en voir d'autres etait de changer les criteres, c'est-a-dire de renoncer a
+              la question qu'on posait.
+
+              ⚠️ Des LIENS, pas un bouton : la page est un composant serveur pur et marche sans
+              JavaScript. L'adresse porte donc toujours la question — c'est ce qui la rend
+              partageable, et c'est deja la raison d'etre du formulaire GET juste au-dessus.
+
+              ⚠️ « Suivante » ne s'affiche que si le fournisseur a rendu une page pleine :
+              proposer une suite qui n'existe pas serait un bouton qui a l'air de marcher. */}
+          {page > 1 || hasMore ? (
+            <nav className="flex items-center gap-3" aria-label={t(locale, 'browse.pages')}>
+              {page > 1 ? (
+                <a className="btn" href={pageHref(page - 1)} rel="prev">
+                  {t(locale, 'browse.previous')}
+                </a>
+              ) : null}
+              {hasMore ? (
+                <a className="btn" href={pageHref(page + 1)} rel="next">
+                  {t(locale, 'browse.next')}
+                </a>
+              ) : null}
+            </nav>
+          ) : null}
         </>
       )}
     </div>

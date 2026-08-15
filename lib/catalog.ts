@@ -388,19 +388,36 @@ export async function discover(
  * Degrade en liste vide plutot que de lever, comme `discover` : une facette en panne doit
  * rendre un ecran qui dit « rien ici », pas une page d'erreur.
  */
+/** Ce qu'une page de `discover` rend chez TMDB quand il en reste. */
+const TMDB_PAGE_SIZE = 20;
+
+/**
+ * ⚠️ **`hasMore` se lit AVANT le filtre de vitrine, jamais apres.**
+ *
+ * La page rendait 18 series pour 20 servies : le filtre en retire toujours quelques-unes.
+ * Deduire « il n'y a plus rien » d'un resultat filtre court ferait donc disparaitre la suite
+ * des qu'une page contient six programmes sans notes — c'est-a-dire souvent, et d'autant plus
+ * souvent qu'on avance dans le catalogue.
+ *
+ * Une page pleine chez le fournisseur veut dire qu'il en reste. C'est le seul signal fiable
+ * dont on dispose sans payer un appel de plus pour aller voir.
+ */
 export async function browse(
   query: BrowseQuery,
   page = 1,
   locale: Locale = DEFAULT_LOCALE,
-): Promise<readonly SeriesSummary[]> {
-  const key = `browse:${query.genre ?? ''}:${query.decade ?? ''}:${query.sort ?? ''}:${page}`;
+): Promise<{ readonly items: readonly SeriesSummary[]; readonly hasMore: boolean }> {
+  const key = `browse:${query.genre ?? ''}:${query.decade ?? ''}:${query.sort ?? ''}:${query.run ?? ''}:${page}`;
   try {
     const all = await throughDiscover(keyIn(locale, key), () =>
       getProvider(locale).browse(query, page),
     );
-    return all.filter((s) => (s.kind === undefined || isShowcased(s.kind)) && isPopular(s));
+    return {
+      items: all.filter((s) => (s.kind === undefined || isShowcased(s.kind)) && isPopular(s)),
+      hasMore: all.length >= TMDB_PAGE_SIZE,
+    };
   } catch {
-    return [];
+    return { items: [], hasMore: false };
   }
 }
 

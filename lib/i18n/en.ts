@@ -72,6 +72,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'series.airsOn': 'on {date}',
   'series.demands': 'What this series asks of you',
   'series.sameCreator': 'From the same creator',
+  'series.trailer': 'Trailer',
   'cast.title': 'On screen',
   'cast.why': 'The main roles, across every season.',
   'stat.seasons': 'Seasons',
@@ -106,6 +107,13 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'browse.sort.rating': 'Rating',
   'browse.sort.recent': 'Newest',
   'browse.apply': 'Show',
+  'browse.run': 'Status',
+  'browse.run.ended': 'It has ended',
+  'browse.run.running': 'Still running',
+  'browse.page': 'page {n}',
+  'browse.pages': 'Pages of results',
+  'browse.previous': '← Previous',
+  'browse.next': 'Next →',
   'browse.count.one': '{n} series',
   'browse.count.other': '{n} series',
   'browse.noneTitle': 'Nothing under this combination',
@@ -501,9 +509,13 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'seasons.warn.single': 'Mini-series: a single season, and that is the whole story.',
 
   'chart.aria': 'Rating per season',
+  // Les bornes de l'axe. Elles se disent parce qu'il ne part pas de zero : cadrer est ce qui
+  // rend la forme lisible, le taire serait un mensonge.
+  'chart.scale': 'Scale {lo} – {hi}, not 0 – 5: otherwise every season looks alike.',
   'chart.seasonTitle': 'Season {n} — {v}/5',
   'chart.shape': 'Shape',
   'chart.peak': 'Peak',
+  'chart.trough': 'Low',
   'chart.consistency': 'Consistency',
   'shape.masterpiece': 'Holds up throughout',
   'shape.steady': 'Steady',
@@ -774,6 +786,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
 
   'watch.aria': 'Where to watch',
   'watch.title': 'Where to watch it',
+  'watch.allOffers': 'See every offer and its price on JustWatch →',
   'watch.youHave': 'You already have it: {list}.',
   'watch.flatrate': 'Included in your subscription',
   'watch.free': 'Free',

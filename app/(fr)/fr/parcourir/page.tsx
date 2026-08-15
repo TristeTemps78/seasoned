@@ -11,6 +11,8 @@ export default async function FrenchBrowsePage({ searchParams }: {
     readonly genre?: string;
     readonly annees?: string;
     readonly tri?: string;
+    readonly etat?: string;
+    readonly page?: string;
   }>;
 }) {
   return <BrowseView params={await searchParams} locale="fr" />;

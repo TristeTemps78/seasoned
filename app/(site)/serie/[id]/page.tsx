@@ -325,7 +325,29 @@ export async function SeriesView({ id, locale }: {
               produit — s'affichait en anglais sur les pages francaises. Un defaut que
               ni le typage ni les tests ne pouvaient voir, la valeur par defaut etant
               legale. */}
-          <StatusBadge status={status} withDetail locale={locale} />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <StatusBadge status={status} withDetail locale={locale} />
+
+            {/* 🔴 **Le produit n'avait de bande-annonce nulle part**, alors que la reference
+                en met une sur chaque fiche. C'est le seul element de la page qui reponde a
+                « a quoi ca ressemble » — question qu'aucun chiffre ne traite, et qui est
+                souvent celle qui decide.
+
+                ⚠️ Un lien sortant, pas un lecteur : integrer YouTube ferait entrer un tiers
+                dans la page — ses cookies, son script, une politique de securite a rouvrir —
+                pour un lien qui suffit. Et absent quand le catalogue n'en porte pas : une
+                porte sans chemin ne s'affiche pas (regle du 2026-08-09). */}
+            {detail.trailerKey !== undefined ? (
+              <a
+                href={`https://www.youtube.com/watch?v=${encodeURIComponent(detail.trailerKey)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn rounded-full"
+              >
+                <span aria-hidden="true">▶</span> {t(locale, 'series.trailer')}
+              </a>
+            ) : null}
+          </div>
 
           {/* La seule information du site qui donne une raison de revenir a une date
               precise. « Dans trois jours » laissait le lecteur calculer et ignorer de

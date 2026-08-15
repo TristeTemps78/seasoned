@@ -331,3 +331,77 @@ export function computeTrajectory(
       : {}),
   };
 }
+
+/**
+ * L'amplitude minimale qu'un axe de trajectoire montre, en etoiles.
+ *
+ * Une serie dont toutes les saisons tiennent dans moins d'une etoile n'a pas de forme, et
+ * l'axe le dit en la dessinant plate au milieu de sa piste. Au-dela, c'est l'ecart reel qui
+ * decide de la hauteur des barres.
+ */
+export const MIN_CHART_SPAN = 1;
+
+/** La part de la piste qu'occupe toujours la plus petite barre, pour qu'elle reste visible. */
+const CHART_FLOOR = 0.08;
+
+/**
+ * Les bornes de l'axe, et la hauteur de chaque barre.
+ *
+ * ## 🔴 Le defaut que cette fonction repare
+ *
+ * `TrajectoryChart` calculait `(stars / MAX_STARS) * 100` : une echelle absolue de 0 a 5.
+ * Mesure au navigateur le 2026-08-15 sur *Breaking Bad*, piste de 96 px, notes de foule
+ * 4,2 / 4,2 / 4,1 / 4,2 / 4,5 :
+ *
+ *     S1  80 px      S2  81 px      S3  79 px      S4  81 px      S5  86 px
+ *
+ * **Deux pixels entre la meilleure et la pire saison.** Le livrable annonce par le README
+ * est « une trajectoire », la phrase imprimee sous le graphe dit *« les ecarts comptent plus
+ * que les valeurs »*, et le dessin montrait l'inverse des deux : un mur plat.
+ *
+ * La cause est arithmetique. Les notes de foule d'une serie tiennent dans une bande etroite
+ * — c'est deja ecrit vingt lignes plus haut, a propos de l'arrondi qui detruisait *Dexter* —
+ * donc les rapporter a l'echelle complete les ecrase toutes dans le dernier sixieme.
+ *
+ * ## ⚠️ Ce qui empeche de fabriquer du relief
+ *
+ * Cadrer sur l'ecart reel, seul, ferait l'erreur symetrique : une serie dont les saisons ne
+ * different que de 0,05 ressortirait aussi contrastee qu'une serie qui s'effondre. D'ou
+ * {@link MIN_CHART_SPAN} — sous une etoile d'ecart, l'axe garde une etoile, et la serie se
+ * dessine plate parce qu'elle **est** plate.
+ *
+ * Et l'axe ne part plus de zero : c'est un fait que le lecteur doit savoir, donc les bornes
+ * sont rendues avec le graphe. Un axe tronque qui ne se declare pas est un mensonge.
+ */
+export function chartScale(scores: readonly SeasonScore[]): {
+  readonly lo: number;
+  readonly hi: number;
+  /** La hauteur d'une barre, en pourcentage de la piste. */
+  readonly heightOf: (stars: number) => number;
+} {
+  const values = scores.map((s) => s.stars);
+  const low = values.length > 0 ? Math.min(...values) : 0;
+  const high = values.length > 0 ? Math.max(...values) : MAX_STARS;
+
+  // L'elargissement est **symetrique autour du milieu** : cadrer sur la seule borne basse
+  // collerait toutes les barres en haut de la piste des que la serie est bonne.
+  const middle = (low + high) / 2;
+  const half = Math.max(high - low, MIN_CHART_SPAN) / 2;
+
+  // Borne dure a droite, jamais a gauche : une note ne depasse pas cinq etoiles, et un axe
+  // qui commencerait sous zero rendrait la barre du bas plus courte que le plancher.
+  const hi = Math.min(MAX_STARS, middle + half);
+  const lo = Math.max(0, hi - half * 2);
+
+  const span = hi - lo;
+  return {
+    lo,
+    hi,
+    heightOf: (stars) => {
+      if (span <= 0) return 100 * (CHART_FLOOR + (1 - CHART_FLOOR) / 2);
+      const part = Math.min(1, Math.max(0, (stars - lo) / span));
+      // Le plancher : une saison au fond de l'axe reste une barre, pas un trait absent.
+      return 100 * (CHART_FLOOR + part * (1 - CHART_FLOOR));
+    },
+  };
+}

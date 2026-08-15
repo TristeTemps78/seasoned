@@ -1,5 +1,4 @@
-import type { Trajectory, TrajectoryShape } from '@/src/domain/trajectory';
-import { MAX_STARS } from '@/src/domain/types';
+import { chartScale, type Trajectory, type TrajectoryShape } from '@/src/domain/trajectory';
 import {
   DEFAULT_LOCALE,
   formatNumberIn,
@@ -57,11 +56,23 @@ export function TrajectoryChart({ trajectory, interpret = true, locale = DEFAULT
   if (scores.length < 2) return null;
   const n = (value: number, digits?: number) => formatNumberIn(value, locale, digits);
 
+  // 🔴 L'axe partait de zero, et le graphe ne montrait donc rien : voir {@link chartScale}
+  // pour la mesure — deux pixels entre la meilleure et la pire saison de *Breaking Bad*.
+  const scale = chartScale(scores);
+
+  // Le creux, lu dans la meme suite que le graphe rend. ⚠️ Tu et non affiche quand il
+  // **est** le pic : « pic 4,2 · S3 / creux 4,2 · S3 » dirait deux fois la meme chose.
+  const trough = scores.reduce<(typeof scores)[number] | undefined>(
+    (low, one) => (low === undefined || one.stars < low.stars ? one : low),
+    undefined,
+  );
+  const showTrough = trough !== undefined && trough.seasonNumber !== peakSeason;
+
   return (
     <div className="space-y-5">
       <ol className="flex items-end gap-1.5" aria-label={t(locale, 'chart.aria')}>
         {scores.map(({ seasonNumber, stars }) => {
-          const height = (stars / MAX_STARS) * 100;
+          const height = scale.heightOf(stars);
           const isPeak = seasonNumber === peakSeason;
           const isDrop = breakPoint !== undefined && seasonNumber === breakPoint.beforeSeason;
           return (
@@ -98,6 +109,13 @@ export function TrajectoryChart({ trajectory, interpret = true, locale = DEFAULT
         })}
       </ol>
 
+      {/* ⚠️ **Les bornes se disent.** L'axe ne part pas de zero — c'est ce qui rend la forme
+          lisible — et un axe tronque qui ne se declare pas est un mensonge, pas un cadrage.
+          Une ligne, sous le graphe, dans la meme encre que les chiffres des saisons. */}
+      <p className="text-[10px] tabular-nums text-(--color-muted)">
+        {t(locale, 'chart.scale', { lo: n(scale.lo, 1), hi: n(scale.hi, 1) })}
+      </p>
+
       <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
         {interpret ? (
           <div>
@@ -114,6 +132,25 @@ export function TrajectoryChart({ trajectory, interpret = true, locale = DEFAULT
             </dt>
             <dd>
               {n(peak, 1)}/5 <span className="text-(--color-muted)">· S{peakSeason}</span>
+            </dd>
+          </div>
+        ) : null}
+        {/* 🔴 **Le creux etait calcule et jete** — `spread` vaut `peak - min` depuis toujours
+            (`trajectory.ts`) et n'etait affiche nulle part. Meme defaut que `publicStars`,
+            corrige le 2026-08-13 : une page pleine qui tait ce qu'elle sait deja.
+
+            C'est aussi la reponse a la question que le pic seul ne tranche pas. Deux series a
+            4,2 de moyenne, l'une egale et l'autre qui s'effondre, ont le meme pic ; elles
+            n'ont pas le meme creux. ⚠️ Un fait, pas un jugement — donc affiche meme sous
+            `interpret={false}`, au meme titre que le pic. */}
+        {showTrough ? (
+          <div>
+            <dt className="label">
+              {t(locale, 'chart.trough')}
+            </dt>
+            <dd>
+              {n(trough.stars, 1)}/5{' '}
+              <span className="text-(--color-muted)">· S{trough.seasonNumber}</span>
             </dd>
           </div>
         ) : null}

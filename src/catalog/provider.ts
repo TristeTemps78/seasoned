@@ -79,7 +79,26 @@ export interface WatchOption {
  * sans dire ou, ce qui est exactement le renseignement faux qu'un voyageur ou un
  * expatrie ne pardonne pas.
  */
-export type WatchByRegion = Readonly<Record<string, readonly WatchOption[]>>;
+export interface WatchInRegion {
+  readonly options: readonly WatchOption[];
+  /**
+   * Le lien JustWatch du pays, tel que TMDB le sert (`results.<PAYS>.link`).
+   *
+   * 🔴 **Les puces etaient des `<span>` inertes.** Mesure au navigateur le 2026-08-15 sur
+   * `/serie/1396` : Netflix, Amazon Video, Apple TV Store, Google Play, Fandango — six
+   * fournisseurs nommes, `getAttribute('href')` nul sur les six. La section qui est le
+   * dernier maillon de la decision que toute la page prepare ne menait nulle part.
+   *
+   * ⚠️ **Un lien par PAYS, pas par fournisseur** : TMDB ne sert que celui-la. Fabriquer une
+   * adresse par service reviendrait a deviner l'URL d'un catalogue tiers — c'est-a-dire a
+   * servir des liens morts a la premiere refonte de leur site. C'est aussi ce que fait la
+   * reference : ses badges louer/acheter sont un partenariat JustWatch, et son repli pour
+   * tout le reste est un unique « All services… ».
+   */
+  readonly link?: string;
+}
+
+export type WatchByRegion = Readonly<Record<string, WatchInRegion>>;
 
 /**
  * Les visuels **que TMDB porte deja** pour une serie.
@@ -217,6 +236,20 @@ export interface SeriesDetail extends SeriesSummary {
    * pour en afficher douze ferait payer la fiche entiere pour un encart.
    */
   readonly cast?: readonly CastMember[];
+
+  /**
+   * La cle YouTube de la bande-annonce, quand le catalogue en porte une.
+   *
+   * 🔴 **Le produit n'avait de bande-annonce nulle part.** La reference en met une sur
+   * chaque fiche, a cote de « ou la regarder », et c'est le seul element de la page qui
+   * reponde a « a quoi ca ressemble » — question qu'aucun chiffre ne traite.
+   *
+   * ⚠️ **Une cle, jamais une URL, et jamais un lecteur.** Une cle se compose a l'affichage,
+   * donc l'adresse peut changer sans que le catalogue mente ; c'est la meme regle que les
+   * chemins d'affiche. Et un lecteur integre ferait entrer un tiers dans la page — des
+   * cookies, un script, une politique de securite a rouvrir — pour un lien qui suffit.
+   */
+  readonly trailerKey?: string;
 }
 
 /** Un episode tel que rendu par un fournisseur. */
@@ -316,11 +349,29 @@ export const ALL_BROWSE_SORTS: readonly BrowseSort[] = ['popular', 'rating', 're
  * Tout est facultatif : sans rien, on rend le plus populaire, ce qui est exactement ce que
  * la vitrine montre deja. Le parcours n'est donc jamais un ecran vide.
  */
+/**
+ * L'etat de production, en facette de parcours.
+ *
+ * 🔴 **La seule facette que personne d'autre n'offre, et elle manquait.** `/parcourir`
+ * proposait genre, epoque, tri — c'est-a-dire ce que tous les catalogues proposent. Or la
+ * these du produit est qu'une serie se juge sur sa duree et sur sa fin : « montre-moi des
+ * choses qui **se terminent** » est la question que ce produit existe pour traiter, et elle
+ * n'etait posable nulle part.
+ *
+ * ⚠️ `ended` couvre l'arret **et** l'annulation. Le catalogue les distingue, la fiche aussi
+ * (« It has an ending » / « It may stop without a conclusion »), mais pour quelqu'un qui
+ * cherche une serie finie les deux repondent oui : il y a un dernier episode.
+ */
+export type BrowseRun = 'ended' | 'running';
+
+export const ALL_BROWSE_RUNS: readonly BrowseRun[] = ['ended', 'running'];
+
 export interface BrowseQuery {
   readonly genre?: BrowseGenre;
   /** Premiere annee d'une decennie : `1990`, `2000`, `2010`, `2020`. */
   readonly decade?: number;
   readonly sort?: BrowseSort;
+  readonly run?: BrowseRun;
 }
 
 export type DiscoverKind =

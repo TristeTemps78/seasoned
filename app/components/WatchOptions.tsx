@@ -64,7 +64,11 @@ export function WatchOptions({ byRegion, fallbackRegion }: {
   const chosen = ready && (journal.regions?.length ?? 0) > 0 ? journal.regions! : [fallbackRegion];
 
   const shown = chosen
-    .map((region) => ({ region: region.toUpperCase(), options: byRegion[region.toUpperCase()] ?? [] }))
+    .map((region) => {
+      const code = region.toUpperCase();
+      const found = byRegion[code];
+      return { region: code, options: found?.options ?? [], link: found?.link };
+    })
     .filter((one) => one.options.length > 0);
 
   const mine = new Set(journal.platforms ?? []);
@@ -101,11 +105,12 @@ export function WatchOptions({ byRegion, fallbackRegion }: {
     <section className="space-y-3" aria-label={t('watch.aria')}>
       <h2 className="section-heading">{t('watch.title')}</h2>
 
-      {shown.map(({ region, options }) => (
-        <WatchInRegion
+      {shown.map(({ region, options, link }) => (
+        <WatchInOneRegion
           key={region}
           region={region}
           options={options}
+          {...(link === undefined ? {} : { link })}
           mine={mine}
           ready={ready}
           named={shown.length > 1}
@@ -131,9 +136,11 @@ export function WatchOptions({ byRegion, fallbackRegion }: {
  * l'attribution le dit deja en bas — l'ecrire deux fois est du bruit, et ce composant
  * servait exactement ainsi avant qu'on sache en montrer plusieurs.
  */
-function WatchInRegion({ region, options, mine, ready, named }: {
+function WatchInOneRegion({ region, options, link, mine, ready, named }: {
   readonly region: string;
   readonly options: readonly WatchOption[];
+  /** Le lien JustWatch du pays. Absent sur certaines reponses : alors rien ne s'affiche. */
+  readonly link?: string;
   readonly mine: ReadonlySet<string>;
   readonly ready: boolean;
   readonly named: boolean;
@@ -198,6 +205,27 @@ function WatchInRegion({ region, options, mine, ready, named }: {
           </div>
         ))}
       </dl>
+
+      {/* 🔴 La sortie qui manquait. Les puces nomment six services et n'en ouvrent aucun :
+          mesure au navigateur le 2026-08-15, `href` nul sur les six. Un lien par service
+          serait une adresse devinee — TMDB n'en sert pas — donc c'est le lien du **pays**,
+          celui que JustWatch tient a jour, et qui porte les offres a jour avec leurs prix.
+
+          ⚠️ Absent quand TMDB ne le sert pas : une porte sans chemin ne s'affiche pas. */}
+      {link !== undefined ? (
+        <p className="text-sm">
+          <a
+            href={link}
+            target="_blank"
+            // `noreferrer` autant que `noopener` : le second ferme `window.opener`, le
+            // premier evite d'annoncer a un tiers quelle fiche on regardait.
+            rel="noopener noreferrer"
+            className="tap-line underline hover:text-(--color-volt)"
+          >
+            {t('watch.allOffers')}
+          </a>
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -367,6 +367,8 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
   // public » dans la bibliotheque, qui ne fait aucun appel.
   const voteAverage = readNumber(source, 'vote_average');
 
+  const trailerKey = toTrailerKey(source);
+
   return {
     ...summary,
     externalIds: readExternalIds(source),
@@ -379,7 +381,37 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
     ...(nextAiringAt !== undefined ? { nextAiringAt } : {}),
     ...(nextFull !== undefined ? { nextEpisode: nextFull } : {}),
     ...(episodeRunTimeMinutes !== undefined ? { episodeRunTimeMinutes } : {}),
+    ...(trailerKey !== undefined ? { trailerKey } : {}),
   };
+}
+
+/**
+ * La bande-annonce, parmi les videos que TMDB attache a la fiche.
+ *
+ * ⚠️ **YouTube seulement, et c'est une contrainte, pas une preference** : les autres hotes
+ * que TMDB reference n'ont pas d'adresse composable a partir d'une cle. Une entree Vimeo
+ * gardee ici donnerait un lien casse.
+ *
+ * L'ordre de preference suit ce qu'on cherche vraiment : une bande-annonce officielle, sinon
+ * n'importe quelle bande-annonce, sinon un teaser. Une featurette ou une scene coupee ne
+ * repondent pas a « a quoi ca ressemble », donc elles ne sont jamais retenues.
+ */
+function toTrailerKey(source: Readonly<Record<string, unknown>>): string | undefined {
+  const videos = asArray(asRecord(source['videos'])['results'])
+    .map((entry) => asRecord(entry))
+    .filter((one) => readString(one, 'site') === 'YouTube')
+    .filter((one) => readString(one, 'key') !== undefined);
+
+  const RANG = ['Trailer', 'Teaser'] as const;
+  for (const officiel of [true, false]) {
+    for (const type of RANG) {
+      const found = videos.find(
+        (one) => readString(one, 'type') === type && (one['official'] === true) === officiel,
+      );
+      if (found !== undefined) return readString(found, 'key');
+    }
+  }
+  return undefined;
 }
 
 /** Convertit une fiche saison TMDB. Exporte pour la meme raison. */
@@ -489,7 +521,7 @@ export class TmdbProvider implements CatalogProvider {
       `/tv/${encodeURIComponent(providerId)}`,
       // ⚠️ `aggregate_credits` voyage dans la **meme** reponse : le generique ne coute donc ni
       // une requete de plus, ni une entree de cache de plus, ni une ligne au budget TMDB.
-      { append_to_response: 'external_ids,aggregate_credits' },
+      { append_to_response: 'external_ids,aggregate_credits,videos' },
     );
     const mapped = mapSeriesDetail(raw);
     if (mapped === undefined) {
@@ -557,6 +589,13 @@ export class TmdbProvider implements CatalogProvider {
       params['with_genres'] = String(TMDB_GENRE[query.genre]);
     }
 
+    // ⚠️ Les codes de `with_status` sont ceux de TMDB : 0 en cours, 1 prevue, 2 en
+    // production, 3 terminee, 4 annulee, 5 pilote. « Terminee ou annulee » d'un cote, « en
+    // cours ou en production » de l'autre — le pilote et la serie seulement prevue ne sont
+    // ni l'un ni l'autre, et les ranger de force fausserait les deux reponses.
+    if (query.run === 'ended') params['with_status'] = '3|4';
+    if (query.run === 'running') params['with_status'] = '0|2';
+
     if (query.decade !== undefined) {
       // Bornes **inclusives des deux cotes**, sur la premiere diffusion : une serie
       // commencee en 1999 et finie en 2007 appartient aux annees 1990, parce que c'est la
@@ -580,12 +619,14 @@ export class TmdbProvider implements CatalogProvider {
       `/tv/${encodeURIComponent(providerId)}/watch/providers`,
       {},
     );
-    const out: Record<string, readonly WatchOption[]> = {};
+    const out: Record<string, { options: readonly WatchOption[]; link?: string }> = {};
     for (const region of regions) {
       const options = mapWatchOptions(raw, region);
       // Un pays sans aucune offre ne merite pas une ligne vide a l'ecran : on l'omet, et
       // c'est l'ecran qui decide s'il a quelque chose a dire.
-      if (options.length > 0) out[region.toUpperCase()] = options;
+      if (options.length === 0) continue;
+      const link = mapWatchLink(raw, region);
+      out[region.toUpperCase()] = { options, ...(link === undefined ? {} : { link }) };
     }
     return out;
   }
@@ -711,6 +752,28 @@ export function mapWatchOptions(raw: unknown, region: string): readonly WatchOpt
     }
   }
   return out;
+}
+
+/**
+ * Le lien JustWatch d'un pays — `results.<PAYS>.link`.
+ *
+ * Separe de {@link mapWatchOptions} et non ajoute a son retour : les deux repondent a deux
+ * questions differentes (« quelles offres » / « ou les voir toutes »), et l'un peut manquer
+ * sans l'autre. Les fusionner aurait aussi force a changer la forme que six tests ancrent.
+ *
+ * ⚠️ **`http` refuse.** Ce champ vient d'un tiers, il finit dans un `href`, et rien ne dit
+ * qu'il restera une adresse : on n'accepte que `https:`. Un `javascript:` servi par une
+ * reponse d'API est le scenario que cette ligne ferme, et il ne demande qu'une reponse
+ * malformee pour arriver.
+ */
+export function mapWatchLink(raw: unknown, region: string): string | undefined {
+  const link = readString(asRecord(asRecord(asRecord(raw)['results'])[region.toUpperCase()]), 'link');
+  if (link === undefined) return undefined;
+  try {
+    return new URL(link).protocol === 'https:' ? link : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**

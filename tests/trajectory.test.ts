@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   BREAK_POINT_MIN_DROP,
   HIGH_CONSISTENCY_THRESHOLD,
+  MIN_CHART_SPAN,
   MIN_SEASONS_FOR_CONSISTENCY,
+  chartScale,
   computeTrajectory,
   type SeasonScore,
 } from '../src/domain/trajectory';
@@ -217,5 +219,76 @@ describe('computeTrajectory — robustesse des entrees', () => {
       { seasonNumber: 5, stars: 4 },
     ]);
     expect(t.scores).toHaveLength(2);
+  });
+});
+
+describe("l'axe du graphe", () => {
+  /*
+   * 🔴 Le defaut mesure au navigateur le 2026-08-15 sur *Breaking Bad*, piste de 96 px :
+   * S1 80 px, S2 81, S3 79, S4 81, S5 86 — deux pixels entre la meilleure et la pire saison,
+   * pour des notes de 4,2 / 4,2 / 4,1 / 4,2 / 4,5 sur une echelle absolue de 0 a 5.
+   */
+  const BREAKING_BAD: SeasonScore[] = [
+    { seasonNumber: 1, stars: 4.2 },
+    { seasonNumber: 2, stars: 4.2 },
+    { seasonNumber: 3, stars: 4.1 },
+    { seasonNumber: 4, stars: 4.2 },
+    { seasonNumber: 5, stars: 4.5 },
+  ];
+
+  it('separe deux saisons que l echelle absolue confondait', () => {
+    const ancien = (stars: number) => (stars / 5) * 100;
+    expect(Math.abs(ancien(4.5) - ancien(4.1))).toBeLessThan(9);
+
+    const { heightOf } = chartScale(BREAKING_BAD);
+    // Le pic et le creux doivent etre separes d'au moins un quart de la piste : en dessous,
+    // l'oeil ne distingue rien a 96 px de haut.
+    expect(heightOf(4.5) - heightOf(4.1)).toBeGreaterThan(25);
+  });
+
+  it('ne fabrique pas de relief quand les saisons se valent vraiment', () => {
+    // Un ecart de 0,05 etoile est du bruit. Cadrer dessus le montrerait comme un effondrement.
+    const bruit: SeasonScore[] = [
+      { seasonNumber: 1, stars: 4.0 },
+      { seasonNumber: 2, stars: 4.05 },
+      { seasonNumber: 3, stars: 3.98 },
+    ];
+    const { heightOf, lo, hi } = chartScale(bruit);
+    expect(hi - lo).toBeCloseTo(MIN_CHART_SPAN, 5);
+    expect(Math.abs(heightOf(4.05) - heightOf(3.98))).toBeLessThan(10);
+  });
+
+  it('rend une serie parfaitement plate a hauteur constante, et visible', () => {
+    const plate: SeasonScore[] = [
+      { seasonNumber: 1, stars: 4 },
+      { seasonNumber: 2, stars: 4 },
+      { seasonNumber: 3, stars: 4 },
+    ];
+    const { heightOf } = chartScale(plate);
+    expect(heightOf(4)).toBe(heightOf(4));
+    // Jamais zero : une barre absente se lit comme une saison manquante, pas comme une note.
+    expect(heightOf(4)).toBeGreaterThan(0);
+  });
+
+  it('garde la plus petite barre visible, et la plus haute dans la piste', () => {
+    const chute: SeasonScore[] = [
+      { seasonNumber: 1, stars: 4.8 },
+      { seasonNumber: 2, stars: 2.1 },
+    ];
+    const { heightOf, lo, hi } = chartScale(chute);
+    expect(heightOf(2.1)).toBeGreaterThan(0);
+    expect(heightOf(4.8)).toBeLessThanOrEqual(100);
+    expect(lo).toBeGreaterThanOrEqual(0);
+    expect(hi).toBeLessThanOrEqual(5);
+  });
+
+  it('ne franchit jamais cinq etoiles, meme sur une serie adoree', () => {
+    const parfaite: SeasonScore[] = [
+      { seasonNumber: 1, stars: 4.9 },
+      { seasonNumber: 2, stars: 5 },
+    ];
+    const { hi, heightOf } = chartScale(parfaite);
+    expect(hi).toBeLessThanOrEqual(5);
+    expect(heightOf(5)).toBeLessThanOrEqual(100);
   });
 });

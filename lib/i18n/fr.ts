@@ -82,6 +82,7 @@ export const FR = {
   'series.airsOn': 'le {date}',
   'series.demands': 'Ce que la série demande',
   'series.sameCreator': 'Du même créateur',
+  'series.trailer': 'Bande-annonce',
   'cast.title': 'À l’écran',
   'cast.why': 'Les rôles principaux, toutes saisons confondues.',
   'stat.seasons': 'Saisons',
@@ -125,6 +126,13 @@ export const FR = {
   'browse.sort.rating': 'Note',
   'browse.sort.recent': 'Plus récentes',
   'browse.apply': 'Voir',
+  'browse.run': 'État',
+  'browse.run.ended': 'Elle est finie',
+  'browse.run.running': 'Elle continue',
+  'browse.page': 'page {n}',
+  'browse.pages': 'Pages de résultats',
+  'browse.previous': '← Précédente',
+  'browse.next': 'Suivante →',
   'browse.count.one': '{n} série',
   'browse.count.other': '{n} séries',
   'browse.noneTitle': 'Rien sous cette combinaison',
@@ -593,9 +601,13 @@ export const FR = {
 
   // --- Courbe --------------------------------------------------------------
   'chart.aria': 'Note par saison',
+  // Les bornes de l'axe. Elles se disent parce qu'il ne part pas de zero : cadrer est ce qui
+  // rend la forme lisible, le taire serait un mensonge.
+  'chart.scale': 'Échelle {lo} – {hi}, et non 0 – 5 : sinon toutes les saisons se ressemblent.',
   'chart.seasonTitle': 'Saison {n} — {v}/5',
   'chart.shape': 'Forme',
   'chart.peak': 'Pic',
+  'chart.trough': 'Creux',
   'chart.consistency': 'Constance',
   'shape.masterpiece': 'Tenue de bout en bout',
   'shape.steady': 'Constante',
@@ -917,6 +929,7 @@ export const FR = {
   // --- Ou la regarder ------------------------------------------------------
   'watch.aria': 'Où regarder',
   'watch.title': 'Où la regarder',
+  'watch.allOffers': 'Voir toutes les offres et leur prix sur JustWatch →',
   'watch.youHave': 'Vous l’avez déjà : {list}.',
   'watch.flatrate': 'Inclus dans l’abonnement',
   'watch.free': 'Gratuit',
