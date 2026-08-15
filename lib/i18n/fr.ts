@@ -115,6 +115,13 @@ export const FR = {
   'nav.language.aria': 'Langue',
   // Le premier lien de chaque page, invisible tant qu'on ne tabule pas dessus.
   'nav.skip': 'Aller au contenu',
+  // Le volet de l'en-tete — ce que les six faces ne portent pas. ⚠️ `nav.browse` avait ete
+  // retiree le 2026-08-15 comme traduite sans appelant : elle avait ete ecrite pour un
+  // septieme onglet, qui aurait casse les six faces. Elle revient pour une entree de menu.
+  'nav.menu.aria': 'Mes pages et mon compte',
+  'nav.profile': 'Mon profil public',
+  'nav.profile.claim': 'Choisir mon pseudo',
+  'nav.browse': 'Parcourir le catalogue',
   // Les faces du cube. Une face existe si elle repond a une question qu'on se pose a un
   // moment different — pas a un contenu different.
   'face.discover': 'Découvrir',

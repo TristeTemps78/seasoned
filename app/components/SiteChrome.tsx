@@ -9,6 +9,8 @@ import { LanguagePicker } from '@/app/components/LanguagePicker';
 import { MyFace } from '@/app/components/MyFace';
 import { FaceSwitch } from '@/app/components/FaceSwitch';
 import { Faces } from '@/app/components/Faces';
+import { AccountMenu } from '@/app/components/AccountMenu';
+import { SearchForm } from '@/app/components/SearchForm';
 import { Icon } from '@/app/components/Icon';
 import { AuthProvider } from '@/app/auth/AuthProvider';
 import { JournalSync } from '@/app/components/JournalSync';
@@ -126,24 +128,44 @@ export function SiteChrome({ locale, Messages, children }: {
                 masquerait du contenu indexe sans rien apporter. */}
             <Faces locale={locale} />
 
+            {/* 🔴 **La recherche n'etait PAS partout.** `Faces.tsx` justifie de ne pas lui
+                donner d'onglet par *« la recherche est partout, en faire une face ajouterait
+                un clic a l'action la plus frequente du produit »* — phrase restee vraie d'une
+                version anterieure. Compte le 2026-08-16 : `SearchForm` etait monte sur **trois
+                routes sur dix-huit** — l'accueil, `/recherche` et la 404. Depuis une fiche de
+                serie, `/moi`, `/calendrier`, `/bilan`, `/amis` ou `/listes`, chercher demandait
+                de revenir a l'accueil. C'est le meme genre de defaut que le titre des critiques
+                qui annoncait un filtre inexistant : l'argument qui ecarte un onglet devient faux
+                le jour ou ce qu'il invoque disparait.
+
+                ⚠️ **Deux formes, une seule a la fois, et c'est mesure.** A 1280 px le ruban des
+                faces a **311 px de libre** (six onglets = 653 px pour 964 disponibles) : un
+                champ y tient sans rien voler. A 400 px il en cache deja 342 — il n'y a rien a
+                prendre, donc l'icone seule, qui mene a la page ou le champ a toute la largeur.
+                `hidden`/`lg:hidden` et non `sr-only` : `display: none` sort du parcours de
+                tabulation, alors qu'un champ `sr-only` resterait focalisable et muet — le
+                defaut exact que `a11y-hidden-controls` garde. */}
+            <div className="hidden min-w-0 shrink lg:block lg:w-56">
+              <SearchForm locale={locale} compact />
+            </div>
+            <Link
+              href={pathIn('/recherche', locale)}
+              className="nav-target flex shrink-0 items-center justify-center meta-sm hover:text-(--color-text) lg:hidden"
+            >
+              <Icon name="search" />
+              <span className="sr-only">{t(locale, 'search.submit')}</span>
+            </Link>
+
             {/* ⚠️ Ici et **pas** dans la barre de faces : une face repond a une question
                 qu'on se pose a un moment de la journee, et « ou en est mon compte » n'en
-                est pas une. Un reglage se range avec les reglages. */}
-            <Link
-              href={pathIn('/compte', locale)}
-              // ⚠️ Le libelle disparait sous 640 px, l'icone reste — meme arbitrage que le
-              // mot « VOLTFACE » a cote du cube, et pour la meme raison mesuree le
-              // 2026-08-12 : il volait 60 px au ruban d'onglets, sur les 390 px d'un
-              // telephone. L'icone reste seule mais reste **nommee**, sinon on remplace un
-              // mot coupe par un pictogramme muet.
-              // ⚠️ `.nav-target` porte la **cible**, pas l'apparence : sans lui, une fois le
-              // mot parti, il ne restait que les 14 px de l'icone a toucher. Voir la classe.
-              className="nav-target flex shrink-0 items-center justify-center gap-1.5 meta-sm hover:text-(--color-text)"
-            >
-              <Icon name="user" />
-              <span className="hidden sm:inline">{t(locale, 'account.nav')}</span>
-              <span className="sr-only sm:hidden">{t(locale, 'account.nav')}</span>
-            </Link>
+                est pas une. Un reglage se range avec les reglages.
+
+                ⚠️ Un **volet** depuis le 2026-08-16, et il garde exactement la cible du lien
+                qu'il remplace (icone seule sous 640 px, mot a cote au-dela) : la barre est un
+                budget en pixels, ce menu ouvre quatre destinations sans en prendre un de plus.
+                Voir `AccountMenu` pour les quatre, et pour ce qu'elles avaient de commun —
+                aucune porte. */}
+            <AccountMenu locale={locale} />
             <LanguagePicker />
           </div>
         </header>

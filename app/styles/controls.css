@@ -468,6 +468,60 @@
 
   /**
    * =============================================================================
+   * LE VOLET DE L'EN-TETE — ce que les six faces ne portent pas
+   * =============================================================================
+   *
+   * Voir `AccountMenu` pour ce qu'il repare (quatre destinations construites et sans porte).
+   * Ici, seulement sa geometrie, et elle tient a quatre decisions mesurees.
+   *
+   * ⚠️ **`z-index: 30` et non 20.** L'en-tete est `z-20` et `sticky` : un volet a la meme
+   * couche que son propre parent passerait **sous** la banniere de la fiche serie, qui est
+   * peinte apres lui dans l'ordre du document. Meme valeur que `.skip-link`, pour la meme
+   * raison — ce sont les deux seules choses qui doivent passer devant l'en-tete.
+   *
+   * ⚠️ **Ancre a droite** (`right: 0`), parce que le bouton est a 65 px du bord droit d'un
+   * telephone : ancre a gauche, un volet de 14 rem sortirait de l'ecran de ~150 px en 375 px.
+   * `max-width` le borne a la fenetre pour le jour ou un pseudo long l'elargira.
+   *
+   * ⚠️ **Une largeur minimale, jamais fixe** : le volet porte des pseudos que nous n'ecrivons
+   * pas — meme lecon que `.menu`, dont la plus longue option est un mot tape par le lecteur.
+   */
+  .nav-menu {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    z-index: 30;
+    min-width: 14rem;
+    max-width: calc(100vw - 2rem);
+    padding: 0.25rem;
+  }
+
+  /**
+   * Une ligne du volet — **44 px**, comme `.menu` et `.btn`.
+   *
+   * ⚠️ Le libelle et son indice sur la meme ligne, pousses aux deux bords : `@tristetemps78`
+   * a gauche, « Mon profil public » a droite. Empiles, la ligne ferait 60 px et cinq entrees
+   * demanderaient 300 px de haut — un volet qui depasse le pli sur un telephone.
+   */
+  .nav-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.75rem;
+    border-radius: 0.375rem;
+    padding: 0 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-text);
+    transition: background-color 160ms ease;
+  }
+
+  .nav-menu-item:hover {
+    background-color: color-mix(in oklab, var(--color-volt) 12%, transparent);
+  }
+
+  /**
+   * =============================================================================
    * UN LIEN DE TEXTE QUI ATTEINT 24 PX — la regle ecrite une fois, pas comptee
    * =============================================================================
    *
