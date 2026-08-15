@@ -309,6 +309,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'lists.count.other': '{n} series',
   'lists.open': 'Open',
   'lists.close': 'Collapse',
+  'lists.discover.title': 'What other people keep',
+  // Voir `fr.ts` : la phrase dit **pourquoi** c'est vide, sinon la page a l'air cassee.
+  'lists.discover.none':
+    'Nobody has a list on a public profile yet. Profiles are private by default — the ones you see here are the ones their authors chose to show.',
   'lists.empty': 'This list is empty. Add a series from its page.',
   'lists.remove': 'Remove',
   'lists.delete': 'Delete the list',

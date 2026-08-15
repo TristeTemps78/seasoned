@@ -210,6 +210,21 @@ export interface SeriesList {
 }
 
 /**
+ * Une liste **plus son auteur** — ce que la surface de decouverte montre.
+ *
+ * ⚠️ Le handle est rendu **en plus** du reste, pour la meme raison que `subject` sur une
+ * critique : sur `/u/<nom>` on sait de qui on lit la liste, sur une page de decouverte non.
+ * Sans lui, la page afficherait des listes sans dire qui les tient — et une liste sans son
+ * auteur n'est qu'un titre, alors que c'est justement le gout de quelqu'un qu'on parcourt.
+ */
+export interface DiscoverableList extends SeriesList {
+  readonly handle: string;
+  readonly authorId: string;
+  /** La face de l'auteur, si elle en a une. Voir {@link Profile.face}. */
+  readonly face?: FaceId;
+}
+
+/**
  * Le compte que PostgREST renvoie pour une relation imbriquee.
  *
  * Sa forme est `[{ count: 3 }]`, et elle **change selon la version** — un tableau vide
@@ -257,6 +272,44 @@ const KNOWN_KINDS: Readonly<Record<ActivityKind, true>> = {
 
 function isKnownKind(value: unknown): value is ActivityKind {
   return typeof value === 'string' && Object.hasOwn(KNOWN_KINDS, value);
+}
+
+/**
+ * Une ligne de `lists` telle que le produit la lit.
+ *
+ * Le corps commun de {@link SocialClient.listsBy} et {@link SocialClient.discoverLists}, qui
+ * ne different que par ce qu'elles demandent autour. Meme motif que `#reviews` et
+ * `#profilesOf`, et pour la meme raison : deux copies d'un meme parsing finissent par se
+ * repondre differemment le jour ou l'une est corrigee.
+ *
+ * ⚠️ Rend un tableau plutot qu'un `undefined` : les deux appelants l'utilisent dans un
+ * `flatMap`, donc une ligne inexploitable disparait sans qu'aucun d'eux ait a y penser.
+ */
+function rowToList(row: Record<string, unknown>): readonly SeriesList[] {
+  const slug = row['slug'];
+  const title = row['title'];
+  if (typeof slug !== 'string' || typeof title !== 'string') return [];
+  const note = row['note'];
+  // ⚠️ Defensif jusqu'au bout : une liste dont l'apercu manque ou arrive dans une forme
+  // inattendue doit s'afficher **sans vignettes**, jamais disparaitre. Une carte de liste
+  // vaut infiniment plus que ses quatre miniatures.
+  const raw = row['preview'];
+  const preview = Array.isArray(raw)
+    ? raw.flatMap((item) => {
+        const subject = (item as Record<string, unknown> | null)?.['subject'];
+        return typeof subject === 'string' ? [subject] : [];
+      })
+    : [];
+  return [
+    {
+      slug,
+      title,
+      ...(typeof note === 'string' && note.length > 0 ? { note } : {}),
+      count: countOf(row['list_items']),
+      updatedAt: String(row['updated_at'] ?? ''),
+      preview,
+    },
+  ];
 }
 
 function rowToProfile(row: Record<string, unknown>): Profile {
@@ -1172,32 +1225,62 @@ export class SocialClient {
         `&preview.order=added_at.asc&preview.limit=${LIST_PREVIEW}` +
         `&order=updated_at.desc&limit=${limit}`,
     );
-    return rows.flatMap((row) => {
-      const slug = row['slug'];
-      const title = row['title'];
-      if (typeof slug !== 'string' || typeof title !== 'string') return [];
-      const note = row['note'];
-      // ⚠️ Defensif jusqu'au bout : une liste dont l'apercu manque ou arrive dans une forme
-      // inattendue doit s'afficher **sans vignettes**, jamais disparaitre. Une carte de liste
-      // vaut infiniment plus que ses quatre miniatures.
-      const raw = row['preview'];
-      const preview = Array.isArray(raw)
-        ? raw.flatMap((item) => {
-            const subject = (item as Record<string, unknown> | null)?.['subject'];
-            return typeof subject === 'string' ? [subject] : [];
-          })
-        : [];
-      return [
-        {
-          slug,
-          title,
-          ...(typeof note === 'string' && note.length > 0 ? { note } : {}),
-          count: countOf(row['list_items']),
-          updatedAt: String(row['updated_at'] ?? ''),
-          preview,
-        },
-      ];
-    });
+    return rows.flatMap(rowToList);
+  }
+
+  /**
+   * Des listes a decouvrir — **celles des profils publics, et elles seules**.
+   *
+   * ## Le manque que ca comble
+   *
+   * `/listes` ne montrait que les siennes. C'etait la seule partie du produit qui **exige un
+   * compte pour exister et vit sur le serveur**, donc la seule dont le contenu des autres
+   * etait deja la, deja lisible, deja modere — et invisible. Un visiteur sans compte
+   * arrivait sur une page qui ne parlait que de ce qu'il n'avait pas.
+   *
+   * ## ⚠️ Meme exception que {@link discoverable}, et pas une de plus
+   *
+   * `public` est une demande explicite d'etre trouve ; la visibilite par defaut est
+   * `followers`, donc personne n'y arrive par inadvertance. Le filtre est ecrit ici **et**
+   * applique par `lists_select` (`can_see(user_id)`) : le retirer ne montrerait rien de
+   * plus, la base rendrait la meme liste.
+   *
+   * ⚠️ **`profiles!inner` et non `profiles`** : sans `!inner`, PostgREST rend aussi les
+   * listes dont le profil ne correspond pas au filtre, avec `profiles: null`. On veut une
+   * jointure qui restreint, pas un embarquement qui decore.
+   *
+   * ## Trier, jamais filtrer — la lecon de `discoverable`, appliquee telle quelle
+   *
+   * On classe par nombre de series, puis par fraicheur. **On n'ecarte pas les listes
+   * vides** : filtrer sur « contient quelque chose » ferait taire cette surface exactement
+   * au demarrage a froid, c'est-a-dire le jour ou elle sert. Une liste vide passe derriere,
+   * elle ne disparait pas.
+   */
+  async discoverLists(limit = 12): Promise<readonly DiscoverableList[]> {
+    // Le vivier est borne et plus large que ce qu'on affiche, pour la meme raison que
+    // `discoverable` : PostgREST ne sait pas trier sur un compte imbrique.
+    const rows = await this.#rows<Record<string, unknown>>(
+      `lists?select=slug,title,note,updated_at,list_items(count),preview:list_items(subject),profiles!inner(handle,user_id,face)` +
+        `&profiles.visibility=eq.public` +
+        `&preview.order=added_at.asc&preview.limit=${LIST_PREVIEW}` +
+        `&order=updated_at.desc&limit=${limit * 2}`,
+    );
+    return rows
+      .flatMap((row) => {
+        const author = row['profiles'] as
+          | { handle?: unknown; user_id?: unknown; face?: unknown }
+          | undefined;
+        if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
+        const face = readFace(author.face);
+        return rowToList(row).map((list) => ({
+          ...list,
+          handle: author.handle as string,
+          authorId: author.user_id as string,
+          ...(face !== undefined ? { face } : {}),
+        }));
+      })
+      .sort((a, b) => (b.count - a.count) || (a.updatedAt < b.updatedAt ? 1 : -1))
+      .slice(0, limit);
   }
 
   /** Les series d'une liste, dans l'ordre ou elles y ont ete posees. */

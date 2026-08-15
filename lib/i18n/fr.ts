@@ -355,6 +355,12 @@ export const FR = {
   'lists.count.other': '{n} séries',
   'lists.open': 'Voir',
   'lists.close': 'Replier',
+  'lists.discover.title': 'Ce que rangent les autres',
+  // ⚠️ Dit **pourquoi** c'est vide, et pas seulement que ça l'est : la cause est que personne
+  // n'a rendu son profil public, pas que personne ne range rien. Sans elle, quelqu'un dont
+  // les amis ont tous des listes croirait la page cassée.
+  'lists.discover.none':
+    'Personne n’a encore de liste sur un profil public. Les profils sont privés par défaut — celles que vous voyez ici sont celles que leurs auteurs ont choisi de montrer.',
   'lists.empty': 'Cette liste est vide. Ajoutez-y une série depuis sa fiche.',
   'lists.remove': 'Retirer',
   'lists.delete': 'Supprimer la liste',

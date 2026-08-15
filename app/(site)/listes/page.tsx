@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { Lists } from '@/app/components/Lists';
+import { DiscoverLists } from '@/app/components/DiscoverLists';
 import { PageHeader } from '@/app/components/PageHeader';
 import { FaceDiscovery } from '@/app/components/FaceDiscovery';
 import { PosterRail } from '@/app/components/PosterRail';
@@ -52,6 +53,12 @@ export async function ListsView({ locale }: { readonly locale: Locale }) {
       </FaceDiscovery>
 
       <Lists />
+
+      {/* ⚠️ **Apres les siennes, et sans compte.** La page ne parlait que de ce qu'un visiteur
+          n'avait pas ; les listes des profils publics etaient deja lisibles par lui et
+          n'etaient montrees nulle part. En dernier parce que ses propres listes passent
+          devant celles des autres — mais present pour tout le monde, connecte ou non. */}
+      <DiscoverLists />
     </div>
   );
 }
