@@ -8,6 +8,7 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { EmptyState } from '@/app/components/EmptyState';
 import { ReportButton } from '@/app/components/ReportButton';
 import { FaceDot } from '@/app/components/FaceDot';
+import { Menu } from '@/app/components/Menu';
 import { journalKey } from '@/src/domain/journal';
 import { redactReviews } from '@/src/domain/spoiler';
 import {
@@ -200,28 +201,31 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
       <h2 className="section-heading">{t('review.title')}</h2>
 
       {withControls ? (
-        <div className="space-y-2">
-          <Choice
+        // ⚠️ **Des menus dans une colonne qui porte deja onze blocs.** Cinq boutons sur deux
+        // rangees faisaient 96 px de haut ; deux menus en font 44, sur une seule ligne. Ici
+        // la place ne se dispute pas avec un catalogue mais avec « Ou j'en suis », la
+        // trajectoire et les saisons — tout ce que quelqu'un est venu lire.
+        <div className="flex flex-wrap items-center gap-2">
+          <Menu
+            id="reviews-sort"
             label={t('review.sort')}
-            options={ALL_REVIEW_SORTS.map((one) => ({
-              key: one,
-              label: t(SORT_LABEL[one]),
-              chosen: sort === one,
-              choose: () => setSort(one),
-            }))}
+            value={sort}
+            onChange={(value) => setSort(value as ReviewSort)}
+            options={ALL_REVIEW_SORTS.map((one) => ({ value: one, label: t(SORT_LABEL[one]) }))}
           />
           {/* ⚠️ Sans compte, « les gens que je suis » et « les miennes » ne peuvent rien
-              rendre : la rangee entiere ne s'affiche pas, plutot que de proposer deux
-              boutons qui ne marchent pas (regle du 2026-08-09). Le tri, lui, marche pour
-              tout le monde — c'est pourquoi les deux rangees sont separees. */}
+              rendre : le menu entier ne s'affiche pas, plutot que de proposer deux options
+              qui ne marchent pas (regle du 2026-08-09). Le tri, lui, marche pour tout le
+              monde — c'est pourquoi ce sont deux menus et non un seul. */}
           {account !== undefined ? (
-            <Choice
+            <Menu
+              id="reviews-audience"
               label={t('review.audience')}
+              value={audience}
+              onChange={(value) => setAudience(value as ReviewAudience)}
               options={ALL_REVIEW_AUDIENCES.map((one) => ({
-                key: one,
+                value: one,
                 label: t(AUDIENCE_LABEL[one]),
-                chosen: audience === one,
-                choose: () => setAudience(one),
               }))}
             />
           ) : null}
@@ -370,52 +374,6 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
         </ul>
       )}
     </section>
-  );
-}
-
-/**
- * Une rangee de choix : un libelle, puis des boutons dont un seul est retenu.
- *
- * ⚠️ **Des boutons, la ou `/parcourir` pose des liens** — et c'est la meme decision, pas une
- * incoherence. Une facette de catalogue change ce que le **serveur** doit aller chercher :
- * l'adresse doit donc porter la question, sinon elle ne se partage ni ne revient en arriere.
- * Ici les critiques sont deja toutes chargees ; il n'y a rien a redemander, et une URL par
- * combinaison ferait quatre adresses pour un meme contenu — ce que `withFacet` evite
- * justement en n'ecrivant pas le tri par defaut.
- *
- * `aria-pressed`, et pas `aria-current` : `controls.css` range les deux dans la meme
- * apparence et donne la regle — `aria-pressed` pour un bouton qui bascule, `aria-current`
- * pour un lien qui dit ou l'on est.
- */
-function Choice({ label, options }: {
-  readonly label: string;
-  readonly options: readonly {
-    readonly key: string;
-    readonly label: string;
-    readonly chosen: boolean;
-    readonly choose: () => void;
-  }[];
-}) {
-  return (
-    // ⚠️ `role="group"` avec son nom : sans lui, un lecteur d'ecran annonce cinq boutons a la
-    // file sans dire que « Les plus recentes » et « Tout le monde » repondent a deux questions
-    // differentes. Le libelle est visible ET porte le nom du groupe — une seule source.
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={label}>
-      <span className="label shrink-0" aria-hidden="true">
-        {label}
-      </span>
-      {options.map((option) => (
-        <button
-          key={option.key}
-          type="button"
-          aria-pressed={option.chosen}
-          onClick={option.choose}
-          className="btn rounded-full text-xs"
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
   );
 }
 

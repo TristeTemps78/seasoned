@@ -182,6 +182,13 @@
   .menu {
     appearance: none;
     min-height: 2.75rem;
+    /* ⚠️ **Un `<select>` s'elargit a sa plus longue option**, et certaines ne sont pas
+       ecrites par nous : le filtre de la bibliotheque compose « <mot> · sur N series », ou
+       le mot est tape par le lecteur et peut faire 30 caracteres (`MAX_TAG_CHARS`). Mesure
+       en 375 px : 326 px pour le pire cas plausible — ca tient, et rien ne le garantissait.
+       Deux lignes pour que ca reste vrai quand quelqu'un rallongera le gabarit. */
+    max-width: 100%;
+    min-width: 0;
     border-radius: 0.5rem;
     border: 1px solid var(--color-edge);
     background-color: color-mix(in oklab, var(--color-surface) 70%, transparent);

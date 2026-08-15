@@ -8,6 +8,7 @@ import { pathIn } from '@/lib/routes';
 import { EmptyState } from '@/app/components/EmptyState';
 import { JournalTransfer } from '@/app/components/JournalTransfer';
 import { LibraryCard } from '@/app/components/LibraryCard';
+import { Menu } from '@/app/components/Menu';
 import { MyPlatforms } from '@/app/components/MyPlatforms';
 import { MyRegions } from '@/app/components/MyRegions';
 import { buildLibrary, type LibraryItem } from '@/src/domain/library';
@@ -78,29 +79,29 @@ export function Library() {
           option (« Tous ») est un bouton qui ne fait rien, et il apprendrait a ignorer la
           ligne le jour ou elle servira. */}
       {tags.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="label">{t('tags.filter')}</span>
-          <button
-            type="button"
-            aria-pressed={tag === undefined}
-            onClick={() => setTag(undefined)}
-            className="btn rounded-full text-xs"
-          >
-            {t('tags.all')}
-          </button>
-          {tags.map(({ tag: name, count }) => (
-            <button
-              key={name}
-              type="button"
-              aria-pressed={tag === name}
-              onClick={() => setTag(tag === name ? undefined : name)}
-              className="btn rounded-full text-xs"
-              title={tn('tags.usedOn', count, { n: count })}
-            >
-              {name}
-            </button>
-          ))}
-        </div>
+        // ⚠️ **Un menu et non une rangee, parce que le nombre de mots n'a aucune borne.**
+        // Les mots sont tapes par le lecteur : trois aujourd'hui, quarante dans un an. Une
+        // rangee de boutons tient tant qu'ils sont peu nombreux et pousse la bibliotheque
+        // hors de l'ecran ensuite — c'est ce qui est arrive a `/parcourir`, mesure a 803 px
+        // de commandes pour une fenetre de 812. Un menu a une hauteur fixe quel qu'en soit
+        // le contenu.
+        //
+        // ⚠️ Le compte d'emplois (« sur 3 series ») etait un `title`, donc invisible au
+        // clavier et au tactile. Il entre dans le libelle de l'option, ou tout le monde le
+        // lit — c'est de la place qu'un menu a et qu'une pastille n'avait pas.
+        <Menu
+          id="library-tag"
+          label={t('tags.filter')}
+          value={tag ?? ''}
+          onChange={(value) => setTag(value === '' ? undefined : value)}
+          options={[
+            { value: '', label: t('tags.all') },
+            ...tags.map(({ tag: name, count }) => ({
+              value: name,
+              label: `${name} · ${tn('tags.usedOn', count, { n: count })}`,
+            })),
+          ]}
+        />
       ) : null}
 
       {/* Le vide **du filtre**, qui n'est pas le vide de la bibliotheque : le geste pour en
