@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { Library } from './Library';
 import { PageHeader } from '@/app/components/PageHeader';
@@ -6,6 +7,7 @@ import { Quiz } from '@/app/components/Quiz';
 import { FaceDiscovery } from '@/app/components/FaceDiscovery';
 import { PosterRail } from '@/app/components/PosterRail';
 import { discover } from '@/lib/catalog';
+import { pathIn } from '@/lib/routes';
 
 /**
  * Ma bibliotheque.
@@ -63,7 +65,30 @@ export async function LibraryView({ locale }: { readonly locale: Locale }) {
 
   return (
     <div className="space-y-8">
-      <PageHeader title={t(locale, 'library.title')} lede={t(locale, 'library.lede')} />
+      <PageHeader title={t(locale, 'library.title')} lede={t(locale, 'library.lede')}>
+        {/* La porte du journal date, et **la seule** dans la navigation principale.
+
+            ⚠️ Le journal n'est pas une septieme face, et ce n'est pas un oubli : `Faces.tsx`
+            ecrit que *le cube est complet*, et la marque du produit EST un cube. Il vit donc
+            ici, sur la face dont il est le revers exact — celle-ci range par serie *ce que
+            vous suivez*, celle-la range par date *ce que vous avez fait*. C'est aussi la
+            place que lui donne Letterboxd : sous le profil, jamais dans la barre.
+
+            Toujours affiche, meme sans un seul fait : la page d'arrivee dit alors quoi faire
+            (regle 4), ce qu'un lien absent ne dirait pas. */}
+        <p className="pt-2">
+          {/* ⚠️ `inline-block py-1` : `.meta` seul rendait un lien de **17 px** de haut
+              (mesure au navigateur), sous les 24 px de la regle du depot. Meme correctif
+              que les titres du journal, et pour la meme raison — la hauteur est gratuite
+              ici, la ligne est seule. */}
+          <Link
+            href={pathIn('/journal', locale)}
+            className="meta inline-block py-1 hover:text-(--color-text)"
+          >
+            {t(locale, 'library.toJournal')}
+          </Link>
+        </p>
+      </PageHeader>
 
       {/* Avant la bibliotheque : c'est le rendez-vous, et il doit se voir en arrivant. Se
           tait tout seul tant qu'il n'y a pas assez d'histoire pour poser une question. */}
