@@ -3,7 +3,7 @@
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { journalKey } from '@/src/domain/journal';
-import { Icon } from '@/app/components/Icon';
+import { PosterToggle } from '@/app/components/PosterToggle';
 
 /**
  * « Je veux la voir », **depuis n'importe quelle affiche du catalogue**.
@@ -61,21 +61,18 @@ export function WantButton({ providerId, title, posterPath }: {
   if (!ready) return null;
 
   return (
-    <button
-      type="button"
-      className={`poster-badge poster-badge-tr poster-action ${wanted ? 'poster-badge-liked' : ''}`}
-      aria-pressed={wanted}
+    <PosterToggle
+      pressed={wanted}
       // Le titre entre dans le nom : sur une rangee de douze vignettes, douze boutons qui
       // s'annoncent « Je veux la voir » sont douze fois le meme mot sans dire de quoi.
-      aria-label={t(wanted ? 'want.remove' : 'want.add', { title })}
-      onClick={() => {
+      label={t(wanted ? 'want.remove' : 'want.add', { title })}
+      icon={wanted ? 'check' : 'plus'}
+      onToggle={() => {
         setWanted(key, !wanted);
         if (!wanted) {
           rememberSnapshot(key, { title, ...(posterPath !== undefined ? { posterPath } : {}) });
         }
       }}
-    >
-      <Icon name={wanted ? 'check' : 'plus'} />
-    </button>
+    />
   );
 }

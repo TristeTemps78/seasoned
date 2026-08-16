@@ -10,6 +10,7 @@ import { parseJournalKey } from '@/src/domain/journal';
 import { nextAfter } from '@/src/domain/remaining';
 import type { LibraryItem } from '@/src/domain/library';
 import { Icon } from '@/app/components/Icon';
+import { PosterToggle } from '@/app/components/PosterToggle';
 
 /**
  * Une vignette de la bibliotheque.
@@ -183,17 +184,14 @@ export function LibraryCard({ item, lead = false }: {
 
         ⚠️ Nomme par `aria-label` et non par son icone, avec `aria-pressed` pour l'etat : sans
         lui, un lecteur d'ecran annonce « bouton » sur quarante tuiles identiques. */}
-    <button
-      type="button"
-      className={`poster-badge poster-badge-tr poster-action ${liked ? 'poster-badge-liked' : ''}`}
-      aria-pressed={liked}
-      aria-label={t(liked ? 'library.card.unlike' : 'library.card.like', {
+    <PosterToggle
+      pressed={liked}
+      label={t(liked ? 'library.card.unlike' : 'library.card.like', {
         title: item.snapshot?.title ?? t('library.card.tracked'),
       })}
-      onClick={() => setLiked(item.key, !liked)}
-    >
-      <Icon name="heart" />
-    </button>
+      icon="heart"
+      onToggle={() => setLiked(item.key, !liked)}
+    />
 
     {/* ⚠️ **`.btn` et non `.btn-primary`.** Quarante vignettes portant chacune un aplat volt
         feraient de la bibliotheque un tableau de bord — le critere d'echec que le brief nomme.
