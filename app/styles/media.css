@@ -250,6 +250,73 @@
     right: 0.375rem;
   }
 
+  /**
+   * L'autre coin — **l'etat, quand l'action occupe le premier**.
+   *
+   * 🔴 Les trois marques se disputaient un seul coin, en cascade : aimee, sinon terminee,
+   * sinon abandonnee. Consequence jamais remarquee parce qu'elle est silencieuse : **aimer
+   * une serie terminee effacait la marque « terminee »**. Un coeur et une coche ne disent pas
+   * la meme chose et ne s'excluent pas — l'un est un gout, l'autre un fait.
+   *
+   * Depuis que le coeur est un **bouton** (voir `.poster-action`), la separation n'est plus
+   * seulement une correction : action a droite, etat a gauche. Deux natures, deux places, et
+   * on ne clique jamais par erreur sur une information.
+   */
+  .poster-badge-tl {
+    top: 0.375rem;
+    left: 0.375rem;
+  }
+
+  /**
+   * =============================================================================
+   * UN GESTE POSE SUR L'AFFICHE — et sa seule vraie difficulte, le tactile
+   * =============================================================================
+   *
+   * ⚠️ **Invisible au repos a la souris, toujours visible au doigt.** C'est l'inverse exact
+   * de `.rail-arrows`, et pour une raison symetrique : la-bas le geste natif du tactile
+   * (faire glisser) remplace les fleches, donc elles disparaissent sous `pointer: coarse`.
+   * Ici il n'existe **aucun** geste natif pour « j'aime » — un survol ne se produit jamais
+   * sur un ecran tactile, donc une action qui n'apparait qu'au survol n'existe pas du tout
+   * sur un telephone. Quarante coeurs permanents sur une grille d'affiches, en revanche,
+   * feraient exactement le bruit que *« l'affiche est l'interface »* interdit.
+   *
+   * ⚠️ **Un etat actif reste visible en toutes circonstances** — c'est le cas `[aria-pressed]`
+   * ci-dessous. Ce n'est plus une action a ce moment-la, c'est la marque : la faire
+   * disparaitre au retrait de la souris supprimerait une information, pas un ornement.
+   *
+   * ⚠️ `:focus-visible` **sur le bouton lui-meme**, en plus du survol du groupe : sans lui, on
+   * peut tabuler jusqu'a un bouton qui reste transparent. Un controle focalisable et
+   * invisible est la definition d'un piege au clavier.
+   */
+  .poster-action {
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+
+  .group:hover .poster-action,
+  .poster-action:focus-visible,
+  .poster-action[aria-pressed='true'] {
+    opacity: 1;
+  }
+
+  @media (pointer: coarse) {
+    .poster-action {
+      opacity: 1;
+    }
+  }
+
+  /* Une action reste une action : elle repond au survol, la ou une pastille ne bouge pas. */
+  .poster-action:hover {
+    background-color: color-mix(in oklab, var(--color-ink) 92%, transparent);
+    color: var(--color-volt);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .poster-action {
+      transition: none;
+    }
+  }
+
   /** Aime — l'accent, parce que c'est une action affirmative. */
   .poster-badge-liked {
     color: var(--color-volt);

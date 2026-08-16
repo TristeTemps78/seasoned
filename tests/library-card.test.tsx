@@ -149,7 +149,7 @@ describe('avancer sans ouvrir la fiche', () => {
         ...base,
         entry: { ...base.entry, decision: { kind, at: NOW.toISOString() } },
       });
-      expect(screen.queryByRole('button')).toBeNull();
+      expect(screen.queryByRole('button', { name: /J’ai vu/ })).toBeNull();
       unmount();
     }
   });
@@ -157,7 +157,7 @@ describe('avancer sans ouvrir la fiche', () => {
   it('rien sans decoupage connu — un bouton qui devine se trompe', () => {
     const base = itemAt(1, 3);
     renderItem({ ...base, snapshot: { title: 'Breaking Bad', cachedAt: NOW.toISOString() } });
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('button', { name: /J’ai vu/ })).toBeNull();
   });
 
   it('rien sur une serie qu on n a pas commencee', () => {
@@ -167,6 +167,37 @@ describe('avancer sans ouvrir la fiche', () => {
     const entry = { ...base.entry };
     delete (entry as { position?: unknown }).position;
     renderItem({ ...base, entry });
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('button', { name: /J’ai vu/ })).toBeNull();
+  });
+});
+
+describe('le coeur, depuis la grille', () => {
+  it('🔴 aimer une serie terminee n efface plus la marque « terminee »', () => {
+    // Le defaut etait silencieux : les trois marques se disputaient un seul coin, en
+    // cascade — aimee, sinon terminee, sinon abandonnee. Un gout et un fait ne s'excluent
+    // pas, et personne ne remarque une information qui disparait.
+    const base = itemAt(1, 3);
+    renderItem({
+      ...base,
+      entry: {
+        ...base.entry,
+        decision: { kind: 'completed', at: NOW.toISOString() },
+        liked: { at: NOW.toISOString() },
+      },
+    });
+
+    // L'etat : la coche, en lecture seule, dans son coin.
+    expect(document.querySelector('.poster-badge-tl')).not.toBeNull();
+    // L'action : le coeur, enfonce, dans l'autre.
+    const heart = screen.getByRole('button', { name: 'Ne plus aimer Breaking Bad' });
+    expect(heart.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('le bouton dit ce qu il fera, et nomme la serie', () => {
+    // Sur une grille, quarante boutons qui s'annoncent « J'aime » sont quarante fois le
+    // meme mot sans dire de quoi ils parlent.
+    renderItem(itemAt(1, 3));
+    const heart = screen.getByRole('button', { name: 'J’aime Breaking Bad' });
+    expect(heart.getAttribute('aria-pressed')).toBe('false');
   });
 });

@@ -48,8 +48,9 @@ export function LibraryCard({ item, lead = false }: {
 }) {
   const tr = useT();
   const { t, tn, locale } = tr;
-  const { setPosition } = useJournal();
+  const { setPosition, setLiked } = useJournal();
   const parsed = parseJournalKey(item.key);
+  const liked = item.entry.liked?.at !== undefined;
   const href =
     parsed !== undefined ? seriesPath(parsed.providerId, locale) : pathIn('/', locale);
   const position = item.entry.position;
@@ -86,7 +87,10 @@ export function LibraryCard({ item, lead = false }: {
     // poser un bouton aurait imbrique un controle dans un lien, ce que le HTML interdit et
     // que les navigateurs resolvent chacun a leur facon. Meme restructuration que la bande de
     // l'accueil, pour la meme raison.
-    <div>
+    // ⚠️ `relative` : c'est ce conteneur qui ancre le coeur, puisqu'il doit vivre **hors** du
+    // lien tout en se posant sur l'affiche. Le cadre etant le premier enfant du lien, son coin
+    // superieur droit est celui du conteneur.
+    <div className="relative">
     <Link
       href={href}
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-live)"
@@ -103,19 +107,22 @@ export function LibraryCard({ item, lead = false }: {
         />
 
         {/* Ce que cette affiche sait de MOI, et que la meme affiche dans le catalogue ignore.
-            ⚠️ `aria-hidden` : les trois faits sont ecrits en toutes lettres sous la vignette. */}
-        {item.entry.liked?.at !== undefined ? (
-          <span className="poster-badge poster-badge-tr poster-badge-liked" aria-hidden="true">
-            <Icon name="heart" />
-          </span>
-        ) : decision === 'completed' ? (
-          <span className="poster-badge poster-badge-tr poster-badge-done" aria-hidden="true">
+            ⚠️ `aria-hidden` : les trois faits sont ecrits en toutes lettres sous la vignette.
+
+            🔴 **Le coeur etait ici, en tete d'une cascade, et il effacait la coche.** Les
+            trois marques se disputaient le meme coin — aimee, sinon terminee, sinon
+            abandonnee —, donc aimer une serie terminee **supprimait la marque « terminee »**.
+            Un gout et un fait ne s'excluent pas ; ils ne partagent plus ni la place ni la
+            nature. L'etat reste ici, a gauche, en lecture seule ; le coeur est devenu un
+            bouton et vit a droite, hors du lien. */}
+        {decision === 'completed' ? (
+          <span className="poster-badge poster-badge-tl poster-badge-done" aria-hidden="true">
             <Icon name="check" />
           </span>
         ) : decision === 'abandoned' ? (
           // ⚠️ Une croix et non une absence : la carte des abandons est la donnee propriete du
           // produit, et une serie lachee doit se reconnaitre d'un coup d'oeil dans la grille.
-          <span className="poster-badge poster-badge-tr text-(--color-muted)" aria-hidden="true">
+          <span className="poster-badge poster-badge-tl text-(--color-muted)" aria-hidden="true">
             <Icon name="close" />
           </span>
         ) : null}
@@ -160,6 +167,33 @@ export function LibraryCard({ item, lead = false }: {
         )}
       </p>
     </Link>
+
+    {/* Le coeur — **le seul geste de Letterboxd qui n'existait nulle part dans une grille**.
+        Il etait deja dessine ici, en lecture seule : la pastille disait « aimee » et il fallait
+        ouvrir la fiche pour le devenir ou cesser de l'etre. Le dessin ne change pas, il devient
+        cliquable.
+
+        ⚠️ **Hors du lien**, comme le bouton d'episode, et pour la meme raison : un controle
+        dans un `<a>` est interdit et chaque navigateur s'en tire autrement.
+
+        ⚠️ 24 px, la valeur de `.poster-badge` : c'est **exactement** le minimum de WCAG 2.5.8,
+        celui que le depot a retenu pour `.grid-cell` le 2026-08-13. Le grossir couvrirait un
+        cinquieme d'une tuile de 109 px, c'est-a-dire l'affiche elle-meme — et *l'affiche est
+        l'interface*.
+
+        ⚠️ Nomme par `aria-label` et non par son icone, avec `aria-pressed` pour l'etat : sans
+        lui, un lecteur d'ecran annonce « bouton » sur quarante tuiles identiques. */}
+    <button
+      type="button"
+      className={`poster-badge poster-badge-tr poster-action ${liked ? 'poster-badge-liked' : ''}`}
+      aria-pressed={liked}
+      aria-label={t(liked ? 'library.card.unlike' : 'library.card.like', {
+        title: item.snapshot?.title ?? t('library.card.tracked'),
+      })}
+      onClick={() => setLiked(item.key, !liked)}
+    >
+      <Icon name="heart" />
+    </button>
 
     {/* ⚠️ **`.btn` et non `.btn-primary`.** Quarante vignettes portant chacune un aplat volt
         feraient de la bibliotheque un tableau de bord — le critere d'echec que le brief nomme.
