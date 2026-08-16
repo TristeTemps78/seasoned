@@ -450,6 +450,7 @@ export const FR = {
   // titre vient de l'instantané local du lecteur, sans un appel de plus. Les autres disent
   // « une série » faute de pouvoir le payer.
   'friends.item.reviewed': 'a écrit sur',
+  'feed.someSeries': 'une série',
   // Le quiz personnel. ⚠️ Il se calcule sur le journal local : aucune de ces phrases ne
   // doit promettre un score ou un classement — il n'y en a pas, et il ne peut pas y en
   // avoir sans un calcul serveur.

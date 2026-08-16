@@ -79,11 +79,22 @@ export function FriendsFeed({
               const parsed = parseJournalKey(review.subject);
               // Le titre vient de **mon** instantane local, jamais d'un appel catalogue :
               // une requete par ligne de fil est le cout par utilisateur que ce produit
-              // refuse. Sans instantane on montre la cle — le lien, lui, marche toujours.
+              // refuse.
               // ⚠️ L'instantane publie **d'abord**, le journal du lecteur ensuite. L'ordre
               // inverse laissait « tmdb:94997 » a l'ecran pour toute serie que le lecteur
               // n'avait pas deja — c'est-a-dire dans le seul cas ou un fil sert a decouvrir.
-              const title = review.title ?? journal.entries[review.subject]?.snapshot?.title;
+              //
+              // 🔴 **Et il restait un troisieme cas, celui-la ecrit noir sur blanc** : *« sans
+              // instantane on montre la cle — le lien, lui, marche toujours »*. Constate en
+              // production le 2026-08-16, connecte, en tete du fil : « @test wrote about
+              // **tmdb:94997** ». Les critiques publiees avant le 2026-08-11 n'ont pas
+              // d'instantane, et un lecteur qui ne suit pas la serie n'en a pas non plus — donc
+              // la cle passe a l'ecran, sur la page sociale, en premiere ligne.
+              //
+              // Un lien qui marche ne rachete pas une etiquette illisible : « une serie » dit
+              // exactement ce qu'on sait, et c'est tout ce qu'on sait.
+              const title =
+                review.title ?? journal.entries[review.subject]?.snapshot?.title ?? t('feed.someSeries');
               const poster =
                 review.posterPath ?? journal.entries[review.subject]?.snapshot?.posterPath;
 
@@ -100,7 +111,7 @@ export function FriendsFeed({
                       creusent aucun trou. */}
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     {poster === undefined ? null : (
-                      <PosterChip path={poster} title={title ?? review.subject} />
+                      <PosterChip path={poster} title={title} />
                     )}
                     <Avatar handle={review.handle} face={review.face} />
                     <Link
@@ -111,13 +122,13 @@ export function FriendsFeed({
                     </Link>{' '}
                     {t('friends.item.reviewed')}{' '}
                     {parsed === undefined ? (
-                      <span className="font-medium">{title ?? review.subject}</span>
+                      <span className="font-medium">{title}</span>
                     ) : (
                       <Link
                         href={pathIn(`/serie/${parsed.providerId}`, locale)}
                         className="font-medium hover:text-(--color-volt)"
                       >
-                        {title ?? review.subject}
+                        {title}
                       </Link>
                     )}
                     <ReportButton
@@ -138,7 +149,10 @@ export function FriendsFeed({
             // 🔴 Le bloc « fait » ne nommait **pas du tout** la serie : la ligne disait
             // « @x a note la saison 1 — 4,5 ★ » sans jamais dire de quelle serie. Pire que
             // la cle brute des critiques, et invisible au HTML — il faut le lire a l'ecran.
-            const factTitle = item.title ?? journal.entries[item.subject]?.snapshot?.title;
+            // Meme dernier recours que pour les critiques juste au-dessus : les faits publies
+            // avant le 2026-08-11 n'ont pas d'instantane non plus.
+            const factTitle =
+              item.title ?? journal.entries[item.subject]?.snapshot?.title ?? t('feed.someSeries');
             const factPoster =
               item.posterPath ?? journal.entries[item.subject]?.snapshot?.posterPath;
             const factParsed = parseJournalKey(item.subject);
@@ -148,7 +162,7 @@ export function FriendsFeed({
                 className="feed-row flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
               >
                 {factPoster === undefined ? null : (
-                  <PosterChip path={factPoster} title={factTitle ?? item.subject} />
+                  <PosterChip path={factPoster} title={factTitle} />
                 )}
                 <Avatar handle={item.handle} face={item.face} />{' '}
                 <Link

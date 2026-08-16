@@ -326,7 +326,8 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           <ul className="flex flex-wrap gap-3">
             {loved.map((one) => {
               const parsed = parseJournalKey(one.subject);
-              const title = one.title ?? journal.entries[one.subject]?.snapshot?.title ?? one.subject;
+              const title =
+                one.title ?? journal.entries[one.subject]?.snapshot?.title ?? t('feed.someSeries');
               const posterPath =
                 one.posterPath ?? journal.entries[one.subject]?.snapshot?.posterPath;
               if (parsed === undefined) return null;
@@ -382,7 +383,10 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
               const title = review.title ?? journal.entries[review.subject]?.snapshot?.title;
               const posterPath =
                 review.posterPath ?? journal.entries[review.subject]?.snapshot?.posterPath;
-              const shownTitle = title ?? review.subject;
+              // 🔴 Jamais la cle. Le commentaire vingt lignes plus haut raconte deja que cette
+              // page a affiche « tmdb:94605 » ; le repli qui restait la ramenait des qu'aucune
+              // des deux sources ne connaissait le titre.
+              const shownTitle = title ?? t('feed.someSeries');
               const href = parsed === undefined
                 ? undefined
                 : pathIn(`/serie/${parsed.providerId}`, locale);

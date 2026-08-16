@@ -107,7 +107,11 @@ export function DiscoverReviews() {
           {visible.map((shown) => {
             const parsed = parseJournalKey(shown.subject);
             const title =
-              shown.title ?? journal.entries[shown.subject]?.snapshot?.title ?? shown.subject;
+              shown.title ??
+              journal.entries[shown.subject]?.snapshot?.title ??
+              // Jamais la cle de journal : « tmdb:94997 » a ete constate en production le
+              // 2026-08-16 dans le fil, qui portait le meme repli.
+              t('feed.someSeries');
             const posterPath =
               shown.posterPath ?? journal.entries[shown.subject]?.snapshot?.posterPath;
             const href =

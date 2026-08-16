@@ -385,6 +385,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'friends.item.wanted': 'wants to watch a series',
   'friends.item.liked': 'loves a series',
   'friends.item.reviewed': 'wrote about',
+  'feed.someSeries': 'a series',
   'quiz.title': 'A question for you',
   'quiz.onDay': 'Which series were you watching on {date}?',
   'quiz.byCurve': 'Which series has this trajectory?',

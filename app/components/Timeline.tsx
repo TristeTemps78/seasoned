@@ -208,7 +208,13 @@ const KIND_LABEL = {
 function Row({ event }: { readonly event: TimelineEvent }) {
   const { t, n, locale } = useT();
   const parsed = parseJournalKey(event.subject);
-  const title = event.title ?? event.subject;
+  // 🔴 **Jamais la cle de journal.** Elle retombait ici sur `event.subject`, donc sur
+  // « tmdb:1396 » des qu'une entree n'a pas d'instantane — et le cas n'est pas theorique :
+  // `importForeign` cree les entrees a partir des seuls identifiants TMDB, sans titre, tant
+  // qu'on n'a pas ouvert la fiche. Le journal de quelqu'un qui vient de reprendre son
+  // historique de TV Time — le parcours que `/convertir` met en avant — s'ouvrait donc sur
+  // une liste de cles. Meme repli que le fil et le profil, corriges le meme jour.
+  const title = event.title ?? t('feed.someSeries');
 
   const name =
     parsed === undefined ? (
