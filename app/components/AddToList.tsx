@@ -33,7 +33,22 @@ import { socialFrom } from '@/app/social/socialFrom';
  * compte pour en tenir une. C'est la decision de Tristan du 2026-08-11 : *« sinon les gens ne
  * viendraient pas si on tait tout »*.
  */
-export function AddToList({ seriesId }: { readonly seriesId: string }) {
+export function AddToList({
+  seriesId,
+  title,
+  posterPath,
+}: {
+  readonly seriesId: string;
+  /**
+   * Le titre sous les yeux au moment du rangement — il part avec la ligne.
+   *
+   * ⚠️ **Sans lui, la liste ne sait pas se nommer chez les autres** : la carte resolvait ses
+   * vignettes depuis le journal du lecteur, donc affichait « Tracked series » pour toute
+   * serie qu'il ne suit pas. Voir `020_list_items_titre.sql` et `ListEntry`.
+   */
+  readonly title: string;
+  readonly posterPath?: string;
+}) {
   const { t, locale } = useT();
   const { configured, ready, account } = useAuth();
 
@@ -69,13 +84,19 @@ export function AddToList({ seriesId }: { readonly seriesId: string }) {
       if (userId === undefined) return;
       const social = socialFrom(accessToken);
       if (social === undefined) return;
-      // ⚠️ L'ajout est **idempotent** cote base (`merge-duplicates`) : cliquer deux fois ne
-      // remonte pas une erreur de cle dupliquee pour un geste sans consequence.
-      if (await social.addToList(userId, slug, subject)) {
+      // ⚠️ L'ajout est **idempotent** cote base (`ignore-duplicates` — la cle *est* le fait
+      // entier) : cliquer deux fois ne remonte pas une erreur de cle dupliquee pour un geste
+      // sans consequence. Corollaire : le second clic n'ecrit pas non plus l'instantane.
+      if (
+        await social.addToList(userId, slug, subject, {
+          title,
+          ...(posterPath !== undefined ? { posterPath } : {}),
+        })
+      ) {
         setAdded((current) => new Set([...current, slug]));
       }
     },
-    [userId, accessToken, subject],
+    [userId, accessToken, subject, title, posterPath],
   );
 
   // Tant qu'on ne sait pas, on ne dit rien — la seule retenue qui reste ici.

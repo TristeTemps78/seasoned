@@ -62,7 +62,7 @@ describe('l URL demandee', () => {
     // Les deux embarquements de `list_items`, sous deux alias : sans alias, PostgREST les
     // fusionne et le compte se perd.
     expect(url).toContain('list_items(count)');
-    expect(url).toContain('preview:list_items(subject)');
+    expect(url).toContain('preview:list_items(subject,title,poster_path)');
     expect(url).toContain('preview.limit=4');
   });
 });
@@ -130,7 +130,7 @@ it('rend les cles de l apercu, et se passe d elles quand elles manquent', async 
   ]);
   const listes = await client.discoverLists();
 
-  expect(listes[0]?.preview).toEqual(['tmdb:1396', 'tmdb:1399']);
+  expect(listes[0]?.preview).toEqual([{ subject: 'tmdb:1396' }, { subject: 'tmdb:1399' }]);
   // Une liste dont l'apercu arrive dans une forme inattendue s'affiche **sans vignettes**,
   // jamais en disparaissant : une carte vaut infiniment plus que ses quatre miniatures.
   expect(listes[1]?.preview).toEqual([]);

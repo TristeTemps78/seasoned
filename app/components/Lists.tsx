@@ -21,7 +21,8 @@ import { formatDate } from '@/lib/format';
 import { localeTag } from '@/lib/i18n/engine';
 import { pathIn } from '@/lib/routes';
 import { Menu } from '@/app/components/Menu';
-import { type SeriesList } from '@/src/social/client';
+import { type ListEntry, type SeriesList } from '@/src/social/client';
+import { resolveListEntry } from '@/app/components/listEntry';
 import { socialFrom } from '@/app/social/socialFrom';
 import { AccountGate } from '@/app/components/AccountGate';
 import { EmptyState } from '@/app/components/EmptyState';
@@ -128,7 +129,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
   const ordered = useMemo(() => orderLists(lists, sort, localeTag(locale)), [lists, sort, locale]);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<string | undefined>(undefined);
-  const [items, setItems] = useState<Readonly<Record<string, readonly string[]>>>({});
+  const [items, setItems] = useState<Readonly<Record<string, readonly ListEntry[]>>>({});
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState<ListRejection | 'failed' | undefined>(undefined);
@@ -219,7 +220,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
       if (!(await social.removeFromList(myId, slug, subject))) return;
       setItems((current) => ({
         ...current,
-        [slug]: (current[slug] ?? []).filter((s) => s !== subject),
+        [slug]: (current[slug] ?? []).filter((entry) => entry.subject !== subject),
       }));
       await load();
     },
@@ -392,20 +393,21 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
                     s'interdit — *dix listes en feraient onze*. La requete a ete verifiee contre
                     la vraie base avant d'etre ecrite.
 
-                    ⚠️ L'affiche vient de l'instantane du **lecteur** : chez quelqu'un d'autre,
-                    on ne l'a pas toujours, et `PosterChip` rend alors son monogramme. C'est le
-                    prix de la regle 1 — le catalogue est loue, pas possede. */}
+                    ⚠️ L'affiche venait de l'instantane du **lecteur** — donc jamais chez
+                    quelqu'un d'autre. Depuis `020` la ligne voyage avec la sienne, et
+                    `resolveListEntry` ne retombe sur le journal que pour le fond d'avant. */}
                 {list.preview.length > 0 ? (
                   <ul className="flex flex-wrap gap-2">
-                    {list.preview.map((subject) => {
-                      const parsed = parseJournalKey(subject);
-                      const snapshot = journal.entries[subject]?.snapshot;
-                      const seriesTitle = snapshot?.title ?? t('library.card.tracked');
-                      const chip = (
-                        <PosterChip path={snapshot?.posterPath} title={seriesTitle} wide />
+                    {list.preview.map((entry) => {
+                      const parsed = parseJournalKey(entry.subject);
+                      const { title: seriesTitle, posterPath } = resolveListEntry(
+                        entry,
+                        journal,
+                        t('library.card.tracked'),
                       );
+                      const chip = <PosterChip path={posterPath} title={seriesTitle} wide />;
                       return (
-                        <li key={subject}>
+                        <li key={entry.subject}>
                           {parsed === undefined ? (
                             chip
                           ) : (
@@ -446,20 +448,26 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
                     <p className="meta">{t('lists.empty')}</p>
                   ) : (
                     <ul className="space-y-2">
-                      {shown.map((subject) => {
-                        const parsed = parseJournalKey(subject);
-                        const snapshot = journal.entries[subject]?.snapshot;
-                        const seriesTitle = snapshot?.title ?? t('library.card.tracked');
+                      {shown.map((entry) => {
+                        const parsed = parseJournalKey(entry.subject);
+                        const { title: seriesTitle, posterPath } = resolveListEntry(
+                          entry,
+                          journal,
+                          t('library.card.tracked'),
+                        );
 
                         return (
-                          <li key={subject} className="flex items-center justify-between gap-3">
+                          <li
+                            key={entry.subject}
+                            className="flex items-center justify-between gap-3"
+                          >
                             {/* Une liste de series sans une seule affiche est une liste de
-                                courses. ⚠️ L'affiche ne vient que du journal du lecteur : une
-                                liste consultee chez quelqu'un d'autre porte des series qu'on
-                                n'a pas, et `PosterChip` rend alors le monogramme — c'est deja
-                                mieux qu'une ligne de texte nue. */}
+                                courses. ⚠️ L'affiche venait du seul journal du lecteur : ouvrir
+                                la liste de quelqu'un d'autre rendait autant de monogrammes
+                                qu'elle contient de series qu'on ne suit pas. Depuis `020` elle
+                                voyage avec la ligne — voir `resolveListEntry`. */}
                             <span className="flex min-w-0 items-center gap-3">
-                              <PosterChip path={snapshot?.posterPath} title={seriesTitle} />
+                              <PosterChip path={posterPath} title={seriesTitle} />
                               {parsed === undefined ? (
                                 <span className="text-sm">{seriesTitle}</span>
                               ) : (
@@ -475,7 +483,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
                               <button
                                 type="button"
                                 className="btn"
-                                onClick={() => remove(list.slug, subject)}
+                                onClick={() => remove(list.slug, entry.subject)}
                               >
                                 {t('lists.remove')}
                               </button>

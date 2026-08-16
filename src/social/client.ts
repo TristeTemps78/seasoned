@@ -202,11 +202,40 @@ export interface SeriesList {
    * lever, donc un `select` mal forme rendrait `[]` et **toutes les listes dispararaitraient
    * en silence**. C'est le defaut qui a coute trois sessions au lot 10.
    *
-   * ⚠️ Ce sont des **cles de journal** (`tmdb:1396`), jamais des titres : le catalogue est
-   * loue, pas possede. Le titre et l'affiche viennent de l'instantane du lecteur, et a defaut
-   * `PosterChip` rend son monogramme.
+   * ⚠️ Chaque element porte sa **cle de journal** (`tmdb:1396`) — le catalogue est loue, pas
+   * possede — et, depuis `020`, l'instantane du titre et de l'affiche pris au moment ou la
+   * serie a ete rangee. Voir {@link ListEntry} pour la raison, qui a coute deux fois le meme
+   * defaut.
    */
-  readonly preview: readonly string[];
+  readonly preview: readonly ListEntry[];
+}
+
+/**
+ * Une serie dans une liste : sa cle, et le nom sous lequel on l'y a rangee.
+ *
+ * ## 🔴 Pourquoi le titre voyage, mesure au navigateur le 2026-08-16
+ *
+ * `018` a fait voyager le titre avec un fait du fil et avec une critique, et a **oublie les
+ * listes**. Une carte de liste resolvait donc ses vignettes depuis le journal du **lecteur**,
+ * avec « Tracked series » en repli : le lecteur voyait quatre fois le meme mot pour toute
+ * liste faite de series qu'il ne suit pas — c'est-a-dire **toute liste qu'on decouvre**, ce
+ * qui est exactement l'usage de `/listes`.
+ *
+ * La regle que ces deux defauts donnent : **une cle qui voyage sans son instantane n'est
+ * lisible que par qui l'a deja vue**, et aucune surface de decouverte n'a cette propriete.
+ *
+ * ⚠️ Les deux champs sont **facultatifs et le resteront** : les elements ranges avant le
+ * 2026-08-16 n'en ont pas, et `addToList` ecrit en `ignore-duplicates` (voir
+ * {@link IDEMPOTENCE}), donc refaire le geste ne rattrape pas un instantane manquant. Le
+ * rendu garde son repli — l'instantane du lecteur, puis la cle.
+ */
+export interface ListEntry {
+  /** La cle de journal, telle quelle : `tmdb:1396`. */
+  readonly subject: string;
+  /** Le titre au moment du rangement. Absent sur le fond d'avant `020`. */
+  readonly title?: string;
+  /** Le chemin d'affiche TMDB (`/xxxxx.jpg`), jamais une URL absolue — voir `020`. */
+  readonly posterPath?: string;
 }
 
 /**
@@ -275,6 +304,34 @@ function isKnownKind(value: unknown): value is ActivityKind {
 }
 
 /**
+ * Une ligne de `list_items` telle que le produit la lit — la cle, plus son instantane.
+ *
+ * ⚠️ **Un seul parsing pour les deux appelants** ({@link SocialClient.listsBy} par
+ * l'embarquement `preview`, {@link SocialClient.listItems} en direct). Le contenu d'une liste
+ * et son apercu montrent les memes series : deux copies de ce parsing finiraient par se
+ * repondre differemment le jour ou l'une serait corrigee — c'est litteralement l'histoire de
+ * `018`, qui a nomme deux tables sur trois.
+ *
+ * ⚠️ Rend un tableau : un element sans cle lisible disparait de la liste, il ne la fait pas
+ * disparaitre. Le titre et l'affiche, eux, sont **facultatifs** — le fond d'avant `020` n'en
+ * a pas, et une liste sans vignettes vaut infiniment mieux qu'une liste absente.
+ */
+function rowToListEntry(value: unknown): readonly ListEntry[] {
+  const row = value as Record<string, unknown> | null;
+  const subject = row?.['subject'];
+  if (typeof subject !== 'string') return [];
+  const title = row?.['title'];
+  const posterPath = row?.['poster_path'];
+  return [
+    {
+      subject,
+      ...(typeof title === 'string' && title.length > 0 ? { title } : {}),
+      ...(typeof posterPath === 'string' && posterPath.length > 0 ? { posterPath } : {}),
+    },
+  ];
+}
+
+/**
  * Une ligne de `lists` telle que le produit la lit.
  *
  * Le corps commun de {@link SocialClient.listsBy} et {@link SocialClient.discoverLists}, qui
@@ -294,12 +351,7 @@ function rowToList(row: Record<string, unknown>): readonly SeriesList[] {
   // inattendue doit s'afficher **sans vignettes**, jamais disparaitre. Une carte de liste
   // vaut infiniment plus que ses quatre miniatures.
   const raw = row['preview'];
-  const preview = Array.isArray(raw)
-    ? raw.flatMap((item) => {
-        const subject = (item as Record<string, unknown> | null)?.['subject'];
-        return typeof subject === 'string' ? [subject] : [];
-      })
-    : [];
+  const preview = Array.isArray(raw) ? raw.flatMap(rowToListEntry) : [];
   return [
     {
       slug,
@@ -1296,7 +1348,7 @@ export class SocialClient {
     // alias est obligatoire — sans lui PostgREST fusionne les deux et le compte se perd.
     const rows = await this.#rows<Record<string, unknown>>(
       `lists?user_id=eq.${encodeURIComponent(userId)}` +
-        `&select=slug,title,note,updated_at,list_items(count),preview:list_items(subject)` +
+        `&select=slug,title,note,updated_at,list_items(count),preview:list_items(subject,title,poster_path)` +
         `&preview.order=added_at.asc&preview.limit=${LIST_PREVIEW}` +
         `&order=updated_at.desc&limit=${limit}`,
     );
@@ -1390,7 +1442,7 @@ export class SocialClient {
    */
   async #lists(filter: string, limit: number): Promise<readonly DiscoverableList[]> {
     const rows = await this.#rows<Record<string, unknown>>(
-      `lists?select=slug,title,note,updated_at,list_items(count),preview:list_items(subject),profiles!inner(handle,user_id,face)` +
+      `lists?select=slug,title,note,updated_at,list_items(count),preview:list_items(subject,title,poster_path),profiles!inner(handle,user_id,face)` +
         filter +
         `&preview.order=added_at.asc&preview.limit=${LIST_PREVIEW}` +
         `&limit=${limit}`,
@@ -1410,12 +1462,18 @@ export class SocialClient {
     });
   }
 
-  /** Les series d'une liste, dans l'ordre ou elles y ont ete posees. */
-  async listItems(userId: string, slug: string, limit = 500): Promise<readonly string[]> {
+  /**
+   * Les series d'une liste, dans l'ordre ou elles y ont ete posees.
+   *
+   * ⚠️ Chacune avec son instantane depuis `020` : ouvrir la liste de quelqu'un d'autre
+   * affichait sinon autant de fois « Tracked series » qu'elle contient de series que le
+   * lecteur ne suit pas. Voir {@link ListEntry}.
+   */
+  async listItems(userId: string, slug: string, limit = 500): Promise<readonly ListEntry[]> {
     const rows = await this.#rows<Record<string, unknown>>(
-      `list_items?user_id=eq.${encodeURIComponent(userId)}&slug=eq.${encodeURIComponent(slug)}&select=subject&order=added_at.asc&limit=${limit}`,
+      `list_items?user_id=eq.${encodeURIComponent(userId)}&slug=eq.${encodeURIComponent(slug)}&select=subject,title,poster_path&order=added_at.asc&limit=${limit}`,
     );
-    return rows.flatMap((row) => (typeof row['subject'] === 'string' ? [row['subject']] : []));
+    return rows.flatMap(rowToListEntry);
   }
 
   /**
@@ -1463,12 +1521,32 @@ export class SocialClient {
    * plus **remonte la ligne** en reecrivant `added_at`, alors que la liste se lit dans
    * l'ordre d'ajout. `ignore-duplicates` dit exactement ce qu'on veut : la serie y est
    * deja, on ne touche a rien. Voir {@link IDEMPOTENCE}.
+   *
+   * ⚠️ **L'instantane s'ecrit ici ou jamais.** `ignore-duplicates` ne met rien a jour : une
+   * serie deja rangee garde le titre qu'elle avait — ou n'en aura jamais si elle a ete rangee
+   * avant `020`. C'est le prix assume de la resolution juste ; voir {@link ListEntry}.
+   *
+   * Il est **facultatif** parce qu'un appelant peut ranger une serie sans l'avoir sous les
+   * yeux. L'omettre redonne exactement l'ancien comportement, jamais une erreur.
    */
-  async addToList(userId: string, slug: string, subject: string): Promise<boolean> {
+  async addToList(
+    userId: string,
+    slug: string,
+    subject: string,
+    snapshot?: { readonly title?: string; readonly posterPath?: string },
+  ): Promise<boolean> {
     return this.#write(
       'list_items',
       'POST',
-      { user_id: userId, slug, subject },
+      {
+        user_id: userId,
+        slug,
+        subject,
+        // `?? null` plutot que l'omission, par symetrie avec `publish` — et parce qu'un
+        // corps de POST heterogene entre deux appels est une source de surprise gratuite.
+        title: snapshot?.title ?? null,
+        poster_path: snapshot?.posterPath ?? null,
+      },
       'resolution=ignore-duplicates,return=minimal',
     );
   }

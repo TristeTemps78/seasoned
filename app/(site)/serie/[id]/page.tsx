@@ -551,7 +551,14 @@ export async function SeriesView({ id, locale }: {
           qu'un visuel — un selecteur a un element est un bouton qui ne fait rien. */}
       <SeriesArtworkChoice id={id} />
 
-      <AddToList seriesId={id} />
+      {/* ⚠️ Le titre et l'affiche partent **avec** la ligne rangee : sans eux, la carte de
+          liste se rabat sur le journal du lecteur et annonce « Tracked series » a qui ne
+          suit pas la serie — c'est-a-dire a qui la decouvre. Voir `020_list_items_titre.sql`. */}
+      <AddToList
+        seriesId={id}
+        title={detail.title}
+        {...(detail.posterPath !== undefined ? { posterPath: detail.posterPath } : {})}
+      />
         </aside>
 
         {/* =============================================================================

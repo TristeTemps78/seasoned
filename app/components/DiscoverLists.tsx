@@ -12,6 +12,7 @@ import { socialFrom } from '@/app/social/socialFrom';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
+import { resolveListEntry } from '@/app/components/listEntry';
 
 /**
  * Les listes des autres — **la seule surface du produit dont le contenu existait deja et
@@ -103,18 +104,25 @@ export function DiscoverLists() {
 
               {/* Les quatre vignettes arrivent dans la meme reponse que le compte
                   (`SeriesList.preview`) : zero requete de plus, quel que soit le nombre de
-                  listes. L'affiche vient de l'instantane du **lecteur** — chez quelqu'un
-                  qu'on ne suit pas on ne l'a presque jamais, et `PosterChip` rend alors son
-                  monogramme. C'est le prix de la regle 1 : le catalogue est loue. */}
+                  listes.
+
+                  🔴 **C'est ici que le defaut de l'instantane manquant coutait le plus cher.**
+                  L'affiche et le titre venaient du journal du **lecteur**, sur la seule page
+                  du produit dont l'objet est de montrer les listes de gens qu'on ne suit pas :
+                  chaque carte annoncait donc quatre fois « Tracked series ». Depuis `020` la
+                  ligne voyage avec les siens — voir `resolveListEntry`. */}
               {list.preview.length > 0 ? (
                 <ul className="flex flex-wrap gap-2">
-                  {list.preview.map((subject) => {
-                    const parsed = parseJournalKey(subject);
-                    const snapshot = journal.entries[subject]?.snapshot;
-                    const seriesTitle = snapshot?.title ?? t('library.card.tracked');
-                    const chip = <PosterChip path={snapshot?.posterPath} title={seriesTitle} wide />;
+                  {list.preview.map((entry) => {
+                    const parsed = parseJournalKey(entry.subject);
+                    const { title: seriesTitle, posterPath } = resolveListEntry(
+                      entry,
+                      journal,
+                      t('library.card.tracked'),
+                    );
+                    const chip = <PosterChip path={posterPath} title={seriesTitle} wide />;
                     return (
-                      <li key={subject}>
+                      <li key={entry.subject}>
                         {parsed === undefined ? (
                           chip
                         ) : (

@@ -996,6 +996,67 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- 020 — une liste sait nommer ce qu'elle contient
+  -- ---------------------------------------------------------------------------
+  --
+  -- 🔴 Meme defaut que 018, sur la table d'a cote et **un cran plus cher** : une carte de
+  -- liste resolvait ses vignettes depuis le journal du lecteur, donc affichait « Tracked
+  -- series » pour toute serie qu'il ne suit pas — c'est-a-dire pour toute liste qu'il
+  -- decouvre, sur la page faite pour decouvrir des listes.
+  --
+  -- ⚠️ **Ce que ces trois scenarios protegent d'abord, c'est le rangement lui-meme.**
+  -- `addToList` emet desormais `title` et `poster_path` a chaque appel. Si les colonnes
+  -- manquent — 020 non applique — PostgREST rend 400 et **plus aucune serie ne se range**,
+  -- pendant que `#write` rend `false` sans que rien ne l'affiche. Le correctif casserait
+  -- exactement ce qu'il repare, et c'est la troisieme fois que ce depot rencontre cette
+  -- forme (lot 10.0, 017, la carte des abandons).
+
+  -- 53 — La forme exacte que le client emet, `ignore-duplicates` compris.
+  begin
+    insert into public.lists (user_id, slug, title) values (a, tag || '_l20', 'Liste 020');
+    insert into public.list_items (user_id, slug, subject, title, poster_path)
+    values (a, tag || '_l20', tag || '_s20', 'Breaking Bad', '/abc.jpg')
+    on conflict do nothing;
+    obtenu := 'ok';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'ok';
+  rapport := rapport || format(E'  %s  %s. une serie se range avec son titre et son affiche (020)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 54 — La borne de longueur mord, comme en 018 : premieres colonnes de texte libre de
+  --      cette table.
+  begin
+    insert into public.list_items (user_id, slug, subject, title)
+    values (a, tag || '_l20', tag || '_s21', repeat('x', 201));
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. un titre de liste de plus de 200 caracteres est refuse (020)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 55 — ⚠️ Le seul des trois qui soit une question de securite, et il porte plus loin
+  --      qu'en 018 : une liste est **publique** des que son auteur l'est, donc une URL
+  --      absolue acceptee ici poserait un pisteur sur `/listes` — la page de decouverte,
+  --      vue par des gens qui ne suivent meme pas son auteur.
+  begin
+    insert into public.list_items (user_id, slug, subject, poster_path)
+    values (a, tag || '_l20', tag || '_s22', 'https://pisteur.example/x.jpg');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. une URL absolue en affiche de liste est refusee (020)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);
