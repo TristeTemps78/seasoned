@@ -139,9 +139,15 @@ export function DiscoverReviews() {
                        s'applique depuis le 2026-08-13 sur `.grid-cell` et `.star-box`. Les
                        deux classes se disputent `display`, et l'utilitaire gagnerait sur la
                        couche `components` : garder `block` annulerait la correction en
-                       silence. `tap-line` grandit la cible sans deplacer le texte. */
+                       silence.
+
+                       ⚠️ **`w-full` avec, et la mesure l'a impose.** `tap-line` seul rendait
+                       47 x 24 : conforme — la norme regarde la plus PETITE dimension — mais
+                       une cible de 1 128 px2 la ou `block` en donnait 7 680. Se conformer en
+                       retrecissant la zone cliquable aurait ete une regression deguisee en
+                       correction. 384 x 24 est meilleur que les deux. */
                     <Link
-                      className="tap-line text-sm font-medium hover:text-(--color-volt)"
+                      className="tap-line w-full text-sm font-medium hover:text-(--color-volt)"
                       href={href}
                     >
                       {title}

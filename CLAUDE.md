@@ -53,9 +53,15 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
   masquée) ont vécu sous 956 tests verts. Ce qui se lit dans la source est gardé par
   `tests/layout-collisions.test.ts` ; le reste **se mesure au navigateur**, en lisant le DOM
   (`getComputedStyle`, `getBoundingClientRect`, `scrollWidth > clientWidth`).
-- `npm run db:push` applique `supabase/*.sql`. `npm run db:scenarios` rejoue 52 scénarios
+- `npm run db:push` applique `supabase/*.sql`. `npm run db:scenarios` rejoue 59 scénarios
   RLS contre la vraie base, en transaction annulée — **rien ne persiste, jamais**.
 - `npm run db:round -- 2026-08-10 7` construit 7 manches de quiz d'avance depuis TMDB.
+  `npm run db:stock` dit combien il en reste et **sort en échec** sous 7 : la réserve se
+  vidait sans que rien ne le signale. Il n'est branché sur aucun cron — c'est une décision,
+  et le cron de cette machine vit dans Hermes, hors de ce dépôt.
+- **Le service worker sert l'ancien build.** Une mesure au navigateur qui ne voit pas une
+  correction pourtant compilée n'est pas une correction fausse : désinscrire le SW, vider
+  `caches`, et naviguer avec un paramètre neuf. Constaté encore le 2026-08-16 sur `tap-line`.
 - Pousser = déployer en public : décision de Tristan.
 - **Ce fichier est le seul.** Pas de `TASKS.md`, pas d'`AGENTS.md`, pas de `docs/` :
   supprimés le 2026-08-10, à la demande de Tristan. Ne pas les recréer. Ce qui reste à
