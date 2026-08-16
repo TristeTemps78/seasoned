@@ -1179,6 +1179,9 @@ export const FR = {
   'traj.hidden.other': '{n} saisons au-delà de votre position ne sont pas affichées.',
   'traj.seeMore': 'Voir la suite de la trajectoire',
   'traj.seeAll': 'Voir la trajectoire saison par saison',
+  // Pour qui a tout vu : la courbe est deja au-dessus, et le depliant ne porte plus que
+  // le detail. Ni le libelle ni l'avertissement de spoiler ne tiendraient ici.
+  'traj.seeDetail': 'Le détail, épisode par épisode',
   'traj.warning': 'contient un jugement sur les saisons suivantes',
   'traj.episodeByEpisode': 'Épisode par épisode',
   'traj.clickHint': 'Cliquez un épisode pour dire où vous en êtes, ou le noter.',

@@ -104,6 +104,22 @@ export function TrajectorySection({
   const showsMine = ready && redacted !== undefined && redacted.trajectory.scores.length >= 2;
   const hidden = redacted?.hiddenSeasons ?? 0;
 
+  /**
+   * 🔴 Le spectateur a tout vu : la carte personnelle EST la trajectoire complete.
+   *
+   * `hiddenSeasons === 0` veut dire que `visibleScores` n'a rien filtre, donc que les
+   * deux `TrajectoryChart` recoivent **le meme tableau de notes** — ce n'est pas une
+   * ressemblance, c'est une egalite prouvee par `redactTrajectory`. Mesure au navigateur
+   * le 2026-08-16 sur `/fr/serie/1396` avec un journal a jour : le meme dessin a
+   * `y=1094` puis `y=1465`, et le meme couple pic/creux a 371 px d'ecart.
+   *
+   * L'avertissement etait pire que la repetition : le depliant promettait « un jugement
+   * sur les saisons suivantes » a quelqu'un qui n'en a plus aucune devant lui. Un
+   * avertissement pose la ou il n'y a rien a proteger apprend au lecteur a ne plus le
+   * croire — et le spoiler est l'un des trois silences que le `CLAUDE.md` garde.
+   */
+  const coversEverything = showsMine && hidden === 0;
+
   return (
     <section aria-label={t('traj.aria')}>
       <h2 className="sr-only">{t('traj.srTitle')}</h2>
@@ -169,9 +185,15 @@ export function TrajectorySection({
       <details className="group panel">
         <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium marker:content-none">
           <span className="group-open:hidden">
-            {hidden > 0 ? t('traj.seeMore') : t('traj.seeAll')}
+            {hidden > 0
+              ? t('traj.seeMore')
+              : coversEverything
+                ? t('traj.seeDetail')
+                : t('traj.seeAll')}
           </span>
-          <span className="hidden group-open:inline">{t('traj.srTitle')}</span>
+          <span className="hidden group-open:inline">
+            {coversEverything ? t('traj.seeDetail') : t('traj.srTitle')}
+          </span>
           {/* 🔴 **Les deux libelles etaient colles, et pas seulement a l'oeil.** Releve au
               navigateur le 2026-08-12 en lisant le texte rendu : « Voir la trajectoire saison
               par saisoncontient un jugement sur les saisons suivantes ». `ml-2` est une marge,
@@ -179,17 +201,21 @@ export function TrajectorySection({
               jamais eu d'espace, et c'est ce que lit un lecteur d'ecran. Le tiret cadratin
               repare les deux d'un coup — il pose l'espace qui manquait et il empeche l'aparte
               de se lire comme la suite de la phrase. */}
-          <span className="ml-2 font-normal text-(--color-muted)">— {t('traj.warning')}</span>
+          {coversEverything ? null : (
+            <span className="ml-2 font-normal text-(--color-muted)">— {t('traj.warning')}</span>
+          )}
         </summary>
 
         <div className="border-t border-(--color-edge) px-4 py-5">
           {/* `interpret={false}` : on montre la courbe, le pic et le decrochage — des
               faits — mais ni « forme » ni « constance », qui sont des jugements
               normalises sur une echelle que les notes de foule n'occupent pas. */}
-          <TrajectoryChart trajectory={trajectory} interpret={false} locale={locale} />
+          {coversEverything ? null : (
+            <TrajectoryChart trajectory={trajectory} interpret={false} locale={locale} />
+          )}
 
           {grid.length > 0 ? (
-            <div className="mt-6 border-t border-(--color-edge) pt-5">
+            <div className={coversEverything ? '' : 'mt-6 border-t border-(--color-edge) pt-5'}>
               <h3 className="card-title mb-3">{t('traj.episodeByEpisode')}</h3>
               <p className="mb-3 meta-sm">{t('traj.clickHint')}</p>
               <EpisodeGrid seriesId={seriesId} seasons={grid} />

@@ -991,6 +991,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'traj.hidden.other': '{n} seasons beyond your position are not shown.',
   'traj.seeMore': 'See the rest of the trajectory',
   'traj.seeAll': 'See the season-by-season trajectory',
+  'traj.seeDetail': 'The detail, episode by episode',
   'traj.warning': 'contains a judgement on later seasons',
   'traj.episodeByEpisode': 'Episode by episode',
   'traj.clickHint': 'Click an episode to say where you are, or to rate it.',

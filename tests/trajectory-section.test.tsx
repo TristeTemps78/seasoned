@@ -139,3 +139,59 @@ describe('TrajectorySection — la saison en cours suit la regle de spoiler', ()
     expect(note.textContent).toContain('1,6 sous la moyenne');
   });
 });
+
+/**
+ * 🔴 Mesure au navigateur le 2026-08-16, `/fr/serie/1396` avec un journal a jour : le
+ * meme dessin rendu deux fois, a `y=1094` et `y=1465`, avec le meme couple pic/creux.
+ *
+ * Ce n'est pas une ressemblance : `hiddenSeasons === 0` signifie que `visibleScores`
+ * n'a rien filtre, donc que les deux graphiques recoivent le meme tableau. Le compte de
+ * `chart.aria` est ce qui le prouve — un test sur le texte aurait ete vert avec deux
+ * courbes identiques empilees, puisque le texte attendu s'y trouve bien... deux fois.
+ */
+function charts(): number {
+  return document.querySelectorAll('ol[aria-label="Note par saison"]').length;
+}
+
+describe('TrajectorySection — la courbe ne se dessine pas deux fois', () => {
+  it('ne repete ni le dessin ni l’avertissement quand tout est vu', async () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      serializeJournal(setPosition(EMPTY_JOURNAL, 'tmdb:1396', 5, 16)),
+    );
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Jusqu’où vous en êtes/)).toBeDefined();
+      expect(charts()).toBe(1);
+    });
+    // L'avertissement promettait un spoiler sur des saisons qui n'existent plus devant
+    // ce lecteur-la. Un avertissement pose a vide s'apprend a ignorer.
+    expect(screen.queryByText(/jugement sur les saisons suivantes/)).toBeNull();
+    // Deux occurrences, et c'est le patron du depliant : un libelle pour l'etat ferme,
+    // un pour l'etat ouvert, l'autre etant masque par `group-open`.
+    expect(screen.getAllByText(/Le détail, épisode par épisode/)).toHaveLength(2);
+  });
+
+  it('garde les deux, et l’avertissement, quand il reste des saisons devant', async () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      serializeJournal(setPosition(EMPTY_JOURNAL, 'tmdb:1396', 3, 4)),
+    );
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Jusqu’où vous en êtes/)).toBeDefined();
+      expect(charts()).toBe(2);
+    });
+    expect(screen.getByText(/jugement sur les saisons suivantes/)).toBeDefined();
+    expect(screen.getByText(/Voir la suite de la trajectoire/)).toBeDefined();
+  });
+
+  it('n’en dessine qu’une, complete, faute de position', () => {
+    // Personne ne s'est declare : il n'y a pas de courbe personnelle a repeter.
+    renderSection();
+    expect(charts()).toBe(1);
+    expect(screen.getByText(/jugement sur les saisons suivantes/)).toBeDefined();
+  });
+});
