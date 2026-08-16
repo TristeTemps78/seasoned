@@ -26,6 +26,16 @@ import type { Locale } from '@/lib/i18n';
  *
  * - **La recherche** est partout. En faire une face ajouterait un clic a l'action la plus
  *   frequente du produit.
+ *
+ *   🔴 **Cette phrase etait fausse quand elle a ete ecrite, et l'est restee des mois.**
+ *   Compte le 2026-08-16 : `SearchForm` etait monte sur **trois routes sur dix-huit** —
+ *   l'accueil, `/recherche` et la 404. Depuis une fiche serie, `/moi`, `/calendrier`,
+ *   `/bilan`, `/amis` ou `/listes`, chercher demandait de revenir a l'accueil. L'argument
+ *   qui ecarte un onglet reposait donc sur un fait qui n'existait pas.
+ *
+ *   Elle est vraie depuis que l'en-tete porte la recherche sur toutes les pages (voir
+ *   `SiteChrome`). C'est le meme genre de defaut que le titre des critiques qui annoncait
+ *   un filtre inexistant : **une justification se rememore avec ce qu'elle invoque**.
  * - **`/convertir`** est une porte d'entree indexable, pas une piece : sa valeur entiere
  *   est d'etre trouvee depuis un moteur par les orphelins de TV Time. Dans une barre, elle
  *   occuperait une place pour un geste qu'on fait une fois dans sa vie.

@@ -9,6 +9,7 @@ import { checkList, uniqueSlug, type ListRejection } from '@/src/domain/lists';
 import {
   ALL_LIST_SORTS,
   DEFAULT_LIST_SORT,
+  isListSort,
   orderLists,
   type ListSort,
 } from '@/src/domain/list-order';
@@ -317,7 +318,12 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
           id="lists-sort"
           label={t('browse.sort')}
           value={sort}
-          onChange={(value) => setSort(value as ListSort)}
+          /* ⚠️ `isListSort` et non `value as ListSort` : `Menu` rend une `string`, et une
+             assertion de type est une **affirmation**, pas une verification — elle laisserait
+             entrer n'importe quoi si les options et le type divergeaient un jour. La garde
+             coute une comparaison, et elle donne enfin un appelant a une fonction que l'audit
+             de ce jour a trouvee ecrite, testee, et invoquee nulle part. */
+          onChange={(value) => setSort(isListSort(value) ? value : DEFAULT_LIST_SORT)}
           options={ALL_LIST_SORTS.map((option) => ({
             value: option,
             label: t(`lists.sort.${option}`),
