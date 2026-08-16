@@ -1012,10 +1012,14 @@ begin
   -- forme (lot 10.0, 017, la carte des abandons).
 
   -- 53 — La forme exacte que le client emet, `ignore-duplicates` compris.
+  --
+  -- ⚠️ Le slug prend un TIRET et pas un souligne. `007` borne `lists.slug` a
+  -- `^[a-z0-9][a-z0-9-]{0,58}[a-z0-9]$` ; `tag || '_l20'` violait ce check, et les trois
+  -- scenarios de 020 mesuraient donc cette faute-la et non 020. Voir la note des 54/55.
   begin
-    insert into public.lists (user_id, slug, title) values (a, tag || '_l20', 'Liste 020');
+    insert into public.lists (user_id, slug, title) values (a, tag || '-l20', 'Liste 020');
     insert into public.list_items (user_id, slug, subject, title, poster_path)
-    values (a, tag || '_l20', tag || '_s20', 'Breaking Bad', '/abc.jpg')
+    values (a, tag || '-l20', tag || '_s20', 'Breaking Bad', '/abc.jpg')
     on conflict do nothing;
     obtenu := 'ok';
   exception when others then
@@ -1028,14 +1032,21 @@ begin
 
   -- 54 — La borne de longueur mord, comme en 018 : premieres colonnes de texte libre de
   --      cette table.
+  --
+  -- ⚠️ **Ces deux-la attendent `23514`, pas « refusee ».** Un scenario qui range TOUTE
+  -- exception sous « refusee » est vert quand la colonne n'existe pas (42703), quand la
+  -- table n'existe pas (42P01), ou quand un insert d'amont a echoue pour une raison sans
+  -- rapport — c'est exactement ce qui est arrive ici : le slug etait invalide, `lists`
+  -- refusait, et ces deux bornes de 020 n'avaient JAMAIS ete exercees tout en etant vertes.
+  -- Nommer le sqlstate attendu rend ce faux vert impossible.
   begin
     insert into public.list_items (user_id, slug, subject, title)
-    values (a, tag || '_l20', tag || '_s21', repeat('x', 201));
+    values (a, tag || '-l20', tag || '_s21', repeat('x', 201));
     obtenu := 'acceptee';
   exception when others then
-    obtenu := 'refusee';
+    obtenu := sqlstate;
   end;
-  n := n + 1; attendu := 'refusee';
+  n := n + 1; attendu := '23514';
   rapport := rapport || format(E'  %s  %s. un titre de liste de plus de 200 caracteres est refuse (020)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
@@ -1046,12 +1057,12 @@ begin
   --      vue par des gens qui ne suivent meme pas son auteur.
   begin
     insert into public.list_items (user_id, slug, subject, poster_path)
-    values (a, tag || '_l20', tag || '_s22', 'https://pisteur.example/x.jpg');
+    values (a, tag || '-l20', tag || '_s22', 'https://pisteur.example/x.jpg');
     obtenu := 'acceptee';
   exception when others then
-    obtenu := 'refusee';
+    obtenu := sqlstate;
   end;
-  n := n + 1; attendu := 'refusee';
+  n := n + 1; attendu := '23514';
   rapport := rapport || format(E'  %s  %s. une URL absolue en affiche de liste est refusee (020)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
@@ -1109,22 +1120,24 @@ begin
     values (a, 3, 'tmdb:1400', 'https://pisteur.example/x.jpg');
     obtenu := 'acceptee';
   exception when others then
-    obtenu := 'refusee';
+    obtenu := sqlstate;
   end;
-  n := n + 1; attendu := 'refusee';
+  n := n + 1; attendu := '23514';
   rapport := rapport || format(E'  %s  %s. une URL absolue en affiche epinglee est refusee (021)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- 59 — Et la cinquieme n'existe pas : la borne est dans la cle, pas dans un client.
+  --      Meme raison qu'en 54/55 de nommer le sqlstate : tant que 021 n'est pas applique,
+  --      la table est absente (42P01) et « refusee » aurait rendu ce scenario vert.
   begin
     insert into public.profile_favorites (user_id, ordinal, subject)
     values (a, 5, 'tmdb:1401');
     obtenu := 'acceptee';
   exception when others then
-    obtenu := 'refusee';
+    obtenu := sqlstate;
   end;
-  n := n + 1; attendu := 'refusee';
+  n := n + 1; attendu := '23514';
   rapport := rapport || format(E'  %s  %s. une cinquieme epinglee est refusee par la base (021)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
