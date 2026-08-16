@@ -493,6 +493,80 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
+  -- 22 bis — 🔴 **LE MEME PIEGE QUE LE `DELETE`, SUR LE CHEMIN QUE LE CLIENT EMPRUNTE.**
+  --
+  -- Constate en production le 2026-08-16, connecte, a **chaque** chargement de page :
+  --
+  --   POST /rest/v1/stops → 403
+  --   {"code":"42501","message":"new row violates row-level security policy for table \\"stops\\""}
+  --
+  -- Le scenario 22 juste au-dessus passe, et il passe pour une bonne raison : c'est un
+  -- `INSERT` nu. Or `publishStops` envoie `Prefer: resolution=merge-duplicates`, que
+  -- PostgREST traduit en `ON CONFLICT … DO UPDATE`. Des qu'une ligne existe deja — c'est-a-
+  -- dire des la deuxieme publication —, le chemin `UPDATE` s'active, et **il doit lire la
+  -- ligne en conflit**. Cette table n'ayant aucune politique `select`, il ne la lit pas.
+  --
+  -- C'est exactement le piege du scenario 28, sur une autre commande. Le depot l'avait
+  -- trouve pour `DELETE` et ecrit noir sur blanc ; personne ne l'a cherche pour l'upsert,
+  -- parce qu'aucun scenario ne rejouait la **forme** que le client envoie. Et le silence est
+  -- le meme qu'en 10.0 : `publishStops` rend `response.ok`, donc `false`, que personne
+  -- n'affiche — la carte des abandons ne recevait plus rien sans que rien ne le dise.
+  -- (a) La forme que le client envoyait : refusee. C'est le defaut, ancre pour qu'on ne la
+  --     reintroduise pas le jour ou elle « parait plus simple » — meme raison que le 28.
+  begin
+    insert into public.stops (user_id, subject, reached_season, left_at_season)
+    values (a, tag || '_own', 5, 5)
+    on conflict (user_id, subject) do update
+      set reached_season = excluded.reached_season,
+          left_at_season = excluded.left_at_season;
+    obtenu := 'acceptee';
+  exception when insufficient_privilege then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. un upsert direct sur stops est refuse, faute de politique select (016)  [attendu %s, obtenu %s]
+',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- (b) La forme qui la remplace (019) : la meme republication, par la porte etroite. Elle
+  --     doit passer, et rendre le nombre de lignes ecrites — sans quoi le retrait resterait
+  --     une promesse inverifiable, exactement comme pour `forget_stops`.
+  begin
+    select public.publish_stops(
+             jsonb_build_array(
+               jsonb_build_object('subject', tag || '_own', 'reached_season', 5, 'left_at_season', 5)
+             ))::text
+      into obtenu;
+  exception when undefined_function then
+    obtenu := 'fonction absente — appliquer 019 par npm run db:push';
+  end;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. publish_stops republie la ligne de A (019)  [attendu %s, obtenu %s]
+',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- (c) …et jamais celle de quelqu'un d'autre. `security definer` contourne RLS : c'est
+  --     `auth.uid()`, impose cote fonction, qui tranche — le `user_id` du client n'est meme
+  --     pas lu. Sans cette ligne, la porte etroite serait une porte ouverte.
+  begin
+    perform public.publish_stops(
+              jsonb_build_array(
+                jsonb_build_object('user_id', b::text, 'subject', tag || '_vol', 'reached_season', 2)
+              ));
+    perform set_config('role', 'postgres', true);
+    select count(*)::text into obtenu from public.stops where subject = tag || '_vol' and user_id = b;
+    perform set_config('role', 'authenticated', true);
+  exception when undefined_function then
+    obtenu := 'fonction absente';
+  end;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. publish_stops ignore le user_id envoye par le client (019)  [attendu %s, obtenu %s]
+',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
   -- 23 — 🔴 **LE scenario de ce lot.** La table n'a AUCUNE politique `select` : A ne relit
   --      pas meme la ligne qu'il vient d'ecrire. C'est la garantie d'anonymat elle-meme, et
   --      c'est la seule chose ici qu'aucun test ne peut prouver — ils doublent `fetch`.

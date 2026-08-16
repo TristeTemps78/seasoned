@@ -797,23 +797,29 @@ export class SocialClient {
    */
   async publishStops(userId: string, records: readonly StopRecord[]): Promise<boolean> {
     if (records.length === 0) return true;
+    // `userId` reste dans la signature et n'est plus transmis : c'est `auth.uid()`, cote
+    // fonction, qui decide desormais du proprietaire. Le retirer de l'appelant ferait croire
+    // qu'on peut publier sans savoir pour qui.
+    void userId;
     try {
-      const response = await this.#fetch(this.#url('stops'), {
+      const response = await this.#fetch(this.#url('rpc/publish_stops'), {
         method: 'POST',
-        headers: this.#headers({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
-        body: JSON.stringify(
-          records.map((record) => ({
-            user_id: userId,
+        headers: this.#headers({ Prefer: 'return=minimal' }),
+        body: JSON.stringify({
+          records: records.map((record) => ({
+            // ⚠️ `user_id` n'est plus envoye : la fonction impose `auth.uid()`. Le laisser
+            // ici donnerait un champ que le serveur ignore, donc une fausse piste au
+            // prochain qui lira ce code en cherchant qui decide du proprietaire.
             subject: record.subject,
             reached_season: record.reachedSeason,
             left_at_season: record.leftAtSeason ?? null,
           })),
-        ),
+        }),
       });
-      if (!response.ok) this.#failed('stops', response.status);
+      if (!response.ok) this.#failed('rpc/publish_stops', response.status);
       return response.ok;
     } catch {
-      this.#failed('stops');
+      this.#failed('rpc/publish_stops');
       return false;
     }
   }

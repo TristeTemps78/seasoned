@@ -69,12 +69,8 @@ const CAS = [
         { kind: 'rated_season', subject: 'tmdb:1396', season: 1, stars: 4, happenedOn: '2026-08-11' },
       ]),
   },
-  {
-    quoi: 'contribuer a la carte — la saison atteinte peut changer',
-    table: 'stops',
-    attendu: 'merge-duplicates',
-    geste: (c: SocialClient) => c.publishStops('moi', [{ subject: 'tmdb:1396', reachedSeason: 3 }]),
-  },
+  // 🔴 **`stops` a quitte cette table le 2026-08-16, et c'est la lecon du jour.** Voir le
+  //     scenario dedie plus bas : cette table ne peut PAS recevoir d'upsert PostgREST.
 ] as const;
 
 describe('la resolution se choisit sur le contenu de la ligne', () => {
@@ -94,10 +90,65 @@ describe('la resolution se choisit sur le contenu de la ligne', () => {
    * en base. Une ecriture qui le demande sans que la table l'accorde est le defaut du
    * 2026-08-11, et il est invisible cote client.
    */
-  it('seules activity et stops demandent merge-duplicates, et les deux ont une politique UPDATE', () => {
+  it('seule activity demande merge-duplicates, et sa table a une politique UPDATE', () => {
     const avecCharge = CAS.filter((c) => c.attendu === 'merge-duplicates').map((c) => c.table);
 
-    expect([...avecCharge].sort()).toEqual(['activity', 'stops']);
+    expect([...avecCharge].sort()).toEqual(['activity']);
+  });
+});
+
+/**
+ * 🔴 **`merge-duplicates` implique aussi une politique `SELECT`, et cette phrase manquait.**
+ *
+ * Le garde ci-dessus disait « une politique `UPDATE` », et c'etait vrai a moitie. Mesure en
+ * production le 2026-08-16, connecte, a chaque chargement de page :
+ *
+ *     POST /rest/v1/stops → 403
+ *     42501 — new row violates row-level security policy for table "stops"
+ *
+ * PostgREST traduit `merge-duplicates` en `ON CONFLICT … DO UPDATE`, et ce chemin doit
+ * **lire** la ligne en conflit. `016_stops.sql` decide de ne donner aucune politique `select`
+ * a cette table — c'est la fonctionnalite meme, chaque ligne y est l'information a proteger.
+ * L'upsert etait donc refuse des la deuxieme publication, en silence, depuis le lot 11.
+ *
+ * ⚠️ C'est **exactement** le piege que le meme fichier documente pour `DELETE` (« decider
+ * quoi effacer demande de lire »), sur une autre commande. Il avait ete trouve une fois et
+ * pas cherche ailleurs. La reponse est la meme : une porte `security definer`
+ * (`publish_stops`, 019), comme `forget_stops` pour l'effacement.
+ *
+ * Reproduit contre la vraie base, en transaction annulee — voir le scenario 31 de
+ * `rls-scenarios.sql`.
+ */
+describe('une table sans politique select ne recoit ni upsert ni delete filtre', () => {
+  it('publier un point d arret passe par la fonction, jamais par la table', async () => {
+    const { sent, fetchImpl } = capturing();
+
+    await new SocialClient({
+      url: 'https://exemple.test',
+      anonKey: 'cle',
+      accessToken: () => 'jeton',
+      fetchImpl,
+    }).publishStops('moi', [{ subject: 'tmdb:1396', reachedSeason: 3 }]);
+
+    const urls = sent.map((one) => one.url);
+    expect(urls.some((u) => u.includes('rpc/publish_stops'))).toBe(true);
+    expect(
+      urls.some((u) => /\/stops(\?|$)/.test(u)),
+      'un POST direct sur `stops` est refuse en 42501 des la deuxieme publication',
+    ).toBe(false);
+  });
+
+  it('oublier ses points d arret passe aussi par une fonction', async () => {
+    const { sent, fetchImpl } = capturing();
+
+    await new SocialClient({
+      url: 'https://exemple.test',
+      anonKey: 'cle',
+      accessToken: () => 'jeton',
+      fetchImpl,
+    }).forgetStops();
+
+    expect(sent.map((one) => one.url).some((u) => u.includes('rpc/forget_stops'))).toBe(true);
   });
 });
 
