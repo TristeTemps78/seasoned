@@ -41,6 +41,7 @@ import { WatchOptions } from '@/app/components/WatchOptions';
 import { SeriesOrderings } from '@/app/components/SeriesOrderings';
 import { MyProgress } from '@/app/components/MyProgress';
 import { Cast } from '@/app/components/Cast';
+import { ProductionDetails } from '@/app/components/ProductionDetails';
 import { Reviews } from '@/app/components/Reviews';
 import { SeriesPeople } from '@/app/components/SeriesPeople';
 import { AddToList } from '@/app/components/AddToList';
@@ -631,6 +632,20 @@ export async function SeriesView({ id, locale }: {
           1 fr les reduirait a trois vignettes. */}
       <div className="section-rule space-y-10">
         <Cast cast={detail.cast ?? []} locale={locale} />
+        {/* 🔴 F6 : la fiche montrait douze visages et rien de ce qui fabrique la serie — ni
+            equipe, ni genres, ni pays, ni langue, ni chaine. Les cinq arrivaient **deja**
+            dans la reponse (`aggregate_credits.crew`, puis `/tv/{id}`), jetes au parsing.
+            Sous le generique : on regarde qui joue, puis qui fabrique. */}
+        <ProductionDetails
+          crew={detail.crew ?? []}
+          genres={detail.genres ?? []}
+          networks={detail.networks ?? []}
+          originCountries={detail.originCountries ?? []}
+          {...(detail.originalLanguage !== undefined
+            ? { originalLanguage: detail.originalLanguage }
+            : {})}
+          locale={locale}
+        />
         <AlsoByCreators detail={detail} locale={locale} />
       </div>
     </article>

@@ -14,6 +14,7 @@
 
 import type {
   CastMember,
+  CrewMember,
   CatalogProvider,
   BrowseGenre,
   BrowseQuery,
@@ -218,6 +219,145 @@ const CAST_KEPT = 12;
  * un principal, et c'est celui que TMDB place en tete. Les concatener rendrait « Untel /
  * Untel / Untel » sous un visage de 80 px.
  */
+/**
+ * Le nombre de postes retenus.
+ *
+ * Huit et non douze : un generique technique se lit en une colonne de noms, pas en grille de
+ * visages, et au-dela de huit lignes il devient un annuaire.
+ */
+const CREW_KEPT = 8;
+
+/**
+ * Quels postes meritent la fiche, et dans quel ordre.
+ *
+ * ## 🔴 Ce que la mesure a dementi, le 2026-08-16
+ *
+ * La premiere version de ce fichier prenait **les huit premiers de `crew`**, en affirmant en
+ * commentaire que *« TMDB ordonne `crew` par departement puis par importance »*. Mesure au
+ * navigateur sur `/fr/serie/1396`, aussitot apres :
+ *
+ *     Mark Hansen        Property Master
+ *     Bjarne Sletteland  Art Direction
+ *     Mark S. Freeborn   Production Design
+ *     Paula Dal Santo    Assistant Art Director
+ *
+ * Huit lignes du departement decoration, et **Vince Gilligan nulle part** — le createur de la
+ * serie. L'ordre de `aggregate_credits.crew` n'a aucune propriete utile : c'est un ordre de
+ * base de donnees, pas un classement.
+ *
+ * ⚠️ **L'affirmation etait ecrite dans un commentaire, ce qui la rendait credible sans la
+ * rendre vraie.** C'est le neuvieme cas de ce depot, et le meme que `episode_run_time` — une
+ * fixture ou une intuition tenait lieu de mesure. Rien dans les tests ne pouvait le voir : ils
+ * verifiaient la *forme* (`jobs[]` et non `job`), qui etait juste.
+ *
+ * Le bareme ci-dessous est donc un **choix de produit assume** : qui fabrique une serie, du
+ * point de vue de quelqu'un qui se demande s'il va la regarder. Un poste hors de cette table
+ * n'est pas affiche — le chef decorateur d'une serie est un vrai metier, ce n'est simplement
+ * pas ce qu'on cherche sur une fiche.
+ */
+const CREW_RANK: Readonly<Record<string, number>> = {
+  creator: 0,
+  'series creator': 0,
+  showrunner: 1,
+  'executive producer': 2,
+  'co-executive producer': 3,
+  producer: 4,
+  director: 5,
+  writer: 6,
+  screenplay: 7,
+  'original music composer': 8,
+  'director of photography': 9,
+  editor: 10,
+  'characters': 11,
+  novel: 11,
+};
+
+/** Le poste le mieux classe d'une personne, avec son rang. `undefined` = hors bareme. */
+function bestJob(jobs: readonly unknown[]): { readonly job: string; readonly rank: number } | undefined {
+  let best: { job: string; rank: number } | undefined;
+  for (const raw of jobs) {
+    const job = readString(asRecord(raw), 'job');
+    if (job === undefined) continue;
+    const rank = CREW_RANK[job.toLowerCase()];
+    if (rank === undefined) continue;
+    if (best === undefined || rank < best.rank) best = { job, rank };
+  }
+  return best;
+}
+
+/**
+ * Le generique technique, depuis `aggregate_credits.crew`.
+ *
+ * 🔴 **Il etait dans la reponse depuis le jour ou `aggregate_credits` a ete demande**, a cote
+ * de `cast`, et rien ne le lisait. La fiche montrait douze visages et rien de ce qui fabrique
+ * une serie — alors que sur un feuilleton, le showrunner en dit plus long que le sixieme role.
+ *
+ * ⚠️ **La forme agregee differe de `credits`** : le poste vit sous `jobs[]` et non dans un
+ * champ `job`, exactement comme le personnage vit sous `roles[]` pour le cast. C'est le piege
+ * de cet endpoint, et il se paie par un champ silencieusement absent.
+ *
+ * ⚠️ **Dedoublonne par personne** : quelqu'un credite scenariste *et* producteur delegue
+ * remonte deux lignes, et deux fois le meme nom dans une liste de huit en gaspille deux.
+ * On garde le premier poste, celui que TMDB place en tete.
+ */
+function readCrew(source: Record<string, unknown>): readonly CrewMember[] {
+  const credits = asRecord(source['aggregate_credits']);
+  const seen = new Map<string, { readonly member: CrewMember; readonly rank: number }>();
+
+  for (const raw of asArray(credits['crew'])) {
+    const person = asRecord(raw);
+    const id = readNumber(person, 'id');
+    const name = readString(person, 'name');
+    if (id === undefined || name === undefined) continue;
+
+    const best = bestJob(asArray(person['jobs']));
+    // Hors bareme : le poste existe, il n'a pas sa place sur une fiche serie. Voir CREW_RANK.
+    if (best === undefined) continue;
+
+    const providerId = String(id);
+    // ⚠️ **On garde le MIEUX classe, pas le premier rencontre.** Quelqu'un credite
+    // « Producer » puis « Creator » doit apparaitre comme createur : sans cette comparaison,
+    // l'ordre de la reponse — dont on vient d'etablir qu'il ne veut rien dire — deciderait.
+    const known = seen.get(providerId);
+    if (known !== undefined && known.rank <= best.rank) continue;
+
+    const profilePath = readString(person, 'profile_path');
+    seen.set(providerId, {
+      rank: best.rank,
+      member: {
+        providerId,
+        name,
+        job: best.job,
+        ...(profilePath !== undefined ? { profilePath } : {}),
+      },
+    });
+  }
+
+  return [...seen.values()]
+    // ⚠️ Tri **stable** sur le rang : a poste egal, l'ordre de TMDB est conserve, faute de
+    // mieux. `toSorted` de V8 est stable, donc deux producteurs delegues restent dans l'ordre
+    // ou la reponse les donnait.
+    .toSorted((a, b) => a.rank - b.rank)
+    .slice(0, CREW_KEPT)
+    .map((one) => one.member);
+}
+
+/**
+ * Les `name` d'une liste d'objets TMDB — genres, chaines, societes.
+ *
+ * ⚠️ Une seule fonction pour les trois : la forme `[{ id, name }]` est la meme, et trois
+ * copies de cette boucle finiraient par filtrer differemment. Les entrees sans nom sont
+ * ecartees plutot que rendues vides — une puce sans texte est un defaut visible.
+ */
+function readNames(source: Record<string, unknown>, key: string): readonly string[] {
+  const out: string[] = [];
+  for (const entry of asArray(source[key])) {
+    const name = readString(asRecord(entry), 'name');
+    if (name !== undefined && name.length > 0 && !out.includes(name)) out.push(name);
+  }
+  return out;
+}
+
 function readCast(source: Record<string, unknown>): readonly CastMember[] {
   const credits = asRecord(source['aggregate_credits']);
   return asArray(credits['cast'])
@@ -351,6 +491,13 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
   const episodeRunTimeMinutes = readRuntime(source);
   const creators = readCreators(source);
   const cast = readCast(source);
+  const crew = readCrew(source);
+  const genres = readNames(source, 'genres');
+  const networks = readNames(source, 'networks');
+  const originCountries = asArray(source['origin_country']).filter(
+    (one): one is string => typeof one === 'string' && one.length > 0,
+  );
+  const originalLanguage = readString(source, 'original_language');
 
   const nextSeason = readNumber(nextEpisode, 'season_number');
   const nextNumber = readNumber(nextEpisode, 'episode_number');
@@ -380,6 +527,14 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
     ...(voteAverage !== undefined && voteAverage > 0 ? { voteAverage } : {}),
     ...(creators.length > 0 ? { creators } : {}),
     ...(cast.length > 0 ? { cast } : {}),
+    // ⚠️ Les cinq suivants arrivaient **deja** dans cette reponse et n'etaient pas lus : le
+    // generique technique sous `aggregate_credits.crew`, les genres, les chaines, le pays et
+    // la langue sous `/tv/{id}`. Zero appel de plus — c'est le fil conducteur du 2026-08-16.
+    ...(crew.length > 0 ? { crew } : {}),
+    ...(genres.length > 0 ? { genres } : {}),
+    ...(networks.length > 0 ? { networks } : {}),
+    ...(originCountries.length > 0 ? { originCountries } : {}),
+    ...(originalLanguage !== undefined ? { originalLanguage } : {}),
     ...(lastAiredAt !== undefined ? { lastAiredAt } : {}),
     ...(nextAiringAt !== undefined ? { nextAiringAt } : {}),
     ...(nextFull !== undefined ? { nextEpisode: nextFull } : {}),

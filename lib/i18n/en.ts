@@ -75,6 +75,13 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'series.trailer': 'Trailer',
   'cast.title': 'On screen',
   'cast.why': 'The main roles, across every season.',
+  // F6 — tout arrivait deja dans la reponse TMDB et n'etait pas lu.
+  'details.title': 'Behind it',
+  'details.why': 'Who makes it, and where it comes from.',
+  'details.genres': 'Genres',
+  'details.network': 'Network',
+  'details.country': 'Country',
+  'details.language': 'Original language',
   'person.unknownTitle':
     'Unknown name',
   'person.description':

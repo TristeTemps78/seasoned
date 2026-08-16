@@ -311,6 +311,130 @@ describe('createurs — le seul maillage interne, et il est factuel', () => {
  * quelqu'un avait joue dans une serie ou l'avait ecrite, alors que TMDB donne `character` et
  * `job` dans la **meme reponse**, jamais lus.
  */
+/**
+ * Le generique technique et les details de production — F6 du releve du 2026-08-16.
+ *
+ * ⚠️ **Tout etait deja dans la reponse et rien ne le lisait.** `aggregate_credits` porte
+ * `crew` a cote de `cast` ; `/tv/{id}` porte `genres`, `networks`, `origin_country` et
+ * `original_language`. La fiche montrait douze visages et rien de ce qui fabrique la serie.
+ */
+describe('generique technique et details de production', () => {
+  it('🔴 lit le poste sous `jobs[]`, la forme AGREGEE — pas sous `job`', () => {
+    // Le piege exact de `aggregate_credits`, et le meme que pour `roles[]` du cast : lire
+    // `job` a plat rendrait un generique sans aucun poste, silencieusement.
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      aggregate_credits: {
+        crew: [{ id: 66633, name: 'Vince Gilligan', jobs: [{ job: 'Executive Producer' }] }],
+      },
+    });
+
+    expect(detail?.crew).toEqual([
+      { providerId: '66633', name: 'Vince Gilligan', job: 'Executive Producer' },
+    ]);
+  });
+
+  it('🔴 classe par POSTE, parce que l ordre de TMDB ne veut rien dire', () => {
+    // ⚠️ **Mesure au navigateur le 2026-08-16, et elle a dementi un commentaire de ce depot.**
+    // La premiere version prenait les huit premiers de `crew` en affirmant que TMDB les
+    // ordonnait par importance. Sur `/fr/serie/1396`, ca rendait huit lignes du departement
+    // decoration — « Property Master », « Assistant Art Director » — et **pas Vince Gilligan**.
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      aggregate_credits: {
+        crew: [
+          { id: 1, name: 'Decor', jobs: [{ job: 'Property Master' }] },
+          { id: 2, name: 'Deco', jobs: [{ job: 'Assistant Art Director' }] },
+          { id: 3, name: 'Gilligan', jobs: [{ job: 'Creator' }] },
+          { id: 4, name: 'Prod', jobs: [{ job: 'Executive Producer' }] },
+        ],
+      },
+    });
+
+    // Le createur en tete, le producteur delegue ensuite, et le departement decoration
+    // **absent** : c'est un vrai metier, ce n'est pas ce qu'on cherche sur une fiche.
+    expect(detail?.crew?.map((c) => c.name)).toEqual(['Gilligan', 'Prod']);
+  });
+
+  it('garde le poste le MIEUX classe d une personne, pas le premier rencontre', () => {
+    // Sans cette comparaison, l'ordre de la reponse — dont on vient d'etablir qu'il ne veut
+    // rien dire — deciderait si quelqu'un s'affiche « Producer » ou « Creator ».
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      aggregate_credits: {
+        crew: [
+          { id: 7, name: 'A', jobs: [{ job: 'Producer' }] },
+          { id: 7, name: 'A', jobs: [{ job: 'Creator' }] },
+        ],
+      },
+    });
+
+    expect(detail?.crew).toHaveLength(1);
+    expect(detail?.crew?.[0]?.job).toBe('Creator');
+  });
+
+  it('borne le generique technique a huit', () => {
+    // Un generique de serie longue depasse la centaine de lignes : sans borne, la fiche
+    // devient un annuaire.
+    const crew = Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      name: `P${i}`,
+      jobs: [{ job: 'Producer' }],
+    }));
+    expect(mapSeriesDetail({ id: 1, name: 'x', aggregate_credits: { crew } })?.crew).toHaveLength(8);
+  });
+
+  it('lit genres, diffuseurs, pays et langue', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      genres: [{ id: 18, name: 'Drame' }, { id: 80, name: 'Crime' }],
+      networks: [{ id: 174, name: 'AMC' }],
+      origin_country: ['US'],
+      original_language: 'en',
+    });
+
+    expect(detail?.genres).toEqual(['Drame', 'Crime']);
+    expect(detail?.networks).toEqual(['AMC']);
+    expect(detail?.originCountries).toEqual(['US']);
+    expect(detail?.originalLanguage).toBe('en');
+  });
+
+  it('omet les champs plutot que de rendre des listes vides', () => {
+    // ⚠️ L'encart se tait quand il n'a rien — un « Détails » vide serait un constat de
+    // lacune. Il faut donc que l'absence soit `undefined`, pas `[]`.
+    const detail = mapSeriesDetail({ id: 1, name: 'x' });
+
+    expect(detail?.crew).toBeUndefined();
+    expect(detail?.genres).toBeUndefined();
+    expect(detail?.networks).toBeUndefined();
+    expect(detail?.originCountries).toBeUndefined();
+    expect(detail?.originalLanguage).toBeUndefined();
+  });
+
+  it('ecarte une entree sans nom sans perdre les autres', () => {
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      genres: [{ id: 18, name: 'Drame' }, { id: 99 }, null, { id: 80, name: '' }],
+      aggregate_credits: {
+        crew: [
+          { id: 1 },
+          { id: 2, name: 'B', jobs: [{ job: 'Writer' }] },
+          // Un poste hors bareme n'est pas une entree cassee : il est ecarte, pas signale.
+          { id: 3, name: 'C', jobs: [{ job: 'Craft Service' }] },
+        ],
+      },
+    });
+
+    expect(detail?.genres).toEqual(['Drame']);
+    expect(detail?.crew?.map((c) => c.name)).toEqual(['B']);
+  });
+});
+
 describe('mapPersonCredits', () => {
   it('🔴 garde la serie des DEUX cotes quand on y a joue ET travaille', () => {
     const credits = mapPersonCredits({

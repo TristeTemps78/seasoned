@@ -239,6 +239,22 @@ export interface CastMember {
   readonly profilePath?: string;
 }
 
+/**
+ * Quelqu'un au generique technique.
+ *
+ * ⚠️ **`job` et non `character`**, et c'est toute la difference avec {@link CastMember} : on
+ * ne joue pas un poste. Deux interfaces plutot qu'une avec deux champs facultatifs — un
+ * `CastMember` sans `character` et un `CrewMember` sans `job` seraient alors le meme type,
+ * et rien n'empecherait d'afficher l'un a la place de l'autre.
+ */
+export interface CrewMember {
+  readonly providerId: string;
+  readonly name: string;
+  /** Le poste : « Executive Producer », « Writer »… Brut, traduit nulle part. */
+  readonly job?: string;
+  readonly profilePath?: string;
+}
+
 /** Fiche complete d'une serie, telle que rendue par un fournisseur. */
 export interface SeriesDetail extends SeriesSummary {
   readonly externalIds: ExternalIds;
@@ -278,6 +294,32 @@ export interface SeriesDetail extends SeriesSummary {
    * pour en afficher douze ferait payer la fiche entiere pour un encart.
    */
   readonly cast?: readonly CastMember[];
+  /**
+   * Le generique **technique** — qui ecrit, realise, produit.
+   *
+   * 🔴 **Il arrivait dans la meme reponse et n'etait pas lu.** `aggregate_credits` porte
+   * `crew` a cote de `cast` ; la fiche montrait douze visages et rien de ce qui fabrique une
+   * serie. Chez la reference, `Crew` est un onglet a part entiere — et pour un feuilleton, le
+   * showrunner en dit plus long que le sixieme role.
+   *
+   * ⚠️ Meme borne et meme raison que {@link cast} : le generique technique d'une serie longue
+   * depasse la centaine de lignes.
+   */
+  readonly crew?: readonly CrewMember[];
+  /**
+   * Les genres, **tels que le fournisseur les nomme dans la langue demandee**.
+   *
+   * ⚠️ Ce ne sont pas les {@link SeriesSummary.kind} : ceux-la sont une nature de programme
+   * calculee (`dominantKind`) pour decider de la vitrine, ceux-ci sont des etiquettes a
+   * lire. Les confondre reviendrait a afficher « scripted » a un lecteur.
+   */
+  readonly genres?: readonly string[];
+  /** Les pays d'origine, en ISO 3166-1 (`US`, `FR`). Traduits a l'affichage, jamais ici. */
+  readonly originCountries?: readonly string[];
+  /** La langue d'origine, en ISO 639-1 (`en`, `ja`). Traduite a l'affichage. */
+  readonly originalLanguage?: string;
+  /** Les chaines ou plateformes de diffusion — le « studio » d'une serie. */
+  readonly networks?: readonly string[];
 
   /**
    * La cle YouTube de la bande-annonce, quand le catalogue en porte une.

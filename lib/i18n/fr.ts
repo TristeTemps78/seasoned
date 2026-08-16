@@ -85,6 +85,13 @@ export const FR = {
   'series.trailer': 'Bande-annonce',
   'cast.title': 'À l’écran',
   'cast.why': 'Les rôles principaux, toutes saisons confondues.',
+  // F6 — tout arrivait déjà dans la réponse TMDB et n'était pas lu.
+  'details.title': 'Derrière',
+  'details.why': 'Qui la fabrique, et d’où elle vient.',
+  'details.genres': 'Genres',
+  'details.network': 'Diffuseur',
+  'details.country': 'Pays',
+  'details.language': 'Langue d’origine',
   'person.unknownTitle':
     'Nom inconnu',
   'person.description':
