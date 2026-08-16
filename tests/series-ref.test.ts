@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveListEntry } from '@/app/components/listEntry';
+import { resolveSeriesRef } from '@/app/components/seriesRef';
 import { EMPTY_JOURNAL, journalKey } from '@/src/domain/journal';
 import type { Journal } from '@/src/domain/journal';
 
@@ -39,7 +39,7 @@ function journalWith(title: string, posterPath?: string): Journal {
 describe('le titre d une serie rangee dans une liste', () => {
   it('🔴 vient de la ligne, meme quand le lecteur ne connait pas la serie', () => {
     // Le cas exact du defaut : journal vide, liste de quelqu'un d'autre.
-    const { title, posterPath } = resolveListEntry(
+    const { title, posterPath } = resolveSeriesRef(
       { subject: BB, title: 'Breaking Bad', posterPath: '/bb.jpg' },
       EMPTY_JOURNAL,
       'Tracked series',
@@ -53,7 +53,7 @@ describe('le titre d une serie rangee dans une liste', () => {
     // Ce n'est pas un detail d'ordre : la ligne porte le titre tel que la personne l'avait
     // sous les yeux en rangeant la serie, et c'est ce qu'une liste montre. Le journal du
     // lecteur peut porter un titre plus recent, ou dans une autre langue.
-    const { title } = resolveListEntry(
+    const { title } = resolveSeriesRef(
       { subject: BB, title: 'Breaking Bad' },
       journalWith('Breaking Bad (2008)'),
       'Tracked series',
@@ -65,7 +65,7 @@ describe('le titre d une serie rangee dans une liste', () => {
   it('retombe sur le journal du lecteur pour le fond d avant 020', () => {
     // `addToList` ecrit en `ignore-duplicates` : les elements ranges avant le 2026-08-16
     // n'ont pas d'instantane et n'en auront jamais. Chez soi, le journal comble.
-    const { title, posterPath } = resolveListEntry(
+    const { title, posterPath } = resolveSeriesRef(
       { subject: BB },
       journalWith('Breaking Bad', '/local.jpg'),
       'Tracked series',
@@ -76,7 +76,7 @@ describe('le titre d une serie rangee dans une liste', () => {
   });
 
   it('ne nomme rien quand personne ne sait', () => {
-    const { title, posterPath } = resolveListEntry({ subject: BB }, EMPTY_JOURNAL, 'Tracked series');
+    const { title, posterPath } = resolveSeriesRef({ subject: BB }, EMPTY_JOURNAL, 'Tracked series');
 
     expect(title).toBe('Tracked series');
     expect(posterPath).toBeUndefined();
@@ -85,7 +85,7 @@ describe('le titre d une serie rangee dans une liste', () => {
   it('le titre et l affiche se replient separement', () => {
     // Une ligne peut porter un titre sans affiche (`poster_path` est nullable), et le
     // lecteur peut avoir l'affiche d'une serie dont la ligne ne porte que le nom.
-    const { title, posterPath } = resolveListEntry(
+    const { title, posterPath } = resolveSeriesRef(
       { subject: BB, title: 'Breaking Bad' },
       journalWith('Autre chose', '/local.jpg'),
       'Tracked series',

@@ -10,7 +10,7 @@
 // fichier, et Next.js exige la meme chose.
 
 import { type Journal } from '@/src/domain/journal';
-import { type ListEntry } from '@/src/social/client';
+import { type SeriesRef } from '@/src/social/client';
 
 /**
  * Sous quel nom et quelle affiche montrer une serie rangee dans une liste.
@@ -39,8 +39,8 @@ import { type ListEntry } from '@/src/social/client';
  * titre sans affiche (`poster_path` est nullable), et le lecteur peut avoir l'affiche d'une
  * serie dont la ligne ne porte rien.
  */
-export function resolveListEntry(
-  entry: ListEntry,
+export function resolveSeriesRef(
+  entry: SeriesRef,
   journal: Journal,
   fallbackTitle: string,
 ): { readonly title: string; readonly posterPath: string | undefined } {

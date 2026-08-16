@@ -21,8 +21,8 @@ import { formatDate } from '@/lib/format';
 import { localeTag } from '@/lib/i18n/engine';
 import { pathIn } from '@/lib/routes';
 import { Menu } from '@/app/components/Menu';
-import { type ListEntry, type SeriesList } from '@/src/social/client';
-import { resolveListEntry } from '@/app/components/listEntry';
+import { type SeriesRef, type SeriesList } from '@/src/social/client';
+import { resolveSeriesRef } from '@/app/components/seriesRef';
 import { socialFrom } from '@/app/social/socialFrom';
 import { AccountGate } from '@/app/components/AccountGate';
 import { EmptyState } from '@/app/components/EmptyState';
@@ -38,17 +38,24 @@ import { PosterChip } from '@/app/components/PosterChip';
  * d'elements et pas l'autre — la mecanique exacte qui a fait diverger `LibraryCard` et
  * `SeriesCard` jusqu'a ce que l'un des deux montre trois rectangles gris.
  *
- * ## ⚠️ Le titre d'une serie n'est PAS dans la liste, et ne peut pas y etre
+ * ## 🔴 « Le titre n'est PAS dans la liste, et ne peut pas y etre » — c'etait ecrit ici
  *
- * `list_items` ne porte qu'une cle de journal (`tmdb:1396`). Y ranger le titre serait
- * stocker durablement une metadonnee TMDB, ce que la regle 1 interdit — le catalogue est
- * loue, pas possede. Le titre vient donc de l'instantane du **lecteur** quand il l'a, et a
- * defaut on affiche le repli deja employe par `LibraryCard`, avec le lien vers la fiche ou
- * le vrai titre vit.
+ * Ce fichier a porte cette phrase jusqu'au 2026-08-16, avec son raisonnement : ranger le
+ * titre dans `list_items` serait stocker de la metadonnee TMDB, donc violer la regle 1 — le
+ * catalogue est loue, pas possede. Le titre venait donc du journal du **lecteur**, avec un
+ * repli pour le reste.
  *
- * C'est le meme arbitrage que `PublicProfile` fait deja pour les critiques. Le cout est
- * visible sur la liste de quelqu'un dont on ne suit aucune serie ; le prix de l'inverse
- * serait une base de metadonnees que le contrat nous interdit de constituer.
+ * ⚠️ **La premisse etait juste et la conclusion fausse**, et `018` avait deja tranche la
+ * meme question dans l'autre sens quatre jours plus tot pour `activity` et `reviews` : un
+ * titre est une donnee **publique du catalogue**, derivable de `subject` par un appel TMDB
+ * anonyme. En garder un **instantane** — ce que la personne avait sous les yeux — n'est pas
+ * constituer une base de metadonnees, c'est dater un geste. La regle 1 interdit de posseder
+ * le catalogue, pas de se souvenir de ce qu'on a range.
+ *
+ * Ce que la doctrine coutait, mesure : sur `/listes`, chaque carte d'une liste qu'on
+ * decouvre annoncait quatre fois « Tracked series » — *une liste qu'on decouvre est faite de
+ * ce qu'on ne connait pas*. Le cout etait donc maximal exactement la ou la fonctionnalite
+ * sert. Voir `020_list_items_titre.sql` et `resolveSeriesRef`.
  */
 /**
  * Ce qu'une liste rangerait — avec de **vraies** series, celles du lecteur.
@@ -129,7 +136,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
   const ordered = useMemo(() => orderLists(lists, sort, localeTag(locale)), [lists, sort, locale]);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<string | undefined>(undefined);
-  const [items, setItems] = useState<Readonly<Record<string, readonly ListEntry[]>>>({});
+  const [items, setItems] = useState<Readonly<Record<string, readonly SeriesRef[]>>>({});
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState<ListRejection | 'failed' | undefined>(undefined);
@@ -395,12 +402,12 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
 
                     ⚠️ L'affiche venait de l'instantane du **lecteur** — donc jamais chez
                     quelqu'un d'autre. Depuis `020` la ligne voyage avec la sienne, et
-                    `resolveListEntry` ne retombe sur le journal que pour le fond d'avant. */}
+                    `resolveSeriesRef` ne retombe sur le journal que pour le fond d'avant. */}
                 {list.preview.length > 0 ? (
                   <ul className="flex flex-wrap gap-2">
                     {list.preview.map((entry) => {
                       const parsed = parseJournalKey(entry.subject);
-                      const { title: seriesTitle, posterPath } = resolveListEntry(
+                      const { title: seriesTitle, posterPath } = resolveSeriesRef(
                         entry,
                         journal,
                         t('library.card.tracked'),
@@ -450,7 +457,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
                     <ul className="space-y-2">
                       {shown.map((entry) => {
                         const parsed = parseJournalKey(entry.subject);
-                        const { title: seriesTitle, posterPath } = resolveListEntry(
+                        const { title: seriesTitle, posterPath } = resolveSeriesRef(
                           entry,
                           journal,
                           t('library.card.tracked'),
@@ -465,7 +472,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
                                 courses. ⚠️ L'affiche venait du seul journal du lecteur : ouvrir
                                 la liste de quelqu'un d'autre rendait autant de monogrammes
                                 qu'elle contient de series qu'on ne suit pas. Depuis `020` elle
-                                voyage avec la ligne — voir `resolveListEntry`. */}
+                                voyage avec la ligne — voir `resolveSeriesRef`. */}
                             <span className="flex min-w-0 items-center gap-3">
                               <PosterChip path={posterPath} title={seriesTitle} />
                               {parsed === undefined ? (

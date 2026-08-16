@@ -438,7 +438,35 @@
    * verticale le ferait flotter par-dessus le reste de la page. C'est le meme seuil que la
    * grille, et il n'y en a qu'un.
    */
-  @media (width >= 64rem) {
+  /**
+   * ## 🔴 Et la hauteur de la fenetre compte autant que sa largeur — mesure du 2026-08-16
+   *
+   * Sur `/serie/1396`, fenetre **1440 x 641** :
+   *
+   *     aside.scrollHeight   745
+   *     aside.clientHeight   563      (= 641 - 7rem)
+   *     → 182 px hors du champ.
+   *
+   * La barre est bien visible — le defaut des 566 px muets est corrige — mais une colonne
+   * collante qui coupe son contenu reste une colonne dont on ne voit pas la fin **sans un
+   * second geste**, et ce second geste n'existe que pour qui devine qu'une boite dans une
+   * page defile.
+   *
+   * ⚠️ La regle est deja ecrite vingt lignes plus haut, elle n'etait simplement pas
+   * appliquee a la hauteur : *« un panneau colle n'a de sens que s'il tient dans l'ecran »*.
+   * Elle avait servi a retirer `sticky` d'un coup, puis a le remettre avec une barre
+   * visible ; la troisieme lecture est la bonne — **coller quand ca tient, defiler avec la
+   * page quand ca ne tient pas**.
+   *
+   * 54 rem (864 px) : le seuil ou `calc(100vh - 7rem)` depasse les 745 px mesures. En
+   * dessous, la colonne redevient un bloc ordinaire et **tout** son contenu s'atteint par le
+   * defilement de la page — on perd « toujours sous les yeux », on gagne « entier ».
+   *
+   * ⚠️ Le seuil ne peut pas etre exact et il ne pretend pas l'etre : une serie a douze
+   * saisons rend une colonne plus haute qu'une serie a deux. C'est pourquoi `overflow-y` et
+   * sa barre **restent** au-dessus du seuil — le filet, pas le mecanisme.
+   */
+  @media (width >= 64rem) and (height >= 54rem) {
     .series-aside {
       position: sticky;
       /* La hauteur de l'en-tete colle, plus l'air qui la separe du contenu. */

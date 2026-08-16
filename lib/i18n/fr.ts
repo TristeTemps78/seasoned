@@ -681,6 +681,11 @@ export const FR = {
   // ⚠️ Aucun code, aucun chemin PostgREST : « 42501 » n'apprend rien à qui vient de cliquer.
   // La phrase dit ce qui s'est passé et ce qu'on peut faire — toutes les écritures de ce
   // produit sont idempotentes, donc « recommencez » est vrai.
+  // Les quatre épinglées, sur un profil public — voir `021_profile_favorites.sql`.
+  'profile.pinned': 'Ce qu’il ou elle garde épinglé',
+  'profile.pinned.none': 'Vous n’avez encore rien épinglé.',
+  'profile.pinned.where': 'Épingler quatre séries depuis votre bibliothèque',
+
   // Le profil, sur « Mon compte » — voir `ProfileSettings`.
   'account.profile.title': 'Mon profil ici',
   'account.profile.youAre': 'Vous êtes',

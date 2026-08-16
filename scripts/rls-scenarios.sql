@@ -1057,6 +1057,79 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- 021 — les quatre epinglees arrivent sur le profil
+  -- ---------------------------------------------------------------------------
+  --
+  -- 🔴 « Pin to profile » epinglait dans le journal, donc dans le navigateur : `<Favorites />`
+  -- n'etait monte que sur `/moi`, et personne d'autre ne voyait jamais les quatre series.
+  --
+  -- ⚠️ **Le scenario 57 est le seul qui compte vraiment.** `publishFavorites` reecrit un
+  -- ETAT : il envoie les quatre lignes en `merge-duplicates` sur `(user_id, ordinal)`, donc
+  -- il emprunte le chemin `UPDATE` des la deuxieme publication. Une table sans politique
+  -- `UPDATE` y rend **42501 en silence** — c'est exactement ce qui a coute quatre ecritures
+  -- sur cinq le 2026-08-11, et la carte des abandons pendant onze lots. La politique existe
+  -- en 021 ; ce scenario est ce qui prouve qu'elle est la bonne.
+
+  -- 56 — La forme exacte que le client emet la premiere fois.
+  begin
+    insert into public.profile_favorites (user_id, ordinal, subject, title, poster_path)
+    values (a, 1, 'tmdb:1396', 'Breaking Bad', '/abc.jpg'),
+           (a, 2, 'tmdb:1399', 'Game of Thrones', null)
+    on conflict (user_id, ordinal) do update
+      set subject = excluded.subject, title = excluded.title, poster_path = excluded.poster_path;
+    obtenu := 'ok';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'ok';
+  rapport := rapport || format(E'  %s  %s. quatre epinglees s ecrivent avec leur instantane (021)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 57 — 🔴 Reordonner : le meme rang, une autre serie. C'est le chemin `UPDATE`.
+  begin
+    insert into public.profile_favorites (user_id, ordinal, subject, title)
+    values (a, 1, 'tmdb:94997', 'House of the Dragon')
+    on conflict (user_id, ordinal) do update
+      set subject = excluded.subject, title = excluded.title;
+
+    select subject into obtenu from public.profile_favorites where user_id = a and ordinal = 1;
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'tmdb:94997';
+  rapport := rapport || format(E'  %s  %s. reordonner ses epinglees passe par UPDATE, et est permis (021)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 58 — ⚠️ La securite, comme en 018 et 020 : un profil public est lu par n'importe qui,
+  --      donc une URL absolue acceptee ici poserait un pisteur sur une page publique.
+  begin
+    insert into public.profile_favorites (user_id, ordinal, subject, poster_path)
+    values (a, 3, 'tmdb:1400', 'https://pisteur.example/x.jpg');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. une URL absolue en affiche epinglee est refusee (021)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 59 — Et la cinquieme n'existe pas : la borne est dans la cle, pas dans un client.
+  begin
+    insert into public.profile_favorites (user_id, ordinal, subject)
+    values (a, 5, 'tmdb:1401');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. une cinquieme epinglee est refusee par la base (021)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);

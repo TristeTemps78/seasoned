@@ -208,10 +208,10 @@ export interface SeriesList {
    *
    * ⚠️ Chaque element porte sa **cle de journal** (`tmdb:1396`) — le catalogue est loue, pas
    * possede — et, depuis `020`, l'instantane du titre et de l'affiche pris au moment ou la
-   * serie a ete rangee. Voir {@link ListEntry} pour la raison, qui a coute deux fois le meme
+   * serie a ete rangee. Voir {@link SeriesRef} pour la raison, qui a coute deux fois le meme
    * defaut.
    */
-  readonly preview: readonly ListEntry[];
+  readonly preview: readonly SeriesRef[];
 }
 
 /**
@@ -233,7 +233,7 @@ export interface SeriesList {
  * {@link IDEMPOTENCE}), donc refaire le geste ne rattrape pas un instantane manquant. Le
  * rendu garde son repli — l'instantane du lecteur, puis la cle.
  */
-export interface ListEntry {
+export interface SeriesRef {
   /** La cle de journal, telle quelle : `tmdb:1396`. */
   readonly subject: string;
   /** Le titre au moment du rangement. Absent sur le fond d'avant `020`. */
@@ -320,7 +320,7 @@ function isKnownKind(value: unknown): value is ActivityKind {
  * disparaitre. Le titre et l'affiche, eux, sont **facultatifs** — le fond d'avant `020` n'en
  * a pas, et une liste sans vignettes vaut infiniment mieux qu'une liste absente.
  */
-function rowToListEntry(value: unknown): readonly ListEntry[] {
+function rowToSeriesRef(value: unknown): readonly SeriesRef[] {
   const row = value as Record<string, unknown> | null;
   const subject = row?.['subject'];
   if (typeof subject !== 'string') return [];
@@ -355,7 +355,7 @@ function rowToList(row: Record<string, unknown>): readonly SeriesList[] {
   // inattendue doit s'afficher **sans vignettes**, jamais disparaitre. Une carte de liste
   // vaut infiniment plus que ses quatre miniatures.
   const raw = row['preview'];
-  const preview = Array.isArray(raw) ? raw.flatMap(rowToListEntry) : [];
+  const preview = Array.isArray(raw) ? raw.flatMap(rowToSeriesRef) : [];
   return [
     {
       slug,
@@ -510,6 +510,69 @@ export class SocialClient {
     return this.#write(`profiles?user_id=eq.${encodeURIComponent(userId)}`, 'PATCH', {
       face: face ?? null,
     });
+  }
+
+  /**
+   * Publie les quatre epinglees, dans l'ordre.
+   *
+   * ## 🔴 Le bouton s'appelait « Pin to profile », et le profil ne les voyait pas
+   *
+   * Constate le 2026-08-16 : `favorites.pin` porte ce nom depuis toujours et les epinglees
+   * vivent dans `journal.favorites`, c'est-a-dire **dans le navigateur**. `<Favorites />`
+   * n'est monte que sur `/moi`. On epinglait « sur son profil » quatre series que personne
+   * d'autre ne pouvait voir. Le 2026-08-15 avait comble a cote — les **coeurs**, deja
+   * publies — et un coeur n'est pas un choix ordonne de quatre.
+   *
+   * ## Un etat, pas des faits — donc on remplace
+   *
+   * `merge-duplicates` sur `(user_id, ordinal)` puis retrait de la queue : quatre epinglees
+   * qui en deviennent deux doivent **effacer** les rangs 3 et 4, sinon d'anciennes series
+   * resteraient sur le profil sans que rien ne les y ait remises. C'est la difference avec
+   * `publish()`, dont la cle naturelle absorbe les republications parce qu'un fait ne se
+   * retire pas.
+   *
+   * ⚠️ Le `DELETE` part **apres** l'insertion et seulement si elle a reussi : dans l'autre
+   * sens, une panne reseau entre les deux laisserait un profil vide — c'est-a-dire une perte
+   * visible pour reparer une incoherence invisible.
+   *
+   * ⚠️ Chaque ligne voyage avec son instantane, pour la troisieme fois apres `018` et `020` :
+   * un profil est lu par des gens qui ne suivent pas les memes series.
+   */
+  async publishFavorites(userId: string, items: readonly SeriesRef[]): Promise<boolean> {
+    const kept = items.slice(0, 4);
+    if (kept.length === 0) {
+      return this.#write(
+        `profile_favorites?user_id=eq.${encodeURIComponent(userId)}`,
+        'DELETE',
+      );
+    }
+
+    const wrote = await this.#write(
+      'profile_favorites?on_conflict=user_id,ordinal',
+      'POST',
+      kept.map((one, index) => ({
+        user_id: userId,
+        ordinal: index + 1,
+        subject: one.subject,
+        title: one.title ?? null,
+        poster_path: one.posterPath ?? null,
+      })),
+      'resolution=merge-duplicates,return=minimal',
+    );
+    if (!wrote) return false;
+
+    return this.#write(
+      `profile_favorites?user_id=eq.${encodeURIComponent(userId)}&ordinal=gt.${kept.length}`,
+      'DELETE',
+    );
+  }
+
+  /** Les epinglees de quelqu'un, dans l'ordre choisi. RLS decide de qui les voit. */
+  async favoritesBy(userId: string): Promise<readonly SeriesRef[]> {
+    const rows = await this.#rows<Record<string, unknown>>(
+      `profile_favorites?user_id=eq.${encodeURIComponent(userId)}&select=subject,title,poster_path&order=ordinal.asc&limit=4`,
+    );
+    return rows.flatMap(rowToSeriesRef);
   }
 
   async setVisibility(userId: string, visibility: Visibility): Promise<boolean> {
@@ -1489,13 +1552,13 @@ export class SocialClient {
    *
    * ⚠️ Chacune avec son instantane depuis `020` : ouvrir la liste de quelqu'un d'autre
    * affichait sinon autant de fois « Tracked series » qu'elle contient de series que le
-   * lecteur ne suit pas. Voir {@link ListEntry}.
+   * lecteur ne suit pas. Voir {@link SeriesRef}.
    */
-  async listItems(userId: string, slug: string, limit = 500): Promise<readonly ListEntry[]> {
+  async listItems(userId: string, slug: string, limit = 500): Promise<readonly SeriesRef[]> {
     const rows = await this.#rows<Record<string, unknown>>(
       `list_items?user_id=eq.${encodeURIComponent(userId)}&slug=eq.${encodeURIComponent(slug)}&select=subject,title,poster_path&order=added_at.asc&limit=${limit}`,
     );
-    return rows.flatMap(rowToListEntry);
+    return rows.flatMap(rowToSeriesRef);
   }
 
   /**
@@ -1546,7 +1609,7 @@ export class SocialClient {
    *
    * ⚠️ **L'instantane s'ecrit ici ou jamais.** `ignore-duplicates` ne met rien a jour : une
    * serie deja rangee garde le titre qu'elle avait — ou n'en aura jamais si elle a ete rangee
-   * avant `020`. C'est le prix assume de la resolution juste ; voir {@link ListEntry}.
+   * avant `020`. C'est le prix assume de la resolution juste ; voir {@link SeriesRef}.
    *
    * Il est **facultatif** parce qu'un appelant peut ranger une serie sans l'avoir sous les
    * yeux. L'omettre redonne exactement l'ancien comportement, jamais une erreur.
@@ -1591,7 +1654,11 @@ export class SocialClient {
   async #write(
     path: string,
     method: 'POST' | 'DELETE' | 'PATCH',
-    body?: Record<string, unknown>,
+    // ⚠️ Un tableau est accepte depuis le 2026-08-16 (`publishFavorites`) : PostgREST prend
+    // plusieurs lignes dans un seul POST, et c'est ce qui evite quatre allers-retours pour
+    // quatre epinglees. Une seconde methode aurait duplique le `try/catch` — la forme exacte
+    // qui a laisse ce fichier promettre de ne jamais lever **et** lever.
+    body?: Record<string, unknown> | readonly Record<string, unknown>[],
     prefer = 'return=minimal',
   ): Promise<boolean> {
     try {

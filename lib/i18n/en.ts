@@ -583,6 +583,11 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   // ⚠️ Aucun code, aucun chemin PostgREST : `42501` n'apprend rien a qui vient de cliquer.
   // La phrase dit ce qui s'est passe et ce qu'on peut faire — toutes les ecritures de ce
   // produit sont idempotentes, donc « recommencez » est vrai.
+  // Les quatre epinglees, sur un profil public — voir `021_profile_favorites.sql`.
+  'profile.pinned': 'What they keep pinned',
+  'profile.pinned.none': 'You have not pinned anything yet.',
+  'profile.pinned.where': 'Pin four series from your library',
+
   // Le profil, sur « Mon compte » — voir `ProfileSettings`.
   'account.profile.title': 'My profile here',
   'account.profile.youAre': 'You are',

@@ -11,7 +11,13 @@ import { redactReviewsAcross } from '@/src/domain/spoiler';
 import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { formatDate } from '@/lib/format';
-import { type FeedItem, type Profile, type PublishedReview } from '@/src/social/client';
+import {
+  type FeedItem,
+  type Profile,
+  type PublishedReview,
+  type SeriesRef,
+} from '@/src/social/client';
+import { resolveSeriesRef } from '@/app/components/seriesRef';
 import { Lists } from '@/app/components/Lists';
 import { Avatar } from '@/app/components/Avatar';
 import { EmptyState } from '@/app/components/EmptyState';
@@ -78,6 +84,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   const [profile, setProfile] = useState<Profile | undefined>(undefined);
   const [reviews, setReviews] = useState<readonly PublishedReview[]>([]);
   const [loved, setLoved] = useState<readonly FeedItem[]>([]);
+  const [pinned, setPinned] = useState<readonly SeriesRef[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [following, setFollowing] = useState(false);
   const [followsMe, setFollowsMe] = useState(false);
@@ -117,12 +124,16 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     if (found === undefined) return;
     // Les deux ensemble : c'est ce que la page montre l'un sous l'autre, et les enchainer
     // ferait apparaitre le gout apres les mots, dans une page qui commence par le gout.
-    const [written, hearts] = await Promise.all([
+    const [written, hearts, favorites] = await Promise.all([
       social.reviewsBy(found.userId),
       social.lovedBy(found.userId),
+      // Les epinglees dans le meme paquet que les deux autres : elles s'affichent au-dessus,
+      // donc les enchainer ferait arriver la carte de visite apres ce qu'elle presente.
+      social.favoritesBy(found.userId),
     ]);
     setReviews(written);
     setLoved(hearts);
+    setPinned(favorites);
     if (userId === undefined) return;
     // Les trois d'un coup : elles decident **ensemble** de ce que la zone d'action affiche —
     // le bouton, la mention « vous suit », ou l'invitation a prendre un nom. Les enchainer
@@ -307,6 +318,17 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           la seule forme qui l'annonce. Les fleches sont **obligatoires** dans ce motif — les
           onglets sortent du parcours de tabulation sauf celui qui est actif, donc sans elles
           on ne peut plus atteindre les autres au clavier. */}
+      {/* 🔴 **Les quatre epinglees, et c'est ici qu'elles manquaient.** Le bouton s'appelle
+          « Pin to profile » depuis toujours, et elles vivaient dans le journal — donc dans le
+          navigateur de celui qui epingle, visibles nulle part ailleurs que sur `/moi`. Voir
+          `021_profile_favorites.sql`.
+
+          ⚠️ **Au-dessus des onglets et non dans un quatrieme** : c'est une carte de visite,
+          quatre affiches qu'on lit d'un coup d'oeil avant de choisir quoi ouvrir. Un onglet
+          les mettrait au meme rang que « toutes ses critiques », et surtout les cacherait
+          derriere un clic. */}
+      <PinnedSeries entries={pinned} mine={profile.userId === userId} />
+
       <Tabs current={tab} onSelect={setTab} />
 
       {tab === 'loves' ? (
@@ -560,5 +582,79 @@ function Tabs({ current, onSelect }: {
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Les quatre epinglees de quelqu'un — sa carte de visite.
+ *
+ * ## 🔴 Ce qu'elles ne faisaient pas jusqu'au 2026-08-16
+ *
+ * Le bouton s'intitule *« Pin to profile »* depuis toujours. Les epinglees vivaient dans
+ * `journal.favorites` — c'est-a-dire dans le navigateur de la personne — et `<Favorites />`
+ * n'etait monte que sur `/moi`. On epinglait donc « sur son profil » quatre series qu'aucun
+ * lecteur ne pouvait voir. `021_profile_favorites.sql` leur donne un chemin.
+ *
+ * ## Deux silences, et ils ne disent pas la meme chose
+ *
+ * - **Chez quelqu'un d'autre**, sans epinglee : rien. Il n'y a litteralement rien derriere,
+ *   sur une page par ailleurs pleine — c'est le silence que `CLAUDE.md` garde explicitement
+ *   (`FaceDot`, le compteur de coeurs a zero). Le lecteur ne peut rien y faire.
+ * - **Chez soi**, sans epinglee : une phrase et un chemin. La, il y a un geste a faire et il
+ *   se fait ailleurs (`/moi`) — c'est exactement le cas que la regle 4 vise, et le taire
+ *   laisserait un bouton nomme « epingler sur son profil » sans que le profil n'en parle
+ *   jamais.
+ */
+function PinnedSeries({
+  entries,
+  mine,
+}: {
+  readonly entries: readonly SeriesRef[];
+  readonly mine: boolean;
+}) {
+  const { t, locale } = useT();
+  const { journal } = useJournal();
+
+  if (entries.length === 0) {
+    if (!mine) return null;
+    return (
+      <p className="meta">
+        {t('profile.pinned.none')}{' '}
+        <Link className="tap-line underline hover:text-(--color-volt)" href={pathIn('/moi', locale)}>
+          {t('profile.pinned.where')}
+        </Link>
+      </p>
+    );
+  }
+
+  return (
+    <section className="space-y-3" aria-label={t('profile.pinned')}>
+      <h2 className="section-heading">{t('profile.pinned')}</h2>
+      <ul className="flex flex-wrap gap-3">
+        {entries.map((entry) => {
+          const parsed = parseJournalKey(entry.subject);
+          // ⚠️ Meme resolution que les listes, et par la meme fonction : l'instantane de la
+          // ligne d'abord, le journal du lecteur ensuite. Un profil est justement lu par des
+          // gens qui ne suivent pas les memes series.
+          const { title, posterPath } = resolveSeriesRef(entry, journal, t('feed.someSeries'));
+          const chip = <PosterChip path={posterPath} title={title} wide />;
+          return (
+            <li key={entry.subject}>
+              {parsed === undefined ? (
+                chip
+              ) : (
+                <Link
+                  href={pathIn(`/serie/${parsed.providerId}`, locale)}
+                  className="block"
+                  aria-label={title}
+                >
+                  {chip}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

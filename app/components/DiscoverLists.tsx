@@ -12,7 +12,7 @@ import { socialFrom } from '@/app/social/socialFrom';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
-import { resolveListEntry } from '@/app/components/listEntry';
+import { resolveSeriesRef } from '@/app/components/seriesRef';
 
 /**
  * Les listes des autres — **la seule surface du produit dont le contenu existait deja et
@@ -110,12 +110,12 @@ export function DiscoverLists() {
                   L'affiche et le titre venaient du journal du **lecteur**, sur la seule page
                   du produit dont l'objet est de montrer les listes de gens qu'on ne suit pas :
                   chaque carte annoncait donc quatre fois « Tracked series ». Depuis `020` la
-                  ligne voyage avec les siens — voir `resolveListEntry`. */}
+                  ligne voyage avec les siens — voir `resolveSeriesRef`. */}
               {list.preview.length > 0 ? (
                 <ul className="flex flex-wrap gap-2">
                   {list.preview.map((entry) => {
                     const parsed = parseJournalKey(entry.subject);
-                    const { title: seriesTitle, posterPath } = resolveListEntry(
+                    const { title: seriesTitle, posterPath } = resolveSeriesRef(
                       entry,
                       journal,
                       t('library.card.tracked'),

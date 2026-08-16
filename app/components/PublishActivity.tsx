@@ -6,6 +6,7 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { projectActivity } from '@/src/domain/activity';
 import { projectStops } from '@/src/domain/attrition';
+import { favoritesOf } from '@/src/domain/journal';
 import { socialFrom } from '@/app/social/socialFrom';
 
 /**
@@ -49,6 +50,7 @@ export function PublishActivity() {
   const { journal, ready } = useJournal();
   const lastSent = useRef<string | undefined>(undefined);
   const lastStops = useRef<string | undefined>(undefined);
+  const lastPinned = useRef<string | undefined>(undefined);
   const forgotten = useRef(false);
 
   const accessToken = account?.accessToken;
@@ -67,19 +69,44 @@ export function PublishActivity() {
     // decide de l'envoi, pas la projection. La calculer sous la condition inverse rendrait
     // le code plus court et la reprise du consentement muette jusqu'au prochain geste.
     const stops = keepStopsPrivate ? [] : projectStops(journal);
+    /**
+     * 🔴 Les quatre epinglees, qui n'allaient nulle part.
+     *
+     * Le bouton s'appelle « Pin to profile » depuis toujours et elles vivaient dans le
+     * journal, donc dans ce navigateur : `<Favorites />` n'est monte que sur `/moi`. On
+     * epinglait sur un profil que personne ne verrait — voir `021_profile_favorites.sql`.
+     *
+     * ⚠️ Elles partent **avec leur instantane**, pour la troisieme fois apres `018` et
+     * `020` : un profil est lu par des gens qui ne suivent pas les memes series, et une cle
+     * nue s'y afficherait en monogramme.
+     */
+    const pinned = favoritesOf(journal).map((key) => {
+      const snapshot = journal.entries[key]?.snapshot;
+      return {
+        subject: key,
+        ...(snapshot?.title !== undefined ? { title: snapshot.title } : {}),
+        ...(snapshot?.posterPath !== undefined ? { posterPath: snapshot.posterPath } : {}),
+      };
+    });
 
     // La signature de ce qu'on s'apprete a envoyer. Identique au dernier envoi = rien a
     // faire : `publish` est idempotent, mais un appel reseau inutile reste un appel.
     const shape = JSON.stringify(items);
     const stopShape = JSON.stringify(stops);
+    const pinnedShape = JSON.stringify(pinned);
 
     const sendActivity = items.length > 0 && shape !== lastSent.current;
     const sendStops = stops.length > 0 && stopShape !== lastStops.current;
+    // ⚠️ **Pas de `length > 0` ici**, contrairement aux deux au-dessus, et c'est la
+    // difference entre un fait et un etat : depingler sa derniere serie doit RETIRER les
+    // quatre du profil. La condition des faits laisserait l'ancienne selection en place pour
+    // toujours — un profil qui montre un gout qu'on vient d'effacer.
+    const sendPinned = pinnedShape !== lastPinned.current;
     // Le retrait ne part qu'une fois par session : la table est illisible, donc rien ne
     // permet de constater qu'elle est deja vide, et redemander a chaque frappe serait un
     // `DELETE` par touche.
     const forget = keepStopsPrivate && !forgotten.current;
-    if (!sendActivity && !sendStops && !forget) return;
+    if (!sendActivity && !sendStops && !sendPinned && !forget) return;
 
     const timer = setTimeout(() => {
       if (sendActivity) {
@@ -92,6 +119,11 @@ export function PublishActivity() {
       if (sendStops) {
         void social.publishStops(userId, stops).then((ok) => {
           if (ok) lastStops.current = stopShape;
+        });
+      }
+      if (sendPinned) {
+        void social.publishFavorites(userId, pinned).then((ok) => {
+          if (ok) lastPinned.current = pinnedShape;
         });
       }
       if (forget) {
