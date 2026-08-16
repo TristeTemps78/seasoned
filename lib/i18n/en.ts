@@ -72,6 +72,11 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'series.airsOn': 'on {date}',
   'series.demands': 'What this series asks of you',
   'series.sameCreator': 'From the same creator',
+  // ⚠️ « Ce que les gens regardent aussi » et non « Recommandé pour vous » : la phrase dit
+  // d'ou vient la liste. Rien ici ne connait le lecteur, et le libelle ne doit pas le
+  // laisser croire — voir la note de position au point de montage de `Recommended`.
+  'series.recommended': 'People also watch',
+  'series.recommended.why': 'What viewers of this one tend to watch too.',
   'series.trailer': 'Trailer',
   'cast.title': 'On screen',
   'cast.why': 'The main roles, across every season.',

@@ -804,9 +804,14 @@ export async function waitingSeries(
 /**
  * Les autres series des createurs d'une serie.
  *
- * Seul maillage interne du site, et il est **factuel** : « du meme createur » est un
+ * **Premier** maillage interne du site, et il est **factuel** : « du meme createur » est un
  * credit de production, pas un calcul de similarite — ce qui le distingue de la
- * recommandation algorithmique, ecartee par le projet.
+ * recommandation algorithmique, bannie par `ROADMAP.md` §3 (commit `926ee6f`).
+ *
+ * ⚠️ Il n'est plus le seul depuis le 2026-08-16 : `SeriesDetail.recommendations` en pose un
+ * second, et la position que ca engage est ecrite au montage de `Recommended` dans
+ * `app/(site)/serie/[id]/page.tsx`. Trois commentaires du depot disaient « le seul » ; les
+ * laisser aurait fait croire a une regle encore appliquee.
  *
  * Repond aussi au dernier trou du canal d'acquisition : une page serie ne renvoyait
  * vers aucune autre, ce qui en faisait un cul-de-sac pour le visiteur comme pour le

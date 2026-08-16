@@ -82,6 +82,11 @@ export const FR = {
   'series.airsOn': 'le {date}',
   'series.demands': 'Ce que la série demande',
   'series.sameCreator': 'Du même créateur',
+  // ⚠️ « Ce que les gens regardent aussi » et non « Recommandé pour vous » : la phrase dit
+  // d'où vient la liste. Rien ici ne connaît le lecteur, et le libellé ne doit pas le
+  // laisser croire — voir la note de position au point de montage de `Recommended`.
+  'series.recommended': 'Ce que les gens regardent aussi',
+  'series.recommended.why': 'Ce que regardent aussi ceux qui suivent celle-ci.',
   'series.trailer': 'Bande-annonce',
   'cast.title': 'À l’écran',
   'cast.why': 'Les rôles principaux, toutes saisons confondues.',

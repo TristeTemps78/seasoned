@@ -48,6 +48,7 @@ import { AddToList } from '@/app/components/AddToList';
 import { ProgressSummary } from '@/app/components/ProgressSummary';
 import { ChooseArtwork } from '@/app/components/ChooseArtwork';
 import { legalIsComplete } from '@/lib/legal';
+import { isShowcased } from '@/src/domain/program';
 
 /**
  * Regeneration toutes les 24 h.
@@ -647,6 +648,29 @@ export async function SeriesView({ id, locale }: {
           locale={locale}
         />
         <AlsoByCreators detail={detail} locale={locale} />
+        {/* ⚠️⚠️ **CETTE RANGEE CONTREDIT UNE DECISION ECRITE, ET IL FAUT LE SAVOIR.**
+
+            Le commit `926ee6f` (« maillage interne — du meme createur ») dit mot pour mot :
+            *« J'avais ecarte "series similaires" parce que la recommandation algorithmique
+            est bannie par ROADMAP.md §3 — c'est la commodite par excellence. »* « Du meme
+            createur » avait ete choisi **contre** celle-ci, parce qu'un credit de production
+            n'est pas un calcul de similarite.
+
+            Trois faits, et Tristan tranche :
+            1. `ROADMAP.md` a ete **supprime le 2026-08-10** a sa demande, avec `TASKS.md`,
+               `AGENTS.md` et `docs/`. La regle n'a donc plus de domicile.
+            2. `CLAUDE.md`, le seul document qui reste, **ne la porte pas**.
+            3. Le releve du 2026-08-16 range l'absence de series similaires parmi les manques
+               (F8), sans mentionner qu'elle etait un refus.
+
+            Ce qui est mesurable, en revanche : « du meme createur » **disparait des qu'aucun
+            createur n'est credite**, ce qui est le cas courant hors des series americaines —
+            le commit d'origine le dit lui-meme. Une fiche sur deux reste donc un cul-de-sac,
+            et c'est ce que cette rangee comble.
+
+            `git revert` sur ce commit suffit a la retirer : elle ne coute aucun appel, donc
+            son retrait ne recupere rien d'autre que la position. */}
+        <Recommended detail={detail} locale={locale} />
       </div>
     </article>
   );
@@ -658,12 +682,18 @@ export default async function SeriesPage({ params }: PageProps) {
 }
 
 /**
- * Le seul maillage interne du site.
+ * Le **premier** maillage interne du site — il n'est plus le seul depuis le 2026-08-16.
  *
  * Une page serie ne renvoyait vers aucune autre : cul-de-sac pour le visiteur comme
  * pour le crawl. « Du meme createur » est un **credit de production**, pas un calcul
- * de similarite — ce qui le distingue de la recommandation algorithmique, ecartee
- * par
+ * de similarite — ce qui le distinguait de la recommandation algorithmique, **bannie par
+ * `ROADMAP.md` §3** (commit `926ee6f` : *« c'est la commodite par excellence »*).
+ *
+ * ⚠️ Deux choses ont change depuis, et elles sont dans `Recommended` plus bas :
+ * `ROADMAP.md` a ete supprime le 2026-08-10, et cette rangee-ci **disparait des qu'aucun
+ * createur n'est credite** — le cas courant hors des series americaines, dit par le commit
+ * d'origine lui-meme. La phrase de ce commentaire s'arretait au milieu (« ecartee par »),
+ * ce qui rendait la regle inverifiable : elle est desormais citee avec sa source.
  */
 async function AlsoByCreators({ detail, locale }: {
   readonly detail: Awaited<ReturnType<typeof getSeriesPageData>>['detail'];
@@ -867,5 +897,60 @@ function Stat({ label, value, hint, emphasis = false }: {
       </dd>
       {hint !== undefined ? <dd className="meta-sm text-(--color-muted)">{hint}</dd> : null}
     </div>
+  );
+}
+
+/**
+ * Des series a voir apres celle-ci.
+ *
+ * ## Pourquoi elle ne coute rien
+ *
+ * `recommendations` voyage dans la **meme reponse** que la fiche
+ * (`append_to_response`), comme `aggregate_credits` et `videos` avant elle : pas un appel,
+ * pas une entree de cache, pas une ligne au budget TMDB. C'est ce qui a decide de
+ * l'implementation — un appel par fiche aurait demande un arbitrage, celui-ci n'en demande
+ * aucun **sur le cout**.
+ *
+ * ⚠️ Sur la **position**, il en demande un, et il est ecrit en toutes lettres au point de
+ * montage ci-dessus. Ne pas le lire avant de toucher a ce composant.
+ *
+ * ## `recommendations` et non `similar`
+ *
+ * Le premier est construit sur ce que les gens regardent ensemble, le second sur des
+ * mots-cles partages. Sur une serie de niche, `similar` rend surtout du bruit du meme genre —
+ * c'est-a-dire la caricature de ce que le refus d'origine visait.
+ *
+ * ## Se tait de trois facons, et aucune n'est un `return null` doctrinaire
+ *
+ * Rien a montrer quand TMDB ne recommande rien, quand aucune recommandation n'a d'affiche
+ * (une vignette sans image est un rectangle noir), et quand il ne reste que des programmes
+ * hors vitrine. Dans les trois cas la page est **par ailleurs pleine** et porte deja son
+ * maillage : c'est le silence que `CLAUDE.md` garde explicitement, pas celui qu'il a abattu.
+ */
+function Recommended({ detail, locale }: {
+  readonly detail: Awaited<ReturnType<typeof getSeriesPageData>>['detail'];
+  readonly locale: Locale;
+}) {
+  // Meme regle de vitrine qu'ailleurs : on ne met pas en avant un journal televise.
+  const shown = (detail.recommendations ?? []).filter(
+    (one) => one.kind === undefined || isShowcased(one.kind),
+  );
+  if (shown.length === 0) return null;
+
+  return (
+    // Meme regle que partout : une grille d'affiches sort de la colonne de lecture.
+    <section className="bleed space-y-4" aria-label={t(locale, 'series.recommended')}>
+      <div>
+        <h2 className="section-heading">{t(locale, 'series.recommended')}</h2>
+        <p className="meta">{t(locale, 'series.recommended.why')}</p>
+      </div>
+      <ul className="poster-grid">
+        {shown.map((series) => (
+          <li key={series.providerId}>
+            <SeriesCard series={series} locale={locale} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

@@ -343,6 +343,32 @@ function readCrew(source: Record<string, unknown>): readonly CrewMember[] {
 }
 
 /**
+ * Le nombre de suggestions retenues.
+ *
+ * Six : une rangee pleine sur un ecran large, la meme borne que « du meme createur » juste
+ * au-dessus. Deux rangees de suggestions sous une fiche transformeraient la page en portail.
+ */
+const RECOMMENDED_KEPT = 6;
+
+/**
+ * Les series a voir apres, depuis `recommendations` embarque dans la reponse de la fiche.
+ *
+ * ⚠️ **Sans affiche, la vignette est un rectangle noir.** Meme filtre et meme constat que
+ * `alsoByCreators` le 2026-08-12 : une suggestion que le produit ne sait pas montrer n'a rien
+ * a faire dans une rangee, et son titre seul ne donne a personne une raison de cliquer.
+ *
+ * ⚠️ Le filtre de vitrine (`isShowcased`) n'est **pas** applique ici mais dans
+ * `lib/catalog.ts` : le fournisseur transporte, le catalogue decide. C'est la meme frontiere
+ * que pour le tri des credits d'une personne.
+ */
+function readRecommendations(source: Record<string, unknown>): readonly SeriesSummary[] {
+  return asArray(asRecord(source['recommendations'])['results'])
+    .map(toSummary)
+    .filter((one): one is SeriesSummary => one !== undefined && one.posterPath !== undefined)
+    .slice(0, RECOMMENDED_KEPT);
+}
+
+/**
  * Les `name` d'une liste d'objets TMDB — genres, chaines, societes.
  *
  * ⚠️ Une seule fonction pour les trois : la forme `[{ id, name }]` est la meme, et trois
@@ -498,6 +524,7 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
     (one): one is string => typeof one === 'string' && one.length > 0,
   );
   const originalLanguage = readString(source, 'original_language');
+  const recommendations = readRecommendations(source);
 
   const nextSeason = readNumber(nextEpisode, 'season_number');
   const nextNumber = readNumber(nextEpisode, 'episode_number');
@@ -535,6 +562,7 @@ export function mapSeriesDetail(raw: unknown): SeriesDetail | undefined {
     ...(networks.length > 0 ? { networks } : {}),
     ...(originCountries.length > 0 ? { originCountries } : {}),
     ...(originalLanguage !== undefined ? { originalLanguage } : {}),
+    ...(recommendations.length > 0 ? { recommendations } : {}),
     ...(lastAiredAt !== undefined ? { lastAiredAt } : {}),
     ...(nextAiringAt !== undefined ? { nextAiringAt } : {}),
     ...(nextFull !== undefined ? { nextEpisode: nextFull } : {}),
@@ -679,7 +707,14 @@ export class TmdbProvider implements CatalogProvider {
       `/tv/${encodeURIComponent(providerId)}`,
       // ⚠️ `aggregate_credits` voyage dans la **meme** reponse : le generique ne coute donc ni
       // une requete de plus, ni une entree de cache de plus, ni une ligne au budget TMDB.
-      { append_to_response: 'external_ids,aggregate_credits,videos' },
+      //
+      // ⚠️ **`recommendations` s'y ajoute pour exactement la meme raison** (F6/F8, 2026-08-16).
+      // La fiche ne renvoyait que vers « du meme createur » — un fait de production, donc un
+      // maillage qui s'arrete des qu'une serie n'a pas de createur credite, c'est-a-dire hors
+      // des productions americaines. `recommendations` plutot que `similar` : le premier est
+      // construit sur ce que les gens regardent ensemble, le second sur des mots-cles
+      // partages, et sur une serie de niche `similar` rend surtout du bruit du meme genre.
+      { append_to_response: 'external_ids,aggregate_credits,videos,recommendations' },
     );
     const mapped = mapSeriesDetail(raw);
     if (mapped === undefined) {

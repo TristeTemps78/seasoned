@@ -282,8 +282,15 @@ export interface SeriesDetail extends SeriesSummary {
    * Createurs credites.
    *
    * Un **fait de production**, pas un calcul de similarite : c'est ce qui distingue ce
-   * maillage d'une recommandation algorithmique, ecartee par Souvent
-   * absent hors des series americaines — degrader sans bruit.
+   * maillage d'une recommandation algorithmique, **bannie par `ROADMAP.md` §3** — voir le
+   * commit `926ee6f`, et la note de position au montage de `Recommended` dans
+   * `app/(site)/serie/[id]/page.tsx`, qui dit ce qui a change le 2026-08-16.
+   *
+   * ⚠️ Souvent absent hors des series americaines — degrader sans bruit. C'est precisement ce
+   * qui laissait une fiche sur deux sans aucun maillage.
+   *
+   * (La phrase de ce commentaire s'arretait au milieu — « ecartee par Souvent absent » — et
+   * une regle citee sans sa source est une regle qu'on ne peut ni verifier ni contester.)
    */
   readonly creators?: readonly Creator[];
   /**
@@ -320,6 +327,17 @@ export interface SeriesDetail extends SeriesSummary {
   readonly originalLanguage?: string;
   /** Les chaines ou plateformes de diffusion — le « studio » d'une serie. */
   readonly networks?: readonly string[];
+  /**
+   * Des series a voir apres celle-ci.
+   *
+   * 🔴 **Le seul maillage de la fiche etait « du meme createur »**, c'est-a-dire un fait de
+   * production — qui s'arrete net des qu'aucun createur n'est credite, ce qui est le cas
+   * courant hors des series americaines. Une fiche sans createur credite etait un cul-de-sac.
+   *
+   * ⚠️ Voyage dans la **meme reponse** (`append_to_response=recommendations`) : zero appel,
+   * zero entree de cache, zero ligne au budget. C'est ce qui a decide de l'implementation.
+   */
+  readonly recommendations?: readonly SeriesSummary[];
 
   /**
    * La cle YouTube de la bande-annonce, quand le catalogue en porte une.

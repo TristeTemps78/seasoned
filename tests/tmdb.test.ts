@@ -387,6 +387,35 @@ describe('generique technique et details de production', () => {
     expect(mapSeriesDetail({ id: 1, name: 'x', aggregate_credits: { crew } })?.crew).toHaveLength(8);
   });
 
+  it('lit les recommandations embarquees, et ecarte celles sans affiche', () => {
+    // ⚠️ Sans affiche, la vignette est un rectangle noir — meme constat que sous « du meme
+    // createur » le 2026-08-12. Une suggestion que le produit ne sait pas montrer n'a rien a
+    // faire dans une rangee.
+    const detail = mapSeriesDetail({
+      id: 1,
+      name: 'x',
+      recommendations: {
+        results: [
+          { id: 2, name: 'Avec affiche', poster_path: '/a.jpg', genre_ids: [18] },
+          { id: 3, name: 'Sans affiche', genre_ids: [18] },
+        ],
+      },
+    });
+
+    expect(detail?.recommendations?.map((one) => one.providerId)).toEqual(['2']);
+  });
+
+  it('borne les recommandations a six, comme « du meme createur »', () => {
+    const results = Array.from({ length: 20 }, (_, i) => ({
+      id: i + 100,
+      name: `S${i}`,
+      poster_path: '/p.jpg',
+      genre_ids: [18],
+    }));
+    expect(mapSeriesDetail({ id: 1, name: 'x', recommendations: { results } })?.recommendations)
+      .toHaveLength(6);
+  });
+
   it('lit genres, diffuseurs, pays et langue', () => {
     const detail = mapSeriesDetail({
       id: 1,

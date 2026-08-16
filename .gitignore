@@ -17,3 +17,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Les worktrees des agents : des depots a part, jamais du contenu de celui-ci.
+.claude/worktrees/
