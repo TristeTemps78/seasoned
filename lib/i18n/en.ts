@@ -572,6 +572,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'search.unavailable': 'The catalogue is temporarily unavailable. Try again in a moment.',
   'search.none': 'No results for “{q}”.',
   'search.people': 'People',
+  'search.lists': 'Lists',
   'search.none.hint':
     'Check the spelling, or try the original title. Only series are indexed: a film will not be here.',
   'search.count.one': '{n} result for “{q}”',

@@ -670,6 +670,7 @@ export const FR = {
   'search.unavailable': 'Le catalogue est momentanément indisponible. Réessayez dans un instant.',
   'search.none': 'Aucun résultat pour « {q} ».',
   'search.people': 'Des gens',
+  'search.lists': 'Des listes',
   // ⚠️ Le conseil dit ce que le catalogue **ne contient pas**. C'est la seule cause d'echec
   // qu'on connaisse a l'avance et que le chercheur ne peut pas deviner : rien a l'ecran ne
   // dit qu'un film n'a aucune chance d'etre trouve ici.

@@ -15,6 +15,7 @@ import { PageHeader } from '@/app/components/PageHeader';
 import { SeriesCard } from '@/app/components/SeriesCard';
 import { PosterRail } from '@/app/components/PosterRail';
 import { PeopleResults } from '@/app/components/PeopleResults';
+import { ListResults } from '@/app/components/ListResults';
 import { discover } from '@/lib/catalog';
 
 interface PageProps {
@@ -191,6 +192,12 @@ export async function SearchView({ query, locale }: {
           quasi-totalite des cas. Et il se tait quand il n'y a personne — la page porte deja
           son propre « aucun resultat », une seconde phrase par recherche serait du bruit. */}
       {query.length > 0 ? <PeopleResults query={query} /> : null}
+
+      {/* Le troisieme index. Sous les gens et non entre eux et les series : on cherche une
+          serie, parfois quelqu'un, rarement une liste par son nom — mais « series a montrer
+          a ma mere » ne se cherchait nulle part, et c'est le seul contenu du produit qui
+          exige un compte pour exister. */}
+      {query.length > 0 ? <ListResults query={query} /> : null}
     </div>
   );
 }

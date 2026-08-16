@@ -207,7 +207,16 @@ function EmptyLibrary() {
       title={t('library.empty.title')}
       actions={
         <>
-          <Link href={pathIn('/', locale)} className="btn">
+          {/* 🔴 **Le libelle et la destination se contredisaient.** Ce bouton s'appelle
+              « Parcourir » et menait a `/` — c'est-a-dire a la face « Decouvrir », deja
+              atteignable depuis l'en-tete, pendant que `/parcourir` existe et porte
+              exactement ce titre en `<h1>`.
+
+              Les deux portes offertes ici forment une paire : parcourir **sans titre en
+              tete** (genre, epoque, « elle est finie ») ou chercher **avec**. Renvoyer la
+              premiere a l'accueil laissait la paire boiteuse et `/parcourir` sans seconde
+              entree. Constate a l'ecran le 2026-08-16. */}
+          <Link href={pathIn('/parcourir', locale)} className="btn">
             {t('library.empty.browse')}
           </Link>
           <Link href={pathIn('/recherche', locale)} className="btn btn-primary">

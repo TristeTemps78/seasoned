@@ -1328,28 +1328,80 @@ export class SocialClient {
   async discoverLists(limit = 12): Promise<readonly DiscoverableList[]> {
     // Le vivier est borne et plus large que ce qu'on affiche, pour la meme raison que
     // `discoverable` : PostgREST ne sait pas trier sur un compte imbrique.
-    const rows = await this.#rows<Record<string, unknown>>(
-      `lists?select=slug,title,note,updated_at,list_items(count),preview:list_items(subject),profiles!inner(handle,user_id,face)` +
-        `&profiles.visibility=eq.public` +
-        `&preview.order=added_at.asc&preview.limit=${LIST_PREVIEW}` +
-        `&order=updated_at.desc&limit=${limit * 2}`,
+    //
+    // ⚠️ `profiles.visibility=eq.public` **en plus** de RLS, et seulement ici : une vitrine
+    // s'adresse a un inconnu, donc elle ne montre que ce qui a choisi d'etre public. La
+    // recherche, elle, laisse RLS trancher — voir {@link searchLists}.
+    const rows = await this.#lists(
+      `&profiles.visibility=eq.public&order=updated_at.desc`,
+      limit * 2,
     );
-    return rows
-      .flatMap((row) => {
-        const author = row['profiles'] as
-          | { handle?: unknown; user_id?: unknown; face?: unknown }
-          | undefined;
-        if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
-        const face = readFace(author.face);
-        return rowToList(row).map((list) => ({
-          ...list,
-          handle: author.handle as string,
-          authorId: author.user_id as string,
-          ...(face !== undefined ? { face } : {}),
-        }));
-      })
+    return [...rows]
       .sort((a, b) => (b.count - a.count) || (a.updatedAt < b.updatedAt ? 1 : -1))
       .slice(0, limit);
+  }
+
+  /**
+   * Chercher une liste par son titre — **le dernier index qui manquait**.
+   *
+   * ## 🔴 Ce que la recherche ne trouvait pas
+   *
+   * Elle rendait des series, et depuis le 2026-08-15 des personnes. Chez la reference, elle
+   * separe films, critiques, listes, membres, mots et journal. Les listes sont pourtant la
+   * seule partie du produit qui **exige un compte pour exister et vit sur le serveur** :
+   * elles sont ecrites, lisibles, deja montrees en vitrine sur `/listes` — et introuvables
+   * autrement qu'en tombant dessus.
+   *
+   * ⚠️ **Pas de filtre de visibilite ecrit ici**, contrairement a {@link discoverLists} : une
+   * vitrine s'adresse a un inconnu, une recherche s'adresse a **son lecteur**. `lists_select`
+   * porte `can_see(user_id)`, donc quelqu'un qui suit une personne trouve ses listes, et un
+   * visiteur anonyme ne trouve que les publiques. Rejouer la regle ici en donnerait deux, et
+   * c'est celle du client qui se perime.
+   *
+   * ⚠️ Le motif est **echappe pour PostgREST**, pas seulement pour l'URL : une virgule ou une
+   * parenthese dans un titre cherche sont de la syntaxe dans un filtre. Les guillemets
+   * doubles autour de la valeur les neutralisent, et la barre oblique inverse les protege
+   * eux-memes.
+   */
+  async searchLists(query: string, limit = 8): Promise<readonly DiscoverableList[]> {
+    const clean = query.trim();
+    // Sous trois caracteres, on se tait : deux lettres rendraient la moitie des listes, ce
+    // qui est une enumeration et non une recherche. Meme seuil que `searchProfiles`.
+    if (clean.length < 3) return [];
+    const motif = clean.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+    return this.#lists(
+      `&title=ilike."*${encodeURIComponent(motif)}*"&order=updated_at.desc`,
+      limit,
+    );
+  }
+
+  /**
+   * Le corps commun des deux lectures de listes — elles ne different que par leur filtre.
+   *
+   * Meme motif que `#reviews` et `#activity`, et pour la meme raison : ce parsing tolerant
+   * ecarte les lignes sans auteur, et deux copies de ce rejet finiraient par se repondre
+   * differemment le jour ou l'une serait corrigee.
+   */
+  async #lists(filter: string, limit: number): Promise<readonly DiscoverableList[]> {
+    const rows = await this.#rows<Record<string, unknown>>(
+      `lists?select=slug,title,note,updated_at,list_items(count),preview:list_items(subject),profiles!inner(handle,user_id,face)` +
+        filter +
+        `&preview.order=added_at.asc&preview.limit=${LIST_PREVIEW}` +
+        `&limit=${limit}`,
+    );
+    return rows.flatMap((row) => {
+      const author = row['profiles'] as
+        | { handle?: unknown; user_id?: unknown; face?: unknown }
+        | undefined;
+      if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
+      const face = readFace(author.face);
+      return rowToList(row).map((list) => ({
+        ...list,
+        handle: author.handle as string,
+        authorId: author.user_id as string,
+        ...(face !== undefined ? { face } : {}),
+      }));
+    });
   }
 
   /** Les series d'une liste, dans l'ordre ou elles y ont ete posees. */
