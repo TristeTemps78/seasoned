@@ -710,6 +710,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'library.card.inDays.one': 'new episode in {n}d',
   'library.card.inDays.other': 'new episode in {n}d',
   'library.card.toWatch': 'to watch',
+  'want.add': 'I want to watch {title}',
+  'want.remove': 'Remove {title} from my watchlist',
   'library.card.like': 'Like {title}',
   'library.card.unlike': 'Unlike {title}',
 

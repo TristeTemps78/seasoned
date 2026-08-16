@@ -6,6 +6,7 @@ import type { PosterSize } from '@/lib/catalog';
 import { STATUS_TONE, shortStatus, year } from '@/lib/format';
 import { DEFAULT_LOCALE, type Locale, translatorFor } from '@/lib/i18n';
 import { seriesPath } from '@/lib/routes';
+import { WantButton } from '@/app/components/WantButton';
 
 /**
  * Le ton de la pastille posee **sur** l'affiche.
@@ -81,8 +82,12 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE, size = 'w3
   ];
 
   return (
-    // Le lien reste dans la langue de la page : sans cela, chaque vignette de l'accueil
-    // francais etait une sortie du francais.
+    // ⚠️ `relative` : ancre le bouton « je veux la voir », qui doit se poser sur l'affiche
+    // tout en vivant **hors** du lien — un controle dans un `<a>` est interdit par le HTML.
+    // Le cadre etant le premier enfant du lien, son coin superieur droit est celui d'ici.
+    <div className="relative">
+    {/* Le lien reste dans la langue de la page : sans cela, chaque vignette de l'accueil
+        francais etait une sortie du francais. */}
     <Link
       href={seriesPath(series.providerId, locale)}
       aria-label={parts.join(' — ')}
@@ -134,5 +139,13 @@ export function SeriesCard({ series, status, locale = DEFAULT_LOCALE, size = 'w3
         <p className="numeric meta-sm">{firstYear}</p>
       ) : null}
     </Link>
+
+    {/* L'ilot client — voir `WantButton` pour pourquoi la carte, elle, reste serveur. */}
+    <WantButton
+      providerId={series.providerId}
+      title={series.title}
+      {...(series.posterPath !== undefined ? { posterPath: series.posterPath } : {})}
+    />
+    </div>
   );
 }

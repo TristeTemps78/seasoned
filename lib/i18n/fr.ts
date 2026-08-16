@@ -845,6 +845,8 @@ export const FR = {
   'library.card.inDays.one': 'nouvel épisode dans {n} j',
   'library.card.inDays.other': 'nouvel épisode dans {n} j',
   'library.card.toWatch': 'à voir',
+  'want.add': 'Je veux voir {title}',
+  'want.remove': 'Retirer {title} de mes envies',
   // ⚠️ Le titre entre dans le nom accessible : sur une grille, quarante boutons qui
   // s'annoncent « J'aime » sont quarante fois le même mot sans dire de quoi il parle.
   'library.card.like': 'J’aime {title}',
