@@ -81,3 +81,92 @@ describe('le statut de la vignette suit la langue de la PAGE', () => {
     expect(screen.getByText('to watch')).toBeDefined();
   });
 });
+
+/**
+ * Le geste depuis la grille — voir `LibraryCard` pour ce qu'il repare.
+ *
+ * ⚠️ **La geometrie ne se garde pas ici** : elle a ete mesuree au navigateur (109 px de
+ * tuile en 375 px, 81 px utiles, d'ou la coche et la coordonnee plutot que la phrase). Ce
+ * qui se garde est ce qui se lit dans le rendu — **quand** le bouton existe, et le fait que
+ * la phrase entiere reste son nom accessible.
+ */
+function itemAt(
+  season: number,
+  episode: number,
+  extra: Partial<LibraryItem> = {},
+): LibraryItem {
+  const entry = setPosition(EMPTY_JOURNAL, BB, season, episode, NOW).entries[BB]!;
+  return {
+    key: BB,
+    entry,
+    snapshot: {
+      title: 'Breaking Bad',
+      cachedAt: NOW.toISOString(),
+      seasonSizes: [
+        { seasonNumber: 1, episodeCount: 7 },
+        { seasonNumber: 2, episodeCount: 13 },
+      ],
+    },
+    touchedAt: NOW.getTime(),
+    ...extra,
+  };
+}
+
+function renderItem(item: LibraryItem, locale: Locale = 'fr') {
+  return render(
+    <LocaleProvider locale={locale} messages={DICTIONARIES[locale]}>
+      <LibraryCard item={item} />
+    </LocaleProvider>,
+  );
+}
+
+describe('avancer sans ouvrir la fiche', () => {
+  it('🔴 la grille porte enfin un geste', () => {
+    // Mesure au navigateur le 2026-08-16 : `/fr/moi` ne contenait **aucun** bouton. La
+    // collection entiere n'etait qu'une table des matieres.
+    renderItem(itemAt(1, 3));
+    expect(screen.getByRole('button', { name: 'J’ai vu S1E4' })).toBeDefined();
+  });
+
+  it('bascule sur la saison suivante au dernier episode', () => {
+    renderItem(itemAt(1, 7));
+    expect(screen.getByRole('button', { name: 'J’ai vu S2E1' })).toBeDefined();
+  });
+
+  it('la phrase entiere reste le nom accessible, la coordonnee seule est a l ecran', () => {
+    // Ce qui se raccourcit est le dessin, jamais ce que le bouton annonce a qui ne voit pas.
+    renderItem(itemAt(2, 6));
+    const button = screen.getByRole('button', { name: 'J’ai vu S2E7' });
+    expect(button.textContent).toBe('S2E7');
+  });
+
+  it('🔴 rien sur une serie terminee ou abandonnee', () => {
+    // La vignette contredirait la section qui la contient — le defaut exact que le repli
+    // « a voir » avait deja produit ici, et qui « fait douter de tout le reste ».
+    for (const kind of ['completed', 'abandoned'] as const) {
+      const base = itemAt(1, 3);
+      const { unmount } = renderItem({
+        ...base,
+        entry: { ...base.entry, decision: { kind, at: NOW.toISOString() } },
+      });
+      expect(screen.queryByRole('button')).toBeNull();
+      unmount();
+    }
+  });
+
+  it('rien sans decoupage connu — un bouton qui devine se trompe', () => {
+    const base = itemAt(1, 3);
+    renderItem({ ...base, snapshot: { title: 'Breaking Bad', cachedAt: NOW.toISOString() } });
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('rien sur une serie qu on n a pas commencee', () => {
+    // « Ce que je voulais voir » n'a pas de position : avancer n'a alors aucun sens, et
+    // c'est cette condition — et non une prop passee par la rangee — qui l'exclut.
+    const base = itemAt(1, 3);
+    const entry = { ...base.entry };
+    delete (entry as { position?: unknown }).position;
+    renderItem({ ...base, entry });
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+});

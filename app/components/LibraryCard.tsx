@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { Poster } from '@/app/components/Poster';
 import { statusLabel } from '@/lib/format';
 import { useT } from '@/app/i18n/LocaleProvider';
+import { useJournal } from '@/app/journal/useJournal';
 import { pathIn, seriesPath } from '@/lib/routes';
 import { parseJournalKey } from '@/src/domain/journal';
+import { nextAfter } from '@/src/domain/remaining';
 import type { LibraryItem } from '@/src/domain/library';
 import { Icon } from '@/app/components/Icon';
 
@@ -20,6 +22,24 @@ import { Icon } from '@/app/components/Icon';
  * Une serie dont l'instantane a expire garde sa place : on affiche son identifiant
  * plutot que de la faire disparaitre. Perdre une vignette est un defaut d'affichage ;
  * perdre une serie suivie serait une perte de donnee.
+ *
+ * ## 🔴 On ne pouvait rien faire depuis la bibliotheque, seulement y naviguer
+ *
+ * Mesure au navigateur le 2026-08-16, `/fr/moi` en 1280 px : **zero bouton** dans toute la
+ * grille. Chez Letterboxd, chaque affiche porte ses gestes ; ici la collection entiere etait
+ * une table des matieres — la seule chose qu'on puisse en faire est d'ouvrir une fiche.
+ *
+ * Le meme bouton que la bande de l'accueil, avec la meme fonction de domaine
+ * ({@link nextAfter}) et le meme libelle nomme (« J'ai vu S3E5 ») : c'est le geste le plus
+ * repete du produit, et il n'avait qu'un seul point d'entree — la premiere serie a reprendre.
+ * Les quarante autres demandaient toujours trois navigations.
+ *
+ * ⚠️ **La vignette decide seule, et deux conditions suffisent** — c'est ce qui evite une prop
+ * `showAction` que chaque rangee devrait penser a passer. Il faut une position (donc rien sur
+ * « ce que je voulais voir », qui n'en a pas) et **aucune decision terminale** : proposer
+ * « J'ai vu S4E1 » sur une serie rangee dans « terminees et abandonnees » contredirait la
+ * section qui la contient — exactement le defaut que le repli « a voir » avait deja produit
+ * ici, et qui *« fait douter de tout le reste »*.
  */
 export function LibraryCard({ item, lead = false }: {
   readonly item: LibraryItem;
@@ -28,6 +48,7 @@ export function LibraryCard({ item, lead = false }: {
 }) {
   const tr = useT();
   const { t, tn, locale } = tr;
+  const { setPosition } = useJournal();
   const parsed = parseJournalKey(item.key);
   const href =
     parsed !== undefined ? seriesPath(parsed.providerId, locale) : pathIn('/', locale);
@@ -52,7 +73,20 @@ export function LibraryCard({ item, lead = false }: {
           ? t('decision.paused')
           : undefined;
 
+  /* Le prochain episode, ou rien — voir l'en-tete de ce fichier pour les deux conditions.
+     ⚠️ Les tailles de saison viennent de l'instantane que `buildLibrary` a **deja** filtre
+     par age : sans elles (journal ancien, instantane pose avant que `seasonSizes` existe) on
+     ne sait pas si S1E7 finit sa saison, donc aucun bouton. Un bouton qui devine se trompe. */
+  const done = decision === 'completed' || decision === 'abandoned';
+  const sizes = item.snapshot?.seasonSizes;
+  const next = done || sizes === undefined ? undefined : nextAfter(sizes, position);
+
   return (
+    // 🔴 **Un conteneur, et le lien a l'interieur.** La vignette entiere etait un `<a>` : y
+    // poser un bouton aurait imbrique un controle dans un lien, ce que le HTML interdit et
+    // que les navigateurs resolvent chacun a leur facon. Meme restructuration que la bande de
+    // l'accueil, pour la meme raison.
+    <div>
     <Link
       href={href}
       className="group block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-(--color-live)"
@@ -126,5 +160,40 @@ export function LibraryCard({ item, lead = false }: {
         )}
       </p>
     </Link>
+
+    {/* ⚠️ **`.btn` et non `.btn-primary`.** Quarante vignettes portant chacune un aplat volt
+        feraient de la bibliotheque un tableau de bord — le critere d'echec que le brief nomme.
+        L'action affirmative garde son poids la ou il n'y en a qu'une par ecran.
+
+        🔴 **Le libelle en toutes lettres ne tient pas, et c'est mesure.** La bande de
+        l'accueil dit « J'ai vu S3E5 » sur toute la largeur de la page ; ici la tuile fait
+        **109 px** en 375 px (trois colonnes), soit 81 px utiles. « J'ai vu S1E3 » y tient
+        (71 px), « J'ai vu S10E12 » non (95 px) — donc le bouton passait a deux lignes **selon
+        la saison ou l'on en est**, et la grille devenait inegale pour une raison que le
+        lecteur ne peut pas deviner. En anglais, « I watched » deborde encore plus tot.
+
+        La coche et la coordonnee, elles, font la **meme largeur dans les deux langues** : le
+        pictogramme porte le geste, `S10E12` porte l'episode, et le tout tient a 78 px. C'est
+        deja l'idiome de la tuile — la position juste au-dessus est ecrite pareil, en
+        `.numeric`, precisement pour que « S3E7 » et « S10E12 » cessent de danser.
+
+        ⚠️ **La phrase entiere reste le nom accessible** (`aria-label`), et c'est celle de la
+        bande au mot pres : ce qui se raccourcit est le dessin, jamais ce que le bouton
+        annonce a qui ne voit pas la tuile. Meme patron que l'icone de recherche de
+        l'en-tete. */}
+    {next !== undefined ? (
+      <button
+        type="button"
+        className="btn mt-2 w-full justify-center"
+        aria-label={t('resume.watched', { s: next.seasonNumber, e: next.episodeNumber })}
+        onClick={() => setPosition(item.key, next.seasonNumber, next.episodeNumber)}
+      >
+        <Icon name="check" />
+        <span className="numeric" aria-hidden="true">
+          S{next.seasonNumber}E{next.episodeNumber}
+        </span>
+      </button>
+    ) : null}
+    </div>
   );
 }
