@@ -91,6 +91,17 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
    */
   const [named, setNamed] = useState<boolean | undefined>(undefined);
 
+  /**
+   * L'onglet lu. Dans l'etat React et **pas dans l'adresse** : les trois panneaux sont deja
+   * tous charges quand la page a repondu (une seule requete les rend ensemble), donc changer
+   * d'onglet ne redemande rien. Mettre la question dans l'URL obligerait `/u/<nom>` a devenir
+   * dynamique — c'est-a-dire un rendu par visiteur, le cout qui a tue TV Time.
+   *
+   * Le defaut est « ce qu'il aime », et c'est l'ordre d'avant les onglets : *une affiche se
+   * lit sans rien savoir de quelqu'un, une phrase suppose qu'on connaisse la serie*.
+   */
+  const [tab, setTab] = useState<Tab>('loves');
+
   const accessToken = account?.accessToken;
   const userId = account?.userId;
 
@@ -275,9 +286,43 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           phrase suppose qu'on connaisse la serie. C'est l'argument qui rangeait les listes en
           premier avant le 2026-08-11 ; il etait faux pour du texte, il reste vrai pour des
           images. */}
-      {loved.length > 0 ? (
-        <section className="space-y-3" aria-label={t('profile.loves')}>
-          <h2 className="section-heading">{t('profile.loves')}</h2>
+      {/* =============================================================================
+          LES TROIS FACES DE QUELQU'UN — et pourquoi elles cessent d'etre empilees
+          =============================================================================
+
+          Les trois sections vivaient l'une sous l'autre. Sur un profil fourni — quarante
+          coeurs, trente critiques a deux colonnes, dix listes — lire ce que la personne
+          **range** demandait de traverser tout ce qu'elle aime et tout ce qu'elle ecrit. Le
+          seul ecran du produit dont le sujet est *quelqu'un* se parcourait au defilement.
+
+          ⚠️ **Les trois onglets sont toujours la, meme vides**, et ce n'est pas un oubli de la
+          regle 4 : « cette personne ne tient aucune liste » est une information **sur elle**,
+          au meme titre que dix listes. C'est la difference avec une porte fermee — rien n'est
+          conditionne a un compte ici, chaque panneau dit ce qu'il en est. Les cacher ferait en
+          plus varier la navigation d'un profil a l'autre, ce qui est la pire facon d'apprendre
+          une interface.
+
+          ⚠️ Le motif ARIA complet (`tablist`/`tab`/`tabpanel`, focus tournant, fleches) et non
+          trois boutons `aria-pressed` : ce sont bien des panneaux qui se remplacent, et c'est
+          la seule forme qui l'annonce. Les fleches sont **obligatoires** dans ce motif — les
+          onglets sortent du parcours de tabulation sauf celui qui est actif, donc sans elles
+          on ne peut plus atteindre les autres au clavier. */}
+      <Tabs current={tab} onSelect={setTab} />
+
+      {tab === 'loves' ? (
+        <section
+          id="panneau-loves"
+          role="tabpanel"
+          aria-labelledby="onglet-loves"
+          tabIndex={0}
+          className="space-y-3"
+          aria-label={t('profile.loves')}
+        >
+          {loved.length === 0 ? (
+            // ⚠️ Sans action : le lecteur ne peut rien pour les series que quelqu'un d'autre
+            // n'a pas aimees. Meme raison que `profile.none` juste a cote.
+            <EmptyState>{t('profile.noLoves')}</EmptyState>
+          ) : (
           <ul className="flex flex-wrap gap-3">
             {loved.map((one) => {
               const parsed = parseJournalKey(one.subject);
@@ -294,12 +339,19 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
               );
             })}
           </ul>
+          )}
         </section>
       ) : null}
 
-      <section className="space-y-3" aria-label={t('profile.reviews')}>
-        <h2 className="section-heading">{t('profile.reviews')}</h2>
-
+      {tab === 'reviews' ? (
+      <section
+        id="panneau-reviews"
+        role="tabpanel"
+        aria-labelledby="onglet-reviews"
+        tabIndex={0}
+        className="space-y-3"
+        aria-label={t('profile.reviews')}
+      >
         {reviews.length === 0 ? (
           <EmptyState>{t('profile.none')}</EmptyState>
         ) : (
@@ -409,11 +461,100 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           </ul>
         )}
       </section>
+      ) : null}
 
-      <section className="space-y-3" aria-label={t('profile.lists')}>
-        <h2 className="section-heading">{t('profile.lists')}</h2>
-        <Lists ownerId={profile.userId} />
-      </section>
+      {tab === 'lists' ? (
+        <section
+          id="panneau-lists"
+          role="tabpanel"
+          aria-labelledby="onglet-lists"
+          tabIndex={0}
+          className="space-y-3"
+          aria-label={t('profile.lists')}
+        >
+          {/* `Lists` porte deja son propre vide de visiteur (`lists.noneOther`) : lui en
+              ajouter un ici ferait dire deux fois la meme chose. */}
+          <Lists ownerId={profile.userId} />
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+/** Les trois panneaux d'un profil. L'ordre est celui d'avant les onglets, et il a sa raison. */
+const TABS = ['loves', 'reviews', 'lists'] as const;
+type Tab = (typeof TABS)[number];
+
+const TAB_LABEL: Readonly<Record<Tab, 'profile.loves' | 'profile.reviews' | 'profile.lists'>> = {
+  loves: 'profile.loves',
+  reviews: 'profile.reviews',
+  lists: 'profile.lists',
+};
+
+/**
+ * La barre d'onglets.
+ *
+ * ⚠️ **Le focus tourne** : un seul onglet est atteignable au `Tab` (celui qui est actif), les
+ * autres se rejoignent aux fleches. C'est le motif ARIA, et ce n'est pas une preference — sans
+ * les fleches, les onglets non actifs deviendraient **inatteignables au clavier**, puisque le
+ * motif les sort lui-meme du parcours de tabulation. Les deux moities vont ensemble ou pas du
+ * tout.
+ *
+ * ⚠️ `Home`/`End` en plus des fleches : trois onglets ne les rendent pas indispensables, mais
+ * c'est la meme boucle de code, et la barre grandira le jour ou un profil aura un journal
+ * public.
+ */
+function Tabs({ current, onSelect }: {
+  readonly current: Tab;
+  readonly onSelect: (tab: Tab) => void;
+}) {
+  const { t } = useT();
+
+  return (
+    <div role="tablist" aria-label={t('profile.tabs')} className="flex gap-1 border-b border-(--color-edge)">
+      {TABS.map((tab) => {
+        const active = tab === current;
+        return (
+          <button
+            key={tab}
+            id={`onglet-${tab}`}
+            role="tab"
+            type="button"
+            aria-selected={active}
+            aria-controls={`panneau-${tab}`}
+            tabIndex={active ? 0 : -1}
+            onClick={() => onSelect(tab)}
+            onKeyDown={(event) => {
+              const step =
+                event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : undefined;
+              const to =
+                step !== undefined
+                  ? TABS[(TABS.indexOf(tab) + step + TABS.length) % TABS.length]
+                  : event.key === 'Home'
+                    ? TABS[0]
+                    : event.key === 'End'
+                      ? TABS[TABS.length - 1]
+                      : undefined;
+              if (to === undefined) return;
+              event.preventDefault();
+              onSelect(to);
+              // Le focus suit la selection : c'est ce que le motif appelle « automatic
+              // activation », et c'est le comportement attendu quand changer d'onglet ne
+              // coute rien — ici tout est deja charge.
+              document.getElementById(`onglet-${to}`)?.focus();
+            }}
+            // Meme dessin que le ruban des faces : capitales serrees, trait volt **sur** le
+            // libelle et sous lui. Deux signaux dont un non colore — la lecon du 2026-08-12.
+            className={`inline-block border-b-2 px-3 py-3 text-xs font-bold tracking-[0.08em] whitespace-nowrap uppercase transition-colors ${
+              active
+                ? 'border-(--color-volt) text-(--color-bright)'
+                : 'border-transparent text-(--color-muted) hover:text-(--color-bright)'
+            }`}
+          >
+            {t(TAB_LABEL[tab])}
+          </button>
+        );
+      })}
     </div>
   );
 }

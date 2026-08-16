@@ -748,6 +748,8 @@ export const FR = {
   'profile.reviews': 'Ce qu’elle ou il a écrit',
   'profile.loves': 'Ce qu’il ou elle aime',
   'profile.none': 'Rien de public à lire ici pour l’instant.',
+  'profile.tabs': 'Ce qu’il ou elle publie',
+  'profile.noLoves': 'Aucun coup de cœur public pour l’instant.',
   // ⚠️ Absente à zéro, et c'est une exception assumée à la règle 4 : sur /bilan « 0 critique »
   // est une porte — votre écran, votre geste ; ici le lecteur ne peut rien pour ce que
   // quelqu'un d'autre n'a pas écrit, et la section plus bas le dit déjà.

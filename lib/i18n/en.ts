@@ -635,6 +635,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'profile.reviews': 'What they have written',
   'profile.loves': 'What they love',
   'profile.none': 'Nothing public to read here yet.',
+  'profile.tabs': 'What they publish',
+  'profile.noLoves': 'No public favourites yet.',
   'profile.count.one': '{n} review published',
   'profile.count.other': '{n} reviews published',
   'profile.follow': 'Follow',
