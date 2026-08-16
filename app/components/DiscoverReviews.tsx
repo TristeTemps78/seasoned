@@ -134,7 +134,16 @@ export function DiscoverReviews() {
                   {href === undefined ? (
                     <span className="text-sm font-medium">{title}</span>
                   ) : (
-                    <Link className="block text-sm font-medium hover:text-(--color-volt)" href={href}>
+                    /* ⚠️ `tap-line` et non `block` : mesure a 384 x **20 px** le 2026-08-16,
+                       sous le plancher de 24 px que WCAG 2.5.8 impose et que ce depot
+                       s'applique depuis le 2026-08-13 sur `.grid-cell` et `.star-box`. Les
+                       deux classes se disputent `display`, et l'utilitaire gagnerait sur la
+                       couche `components` : garder `block` annulerait la correction en
+                       silence. `tap-line` grandit la cible sans deplacer le texte. */
+                    <Link
+                      className="tap-line text-sm font-medium hover:text-(--color-volt)"
+                      href={href}
+                    >
                       {title}
                     </Link>
                   )}
@@ -144,9 +153,12 @@ export function DiscoverReviews() {
                   <p className="flex flex-wrap items-center gap-x-2 gap-y-1 meta-sm">
                     <span className="flex items-center gap-1.5">
                       <FaceDot face={shown.face} />
+                      {/* Mesure a 88 x **17 px** : le nom de l'auteur etait la plus petite
+                          cible de la page, et c'est le lien qui ouvre un profil — le geste
+                          meme que cette vitrine existe pour provoquer. */}
                       <Link
                         href={pathIn(`/u/${shown.handle}`, locale)}
-                        className="font-medium hover:text-(--color-volt)"
+                        className="tap-line font-medium hover:text-(--color-volt)"
                       >
                         @{shown.handle}
                       </Link>

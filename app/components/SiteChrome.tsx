@@ -4,6 +4,7 @@ import { TMDB_ATTRIBUTION } from '@/src/catalog/provider';
 import { PRODUCT_NAME, siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
 import { DataSafety } from '@/app/components/DataSafety';
+import { WriteFailureNotice } from '@/app/components/WriteFailureNotice';
 import { PublishActivity } from '@/app/components/PublishActivity';
 import { LanguagePicker } from '@/app/components/LanguagePicker';
 import { MyFace } from '@/app/components/MyFace';
@@ -192,6 +193,12 @@ export function SiteChrome({ locale, Messages, children }: {
               depend pas de l'endroit ou l'on se trouve. Ne rend rien tant qu'il n'y a
               rien a perdre, ni si l'application est deja installee. */}
           <DataSafety />
+          {/* 🔴 Le seul ecran d'une panne d'ecriture, et il manquait : `onFailure` etait
+              propage jusqu'a `socialFrom` depuis le 2026-08-11 **sans un seul abonne**.
+              Trois fonctionnalites sont mortes en silence pour cette raison. Ici pour la
+              meme raison que `PublishActivity` : une ecriture part de n'importe quelle
+              page, donc son echec doit pouvoir s'y annoncer. */}
+          <WriteFailureNotice />
           {/* 9.3 — la bascule s'annonce la ou l'on se trouve, et une seule fois : la
               memoire est un champ de journal, donc elle suit d'un appareil a l'autre. Ne
               rend rien hors d'un vrai changement de face. */}

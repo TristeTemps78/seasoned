@@ -1,5 +1,6 @@
 import { authConfigFromEnv } from '@/src/auth/client';
 import { SocialClient, type SocialOptions } from '@/src/social/client';
+import { reportFailure } from '@/app/social/failures';
 
 /**
  * Un client social, ou **rien** faute de configuration.
@@ -48,6 +49,14 @@ export function socialFrom(
     url: config.url,
     anonKey: config.anonKey,
     accessToken: () => accessToken,
-    ...(onFailure !== undefined ? { onFailure } : {}),
+    // 🔴 **L'abonnement est le DEFAUT, et c'est la correction du 2026-08-16.** `onFailure`
+    // etait propage jusqu'ici depuis le 2026-08-11 et **aucun des douze appelants ne le
+    // passait** : le rappel existait, documente et teste, sans un seul abonne. Le laisser
+    // facultatif revenait a demander a douze fichiers de se souvenir d'une option — ce qui
+    // est precisement le probleme que ce fichier existe pour supprimer.
+    //
+    // Un appelant peut toujours donner le sien : il remplace alors le rappel commun, ce qui
+    // est ce qu'on veut quand un ecran sait dire la panne mieux que la banniere generale.
+    onFailure: onFailure ?? reportFailure,
   });
 }

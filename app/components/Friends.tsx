@@ -136,7 +136,11 @@ export function Friends() {
       setFans(following);
       // Les deux moities du fil, en parallele : ce sont deux tables, donc deux lectures, et
       // les enchainer doublerait l'attente pour rien.
-      const [facts, texts] = await Promise.all([social.feed(), social.feedReviews()]);
+      // ⚠️ `id` en second argument : sans lui le fil rendait **ses propres** lignes sous un
+      // titre qui dit « eux » — 4 faits de `@test` sur 13, mesures le 2026-08-16. RLS laisse
+      // passer ce qu'on a soi-meme ecrit, et c'est juste ; c'est au fil des autres de s'en
+      // retirer.
+      const [facts, texts] = await Promise.all([social.feed(50, id), social.feedReviews(30, id)]);
       setFeed(facts);
       setWritten(texts);
     },
@@ -387,37 +391,27 @@ export function Friends() {
           </div>
         ) : null}
 
-        {/* 🔴 La visibilite du profil, qui n'etait reglable NULLE PART.
-            `setVisibility()` existait sans appelant, et la valeur etait codee en dur a
-            `followers` a la creation — donc aucune critique, aucun fait, n'aurait jamais pu
-            etre lu par quelqu'un qui ne vous suit pas deja. Le social etait bati et aveugle. */}
-        <div className="space-y-1 text-sm">
-          <p className="text-(--color-muted)">{t('friends.visibility')}</p>
-          <div className="flex flex-wrap gap-2">
-            {(
-              [
-                ['private', 'friends.visibility.private'],
-                ['followers', 'friends.visibility.followers'],
-                ['public', 'friends.visibility.public'],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={profile.visibility === value}
-                onClick={() => {
-                  if (client === undefined || userId === undefined) return;
-                  void client.setVisibility(userId, value).then((ok) => {
-                    if (ok) setProfile({ ...profile, visibility: value });
-                  });
-                }}
-                className="btn rounded-full"
-              >
-                {t(label)}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* 🔴 La bascule de visibilite **etait ici**, et c'etait le defaut : le reglage le
+            plus engageant du produit vivait sur la page ou l'on va regarder les autres,
+            pendant que « Mon compte » n'en disait rien.
+
+            ⚠️ **Une ligne, pas un second controle.** Copier la bascule donnerait deux
+            copies du meme profil chargees separement : celle qu'on ne regarde pas afficherait
+            l'ancienne valeur jusqu'au rechargement, et rien ne dirait laquelle ment. Ici on
+            **nomme** l'etat courant — la question se pose naturellement a cote de ses
+            abonnes — et le chemin est cliquable. */}
+        <p className="text-sm text-(--color-muted)">
+          {t('friends.visibility.now')}{' '}
+          <span className="font-medium text-(--color-text)">
+            {t(`friends.visibility.${profile.visibility}`)}
+          </span>{' '}
+          <Link
+            className="tap-line underline hover:text-(--color-volt)"
+            href={pathIn('/compte', locale)}
+          >
+            {t('friends.visibility.change')}
+          </Link>
+        </p>
       </section>
 
       {/* Avant le fil : quand on n'a suivi personne, le fil est vide et c'est justement

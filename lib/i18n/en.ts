@@ -413,6 +413,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'friends.followersLabel': 'Following you',
   'friends.followBack': 'follow back',
   'friends.visibility': 'Who can see what you publish',
+  // Sur `/amis` : l'etat courant en une phrase, et le chemin vers le seul controle. Voir
+  // `ProfileSettings` — deux bascules sur le meme etat en feraient une qui ment.
+  'friends.visibility.now': 'Who can see what you publish:',
+  'friends.visibility.change': 'Change this in My account',
   'friends.visibility.private': 'Nobody',
   'friends.visibility.followers': 'People who follow you',
   'friends.visibility.public': 'Everyone',
@@ -565,17 +569,35 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'discovery.notFound.title': 'While you are here',
   'discovery.notFound.subtitle': 'The ones everyone has seen, in case you were after something else.',
 
-  'search.placeholder': 'Search for a series…',
+  // ⚠️ Les trois phrases suivantes annoncent ce que la recherche cherche, et elles doivent
+  // bouger ENSEMBLE : elles disaient « une serie » alors que trois index repondent depuis le
+  // 2026-08-15 — les series du catalogue, les gens d'ici, et leurs listes. Un champ qui
+  // sous-annonce ce qu'il sait faire est un champ que personne n'essaie autrement.
+  'search.placeholder': 'Search series, people, lists…',
   'search.submit': 'Search',
   'search.title': 'Search',
   'search.titleQuery': '“{q}”',
-  'search.prompt': 'Type the name of a series.',
+  'search.prompt': 'Type the name of a series, of someone here, or of one of their lists.',
   'search.unavailable': 'The catalogue is temporarily unavailable. Try again in a moment.',
   'search.none': 'No results for “{q}”.',
+  // ⚠️ Aucun code, aucun chemin PostgREST : `42501` n'apprend rien a qui vient de cliquer.
+  // La phrase dit ce qui s'est passe et ce qu'on peut faire — toutes les ecritures de ce
+  // produit sont idempotentes, donc « recommencez » est vrai.
+  // Le profil, sur « Mon compte » — voir `ProfileSettings`.
+  'account.profile.title': 'My profile here',
+  'account.profile.youAre': 'You are',
+  'account.profile.noHandle': 'You have not picked a name yet, so nobody can follow you.',
+  'account.profile.claimThere': 'Pick one on Friends',
+
+  'write.failed.title': 'That did not get saved.',
+  'write.failed.body':
+    'Your last action never reached the server. Nothing is lost on this device — do it again, and it will go through.',
+  'write.failed.dismiss': 'Dismiss',
+
   'search.people': 'People',
   'search.lists': 'Lists',
   'search.none.hint':
-    'Check the spelling, or try the original title. Only series are indexed: a film will not be here.',
+    'Check the spelling, or try the original title. The catalogue holds series only — a film will not be here — alongside the people and lists on Voltface.',
   'search.count.one': '{n} result for “{q}”',
   'search.count.other': '{n} results for “{q}”',
 
@@ -595,8 +617,14 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'progress.wanted': '✓ On my list',
   'progress.like': 'Love',
   'progress.liked': 'Loved',
-  'review.write': 'Write what I thought',
-  'review.edit': 'Edit my review',
+  // 🔴 **Deux boutons, un seul libelle visible, jusqu'au 2026-08-16.** L'un notait la saison,
+  // l'autre la serie, a quelques centimetres l'un de l'autre dans la meme colonne — et ils ne
+  // se distinguaient que par un suffixe `sr-only`. Un lecteur d'ecran les separait ; un oeil,
+  // non. La cible est nommee **dans** le libelle, pas a cote.
+  'review.write.series': 'Write what I thought of the series',
+  'review.write.season': 'Write what I thought of season {n}',
+  'review.edit.series': 'Edit what I wrote about the series',
+  'review.edit.season': 'Edit what I wrote about season {n}',
   'review.onSeries': 'On the series',
   'review.onSeason': 'On season {n}',
   'review.placeholder': 'What you made of it — for you, and for those still deciding.',

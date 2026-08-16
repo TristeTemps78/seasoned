@@ -64,8 +64,12 @@ export interface SocialOptions {
    *
    * @param where le chemin PostgREST concerne — de quoi nommer ce qui a echoue.
    * @param status le code HTTP, absent si la panne est reseau.
+   * @param kind lecture ou ecriture. ⚠️ **Les deux ne se disent pas de la meme facon** : une
+   *   lecture ratee a deja son ecran (« je n'ai pas pu lire », `EmptyState status`), alors
+   *   qu'une ecriture ratee n'en a aucun — le geste a l'air d'avoir marche. Ajoute le
+   *   2026-08-16 avec le premier abonne ; facultatif, donc les rappels d'avant compilent.
    */
-  readonly onFailure?: (where: string, status?: number) => void;
+  readonly onFailure?: (where: string, status?: number, kind?: 'read' | 'write') => void;
 }
 
 export type Visibility = 'private' | 'followers' | 'public';
@@ -421,9 +425,9 @@ export class SocialClient {
    * Le seul endroit ou une panne est **nommee**. Voir {@link SocialOptions.onFailure} : le
    * rappel ne doit jamais pouvoir casser ce qu'il observe, donc son propre echec est avale.
    */
-  #failed(where: string, status?: number): void {
+  #failed(where: string, status?: number, kind: 'read' | 'write' = 'read'): void {
     try {
-      this.#options.onFailure?.(where, status);
+      this.#options.onFailure?.(where, status, kind);
     } catch {
       /* Un observateur qui leve ne doit pas faire tomber ce qu'il observe. */
     }
@@ -514,10 +518,10 @@ export class SocialClient {
         this.#url(`profiles?user_id=eq.${encodeURIComponent(userId)}`),
         { method: 'PATCH', headers: this.#headers(), body: JSON.stringify({ visibility }) },
       );
-      if (!response.ok) this.#failed('profiles', response.status);
+      if (!response.ok) this.#failed('profiles', response.status, 'write');
       return response.ok;
     } catch {
-      this.#failed('profiles');
+      this.#failed('profiles', undefined, 'write');
       return false;
     }
   }
@@ -595,10 +599,10 @@ export class SocialClient {
         headers: this.#headers({ Prefer: 'resolution=ignore-duplicates,return=minimal' }),
         body: JSON.stringify({ follower_id: followerId, followee_id: followeeId }),
       });
-      if (!response.ok) this.#failed('follows', response.status);
+      if (!response.ok) this.#failed('follows', response.status, 'write');
       return response.ok;
     } catch {
-      this.#failed('follows');
+      this.#failed('follows', undefined, 'write');
       return false;
     }
   }
@@ -611,10 +615,10 @@ export class SocialClient {
         ),
         { method: 'DELETE', headers: this.#headers() },
       );
-      if (!response.ok) this.#failed('follows', response.status);
+      if (!response.ok) this.#failed('follows', response.status, 'write');
       return response.ok;
     } catch {
-      this.#failed('follows');
+      this.#failed('follows', undefined, 'write');
       return false;
     }
   }
@@ -674,9 +678,24 @@ export class SocialClient {
    * marginal par utilisateur que ce produit refuse partout ailleurs.
    *
    * RLS fait le filtrage : on demande tout, la base ne rend que le visible.
+   *
+   * ## 🔴 Et « le visible » inclut ses PROPRES lignes, ce que le titre dementait
+   *
+   * Mesure le 2026-08-16 : **4 faits de `@test` sur 13** dans un fil intitule *« What they
+   * are up to »*. Ses propres gestes lui revenaient annonces comme ceux de quelqu'un
+   * d'autre — et sur une base a deux comptes, un fil peuple **surtout de soi** donne
+   * l'illusion d'une communaute qui n'existe pas encore.
+   *
+   * `except` retire l'auteur au niveau de la requete plutot qu'apres coup : filtrer en aval
+   * gaspillerait la moitie de la limite de 50 en lignes jetees, donc raccourcirait le fil
+   * d'autant. ⚠️ Il reste **facultatif** — un appelant sans compte n'a personne a retirer,
+   * et `undefined` doit alors demander le fil tel quel, jamais `user_id=neq.undefined`.
    */
-  async feed(limit = 50): Promise<readonly FeedItem[]> {
-    return this.#activity('', limit);
+  async feed(limit = 50, except?: string): Promise<readonly FeedItem[]> {
+    return this.#activity(
+      except === undefined ? '' : `user_id=neq.${encodeURIComponent(except)}&`,
+      limit,
+    );
   }
 
   /**
@@ -827,10 +846,10 @@ export class SocialClient {
           ),
         },
       );
-      if (!response.ok) this.#failed('activity', response.status);
+      if (!response.ok) this.#failed('activity', response.status, 'write');
       return response.ok;
     } catch {
-      this.#failed('activity');
+      this.#failed('activity', undefined, 'write');
       return false;
     }
   }
@@ -868,10 +887,10 @@ export class SocialClient {
           })),
         }),
       });
-      if (!response.ok) this.#failed('rpc/publish_stops', response.status);
+      if (!response.ok) this.#failed('rpc/publish_stops', response.status, 'write');
       return response.ok;
     } catch {
-      this.#failed('rpc/publish_stops');
+      this.#failed('rpc/publish_stops', undefined, 'write');
       return false;
     }
   }
@@ -992,10 +1011,10 @@ export class SocialClient {
           poster_path: review.posterPath ?? null,
         }),
       });
-      if (!response.ok) this.#failed('reviews', response.status);
+      if (!response.ok) this.#failed('reviews', response.status, 'write');
       return response.ok;
     } catch {
-      this.#failed('reviews');
+      this.#failed('reviews', undefined, 'write');
       return false;
     }
   }
@@ -1063,8 +1082,11 @@ export class SocialClient {
    * la meme raison qui a fait choisir la jointure PostgREST pour {@link feed} — une requete
    * par ami est exactement le cout marginal par utilisateur que ce produit refuse.
    */
-  async feedReviews(limit = 30): Promise<readonly PublishedReview[]> {
-    return this.#reviews('', limit);
+  async feedReviews(limit = 30, except?: string): Promise<readonly PublishedReview[]> {
+    // ⚠️ Meme retrait que {@link feed}, et il doit se faire aux deux endroits : les deux
+    // moities se rangent ensemble dans `src/domain/feed.ts`, donc n'en filtrer qu'une
+    // laisserait ses propres critiques sous un titre qui dit « eux ».
+    return this.#reviews(except === undefined ? '' : `user_id=neq.${encodeURIComponent(except)}&`, limit);
   }
 
   /**
@@ -1119,7 +1141,7 @@ export class SocialClient {
           ),
           { method: 'DELETE', headers: this.#headers() },
         );
-        if (!response.ok) this.#failed('review_likes', response.status);
+        if (!response.ok) this.#failed('review_likes', response.status, 'write');
         return response.ok;
       }
       const response = await this.#fetch(this.#url('review_likes'), {
@@ -1136,10 +1158,10 @@ export class SocialClient {
           target,
         }),
       });
-      if (!response.ok) this.#failed('review_likes', response.status);
+      if (!response.ok) this.#failed('review_likes', response.status, 'write');
       return response.ok;
     } catch {
-      this.#failed('review_likes');
+      this.#failed('review_likes', undefined, 'write');
       return false;
     }
   }
@@ -1578,10 +1600,10 @@ export class SocialClient {
         headers: this.#headers({ Prefer: prefer }),
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
-      if (!response.ok) this.#failed(path, response.status);
+      if (!response.ok) this.#failed(path, response.status, 'write');
       return response.ok;
     } catch {
-      this.#failed(path);
+      this.#failed(path, undefined, 'write');
       return false;
     }
   }

@@ -182,9 +182,16 @@ describe('les maillons que rien d autre ne couvre', () => {
   it('la visibilite du profil est reglable, et unfollow a un appelant', () => {
     // Les deux etaient du code mort : sans elles, aucune critique n'aurait pu etre lue par
     // quelqu'un qui ne vous suit pas deja, et on ne pouvait pas cesser de suivre.
-    const source = sourceOf('app/components/Friends.tsx');
-    expect(source).toMatch(/client\.setVisibility\(/);
-    expect(source).toMatch(/client\.unfollow\(/);
+    //
+    // ⚠️ **La bascule a demenage le 2026-08-16**, de `/amis` vers `/compte` : les deux
+    // reglages les plus engageants du produit vivaient sur la page ou l'on va regarder les
+    // autres. Ce que cette garde protege n'est pas un *fichier*, c'est le fait que ces
+    // methodes aient un appelant — donc elle suit le controle plutot que de tomber. Il n'y
+    // en a qu'un seul et il doit le rester : deux bascules sur le meme etat en feraient une
+    // qui affiche l'ancienne valeur.
+    expect(sourceOf('app/components/ProfileSettings.tsx')).toMatch(/social\.setVisibility\(/);
+    expect(sourceOf('app/components/Friends.tsx')).not.toMatch(/setVisibility\(/);
+    expect(sourceOf('app/components/Friends.tsx')).toMatch(/client\.unfollow\(/);
   });
 });
 

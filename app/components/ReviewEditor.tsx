@@ -56,9 +56,17 @@ export function ReviewEditor({ seriesId, seasonNumber, canPublish }: {
 
   if (!open) {
     return (
+      // 🔴 **Le libelle nomme la cible, et il n'est plus `sr-only`.** Les deux boutons — la
+      // saison, la serie — vivent dans la meme colonne a quelques centimetres l'un de
+      // l'autre : ils rendaient exactement le meme texte visible, et ne se separaient que
+      // pour un lecteur d'ecran. Une aide d'accessibilite qui repare un defaut d'affichage
+      // le cache aux voyants au lieu de le corriger.
       <button type="button" onClick={() => setOpen(true)} className="btn rounded-full">
-        {existing === undefined ? t('review.write') : t('review.edit')}
-        <span className="sr-only"> — {label}</span>
+        {seasonNumber === undefined
+          ? t(existing === undefined ? 'review.write.series' : 'review.edit.series')
+          : t(existing === undefined ? 'review.write.season' : 'review.edit.season', {
+              n: seasonNumber,
+            })}
       </button>
     );
   }

@@ -484,6 +484,10 @@ export const FR = {
   'friends.followersLabel': 'Vous suivent',
   'friends.followBack': 'suivre en retour',
   'friends.visibility': 'Qui peut voir ce que vous publiez',
+  // Sur `/amis` : l'état courant en une phrase, et le chemin vers le seul contrôle. Voir
+  // `ProfileSettings` — deux bascules sur le même état en feraient une qui ment.
+  'friends.visibility.now': 'Qui peut voir ce que vous publiez :',
+  'friends.visibility.change': 'Le changer dans Mon compte',
   'friends.visibility.private': 'Personne',
   'friends.visibility.followers': 'Ceux qui vous suivent',
   'friends.visibility.public': 'Tout le monde',
@@ -661,22 +665,41 @@ export const FR = {
   'discovery.notFound.subtitle': 'Celles que tout le monde a vues, au cas où vous cherchiez autre chose.',
 
   // --- Recherche -----------------------------------------------------------
-  'search.placeholder': 'Chercher une série…',
+  // ⚠️ Les trois phrases de cette recherche annoncent ce qu'elle cherche, et elles bougent
+  // ENSEMBLE : elles disaient « une série » alors que trois index répondent depuis le
+  // 2026-08-15 — les séries du catalogue, les gens d'ici, et leurs listes. Un champ qui
+  // sous-annonce ce qu'il sait faire est un champ que personne n'essaie autrement.
+  'search.placeholder': 'Chercher une série, quelqu’un, une liste…',
   'search.submit': 'Chercher',
   'search.title': 'Recherche',
   // Les guillemets font partie de la traduction : le francais met des chevrons et une
   // espace insecable, l'anglais des guillemets courbes colles au mot.
   'search.titleQuery': '« {q} »',
-  'search.prompt': 'Tapez le nom d’une série.',
+  'search.prompt': 'Tapez le nom d’une série, de quelqu’un d’ici, ou d’une de ses listes.',
   'search.unavailable': 'Le catalogue est momentanément indisponible. Réessayez dans un instant.',
   'search.none': 'Aucun résultat pour « {q} ».',
+  // ⚠️ Aucun code, aucun chemin PostgREST : « 42501 » n'apprend rien à qui vient de cliquer.
+  // La phrase dit ce qui s'est passé et ce qu'on peut faire — toutes les écritures de ce
+  // produit sont idempotentes, donc « recommencez » est vrai.
+  // Le profil, sur « Mon compte » — voir `ProfileSettings`.
+  'account.profile.title': 'Mon profil ici',
+  'account.profile.youAre': 'Vous êtes',
+  'account.profile.noHandle':
+    'Vous n’avez pas encore choisi de nom, donc personne ne peut vous suivre.',
+  'account.profile.claimThere': 'En choisir un sur Amis',
+
+  'write.failed.title': 'Ce geste n’est pas parti.',
+  'write.failed.body':
+    'Votre dernière action n’a pas atteint le serveur. Rien n’est perdu sur cet appareil — refaites-la, elle passera.',
+  'write.failed.dismiss': 'Fermer',
+
   'search.people': 'Des gens',
   'search.lists': 'Des listes',
   // ⚠️ Le conseil dit ce que le catalogue **ne contient pas**. C'est la seule cause d'echec
   // qu'on connaisse a l'avance et que le chercheur ne peut pas deviner : rien a l'ecran ne
   // dit qu'un film n'a aucune chance d'etre trouve ici.
   'search.none.hint':
-    'Vérifiez l’orthographe, ou essayez le titre original. Seules les séries sont référencées : un film ne s’y trouvera pas.',
+    'Vérifiez l’orthographe, ou essayez le titre original. Le catalogue ne porte que des séries — un film ne s’y trouvera pas — à côté des gens et des listes de Voltface.',
   'search.count.one': '{n} résultat pour « {q} »',
   'search.count.other': '{n} résultats pour « {q} »',
 
@@ -698,8 +721,14 @@ export const FR = {
   'progress.wanted': '✓ Dans ma liste',
   'progress.like': 'J’aime',
   'progress.liked': 'Aimée',
-  'review.write': 'Écrire ce que j’en ai pensé',
-  'review.edit': 'Modifier ma critique',
+  // 🔴 **Deux boutons, un seul libellé visible, jusqu'au 2026-08-16.** L'un notait la saison,
+  // l'autre la série, à quelques centimètres l'un de l'autre dans la même colonne — et ils ne
+  // se distinguaient que par un suffixe `sr-only`. Un lecteur d'écran les séparait ; un œil,
+  // non. La cible est nommée **dans** le libellé, pas à côté.
+  'review.write.series': 'Écrire ce que j’ai pensé de la série',
+  'review.write.season': 'Écrire ce que j’ai pensé de la saison {n}',
+  'review.edit.series': 'Modifier ce que j’ai écrit sur la série',
+  'review.edit.season': 'Modifier ce que j’ai écrit sur la saison {n}',
   'review.onSeries': 'Sur la série',
   'review.onSeason': 'Sur la saison {n}',
   'review.placeholder': 'Ce que vous en avez pensé, pour vous — et pour ceux qui hésitent.',

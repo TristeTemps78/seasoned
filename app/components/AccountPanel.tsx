@@ -5,6 +5,7 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { SignIn } from '@/app/components/SignIn';
+import { ProfileSettings } from '@/app/components/ProfileSettings';
 
 /**
  * Ce que la page compte montre, selon qu'on est connecte ou non.
@@ -82,6 +83,11 @@ export function AccountPanel() {
       </section>
 
       <p className="max-w-prose meta">{t('account.notSynced')}</p>
+
+      {/* 🔴 Le nom public et la visibilite vivaient sur `/amis` — la page ou l'on va pour
+          regarder les autres — et « Mon compte » n'en disait rien. Ce sont les deux reglages
+          les plus engageants du produit : ils appartiennent ici. Voir `ProfileSettings`. */}
+      <ProfileSettings />
 
       <StopMapConsent />
 
