@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
@@ -114,6 +114,18 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
   const [sort, setSort] = useState<ListSort>(DEFAULT_LIST_SORT);
 
   const [lists, setLists] = useState<readonly SeriesList[]>([]);
+  /**
+   * ⚠️ **Range une fois par changement de tri, et non a chaque rendu.**
+   *
+   * Ce composant se rend a chaque depliage de carte (`open`), a chaque chargement du contenu
+   * d'une liste (`items`), a chaque frappe dans le formulaire de creation (`title`, `note`).
+   * Le rangement etait ecrit dans le JSX : il repartait donc a chaque touche tapee, en
+   * construisant a chaque fois un `Intl.Collator` neuf — l'objet le plus cher de la fonction.
+   * Meme discipline que `buildLibrary` dans `Library.tsx`, et pour la meme raison ecrite la :
+   * *« le rangement traverse toutes les entrees, il n'a aucune raison de recommencer a chaque
+   * rendu »*.
+   */
+  const ordered = useMemo(() => orderLists(lists, sort, localeTag(locale)), [lists, sort, locale]);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<string | undefined>(undefined);
   const [items, setItems] = useState<Readonly<Record<string, readonly string[]>>>({});
@@ -342,7 +354,7 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
         // pour choisir, pas un article qu'on lit de haut en bas. Empilees pleine largeur, dix
         // listes demandent dix ecrans de defilement pour en trouver une.
         <ul className="grid gap-3 sm:grid-cols-2">
-          {orderLists(lists, sort, localeTag(locale)).map((list) => {
+          {ordered.map((list) => {
             const shown = items[list.slug] ?? [];
             const isOpen = open === list.slug;
 

@@ -118,6 +118,22 @@ export function classifyMarks(
 }
 
 /**
+ * Les saisons **utilisables**, rangees dans l'ordre.
+ *
+ * ⚠️ Ecrite parce que les deux fonctions publiques de ce module ouvraient sur les memes
+ * trois lignes, au caractere pres. Ce n'est pas de l'economie : le filtre porte une decision
+ * — une saison de zero episode ou de numero non fini vient du fournisseur et **n'existe
+ * pas** pour nous — et deux copies de cette decision, c'est la garantie qu'un jour l'une
+ * acceptera ce que l'autre refuse. Meme raison que `.grid-cell` et `.star-box`, declarees
+ * d'un bloc parce qu'elles doivent s'accorder.
+ */
+function knownSeasons(seasons: readonly SeasonSize[]): readonly SeasonSize[] {
+  return [...seasons]
+    .filter((s) => Number.isFinite(s.seasonNumber) && s.episodeCount > 0)
+    .sort((a, b) => a.seasonNumber - b.seasonNumber);
+}
+
+/**
  * Ce qu'il reste apres la position.
  *
  * @param seasons saisons notables, dans n'importe quel ordre.
@@ -139,9 +155,7 @@ export function remainingAfter(
 ): Remaining | undefined {
   if (position === undefined) return undefined;
 
-  const known = [...seasons]
-    .filter((s) => Number.isFinite(s.seasonNumber) && s.episodeCount > 0)
-    .sort((a, b) => a.seasonNumber - b.seasonNumber);
+  const known = knownSeasons(seasons);
   if (known.length === 0) return undefined;
 
   let episodes = 0;
@@ -225,9 +239,7 @@ export function nextAfter(
 ): WatchPosition | undefined {
   if (position === undefined) return undefined;
 
-  const known = [...seasons]
-    .filter((s) => Number.isFinite(s.seasonNumber) && s.episodeCount > 0)
-    .sort((a, b) => a.seasonNumber - b.seasonNumber);
+  const known = knownSeasons(seasons);
   if (known.length === 0) return undefined;
 
   const current = known.find((s) => s.seasonNumber === position.seasonNumber);
