@@ -33,6 +33,24 @@ export interface AuthoredReview {
   readonly publishedAt: string;
 }
 
+/**
+ * A partir de combien de critiques les commandes de tri apparaissent.
+ *
+ * ⚠️ **Ce n'est pas une economie de pixels, c'est la regle 4 lue a l'endroit.** Elle demande
+ * qu'un ecran sans issue dise quoi faire ; elle ne demande pas qu'un tri s'affiche au-dessus
+ * de deux textes — `CLAUDE.md` le dit pour le compteur de coeurs a zero, et c'est le meme
+ * cas. Trier trois critiques ne repond a aucune question qu'on se pose.
+ *
+ * Cinq, comme le seuil de `stop_map()` : c'est deja le nombre a partir duquel ce produit
+ * considere qu'une liste devient une population.
+ *
+ * ⚠️ **Il vit ici et plus dans `Reviews.tsx`** : le profil public porte le meme tri depuis le
+ * 2026-08-17, et un seuil recopie est une decision ecrite deux fois. Ce depot a trouve cette
+ * forme quatre fois (la note du public, `spread`, `publishedAt`, `updated_at`), et a chaque
+ * fois les deux copies avaient fini par differer.
+ */
+export const CONTROLS_FROM = 5;
+
 export const ALL_REVIEW_SORTS = ['recent', 'liked'] as const;
 export type ReviewSort = (typeof ALL_REVIEW_SORTS)[number];
 

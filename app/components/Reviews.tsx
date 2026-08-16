@@ -13,35 +13,18 @@ import { journalKey } from '@/src/domain/journal';
 import { redactReviews } from '@/src/domain/spoiler';
 import {
   ALL_REVIEW_AUDIENCES,
-  ALL_REVIEW_SORTS,
+  CONTROLS_FROM,
   orderReviews,
   type ReviewAudience,
   type ReviewSort,
 } from '@/src/domain/review-order';
+import { ReviewHeart } from '@/app/components/ReviewHeart';
+import { ReviewSortMenu } from '@/app/components/ReviewSortMenu';
 import { type PublishedReview, type ReviewLikes } from '@/src/social/client';
 import { formatDate } from '@/lib/format';
 import type { MessageKey } from '@/lib/i18n/engine';
 import { pathIn } from '@/lib/routes';
 import { socialFrom } from '@/app/social/socialFrom';
-
-/**
- * A partir de combien de critiques les commandes apparaissent.
- *
- * ⚠️ **Ce n'est pas une economie de pixels, c'est la regle 4 lue a l'endroit.** Elle demande
- * qu'un ecran sans issue dise quoi faire ; elle ne demande pas qu'un tri s'affiche au-dessus
- * de deux textes — `CLAUDE.md` le dit pour le compteur de coeurs a zero, et c'est le meme
- * cas. Trier trois critiques ne repond a aucune question qu'on se pose, et la colonne de la
- * fiche serie porte deja onze blocs.
- *
- * Cinq, comme le seuil de `stop_map()` : c'est deja le nombre a partir duquel ce produit
- * considere qu'une liste devient une population.
- */
-const CONTROLS_FROM = 5;
-
-const SORT_LABEL = {
-  recent: 'review.sortRecent',
-  liked: 'review.sortLiked',
-} as const satisfies Record<ReviewSort, MessageKey>;
 
 const AUDIENCE_LABEL = {
   everyone: 'review.audienceEveryone',
@@ -206,13 +189,7 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
         // la place ne se dispute pas avec un catalogue mais avec « Ou j'en suis », la
         // trajectoire et les saisons — tout ce que quelqu'un est venu lire.
         <div className="flex flex-wrap items-center gap-2">
-          <Menu
-            id="reviews-sort"
-            label={t('review.sort')}
-            value={sort}
-            onChange={(value) => setSort(value as ReviewSort)}
-            options={ALL_REVIEW_SORTS.map((one) => ({ value: one, label: t(SORT_LABEL[one]) }))}
-          />
+          <ReviewSortMenu id="reviews-sort" value={sort} onChange={setSort} />
           {/* ⚠️ Sans compte, « les gens que je suis » et « les miennes » ne peuvent rien
               rendre : le menu entier ne s'affiche pas, plutot que de proposer deux options
               qui ne marchent pas (regle du 2026-08-09). Le tri, lui, marche pour tout le
@@ -338,7 +315,7 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                     On ne peut pas non plus aimer sa propre critique : ce serait un compteur
                     qu'on s'incremente soi-meme. */}
                 {account !== undefined && account.userId !== review.authorId ? (
-                  <LikeButton
+                  <ReviewHeart
                     count={likes[id]?.likes ?? 0}
                     mine={likes[id]?.mine ?? false}
                     onToggle={async (next) => {
@@ -374,45 +351,5 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
         </ul>
       )}
     </section>
-  );
-}
-
-/**
- * Le coeur d'une critique.
- *
- * ⚠️ **Le nombre ne s'affiche qu'a partir de un**, et c'est une exception assumee a la
- * regle 4 (2026-08-11). Un « 0 » colle a un coeur n'ouvre rien : il n'a ni cause a
- * expliquer, ni geste a proposer que le coeur lui-meme ne propose deja. La regle demande
- * qu'un ecran vide dise quoi faire ; elle ne demande pas qu'un compteur affiche zero.
- */
-function LikeButton({
-  count,
-  mine,
-  onToggle,
-}: {
-  readonly count: number;
-  readonly mine: boolean;
-  readonly onToggle: (next: boolean) => Promise<boolean>;
-}) {
-  const { t } = useT();
-  const [busy, setBusy] = useState(false);
-
-  return (
-    <button
-      type="button"
-      disabled={busy}
-      aria-pressed={mine}
-      aria-label={t(mine ? 'review.unlike' : 'review.like')}
-      onClick={() => {
-        setBusy(true);
-        void onToggle(!mine).finally(() => setBusy(false));
-      }}
-      className={`inline-flex items-center gap-1.5 text-sm ${
-        mine ? 'text-(--color-volt)' : 'text-(--color-muted) hover:text-(--color-text)'
-      }`}
-    >
-      <span aria-hidden="true">{mine ? '♥' : '♡'}</span>
-      {count > 0 ? <span className="numeric">{count}</span> : null}
-    </button>
   );
 }

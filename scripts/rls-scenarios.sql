@@ -1143,6 +1143,77 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- 022 — les coeurs d'un lot de critiques qui melange les series
+  -- ---------------------------------------------------------------------------
+  --
+  -- 🔴 `likeReview` et le tri « les plus aimees » existaient depuis `015` et n'etaient
+  -- montes qu'a UN endroit : la fiche serie. On lisait quelqu'un sur son profil ou sur la
+  -- vitrine de l'accueil sans pouvoir le lui dire. Le blocage n'etait pas dans le rendu :
+  -- `review_like_counts` prend **un** sujet, parce qu'elle a ete ecrite pour une page ou
+  -- toutes les critiques portent deja sur la meme serie.
+
+  -- 63 — La forme exacte que le client emet : un appel, deux series.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.reviews (user_id, subject, target, body, through_season, lang)
+    values (b, tag || '_r22a', 'series', 'Texte du scenario.', 0, 'fr'),
+           (b, tag || '_r22b', 'series', 'Texte du scenario.', 0, 'fr');
+    perform set_config('role', 'authenticated', true);
+
+    insert into public.review_likes (liker_id, author_id, subject, target)
+    values (a, b, tag || '_r22a', 'series'),
+           (a, b, tag || '_r22b', 'series');
+
+    select count(*)::text into obtenu
+      from public.review_like_counts_across(array[tag || '_r22a', tag || '_r22b']);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '2';
+  rapport := rapport || format(E'  %s  %s. un seul appel rend les coeurs de deux series (022)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 64 — 🔴 **Le scenario qui compte.** Le chiffre doit etre le MEME pour tout le monde, et
+  --      c'est exactement ce que `security definer` achete — c'est aussi ce qui distingue
+  --      ce compteur de celui que 10.2 avait refuse, qui comptait des lignes rendues par
+  --      RLS et variait donc d'un lecteur a l'autre.
+  --
+  --      `c1` n'a pas de profil, donc `can_see(c1)` est faux et `review_likes_select` cache
+  --      son coeur a A. La table en rend 1, la fonction en compte 2. Si un jour quelqu'un
+  --      « simplifie » la fonction en retirant `security definer`, les deux chiffres se
+  --      rejoindront et ce scenario tombera.
+  --
+  --      ⚠️ Il resseme sa critique et son propre coeur au lieu de reprendre ceux du 63, et
+  --      ce n'est pas de la redondance : un bloc `begin … exception` est une
+  --      sous-transaction, donc **tout ce que le 63 a ecrit disparait des qu'il echoue**.
+  --      Sans cette graine, ce scenario rendrait 23503 — une violation de cle etrangere —
+  --      la ou la vraie nouvelle est « 022 n'est pas applique ». Un scenario qui accuse le
+  --      mauvais coupable coute une heure a chaque fois qu'on le lit.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.reviews (user_id, subject, target, body, through_season, lang)
+    values (b, tag || '_r22a', 'series', 'Texte du scenario.', 0, 'fr')
+    on conflict do nothing;
+    insert into public.review_likes (liker_id, author_id, subject, target)
+    values (a, b, tag || '_r22a', 'series') on conflict do nothing;
+    insert into public.review_likes (liker_id, author_id, subject, target)
+    values (c1, b, tag || '_r22a', 'series') on conflict do nothing;
+    perform set_config('role', 'authenticated', true);
+
+    select (select count(*) from public.review_likes where subject = tag || '_r22a')::text
+           || '/' ||
+           (select likes from public.review_like_counts_across(array[tag || '_r22a']))::text
+      into obtenu;
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1/2';
+  rapport := rapport || format(E'  %s  %s. le compte ignore la visibilite, la table non (022)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);

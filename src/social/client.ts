@@ -105,6 +105,18 @@ export interface ReviewLikes {
   readonly mine: boolean;
 }
 
+/**
+ * Les memes coeurs, quand le lot melange les series.
+ *
+ * ⚠️ Le `subject` fait partie de l'identite ici et pas dans {@link ReviewLikes} : sur une
+ * fiche serie il est connu et constant, sur un profil ou une vitrine il ne l'est pas. Deux
+ * critiques du meme auteur, sur la meme cible, dans deux series differentes, ne se
+ * distinguent que par lui.
+ */
+export interface ReviewLikesAcross extends ReviewLikes {
+  readonly subject: string;
+}
+
 /** Une question de la manche, telle que le serveur accepte de la montrer. */
 export interface QuizServed {
   readonly kind: string;
@@ -1171,6 +1183,47 @@ export class SocialClient {
         ? []
         : [
             {
+              authorId: row['author_id'],
+              target: row['target'],
+              likes: Number(row['likes'] ?? 0),
+              mine: row['mine'] === true,
+            },
+          ],
+    );
+  }
+
+  /**
+   * Les memes coeurs, pour un lot de series — ce que le profil et la vitrine demandent.
+   *
+   * ## ⚠️ Pourquoi ce n'est pas une boucle sur {@link reviewLikes}
+   *
+   * C'etait la reponse facile, et la documentation de `reviewLikes` juste au-dessus
+   * l'interdit : *« un appel pour toute la page, jamais un par critique »*. Un profil charge
+   * jusqu'a 30 critiques, donc jusqu'a 30 series : la boucle aurait fait 30 allers-retours
+   * pour un chiffre. La regle vaut aussi quand c'est la dimension d'a cote qui change.
+   *
+   * ## ⚠️ Sans `022` applique, rend `[]` — et c'est voulu
+   *
+   * `#rpc` ne leve jamais : une fonction absente donne une liste vide, donc des coeurs a
+   * zero, cliquables, sur les nouvelles surfaces. La fiche serie n'est pas touchee, elle
+   * garde {@link reviewLikes}. C'est la degradation douce que `020` n'avait pas — la, le
+   * client emettait des colonnes absentes et PostgREST refusait l'ecriture entiere.
+   */
+  async reviewLikesAcross(subjects: readonly string[]): Promise<readonly ReviewLikesAcross[]> {
+    // Rien a demander : sans sujet, la reponse est vide et l'appel serait un aller-retour
+    // pour un tableau vide. Le cas est frequent — une page sans critique.
+    if (subjects.length === 0) return [];
+    const rows = await this.#rpc<Record<string, unknown>>('review_like_counts_across', {
+      for_subjects: [...subjects],
+    });
+    return rows.flatMap((row) =>
+      typeof row['subject'] !== 'string' ||
+      typeof row['author_id'] !== 'string' ||
+      typeof row['target'] !== 'string'
+        ? []
+        : [
+            {
+              subject: row['subject'],
               authorId: row['author_id'],
               target: row['target'],
               likes: Number(row['likes'] ?? 0),

@@ -15,6 +15,8 @@ import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
 import { ReviewBody } from '@/app/components/ReviewBody';
+import { ReviewHeart } from '@/app/components/ReviewHeart';
+import { useReviewHearts } from '@/app/social/useReviewHearts';
 
 /**
  * Ce que les gens ecrivent — **et qui ne menait nulle part**.
@@ -55,6 +57,12 @@ export function DiscoverReviews() {
   const { t, locale } = useT();
   const { journal } = useJournal();
   const [reviews, setReviews] = useState<readonly PublishedReview[] | undefined>(undefined);
+  /**
+   * ⚠️ Appele avec la liste BRUTE et avant le retour anticipe : un crochet ne se met pas
+   * derriere une condition. Le caviardage ne touche que le texte, jamais l'identite d'une
+   * critique — les coeurs se comptent donc sur les memes lignes.
+   */
+  const { hearts, mine, canHeart, toggle } = useReviewHearts(reviews);
 
   const accessToken = account?.accessToken;
 
@@ -180,6 +188,22 @@ export function DiscoverReviews() {
                     hiddenText={shown.hiddenText ?? ''}
                     throughSeason={shown.throughSeason}
                   />
+
+                  {/* 🔴 **C'est ici que le coeur manquait le plus.** Cette vitrine existe
+                      pour faire croiser quelqu'un ; jusqu'au 2026-08-17 on pouvait ouvrir
+                      son profil et pas lui dire qu'on l'avait lu. Le geste demandait
+                      d'ouvrir la fiche de la serie, c'est-a-dire de quitter l'endroit ou
+                      l'on venait de decouvrir le texte.
+
+                      ⚠️ **Sous le texte**, comme sur la fiche serie : on aime ce qu'on
+                      vient de lire, et un coeur pose en tete inviterait a aimer sans lire. */}
+                  {canHeart(shown) ? (
+                    <ReviewHeart
+                      count={hearts(shown)}
+                      mine={mine(shown)}
+                      onToggle={(next) => toggle(shown, next)}
+                    />
+                  ) : null}
                 </div>
               </li>
             );

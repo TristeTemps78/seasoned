@@ -20,6 +20,10 @@ import {
 import { resolveSeriesRef } from '@/app/components/seriesRef';
 import { Lists } from '@/app/components/Lists';
 import { Avatar } from '@/app/components/Avatar';
+import { ReviewHeart } from '@/app/components/ReviewHeart';
+import { ReviewSortMenu } from '@/app/components/ReviewSortMenu';
+import { useReviewHearts } from '@/app/social/useReviewHearts';
+import { CONTROLS_FROM, orderReviews, type ReviewSort } from '@/src/domain/review-order';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
@@ -108,9 +112,27 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
    * lit sans rien savoir de quelqu'un, une phrase suppose qu'on connaisse la serie*.
    */
   const [tab, setTab] = useState<Tab>('loves');
+  /**
+   * L'ordre des critiques — M3.
+   *
+   * « Les plus recentes / les plus aimees » existait sur la fiche serie et **nulle part
+   * ailleurs** : cette page rendait ce que la base avait renvoye. Sur un profil fourni,
+   * c'est la seule commande qui reponde a « par quoi commencer ? ».
+   *
+   * ⚠️ Pas de filtre d'audience ici, et ce n'est pas un oubli : toutes ces critiques sont
+   * de la meme personne. « Les gens que je suis » y rendrait tout ou rien.
+   */
+  const [sort, setSort] = useState<ReviewSort>('recent');
 
   const accessToken = account?.accessToken;
   const userId = account?.userId;
+
+  /**
+   * ⚠️ Sur la liste BRUTE, et avant les retours anticipes : un crochet ne se met pas
+   * derriere une condition. Le caviardage ne touche que le texte, jamais l'identite d'une
+   * critique — les coeurs se comptent donc sur les memes lignes.
+   */
+  const { hearts, mine: heartedByMe, canHeart, toggle } = useReviewHearts(reviews);
 
   const load = useCallback(async () => {
     // ⚠️ Le client est construit **meme sans compte** : un profil `public` se lit par un
@@ -185,6 +207,12 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
       declaredAt: new Date(position.declaredAt),
     };
   });
+
+  // ⚠️ Le seuil se compte sur **tout ce qui est charge**, jamais sur la liste rendue : c'est
+  // la meme regle que sur la fiche serie, et la meme raison — une commande qui disparait
+  // parce qu'elle a filtre fabrique un cul-de-sac dont on ne peut plus sortir.
+  const listed = orderReviews(visible, { sort, audience: 'everyone' }, { hearts });
+  const withControls = reviews.length >= CONTROLS_FROM;
 
   return (
     <div className="space-y-6">
@@ -375,6 +403,13 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
         className="space-y-3"
         aria-label={t('profile.reviews')}
       >
+        {/* M3 — le tri n'existait que sur la fiche serie. Meme seuil qu'elle, importe du
+            domaine plutot que recopie : sous cinq critiques, trier ne repond a aucune
+            question qu'on se pose. */}
+        {withControls ? (
+          <ReviewSortMenu id="profile-reviews-sort" value={sort} onChange={setSort} />
+        ) : null}
+
         {reviews.length === 0 ? (
           <EmptyState>{t('profile.none')}</EmptyState>
         ) : (
@@ -383,7 +418,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           // 87 px de haut. Une opinion courte est le cas le plus frequent, et elle ne merite
           // pas la largeur d'un article.
           <ul className="grid gap-3 sm:grid-cols-2">
-            {visible.map((shown) => {
+            {listed.map((shown) => {
               const review = shown;
               const parsed = parseJournalKey(review.subject);
               const id = `${review.subject}:${review.target}`;
@@ -473,6 +508,23 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
                         d'image impossible a masquer alors que `/regles` promet le contraire.
                         C'est aussi le seul geste qui ait un sens : on partage ce qu'on a
                         ecrit. */}
+                    {/* 🔴 Le coeur, absent de cette page jusqu'au 2026-08-17 : on lisait
+                        quelqu'un sans pouvoir le lui dire, sur la page **faite** pour lire
+                        quelqu'un. `likeReview` existait depuis `015` et n'etait branche qu'a
+                        la fiche serie.
+
+                        ⚠️ Les deux gestes ne se croisent jamais : `canHeart` est faux sur
+                        ses propres critiques (un compteur qu'on s'incremente soi-meme),
+                        `isSelf` n'est vrai que la. Sur son propre profil, on partage ; sur
+                        celui d'un autre, on aime. */}
+                    {canHeart(shown) ? (
+                      <ReviewHeart
+                        count={hearts(shown)}
+                        mine={heartedByMe(shown)}
+                        onToggle={(next) => toggle(shown, next)}
+                      />
+                    ) : null}
+
                     {isSelf ? (
                       <ShareReview
                         title={shownTitle}
