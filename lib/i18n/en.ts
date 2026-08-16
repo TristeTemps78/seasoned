@@ -999,6 +999,18 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'traj.stop.after': ', instead of ~ {full}.',
   'traj.source':
     'Derived from TMDB public ratings, season by season — not from ratings on this site. Those ratings look very similar from one season to the next: the gaps matter more than the values.',
+  // --- Episode spread ------------------------------------------------------
+  'spread.title': 'Do the episodes resemble each other?',
+  'spread.aria': 'Episodes by rating',
+  'spread.axis': '{n} episodes with enough votes, in half-point bands out of 10.',
+  'spread.bucket': '{n} between {from} and {to}',
+  'spread.apart.one':
+    '1 episode out of {counted} sits more than half a point from the median, which is {median}/10.',
+  'spread.apart.other':
+    '{n} episodes out of {counted} sit more than half a point from the median, which is {median}/10.',
+  'spread.none':
+    'No episode sits more than half a point from the median, which is {median}/10: the series is even.',
+  'spread.range': 'From the lowest, S{ws}E{we} at {wv}/10, to the highest, S{bs}E{be} at {bv}/10.',
   // --- The drop-off map ----------------------------------------------------
   'stops.aria': 'Where people drop off',
   'stops.title': 'Where people drop off',

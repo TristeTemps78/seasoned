@@ -8,6 +8,7 @@ import { TrajectoryChart } from '@/app/components/TrajectoryChart';
 import type { CurrentSeasonVerdict } from '@/src/domain/current-season';
 import type { EntryPoint } from '@/src/domain/entry-point';
 import { journalKey } from '@/src/domain/journal';
+import { episodeSpread, type RatedEpisode } from '@/src/domain/dispersion';
 import { redactTrajectory } from '@/src/domain/spoiler';
 import type { Trajectory } from '@/src/domain/trajectory';
 import { formatCommitment } from '@/lib/format';
@@ -222,6 +223,11 @@ export function TrajectorySection({
             </div>
           ) : null}
 
+          {/* La dispersion, juste sous la grille qu'elle resume — et dans le depliant, donc
+              derriere le geste explicite : nommer le plus mauvais episode d'une serie est un
+              jugement sur les saisons suivantes pour qui n'y est pas. */}
+          <EpisodeSpreadBars episodes={grid.flatMap((season) => season.episodes)} />
+
           {/* La question que pose le produit — « ca vaut le coup ? » — enfin chiffree.
               Formulee comme un FAIT OBSERVE et jamais comme une injonction : sur des
               notes de foule, un decrochage se compte en dixiemes d'etoile, ce qui ne
@@ -300,6 +306,103 @@ function Comparison({ scores, mine }: {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/**
+ * « Les episodes se ressemblent-ils ? » — la dispersion, en tranches d'un demi-point.
+ *
+ * ## 🔴 Ce que ce bloc repond, et ce qu'il refuse de faire semblant de repondre
+ *
+ * Le releve du 2026-08-16 demandait la **distribution des notes du public**, faute de quoi
+ * « deux series a 4,2, l'une consensuelle et l'autre clivante, restent indiscernables ».
+ * Cette distribution-la n'existe pas : TMDB sert une moyenne et un effectif, jamais
+ * l'histogramme des votants, et le fabriquer serait pire que de se taire.
+ *
+ * Ce qui se derive est la dispersion des **episodes entre eux** — 62 points la ou la courbe
+ * n'en a que cinq, donc assez pour que le mot ait un sens. C'est une autre question, et le
+ * titre la pose telle quelle : la presenter comme « ce qu'en pensent les gens » serait la
+ * cinquieme occurrence de la forme que ce depot connait — une phrase restee vraie d'une
+ * version anterieure.
+ *
+ * ## ⚠️ Cet axe-ci part bien de zero, contrairement a celui de la trajectoire
+ *
+ * Et ce n'est pas une incoherence : la trajectoire porte des **notes**, agglutinees dans une
+ * bande etroite, donc un axe absolu y ecrase la forme (deux pixels entre la meilleure et la
+ * pire saison de *Breaking Bad*, mesures le 2026-08-15). Ici l'axe porte des **effectifs**,
+ * dont zero est le vrai plancher : le tronquer inventerait du relief.
+ *
+ * Zero appel de plus : `grid` est deja chargee pour la grille et pour la courbe.
+ */
+function EpisodeSpreadBars({ episodes }: { readonly episodes: readonly RatedEpisode[] }) {
+  const { t, tn, n } = useT();
+  const spread = episodeSpread(episodes);
+
+  // Sous douze episodes assez votes, il n'y a pas de distribution — voir
+  // `MIN_EPISODES_FOR_SPREAD`. C'est l'un des silences justes : la grille juste au-dessus
+  // montre deja chaque episode un par un, donc rien n'est cache a personne.
+  if (spread === undefined) return null;
+
+  const tallest = Math.max(...spread.buckets.map((one) => one.count));
+
+  return (
+    <div className="mt-6 border-t border-(--color-edge) pt-5">
+      <h3 className="card-title mb-1">{t('spread.title')}</h3>
+      <p className="mb-3 meta-sm">{t('spread.axis', { n: n(spread.counted) })}</p>
+
+      <ol className="flex items-end gap-1.5" aria-label={t('spread.aria')}>
+        {spread.buckets.map((bucket) => (
+          <li
+            key={bucket.from}
+            className="flex flex-1 flex-col items-center gap-1"
+            title={t('spread.bucket', {
+              n: n(bucket.count),
+              from: n(bucket.from, 1),
+              to: n(bucket.to, 1),
+            })}
+          >
+            <span className="text-[10px] tabular-nums text-(--color-muted)">
+              {bucket.count > 0 ? n(bucket.count) : ''}
+            </span>
+            <div className="flex h-20 w-full items-end">
+              {/* ⚠️ Une tranche vide n'a **aucune** hauteur, pas un plancher : la trajectoire
+                  en pose un pour qu'une saison au fond de l'axe reste une barre, mais ici
+                  zero episode veut dire zero, et lui donner un trait ferait lire un creux
+                  comme une population. */}
+              <div
+                className="w-full rounded-sm bg-(--color-edge)"
+                style={{ height: `${tallest > 0 ? (bucket.count / tallest) * 100 : 0}%` }}
+              />
+            </div>
+            <span className="text-[10px] tabular-nums text-(--color-muted)">
+              {n(bucket.from, 1)}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      {/* Le chiffre brut plutot qu'un indice : « 4 episodes sur 62 » se lit, « constance
+          0,83 » non — et c'est la meme raison qui garde `interpret={false}` sur les deux
+          courbes de cette page. */}
+      <p className="mt-3 text-sm">
+        {spread.apart === 0
+          ? t('spread.none', { median: n(spread.median, 1) })
+          : tn('spread.apart', spread.apart, {
+              counted: n(spread.counted),
+              median: n(spread.median, 1),
+            })}
+      </p>
+      <p className="mt-1 meta-sm">
+        {t('spread.range', {
+          ws: spread.worst.seasonNumber,
+          we: spread.worst.episodeNumber,
+          wv: n(spread.worst.voteAverage, 1),
+          bs: spread.best.seasonNumber,
+          be: spread.best.episodeNumber,
+          bv: n(spread.best.voteAverage, 1),
+        })}
+      </p>
     </div>
   );
 }

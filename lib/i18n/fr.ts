@@ -1189,6 +1189,21 @@ export const FR = {
   'traj.stop.after': ', au lieu de ~ {full}.',
   'traj.source':
     'Établie à partir des notes du public TMDB, saison par saison — pas des notes de ce site. Ces notes se ressemblent beaucoup d’une saison à l’autre : les écarts comptent plus que les valeurs.',
+  // --- La dispersion des épisodes ------------------------------------------
+  // ⚠️ Le titre pose la question à laquelle la donnée sait répondre — « les épisodes se
+  // ressemblent-ils ? » — et surtout pas « ce qu’en pensent les gens » : TMDB ne sert
+  // aucun histogramme de votants, et le laisser croire serait un mensonge de libellé.
+  'spread.title': 'Les épisodes se ressemblent-ils ?',
+  'spread.aria': 'Répartition des épisodes par note',
+  'spread.axis': '{n} épisodes assez notés, rangés par demi-point sur 10.',
+  'spread.bucket': '{n} entre {from} et {to}',
+  'spread.apart.one':
+    '1 épisode sur {counted} s’écarte de plus d’un demi-point de la médiane, qui est à {median}/10.',
+  'spread.apart.other':
+    '{n} épisodes sur {counted} s’écartent de plus d’un demi-point de la médiane, qui est à {median}/10.',
+  'spread.none':
+    'Aucun épisode ne s’écarte de plus d’un demi-point de la médiane, qui est à {median}/10 : la série est régulière.',
+  'spread.range': 'Du plus bas, S{ws}E{we} à {wv}/10, au plus haut, S{bs}E{be} à {bv}/10.',
   // --- La carte des abandons -----------------------------------------------
   // ⚠️ Le mot « abandon » est assume : c'est ce que le geste dit, et l'adoucir
   // (« interruption », « pause ») rendrait la mesure incomprehensible.
