@@ -18,6 +18,48 @@ import type { RawSeason } from '../domain/seasons';
 import type { ProgramKind } from '../domain/program';
 
 /** Resultat de recherche : le minimum pour choisir dans une liste. */
+/**
+ * Qui est cette personne — le strict necessaire pour l'annoncer en tete de sa page.
+ *
+ * ⚠️ Ni biographie ni date de naissance : ce produit parle de **series**, pas de gens, et une
+ * biographie TMDB est un pave de metadonnee louee qu'il faudrait traduire, tronquer et
+ * rafraichir. Le visage, le nom et le metier suffisent a dire de qui l'on parle.
+ */
+export interface PersonIdentity {
+  readonly name: string;
+  readonly profilePath?: string;
+  /**
+   * Le metier principal chez TMDB (`known_for_department`) : « Acting », « Writing »…
+   *
+   * ⚠️ **Brut, jamais traduit ici.** Meme regle que `JournalSnapshot.status` : memoriser un
+   * libelle deja traduit fige la langue du moment ou la donnee a ete lue. La page le traduit
+   * a l'affichage, ou pas du tout quand la valeur est inconnue.
+   */
+  readonly knownForDepartment?: string;
+}
+
+/** Une serie au generique de quelqu'un, avec le titre auquel il ou elle y figure. */
+export interface PersonCredit {
+  readonly series: SeriesSummary;
+  /**
+   * Le personnage joue, ou le poste occupe. Absent quand TMDB ne le donne pas — ce qui
+   * arrive, et n'empeche pas d'afficher la serie.
+   */
+  readonly role?: string;
+}
+
+/**
+ * Ce qu'une personne a joue, et ce qu'elle a fabrique.
+ *
+ * ⚠️ **Deux listes et non une**, parce que ce sont deux questions. Les fondre etait le
+ * defaut de `mapPersonSeriesCredits` : on ne pouvait pas savoir si quelqu'un avait joue dans
+ * une serie ou l'avait ecrite, alors que la reponse arrivait dans le meme paquet.
+ */
+export interface PersonCredits {
+  readonly cast: readonly PersonCredit[];
+  readonly crew: readonly PersonCredit[];
+}
+
 export interface SeriesSummary {
   readonly providerId: string;
   readonly title: string;
@@ -435,14 +477,31 @@ export interface CatalogProvider {
    * donc la donnee existe et sait produire une page. Ce n'etait pas « rien derriere », c'etait
    * « pas encore construit ».
    */
-  personName(
-    personId: string,
-  ): Promise<{ readonly name: string; readonly profilePath?: string } | undefined>;
+  personName(personId: string): Promise<PersonIdentity | undefined>;
 
   /** Les autres series d'une personne creditee a la creation. */
   seriesByCreator(
     personId: string,
   ): Promise<readonly SeriesSummary[]>;
+
+  /**
+   * Les credits d'une personne, **cast et crew separes**.
+   *
+   * ## Pourquoi une methode de plus a cote de {@link seriesByCreator}
+   *
+   * Les deux interrogent `/person/{id}/tv_credits`, et elles ne demandent pas la meme chose.
+   * `seriesByCreator` sert « du meme createur » sous une fiche : une liste plate de
+   * suggestions, ou l'on se moque de savoir a quel titre la personne y figure. Une **page de
+   * personne** pose l'autre question — *qu'a-t-elle jouee, qu'a-t-elle faite* — et fondre les
+   * deux etait exactement le defaut : `mapPersonSeriesCredits` parcourt `crew` puis `cast` et
+   * **dedoublonne par serie**, donc un acteur qui a aussi produit un episode perdait l'un des
+   * deux roles, en silence et selon l'ordre de lecture.
+   *
+   * ⚠️ Le role vient avec, et il n'est pas decoratif : « Walter White » en dit plus long sur
+   * une filmographie que la centieme affiche. C'est la donnee que la page precedente jetait
+   * alors qu'elle arrivait dans la meme reponse.
+   */
+  personCredits(personId: string): Promise<PersonCredits>;
 
   /**
    * Ou regarder une serie, dans **chacun** des pays demandes.

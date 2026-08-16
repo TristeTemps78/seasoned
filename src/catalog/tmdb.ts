@@ -22,6 +22,9 @@ import type {
   DiscoverKind,
   EpisodeDetail,
   EpisodeGrouping,
+  PersonCredit,
+  PersonCredits,
+  PersonIdentity,
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
@@ -651,15 +654,18 @@ export class TmdbProvider implements CatalogProvider {
     return mapEpisodeGroups(raw);
   }
 
-  async personName(
-    personId: string,
-  ): Promise<{ readonly name: string; readonly profilePath?: string } | undefined> {
+  async personName(personId: string): Promise<PersonIdentity | undefined> {
     try {
       const source = asRecord(await this.#get(`/person/${encodeURIComponent(personId)}`, {}));
       const name = readString(source, 'name');
       if (name === undefined) return undefined;
       const profilePath = readString(source, 'profile_path');
-      return { name, ...(profilePath === undefined ? {} : { profilePath }) };
+      const department = readString(source, 'known_for_department');
+      return {
+        name,
+        ...(profilePath === undefined ? {} : { profilePath }),
+        ...(department === undefined ? {} : { knownForDepartment: department }),
+      };
     } catch {
       // Une page de personne sans son nom reste utile — elle porte ses series. Lever ici
       // rendrait une 404 pour une identite manquante, alors que le contenu est la.
@@ -675,6 +681,16 @@ export class TmdbProvider implements CatalogProvider {
       {},
     );
     return mapPersonSeriesCredits(raw);
+  }
+
+  async personCredits(personId: string): Promise<PersonCredits> {
+    try {
+      const raw = await this.#get(`/person/${encodeURIComponent(personId)}/tv_credits`, {});
+      return mapPersonCredits(raw);
+    } catch {
+      // Meme contrat que `personName` : une page de personne sans ses credits reste une page.
+      return { cast: [], crew: [] };
+    }
   }
 }
 
@@ -814,6 +830,45 @@ export function mapArtwork(raw: unknown): SeriesArtwork {
     return out;
   };
   return { posters: paths('posters'), backdrops: paths('backdrops') };
+}
+
+/**
+ * Reponse de `/person/{id}/tv_credits`, **avec les roles et sans fondre les deux listes**.
+ *
+ * ## 🔴 Ce que {@link mapPersonSeriesCredits} jetait
+ *
+ * Il parcourt `crew` puis `cast` et dedoublonne **par serie** : quelqu'un qui a joue dans une
+ * serie *et* ecrit un episode n'y figure qu'une fois, du cote lu en premier. Pour « du meme
+ * createur » c'est sans consequence — on ne veut qu'une liste de suggestions. Pour une page
+ * de personne, c'est la question meme qui disparait.
+ *
+ * Le `character` et le `job` arrivaient dans la **meme reponse** et n'etaient jamais lus.
+ *
+ * ⚠️ Le dedoublonnage reste, mais **par liste** : TMDB rend une ligne par episode credite,
+ * donc un acteur recurrent apparait vingt fois pour la meme serie. On garde la premiere, qui
+ * porte le role principal.
+ *
+ * ⚠️ Aucun tri ici : `mapPersonCredits` **transporte**, `lib/catalog.ts` decide de l'ordre.
+ * C'est la meme frontiere que partout — le fournisseur ne range pas.
+ */
+export function mapPersonCredits(raw: unknown): PersonCredits {
+  const source = asRecord(raw);
+
+  const readSide = (key: 'cast' | 'crew', roleField: 'character' | 'job'): readonly PersonCredit[] => {
+    const seen = new Set<string>();
+    const out: PersonCredit[] = [];
+    for (const entry of asArray(source[key])) {
+      const summary = toSummary(entry);
+      if (summary === undefined || seen.has(summary.providerId)) continue;
+      seen.add(summary.providerId);
+      const role = readString(asRecord(entry), roleField);
+      // Une chaine vide est du bruit TMDB, pas un role : `readString` la laisse passer.
+      out.push({ series: summary, ...(role === undefined || role.length === 0 ? {} : { role }) });
+    }
+    return out;
+  };
+
+  return { cast: readSide('cast', 'character'), crew: readSide('crew', 'job') };
 }
 
 /** Reponse de `/person/{id}/tv_credits` : les series sont sous `cast` et `crew`. */

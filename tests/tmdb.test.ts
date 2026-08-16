@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   TmdbProvider,
+  mapPersonCredits,
   mapPersonSeriesCredits,
   mapSearchResults,
   mapSeasonDetail,
@@ -293,6 +294,78 @@ describe('createurs — le seul maillage interne, et il est factuel', () => {
     expect(mapPersonSeriesCredits(null)).toEqual([]);
     expect(mapPersonSeriesCredits({})).toEqual([]);
     expect(mapPersonSeriesCredits({ crew: 'pas un tableau' })).toEqual([]);
+  });
+});
+
+/**
+ * Les credits d'une personne, **avec leurs roles et sans fondre les deux listes**.
+ *
+ * ## 🔴 Ce que la fusion coutait, et pourquoi le test au-dessus ne le voyait pas
+ *
+ * `mapPersonSeriesCredits` dedoublonne **par serie a travers les deux listes** — son propre
+ * test le revendique : *« la meme serie peut apparaitre des deux cotes : creee et jouee »*, et
+ * il verifie qu'elle n'y figure qu'une fois. C'est juste pour « du meme createur », qui ne
+ * veut qu'une liste de suggestions.
+ *
+ * Sur une page de personne, c'est la question qui disparait : on ne pouvait pas savoir si
+ * quelqu'un avait joue dans une serie ou l'avait ecrite, alors que TMDB donne `character` et
+ * `job` dans la **meme reponse**, jamais lus.
+ */
+describe('mapPersonCredits', () => {
+  it('🔴 garde la serie des DEUX cotes quand on y a joue ET travaille', () => {
+    const credits = mapPersonCredits({
+      cast: [{ id: 2, name: 'B', genre_ids: [18], character: 'Walter White' }],
+      crew: [{ id: 2, name: 'B', genre_ids: [18], job: 'Producer' }],
+    });
+
+    // Le dedoublonnage transversal en aurait perdu un — celui lu en second.
+    expect(credits.cast.map((c) => c.series.providerId)).toEqual(['2']);
+    expect(credits.crew.map((c) => c.series.providerId)).toEqual(['2']);
+    expect(credits.cast[0]?.role).toBe('Walter White');
+    expect(credits.crew[0]?.role).toBe('Producer');
+  });
+
+  it('dedoublonne DANS une liste : TMDB rend une ligne par episode credite', () => {
+    // Un acteur recurrent apparait autant de fois qu'il a d'episodes. Sans ce retrait, sa
+    // page rendrait vingt fois la meme affiche.
+    const credits = mapPersonCredits({
+      cast: [
+        { id: 7, name: 'G', genre_ids: [18], character: 'Le role principal' },
+        { id: 7, name: 'G', genre_ids: [18], character: 'Lui-meme (episode 4)' },
+      ],
+    });
+
+    expect(credits.cast).toHaveLength(1);
+    // La premiere est gardee : c'est celle qui porte le role principal.
+    expect(credits.cast[0]?.role).toBe('Le role principal');
+  });
+
+  it('omet le role plutot que d en inventer un, chaine vide comprise', () => {
+    const credits = mapPersonCredits({
+      cast: [{ id: 1, name: 'A', genre_ids: [18] }],
+      crew: [{ id: 2, name: 'B', genre_ids: [18], job: '' }],
+    });
+
+    expect(credits.cast[0]).not.toHaveProperty('role');
+    expect(credits.crew[0]).not.toHaveProperty('role');
+  });
+
+  it('ne trie pas : l ordre appartient a lib/catalog', () => {
+    // La frontiere du depot — le fournisseur transporte, le catalogue range. La renverser
+    // mettrait une decision de produit dans le mappeur d'une API tierce.
+    const credits = mapPersonCredits({
+      cast: [
+        { id: 1, name: 'vieux', genre_ids: [18], first_air_date: '1998-01-01' },
+        { id: 2, name: 'recent', genre_ids: [18], first_air_date: '2024-01-01' },
+      ],
+    });
+
+    expect(credits.cast.map((c) => c.series.providerId)).toEqual(['1', '2']);
+  });
+
+  it('rend deux listes vides pour une reponse malformee', () => {
+    expect(mapPersonCredits(null)).toEqual({ cast: [], crew: [] });
+    expect(mapPersonCredits({ cast: 'pas un tableau' })).toEqual({ cast: [], crew: [] });
   });
 });
 

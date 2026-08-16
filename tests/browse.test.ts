@@ -44,6 +44,11 @@ function providerOf(items: readonly SeriesSummary[]): CatalogProvider {
     async personName() {
       return undefined;
     },
+    // ⚠️ Ajoutee au faux le 2026-08-16 avec la page de personne : un faux exhaustif est ce
+    // qui garantit qu'une methode nouvelle ne passe pas inapercue dans les six autres.
+    async personCredits() {
+      return { cast: [], crew: [] };
+    },
     async seriesByCreator() {
       return [];
     },

@@ -83,6 +83,15 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
     '{n} series',
   'person.count.other':
     '{n} series',
+  // Deux sections plutot qu'une grille : on ne pouvait pas savoir si quelqu'un avait joue
+  // dans une serie ou l'avait ecrite, alors que TMDB le dit dans la meme reponse.
+  'person.asCast': 'On screen',
+  'person.asCrew': 'Behind the camera',
+  'person.dept.acting': 'Actor',
+  'person.dept.directing': 'Director',
+  'person.dept.writing': 'Writer',
+  'person.dept.production': 'Producer',
+  'person.dept.creator': 'Creator',
   'person.noneTitle':
     'Nothing to show here',
   'person.noneBody':

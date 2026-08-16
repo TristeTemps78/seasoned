@@ -16,6 +16,9 @@ import type {
   CatalogProvider,
   DiscoverKind,
   EpisodeGrouping,
+  PersonCredit,
+  PersonCredits,
+  PersonIdentity,
   SeasonDetail,
   SeriesDetail,
   SeriesSummary,
@@ -194,6 +197,14 @@ const throughDiscover = memoizeAsync(discoverCache, SERIES_TTL_MS);
 
 const creatorCache = enrole(new ExpiringCache<readonly SeriesSummary[]>({ maxEntries: 1_000 }));
 const throughCreator = memoizeAsync(creatorCache, SERIES_TTL_MS);
+
+// ⚠️ Un cache distinct de `creatorCache` et **pas un partage** : les deux lisent le meme
+// endpoint mais n'en gardent pas la meme chose, et la meme cle rendrait a l'un la forme de
+// l'autre. `enrole` l'inscrit, donc changer de fournisseur le vide aussi — c'est l'invariant
+// que `catalog-caches.test.ts` tient depuis qu'un cache oublie a rendu l'affiche du
+// fournisseur precedent.
+const personCreditsCache = enrole(new ExpiringCache<PersonCredits>({ maxEntries: 1_000 }));
+const throughPersonCredits = memoizeAsync(personCreditsCache, SERIES_TTL_MS);
 
 const watchCache = enrole(new ExpiringCache<WatchByRegion>({ maxEntries: 2_000 }));
 const throughWatch = memoizeAsync(watchCache, SERIES_TTL_MS);
@@ -825,24 +836,76 @@ export async function person(
   personId: string,
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<
-  | { readonly name: string; readonly profilePath?: string; readonly series: readonly SeriesSummary[] }
+  | (PersonIdentity & {
+      /** Ce qu'elle a joue, du plus recent au plus ancien. */
+      readonly cast: readonly PersonCredit[];
+      /** Ce qu'elle a fabrique — ecrit, realise, produit. Meme ordre. */
+      readonly crew: readonly PersonCredit[];
+      /** Les deux ensemble, dedoublonnees : ce que le compte de l'en-tete annonce. */
+      readonly series: readonly SeriesSummary[];
+    })
   | undefined
 > {
   if (!/^[0-9]+$/.test(personId)) return undefined;
   try {
     const [identity, credits] = await Promise.all([
       getProvider(locale).personName(personId),
-      throughCreator(keyIn(locale, personId), () => getProvider(locale).seriesByCreator(personId)),
+      throughPersonCredits(keyIn(locale, personId), () =>
+        getProvider(locale).personCredits(personId),
+      ),
     ]);
     if (identity === undefined) return undefined;
+
+    /**
+     * Ce qu'une page de personne montre, et dans quel ordre.
+     *
+     * ⚠️ **Le tri est ici et pas dans le fournisseur** : TMDB rend ses credits dans un ordre
+     * qui lui appartient (ni chronologique, ni par importance), et une filmographie qu'on
+     * parcourt se lit du plus recent au plus ancien — c'est ce que fait la reference, et
+     * c'est ce que « pas de tri » designait dans le releve du 2026-08-16.
+     *
+     * ⚠️ Une serie sans date passe **derriere** et non devant : `undefined` trie a zero
+     * naivement, ce qui remonterait les inconnues en tete d'une page dont le premier ecran
+     * decide si l'on reste.
+     */
+    const rank = (one: PersonCredit): number => one.series.firstAirDate?.getTime() ?? -Infinity;
+    const shown = (list: readonly PersonCredit[]): readonly PersonCredit[] =>
+      list
+        // Meme regle de vitrine qu'ailleurs : on ne met pas en avant un journal televise.
+        .filter((one) => one.series.kind === undefined || isShowcased(one.series.kind))
+        // 🔴 Sans affiche, la vignette est un rectangle noir — le meme constat que sous « du
+        // meme createur » le 2026-08-12 : les credits remontent des pilotes jamais diffuses
+        // dont TMDB n'a aucune image.
+        .filter((one) => one.series.posterPath !== undefined)
+        .toSorted((a, b) => rank(b) - rank(a));
+
+    const cast = shown(credits.cast);
+    const crew = shown(credits.crew);
+
     return {
       ...identity,
-      // Meme regle de vitrine qu'ailleurs : on ne met pas en avant un journal televise.
-      series: credits.filter((one) => one.kind === undefined || isShowcased(one.kind)),
+      cast,
+      crew,
+      /**
+       * La liste plate, dedoublonnee — ce que la page rendait avant, et ce dont le compte de
+       * l'en-tete a besoin. `cast` d'abord : quand quelqu'un a joue **et** produit, c'est
+       * sous son visage qu'on le cherche.
+       */
+      series: dedupeById([...cast, ...crew].map((one) => one.series)),
     };
   } catch {
     return undefined;
   }
+}
+
+/** Garde la premiere occurrence de chaque serie, dans l'ordre donne. */
+function dedupeById(list: readonly SeriesSummary[]): readonly SeriesSummary[] {
+  const seen = new Set<string>();
+  return list.filter((one) => {
+    if (seen.has(one.providerId)) return false;
+    seen.add(one.providerId);
+    return true;
+  });
 }
 
 export async function alsoByCreators(

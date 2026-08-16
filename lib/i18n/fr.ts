@@ -93,6 +93,15 @@ export const FR = {
     '{n} série',
   'person.count.other':
     '{n} séries',
+  // Deux sections plutôt qu'une grille : on ne pouvait pas savoir si quelqu'un avait joué
+  // dans une série ou l'avait écrite, alors que TMDB le dit dans la même réponse.
+  'person.asCast': 'À l’écran',
+  'person.asCrew': 'Derrière la caméra',
+  'person.dept.acting': 'Acteur ou actrice',
+  'person.dept.directing': 'Réalisation',
+  'person.dept.writing': 'Écriture',
+  'person.dept.production': 'Production',
+  'person.dept.creator': 'Création',
   'person.noneTitle':
     'Rien à montrer ici',
   'person.noneBody':
