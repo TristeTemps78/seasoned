@@ -12,6 +12,7 @@
  * Aucun secret dans ce fichier : la cle vient de l'environnement.
  */
 
+import { BROWSE_LENGTH_BOUNDS } from './provider';
 import type {
   CastMember,
   CrewMember,
@@ -794,6 +795,15 @@ export class TmdbProvider implements CatalogProvider {
     // ni l'un ni l'autre, et les ranger de force fausserait les deux reponses.
     if (query.run === 'ended') params['with_status'] = '3|4';
     if (query.run === 'running') params['with_status'] = '0|2';
+
+    // ⚠️ **Les deux bornes, ou aucune.** `with_runtime.lte` seul laisse passer tout ce dont
+    // la duree est inconnue (zero) : mesure le 2026-08-17, `lte=30` rendait 177 380 series
+    // dont *House of the Dragon*, alors que `lte=25&gte=1` en rend 24 451, toutes courtes.
+    if (query.length !== undefined) {
+      const bounds = BROWSE_LENGTH_BOUNDS[query.length];
+      params['with_runtime.gte'] = String(bounds.gte);
+      if (bounds.lte !== undefined) params['with_runtime.lte'] = String(bounds.lte);
+    }
 
     if (query.decade !== undefined) {
       // Bornes **inclusives des deux cotes**, sur la premiere diffusion : une serie

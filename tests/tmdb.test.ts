@@ -761,6 +761,36 @@ describe('TmdbProvider.browse — les parametres envoyes', () => {
     expect(url()?.searchParams.has('first_air_date.gte')).toBe(false);
   });
 
+  it('🔴 la duree d un episode part avec ses DEUX bornes', async () => {
+    // Mesure contre l'API le 2026-08-17 : `with_runtime.lte=30` **seul** rend 177 380
+    // series dont *House of the Dragon* — sans plancher, tout ce dont la duree est inconnue
+    // (zero) passe le filtre. Avec `gte=1`, 24 451, toutes courtes. Une facette qui laisse
+    // passer ce qu'elle pretend ecarter est pire que pas de facette : elle ment.
+    const { provider, url } = capture();
+    await provider.browse({ length: 'short' });
+
+    expect(url()?.searchParams.get('with_runtime.lte')).toBe('25');
+    expect(url()?.searchParams.get('with_runtime.gte')).toBe('1');
+  });
+
+  it('le format long n a PAS de plafond', async () => {
+    // Une serie-evenement de 90 minutes par episode existe, et l'ecarter ferait mentir le
+    // mot « long ». L'ancrage : le plancher, lui, doit bien partir.
+    const { provider, url } = capture();
+    await provider.browse({ length: 'long' });
+
+    expect(url()?.searchParams.get('with_runtime.gte')).toBe('46');
+    expect(url()?.searchParams.has('with_runtime.lte')).toBe(false);
+  });
+
+  it('sans duree demandee, aucune borne ne part', async () => {
+    const { provider, url } = capture();
+    await provider.browse({});
+
+    expect(url()?.searchParams.has('with_runtime.gte')).toBe(false);
+    expect(url()?.searchParams.has('with_runtime.lte')).toBe(false);
+  });
+
   it('exclut explicitement les programmes adultes', async () => {
     // TMDB les exclut par defaut. On le dit quand meme : un defaut du fournisseur n'est pas
     // une decision du produit, et il peut changer sans prevenir.

@@ -468,8 +468,48 @@ export type BrowseRun = 'ended' | 'running';
 
 export const ALL_BROWSE_RUNS: readonly BrowseRun[] = ['ended', 'running'];
 
+/**
+ * Le temps que coute **un episode** — la facette que ce produit devrait avoir en premier.
+ *
+ * ## 🔴 Ce qui manquait, et ce que cette facette n'est PAS
+ *
+ * Le releve du 2026-08-17 demandait de trier sur *« l'engagement en heures, qui est LE
+ * differenciateur du produit »*. Il faut le dire franchement : **ce n'est pas ce que ceci
+ * fait.** L'engagement total (episodes x duree) ne se demande a aucun catalogue — il se
+ * calcule apres coup, serie par serie, et le trier demanderait un index a nous.
+ *
+ * Ce qui **est** demandable, et qui a ete mesure contre l'API le 2026-08-17 :
+ * `with_runtime` borne la duree **d'un episode**. Sur 229 203 series, `lte=25&gte=1` en
+ * rend 24 451 — le filtre mord, et il rend bien des formats courts.
+ *
+ * ⚠️ **Les deux bornes ensemble, toujours.** `lte=30` seul rend 177 380 series, dont
+ * *House of the Dragon* : sans plancher, tout ce dont la duree est inconnue (zero) passe.
+ * Mesure, pas devine — et c'est exactement le genre de parametre qu'on croit avoir compris.
+ *
+ * C'est donc « j'ai vingt minutes » plutot que « j'ai un week-end ». La question est plus
+ * frequente, et elle est la seule des deux qu'on puisse poser honnetement aujourd'hui.
+ */
+export type BrowseLength = 'short' | 'half' | 'long';
+
+export const ALL_BROWSE_LENGTHS: readonly BrowseLength[] = ['short', 'half', 'long'];
+
+/**
+ * Les bornes, en minutes, de chaque forme.
+ *
+ * ⚠️ Le plancher de `short` est **1** et non 0 : voir {@link BrowseLength}. Celui de `long`
+ * n'a pas de plafond — une serie de 90 minutes par episode existe (les series-evenements),
+ * et l'ecarter serait mentir sur ce que « long » veut dire.
+ */
+export const BROWSE_LENGTH_BOUNDS: Readonly<Record<BrowseLength, { readonly gte: number; readonly lte?: number }>> = {
+  short: { gte: 1, lte: 25 },
+  half: { gte: 26, lte: 45 },
+  long: { gte: 46 },
+};
+
 export interface BrowseQuery {
   readonly genre?: BrowseGenre;
+  /** La duree d'un episode. Voir {@link BrowseLength}. */
+  readonly length?: BrowseLength;
   /** Premiere annee d'une decennie : `1990`, `2000`, `2010`, `2020`. */
   readonly decade?: number;
   readonly sort?: BrowseSort;

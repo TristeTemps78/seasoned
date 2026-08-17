@@ -8,8 +8,10 @@ import { EmptyState } from '@/app/components/EmptyState';
 import { pathIn } from '@/lib/routes';
 import {
   ALL_BROWSE_GENRES,
+  ALL_BROWSE_LENGTHS,
   ALL_BROWSE_RUNS,
   ALL_BROWSE_SORTS,
+  type BrowseLength,
   type BrowseRun,
   type BrowseGenre,
   type BrowseSort,
@@ -55,6 +57,7 @@ interface PageProps {
     readonly annees?: string;
     readonly tri?: string;
     readonly etat?: string;
+    readonly duree?: string;
     readonly page?: string;
   }>;
 }
@@ -89,6 +92,17 @@ const RUN_LABEL: Readonly<Record<BrowseRun, MessageKey>> = {
   running: 'browse.run.running',
 };
 
+/**
+ * ⚠️ Les libelles disent des **minutes**, pas « court » et « long » : la borne exacte est la
+ * seule chose qui rende la facette utilisable — « j'ai vingt minutes » se compare a un
+ * chiffre, pas a un adjectif.
+ */
+const LENGTH_LABEL: Readonly<Record<BrowseLength, MessageKey>> = {
+  short: 'browse.length.short',
+  half: 'browse.length.half',
+  long: 'browse.length.long',
+};
+
 const SORT_LABEL = {
   popular: 'browse.sort.popular',
   rating: 'browse.sort.rating',
@@ -106,6 +120,10 @@ function readSort(raw: string | undefined): BrowseSort | undefined {
 
 function readRun(raw: string | undefined): BrowseRun | undefined {
   return ALL_BROWSE_RUNS.find((r) => r === raw);
+}
+
+function readLength(raw: string | undefined): BrowseLength | undefined {
+  return ALL_BROWSE_LENGTHS.find((l) => l === raw);
 }
 
 /**
@@ -152,6 +170,7 @@ export async function BrowseView({ params, locale }: {
     readonly annees?: string;
     readonly tri?: string;
     readonly etat?: string;
+    readonly duree?: string;
     readonly page?: string;
   };
   readonly locale: Locale;
@@ -160,6 +179,7 @@ export async function BrowseView({ params, locale }: {
   const decade = readDecade(params.annees);
   const sort = readSort(params.tri) ?? 'popular';
   const run = readRun(params.etat);
+  const length = readLength(params.duree);
   const page = readPage(params.page);
 
   const { items: results, hasMore } = await browse(
@@ -167,6 +187,7 @@ export async function BrowseView({ params, locale }: {
       ...(genre !== undefined ? { genre } : {}),
       ...(decade !== undefined ? { decade } : {}),
       ...(run !== undefined ? { run } : {}),
+      ...(length !== undefined ? { length } : {}),
       sort,
     },
     page,
@@ -185,6 +206,7 @@ export async function BrowseView({ params, locale }: {
     if (genre !== undefined) query.set('genre', genre);
     if (decade !== undefined) query.set('annees', String(decade));
     if (run !== undefined) query.set('etat', run);
+    if (length !== undefined) query.set('duree', length);
     if (sort !== 'popular') query.set('tri', sort);
     if (n > 1) query.set('page', String(n));
     const suffix = query.toString();
@@ -245,6 +267,24 @@ export async function BrowseView({ params, locale }: {
             options={[
               { value: '', label: t(locale, 'browse.any') },
               ...ALL_BROWSE_RUNS.map((r) => ({ value: r, label: t(locale, RUN_LABEL[r]) })),
+            ]}
+          />
+          {/* 🔴 **La seconde facette que personne d'autre n'offre.** Le releve du
+              2026-08-17 demandait de trier sur l'engagement — *« le differenciateur du
+              produit »*. L'engagement **total** ne se demande a aucun catalogue : il se
+              calcule serie par serie, et le trier dessus exigerait un index a nous. La duree
+              d'**un episode**, elle, se demande — mesure contre l'API le meme jour — et elle
+              repond a la question la plus frequente des deux : « j'ai vingt minutes ». Le
+              nom de la facette le dit, pour qu'on ne la lise pas comme ce qu'elle n'est
+              pas. */}
+          <Menu
+            id="browse-length"
+            label={t(locale, 'browse.length')}
+            name="duree"
+            defaultValue={length ?? ''}
+            options={[
+              { value: '', label: t(locale, 'browse.any') },
+              ...ALL_BROWSE_LENGTHS.map((l) => ({ value: l, label: t(locale, LENGTH_LABEL[l]) })),
             ]}
           />
           <Menu

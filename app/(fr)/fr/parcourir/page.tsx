@@ -12,6 +12,7 @@ export default async function FrenchBrowsePage({ searchParams }: {
     readonly annees?: string;
     readonly tri?: string;
     readonly etat?: string;
+    readonly duree?: string;
     readonly page?: string;
   }>;
 }) {
