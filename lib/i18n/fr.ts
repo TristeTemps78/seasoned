@@ -812,6 +812,11 @@ export const FR = {
   'profile.lists': 'Ses listes',
   'profile.reviews': 'Ce qu’elle ou il a écrit',
   'profile.loves': 'Ce qu’il ou elle aime',
+  // ⚠️ « Ce qu’il regarde » et non « son journal » : le mot « journal » désigne déjà la page
+  // personnelle, qui contient bien plus et ne sort jamais du navigateur. Deux noms pour deux
+  // choses différentes — voir `journalBy`.
+  'profile.journal': 'Ce qu’il ou elle regarde',
+  'profile.noJournal': 'Rien de publié pour l’instant.',
   'profile.none': 'Rien de public à lire ici pour l’instant.',
   'profile.tabs': 'Ce qu’il ou elle publie',
   'profile.noLoves': 'Aucun coup de cœur public pour l’instant.',

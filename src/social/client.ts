@@ -801,6 +801,34 @@ export class SocialClient {
   }
 
   /**
+   * Tout ce que quelqu'un a **fait** — son journal, tel qu'il est deja publie.
+   *
+   * ## 🔴 Ce que ca rend visible, et ce que ca ne publie PAS
+   *
+   * Le releve du 2026-08-16 demandait un journal public : *« le journal existe et il est riche
+   * — annee, genre de fait, douze filtres. Il est strictement prive. Letterboxd en fait un
+   * onglet public, et c'est ce qui rend un profil vivant entre deux critiques »*.
+   *
+   * ⚠️ **Aucune donnee nouvelle ne sort d'ici, et c'est tout le point.** `activity` est la
+   * projection **deja publiee** du journal : les memes lignes alimentent `feed()` depuis le
+   * lot 6, sous la meme politique `activity_select_visible` qui porte `can_see(user_id)`. Un
+   * lecteur voit donc exactement ce qu'il voyait deja dans son fil — simplement range par
+   * personne au lieu d'etre noye dans la chronologie de tout le monde. Zero migration, zero
+   * colonne, et surtout **aucun elargissement de visibilite**.
+   *
+   * ⚠️ Ce n'est PAS `/journal`. La page personnelle lit le journal du navigateur, qui porte
+   * des choses que personne ne publie — la position episode par episode, les mots, les
+   * exceptions de progression. Ce qui voyage ici est ce que `PublishActivity` a choisi
+   * d'envoyer, et rien de plus. Confondre les deux ferait de ce lien une fuite.
+   *
+   * ⚠️ Tous les genres, contrairement a {@link lovedBy} qui filtre `liked` : c'est la
+   * difference entre « ce qu'il aime » et « ce qu'il fait ».
+   */
+  async journalBy(userId: string, limit = 40): Promise<readonly FeedItem[]> {
+    return this.#activity(`user_id=eq.${encodeURIComponent(userId)}&`, limit);
+  }
+
+  /**
    * Qui d'autre a **aime** ou **termine** cette serie.
    *
    * ## La porte de decouverte principale, restee fermee jusqu'ici

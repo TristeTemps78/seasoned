@@ -88,6 +88,8 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   const [profile, setProfile] = useState<Profile | undefined>(undefined);
   const [reviews, setReviews] = useState<readonly PublishedReview[]>([]);
   const [loved, setLoved] = useState<readonly FeedItem[]>([]);
+  /** Le journal deja publie de cette personne — voir `journalBy` pour ce qu'il ne contient pas. */
+  const [done, setDone] = useState<readonly FeedItem[]>([]);
   const [pinned, setPinned] = useState<readonly SeriesRef[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [following, setFollowing] = useState(false);
@@ -146,16 +148,21 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     if (found === undefined) return;
     // Les deux ensemble : c'est ce que la page montre l'un sous l'autre, et les enchainer
     // ferait apparaitre le gout apres les mots, dans une page qui commence par le gout.
-    const [written, hearts, favorites] = await Promise.all([
+    const [written, hearts, favorites, journal] = await Promise.all([
       social.reviewsBy(found.userId),
       social.lovedBy(found.userId),
       // Les epinglees dans le meme paquet que les deux autres : elles s'affichent au-dessus,
       // donc les enchainer ferait arriver la carte de visite apres ce qu'elle presente.
       social.favoritesBy(found.userId),
+      // ⚠️ Dans le meme paquet aussi, et pas au clic sur l'onglet : les quatre panneaux sont
+      // deja tous charges quand la page a repondu — c'est ce qui permet de changer d'onglet
+      // sans rien redemander, et c'est ecrit dans le commentaire de `tab`.
+      social.journalBy(found.userId),
     ]);
     setReviews(written);
     setLoved(hearts);
     setPinned(favorites);
+    setDone(journal);
     if (userId === undefined) return;
     // Les trois d'un coup : elles decident **ensemble** de ce que la zone d'action affiche —
     // le bouton, la mention « vous suit », ou l'invitation a prendre un nom. Les enchainer
@@ -557,18 +564,41 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           <Lists ownerId={profile.userId} ownerHandle={profile.handle} />
         </section>
       ) : null}
+
+      {tab === 'journal' ? (
+        <section
+          id="panneau-journal"
+          role="tabpanel"
+          aria-labelledby="onglet-journal"
+          tabIndex={0}
+          className="space-y-3"
+          aria-label={t('profile.journal')}
+        >
+          <PublicJournal entries={done} />
+        </section>
+      ) : null}
     </div>
   );
 }
 
-/** Les trois panneaux d'un profil. L'ordre est celui d'avant les onglets, et il a sa raison. */
-const TABS = ['loves', 'reviews', 'lists'] as const;
+/**
+ * Les panneaux d'un profil. L'ordre est celui d'avant les onglets, et il a sa raison.
+ *
+ * 🔴 **Le journal est le quatrieme depuis le 2026-08-17**, et le commentaire de `Tabs` juste
+ * en dessous l'avait annonce : *« la barre grandira le jour ou un profil aura un journal
+ * public »*. Il vient en dernier parce qu'il se lit apres, pas avant : les coeurs et les
+ * critiques disent **qui** est quelqu'un, le journal dit ce qu'il a fait cette semaine.
+ */
+const TABS = ['loves', 'reviews', 'lists', 'journal'] as const;
 type Tab = (typeof TABS)[number];
 
-const TAB_LABEL: Readonly<Record<Tab, 'profile.loves' | 'profile.reviews' | 'profile.lists'>> = {
+const TAB_LABEL: Readonly<
+  Record<Tab, 'profile.loves' | 'profile.reviews' | 'profile.lists' | 'profile.journal'>
+> = {
   loves: 'profile.loves',
   reviews: 'profile.reviews',
   lists: 'profile.lists',
+  journal: 'profile.journal',
 };
 
 /**
@@ -636,6 +666,92 @@ function Tabs({ current, onSelect }: {
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Ce que quelqu'un a fait — son journal, tel qu'il est **deja publie**.
+ *
+ * ## 🔴 F10, et pourquoi ca ne demande ni migration ni reglage
+ *
+ * Le releve du 2026-08-16 disait : *« le journal existe et il est riche — annee, genre de
+ * fait, douze filtres. Il est strictement prive. Letterboxd en fait un onglet public, et
+ * c'est ce qui rend un profil vivant entre deux critiques »*.
+ *
+ * ⚠️ **Aucune donnee nouvelle n'est publiee ici.** `activity` est la projection deja envoyee
+ * du journal ; les memes lignes alimentent le fil d'amis depuis le lot 6, sous la meme
+ * politique `activity_select_visible`. Un lecteur voit exactement ce qu'il voyait deja —
+ * range par personne au lieu d'etre noye dans la chronologie de tout le monde. La visibilite
+ * ne bouge pas d'un cran : c'est RLS qui decide, et elle decidait deja.
+ *
+ * ⚠️ **Ce n'est pas `/journal`**, et la distinction est la garantie. La page personnelle lit
+ * le journal du navigateur, qui porte ce que personne ne publie : la position episode par
+ * episode, les mots, les exceptions de progression. Voir `journalBy`.
+ *
+ * ## Pourquoi la ligne ne repete pas le nom
+ *
+ * Le fil d'amis met `@nom` sur chaque ligne parce qu'il melange les gens. Ici il y en a un
+ * seul, nomme par le `<h1>` de la page : le repeter quarante fois serait du bruit — c'est le
+ * meme arbitrage que la reciprocite, dite sur le profil et tue dans la liste d'amis.
+ */
+function PublicJournal({ entries }: { readonly entries: readonly FeedItem[] }) {
+  const { t, locale } = useT();
+  const { journal } = useJournal();
+
+  if (entries.length === 0) {
+    // ⚠️ Sans action : le lecteur ne peut rien pour ce que quelqu'un d'autre n'a pas fait.
+    // Meme raison que `profile.none` et `profile.noLoves` a cote.
+    return <EmptyState>{t('profile.noJournal')}</EmptyState>;
+  }
+
+  return (
+    <ul className="space-y-2">
+      {entries.map((item, index) => {
+        const parsed = parseJournalKey(item.subject);
+        // 🔴 Jamais la cle brute : « @test wrote about tmdb:94997 » a ete constate en
+        // production le 2026-08-16. L'instantane publie d'abord, le journal du lecteur en
+        // repli, la phrase incomplete en dernier recours — jamais `tmdb:…`.
+        const title =
+          item.title ?? journal.entries[item.subject]?.snapshot?.title ?? t('feed.someSeries');
+        const posterPath =
+          item.posterPath ?? journal.entries[item.subject]?.snapshot?.posterPath;
+
+        return (
+          <li
+            key={`${item.subject}-${item.kind}-${item.happenedOn}-${index}`}
+            className="feed-row flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
+          >
+            {posterPath === undefined ? null : <PosterChip path={posterPath} title={title} />}
+            {/* Le meme vocabulaire que le fil : « a terminé », « a noté la saison 2 ». Deux
+                tables de verbes pour le meme fait finiraient par se contredire. */}
+            <span>{t(`friends.item.${item.kind}`)}</span>
+            {parsed === undefined ? (
+              <span className="font-medium">{title}</span>
+            ) : (
+              <Link
+                href={pathIn(`/serie/${parsed.providerId}`, locale)}
+                className="font-medium hover:text-(--color-volt)"
+              >
+                {title}
+              </Link>
+            )}
+            {item.season !== undefined && item.stars !== undefined
+              ? t('friends.item.season', {
+                  season: String(item.season),
+                  stars: item.stars.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-GB'),
+                })
+              : null}
+            {/* 🔴 **La date, et c'est ce qui distingue un journal d'une liste.** « Ce qu'il
+                aime » n'est pas date ; un journal sans date ne dit pas si la personne regarde
+                encore. C'est la quatrieme fois que ce depot pose une colonne deja payee a
+                l'ecran (la note du public, le creux, `publishedAt`, `updated_at`). */}
+            <time dateTime={item.happenedOn} className="meta-sm">
+              {formatDate(new Date(item.happenedOn), locale)}
+            </time>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
