@@ -493,6 +493,30 @@ export const FR = {
   // « une série » faute de pouvoir le payer.
   'friends.item.reviewed': 'a écrit sur',
   'feed.someSeries': 'une série',
+
+  // N1 — le retour au retour. Les cœurs ne nomment personne : `review_like_counts` ne
+  // projette pas `liker_id`, et un agrégat n'est pas un annuaire.
+  'feedback.title': 'Ce que vos textes ont reçu',
+  'feedback.lede':
+    'Les cœurs et les réponses arrivent sur la fiche de la série. Ils sont rassemblés ici pour que vous n’ayez pas à y repasser.',
+  'feedback.hearts.one': '{n} cœur',
+  'feedback.hearts.other': '{n} cœurs',
+  'feedback.reply': '{who} vous a répondu',
+  'feedback.new': 'nouveau',
+
+  // N2 — la page d'un mot. Un mot est un index, pas une etiquette.
+  'word.title': 'Un mot',
+  'word.people.one': '{n} personne',
+  'word.people.other': '{n} personnes',
+  'word.series.one': '{n} série',
+  'word.series.other': '{n} séries',
+  'word.none.title': 'Personne ne range de série sous ce mot',
+  'word.none.body':
+    'Vos mots se posent depuis la fiche d’une série, et ne sont publiés que si vous l’avez demandé. Le premier à employer un mot lui donne son sens.',
+  'word.none.browse': 'Parcourir les séries',
+  'word.search': 'Mots',
+  'word.searchCount.one': '{n} série rangée sous ce mot',
+  'word.searchCount.other': '{n} séries rangées sous ce mot',
   // Le quiz personnel. ⚠️ Il se calcule sur le journal local : aucune de ces phrases ne
   // doit promettre un score ou un classement — il n'y en a pas, et il ne peut pas y en
   // avoir sans un calcul serveur.
@@ -742,6 +766,7 @@ export const FR = {
 
   'search.people': 'Des gens',
   'search.lists': 'Des listes',
+  'search.reviews': 'Ce que les gens en ont écrit',
   // ⚠️ Le conseil dit ce que le catalogue **ne contient pas**. C'est la seule cause d'echec
   // qu'on connaisse a l'avance et que le chercheur ne peut pas deviner : rien a l'ecran ne
   // dit qu'un film n'a aucune chance d'etre trouve ici.

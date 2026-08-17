@@ -16,6 +16,8 @@ import { SeriesCard } from '@/app/components/SeriesCard';
 import { PosterRail } from '@/app/components/PosterRail';
 import { PeopleResults } from '@/app/components/PeopleResults';
 import { ListResults } from '@/app/components/ListResults';
+import { ReviewResults } from '@/app/components/ReviewResults';
+import { WordResults } from '@/app/components/WordResults';
 import { discover } from '@/lib/catalog';
 
 interface PageProps {
@@ -198,6 +200,18 @@ export async function SearchView({ query, locale }: {
           a ma mere » ne se cherchait nulle part, et c'est le seul contenu du produit qui
           exige un compte pour exister. */}
       {query.length > 0 ? <ListResults query={query} /> : null}
+
+      {/* 🔴 **Les quatrieme et cinquieme index — et le premier des deux est la moitie de la
+          cible.** Chercher « fin bâclée » ne rendait rien, alors que c'est exactement la
+          phrase qu'on tape quand on hesite devant une serie, et que le corpus existe depuis
+          le lot 8. Les mots, eux, n'etaient qu'une etiquette sur un profil : les chercher est
+          ce qui en fait un index (N2).
+
+          ⚠️ En dernier, et dans cet ordre : on cherche une serie, parfois quelqu'un,
+          rarement une phrase, et presque jamais un mot — mais quand on le fait, rien d'autre
+          ne repond. */}
+      {query.length > 0 ? <ReviewResults query={query} /> : null}
+      {query.length > 0 ? <WordResults query={query} /> : null}
     </div>
   );
 }

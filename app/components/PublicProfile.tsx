@@ -741,7 +741,18 @@ function PublicWords({ entries }: { readonly entries: readonly TaggedSeries[] })
       {words.map(([word, series]) => (
         <li key={word} className="space-y-2">
           <p className="flex flex-wrap items-baseline gap-x-2">
-            <span className="card-title">{word}</span>
+            {/* 🔴 **C'etait un `<span>`, et c'est tout le defaut N2.** Un mot s'affichait
+                comme une etiquette : on lisait le vocabulaire de quelqu'un sans pouvoir le
+                confronter a celui des autres, alors que c'est la seule chose qu'un mot sache
+                faire. Chez la reference, un tag est un index navigable — ici il ne menait
+                nulle part, exactement comme le nom de l'auteur d'une critique avant le
+                2026-08-11. */}
+            <Link
+              href={pathIn(`/mot/${encodeURIComponent(word)}`, locale)}
+              className="tap-line card-title hover:text-(--color-volt)"
+            >
+              {word}
+            </Link>
             <span className="meta-sm">{tn('lists.count', series.length)}</span>
           </p>
           <ul className="flex flex-wrap gap-2">

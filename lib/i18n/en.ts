@@ -423,6 +423,27 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'friends.item.liked': 'loves a series',
   'friends.item.reviewed': 'wrote about',
   'feed.someSeries': 'a series',
+
+  'feedback.title': 'What your writing got back',
+  'feedback.lede':
+    'Hearts and replies land on the series page. They are gathered here so you do not have to go back for them.',
+  'feedback.hearts.one': '{n} heart',
+  'feedback.hearts.other': '{n} hearts',
+  'feedback.reply': '{who} replied to you',
+  'feedback.new': 'new',
+
+  'word.title': 'A word',
+  'word.people.one': '{n} person',
+  'word.people.other': '{n} people',
+  'word.series.one': '{n} series',
+  'word.series.other': '{n} series',
+  'word.none.title': 'Nobody files a series under this word',
+  'word.none.body':
+    'Your words are added from a series page, and are only published if you asked for it. Whoever uses a word first gives it its meaning.',
+  'word.none.browse': 'Browse series',
+  'word.search': 'Words',
+  'word.searchCount.one': '{n} series filed under this word',
+  'word.searchCount.other': '{n} series filed under this word',
   'quiz.title': 'A question for you',
   'quiz.onDay': 'Which series were you watching on {date}?',
   'quiz.byCurve': 'Which series has this trajectory?',
@@ -638,6 +659,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
 
   'search.people': 'People',
   'search.lists': 'Lists',
+  'search.reviews': 'What people wrote about it',
   'search.none.hint':
     'Check the spelling, or try the original title. The catalogue holds series only — a film will not be here — alongside the people and lists on Voltface.',
   'search.count.one': '{n} result for “{q}”',

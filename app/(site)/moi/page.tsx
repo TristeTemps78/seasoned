@@ -5,6 +5,7 @@ import { Library } from './Library';
 import { PageHeader } from '@/app/components/PageHeader';
 import { Quiz } from '@/app/components/Quiz';
 import { Favorites } from '@/app/components/Favorites';
+import { Feedback } from '@/app/components/Feedback';
 import { FaceDiscovery } from '@/app/components/FaceDiscovery';
 import { PosterRail } from '@/app/components/PosterRail';
 import { discover } from '@/lib/catalog';
@@ -88,6 +89,17 @@ export async function LibraryView({ locale }: { readonly locale: Locale }) {
           </Link>
         </p>
       </PageHeader>
+
+      {/* 🔴 **Le chemin de retour, et il vient en premier.** Les coeurs et les reponses
+          n'existaient que sur la fiche de la serie commentee : l'auteur d'une critique n'y
+          repasse pas, donc `015` et `024` ecrivaient dans le vide pour la seule personne a
+          qui ils s'adressent. C'est ce que le releve du 2026-08-17 appelait le plus cher des
+          trois manques.
+
+          En tete parce que c'est **ce pour quoi on revient** : ce qui a bouge depuis la
+          derniere visite passe avant ce qu'on a soi-meme range. Se tait entierement tant que
+          rien n'est arrive — voir le composant. */}
+      <Feedback />
 
       {/* La carte de visite, **avant** tout le reste : c'est la seule chose de cette page
           qui dise qui vous etes plutot que ce que vous avez regarde. Toujours rendue, meme

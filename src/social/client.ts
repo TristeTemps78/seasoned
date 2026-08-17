@@ -210,6 +210,8 @@ export interface Feedback {
    * lu, pas par qui.
    */
   readonly handle?: string;
+  /** La face de qui a repondu, si elle en a une. Voir {@link Profile.face}. */
+  readonly face?: FaceId;
   /** Le texte de la reponse, pour un `reply`. */
   readonly body?: string;
 }
@@ -1810,7 +1812,7 @@ export class SocialClient {
       this.#rows<Record<string, unknown>>(
         `review_comments?review_author_id=eq.${encodeURIComponent(userId)}` +
           `&author_id=neq.${encodeURIComponent(userId)}` +
-          `&select=subject,target,body,written_at,profiles!inner(handle)` +
+          `&select=subject,target,body,written_at,profiles!inner(handle,face)` +
           `&order=written_at.desc&limit=${limit}`,
       ),
     ]);
@@ -1835,8 +1837,9 @@ export class SocialClient {
     const items: Feedback[] = [
       ...[...grouped.values()].map((one) => ({ kind: 'heart' as const, ...one })),
       ...replies.flatMap((row) => {
-        const author = row['profiles'] as { handle?: unknown } | undefined;
+        const author = row['profiles'] as { handle?: unknown; face?: unknown } | undefined;
         if (typeof author?.handle !== 'string' || typeof row['body'] !== 'string') return [];
+        const face = readFace(author.face);
         return [
           {
             kind: 'reply' as const,
@@ -1845,6 +1848,7 @@ export class SocialClient {
             at: String(row['written_at'] ?? ''),
             count: 1,
             handle: author.handle,
+            ...(face !== undefined ? { face } : {}),
             body: row['body'],
           },
         ];
