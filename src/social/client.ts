@@ -2492,9 +2492,53 @@ export class SocialClient {
    */
   async listItems(userId: string, slug: string, limit = 500): Promise<readonly SeriesRef[]> {
     const rows = await this.#rows<Record<string, unknown>>(
-      `list_items?user_id=eq.${encodeURIComponent(userId)}&slug=eq.${encodeURIComponent(slug)}&select=subject,title,poster_path&order=added_at.asc&limit=${limit}`,
+      `list_items?user_id=eq.${encodeURIComponent(userId)}&slug=eq.${encodeURIComponent(slug)}` +
+        `&select=subject,title,poster_path` +
+        // ⚠️ `nullslast` n'est pas une precaution : sur un tri ascendant, Postgres met les
+        // `null` **en tete**. Sans lui, une liste a moitie classee commencerait par ce qu'on
+        // n'a justement pas classe. Le rang d'abord, le reste dans son ordre d'ajout (032).
+        `&order=ordinal.asc.nullslast,added_at.asc&limit=${limit}`,
     );
     return rows.flatMap(rowToSeriesRef);
+  }
+
+  /**
+   * **Classer une liste a la main** — 032.
+   *
+   * ## Un seul aller-retour, quel que soit le nombre de series
+   *
+   * PostgREST accepte plusieurs lignes dans un POST : `merge-duplicates` sur la cle primaire
+   * `(user_id, slug, subject)` ecrit donc tous les rangs d'un coup. Un `PATCH` par ligne
+   * aurait fait vingt allers-retours pour un glissement — le cout par geste que ce produit
+   * refuse partout.
+   *
+   * ⚠️ **`merge-duplicates` emprunte le chemin `UPDATE`**, et `list_items` n'avait aucune
+   * politique de ce genre : c'est exactement la forme qui rend **42501 en silence** (voir
+   * {@link IDEMPOTENCE}, quatre ecritures sur cinq le 2026-08-11). `032` pose la politique
+   * **avec** ce geste, pas avant.
+   *
+   * ⚠️ Le corps porte `title` et `poster_path` **absents** volontairement : un
+   * `ON CONFLICT DO UPDATE` n'ecrit que les colonnes envoyees, donc ne rien dire d'eux les
+   * laisse en place. Les envoyer a `null` effacerait l'instantane de `020` a chaque
+   * reordonnement — un classement ne doit pas couter les vignettes.
+   */
+  async reorderList(
+    userId: string,
+    slug: string,
+    subjects: readonly string[],
+  ): Promise<boolean> {
+    if (subjects.length === 0) return true;
+    return this.#write(
+      'list_items?on_conflict=user_id,slug,subject',
+      'POST',
+      subjects.map((subject, index) => ({
+        user_id: userId,
+        slug,
+        subject,
+        ordinal: index + 1,
+      })),
+      'resolution=merge-duplicates,return=minimal',
+    );
   }
 
   /**

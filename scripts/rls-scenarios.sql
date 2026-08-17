@@ -1738,6 +1738,72 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
+  -- ===========================================================================
+  -- 032 — classer une liste a la main
+  -- ===========================================================================
+
+  -- 92 — 🔴 **La politique `UPDATE` que `list_items` n'avait pas.** Reordonner ecrit
+  --      `ordinal` sur des lignes qui existent : sans politique, le chemin `UPDATE` rend
+  --      **42501 en silence** — la forme exacte qui a coute quatre ecritures sur cinq le
+  --      2026-08-11. On mesure donc que A peut classer SA liste.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.lists (user_id, slug, title) values (a, tag || 'lo', 'A classer')
+    on conflict do nothing;
+    insert into public.list_items (user_id, slug, subject)
+    values (a, tag || 'lo', 'tmdb:1'), (a, tag || 'lo', 'tmdb:2')
+    on conflict do nothing;
+    perform set_config('role', 'authenticated', true);
+
+    update public.list_items set ordinal = 1
+     where user_id = a and slug = tag || 'lo' and subject = 'tmdb:2';
+    get diagnostics lignes = row_count;
+    obtenu := lignes::text;
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. on classe SA liste (032)  [attendu %s, obtenu %s]
+',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 93 — Et pas celle d'un autre : `list_items_update` est borne a `auth.uid()`, donc B ne
+  --      deplace rien chez A. **Zero ligne, sans erreur** — comme au 71 et au 82, c'est
+  --      pourquoi on compte au lieu d'attendre un refus.
+  begin
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', b::text, 'role', 'authenticated')::text, true);
+    update public.list_items set ordinal = 99
+     where user_id = a and slug = tag || 'lo';
+    get diagnostics lignes = row_count;
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+    obtenu := lignes::text;
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. on ne classe pas la liste d un autre (032)  [attendu %s, obtenu %s]
+',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 94 — Un rang doit etre un rang : zero et les negatifs sont refuses par la contrainte,
+  --      sinon un client fautif ferait remonter une serie « avant la premiere » pour toujours.
+  begin
+    update public.list_items set ordinal = 0
+     where user_id = a and slug = tag || 'lo' and subject = 'tmdb:1';
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '23514';
+  rapport := rapport || format(E'  %s  %s. un rang commence a 1 (032)  [attendu %s, obtenu %s]
+',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
   -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------

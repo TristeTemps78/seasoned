@@ -453,6 +453,10 @@ export const FR = {
   'list.copied': 'Elle est chez vous.',
   'list.copied.open': 'Voir mes listes',
   'list.copyFailed': 'La reprise n’est pas partie. Réessayez.',
+  // 032 — deux fleches plutot qu'un glisser-deposer : le glisser n'existe pas au clavier
+  // sans reimplementer un protocole entier, et il se comporte mal sur un ecran qui defile.
+  'lists.moveUp': 'Monter {title}',
+  'lists.moveDown': 'Descendre {title}',
   'lists.remove': 'Retirer',
   'lists.delete': 'Supprimer la liste',
   // `lists_update` existait depuis le premier jour, sans appelant : corriger un titre

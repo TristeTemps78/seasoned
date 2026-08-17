@@ -389,6 +389,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'list.copied': 'It is yours now.',
   'list.copied.open': 'See my lists',
   'list.copyFailed': 'The copy did not go through. Try again.',
+  'lists.moveUp': 'Move {title} up',
+  'lists.moveDown': 'Move {title} down',
   'lists.remove': 'Remove',
   'lists.delete': 'Delete the list',
   'lists.rename': 'Edit the title',

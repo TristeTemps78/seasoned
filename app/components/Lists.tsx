@@ -290,6 +290,44 @@ export function Lists({ ownerId, ownerHandle }: {
     [editTitle, editNote, clientFor, myId, load],
   );
 
+  /**
+   * **Classer une liste a la main** — 032.
+   *
+   * ## Pourquoi deux boutons et non un glisser-deposer
+   *
+   * Le glisser-deposer est ce qu'on imagine d'abord, et c'est le geste le plus difficile a
+   * rendre accessible : il n'existe pas au clavier sans reimplementer tout un protocole, il
+   * se comporte mal sur un ecran tactile qui defile, et il demande une bibliotheque. Deux
+   * fleches font le meme travail, se decrivent en un mot, et marchent partout — c'est le
+   * meme arbitrage que le menu deroulant preferé a une rangee de boutons dans ce fichier.
+   *
+   * ⚠️ **L'ecran bouge d'abord, la base ensuite** — l'inverse de la regle habituelle de ce
+   * depot, et c'est assume ici : un deplacement dont l'effet n'apparait qu'apres l'aller-
+   * retour se lit comme un clic perdu, et on recliquerait. L'echec, lui, a son ecran : la
+   * banniere commune (`WriteFailureNotice`) annonce l'ecriture qui n'est pas partie, et
+   * rouvrir la liste rend l'ordre du serveur.
+   */
+  const move = useCallback(
+    async (slug: string, subject: string, direction: -1 | 1) => {
+      const current = items[slug];
+      if (current === undefined || myId === undefined) return;
+      const at = current.findIndex((one) => one.subject === subject);
+      const to = at + direction;
+      if (at < 0 || to < 0 || to >= current.length) return;
+
+      const next = [...current];
+      const [moved] = next.splice(at, 1);
+      if (moved === undefined) return;
+      next.splice(to, 0, moved);
+      setItems((all) => ({ ...all, [slug]: next }));
+
+      const social = clientFor();
+      if (social === undefined) return;
+      await social.reorderList(myId, slug, next.map((one) => one.subject));
+    },
+    [items, myId, clientFor],
+  );
+
   const remove = useCallback(
     async (slug: string, subject: string) => {
       const social = clientFor();
@@ -610,7 +648,7 @@ export function Lists({ ownerId, ownerHandle }: {
                     <p className="meta">{t('lists.empty')}</p>
                   ) : (
                     <ul className="space-y-2">
-                      {shown.map((entry) => {
+                      {shown.map((entry, index) => {
                         const parsed = parseJournalKey(entry.subject);
                         const { title: seriesTitle, posterPath } = resolveSeriesRef(
                           entry,
@@ -642,13 +680,36 @@ export function Lists({ ownerId, ownerHandle }: {
                               )}
                             </span>
                             {editable ? (
-                              <button
-                                type="button"
-                                className="btn"
-                                onClick={() => remove(list.slug, entry.subject)}
-                              >
-                                {t('lists.remove')}
-                              </button>
+                              <span className="flex shrink-0 items-center gap-1">
+                                {/* ⚠️ Les libelles accessibles nomment **la serie**, pas
+                                    « monter » : dans une liste de vingt, vingt boutons
+                                    « monter » se lisent tous pareil au lecteur d'ecran. */}
+                                <button
+                                  type="button"
+                                  className="btn px-2"
+                                  disabled={index === 0}
+                                  aria-label={t('lists.moveUp', { title: seriesTitle })}
+                                  onClick={() => void move(list.slug, entry.subject, -1)}
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn px-2"
+                                  disabled={index === shown.length - 1}
+                                  aria-label={t('lists.moveDown', { title: seriesTitle })}
+                                  onClick={() => void move(list.slug, entry.subject, 1)}
+                                >
+                                  ↓
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn"
+                                  onClick={() => remove(list.slug, entry.subject)}
+                                >
+                                  {t('lists.remove')}
+                                </button>
+                              </span>
                             ) : null}
                           </li>
                         );
