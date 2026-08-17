@@ -53,8 +53,12 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
   masquée) ont vécu sous 956 tests verts. Ce qui se lit dans la source est gardé par
   `tests/layout-collisions.test.ts` ; le reste **se mesure au navigateur**, en lisant le DOM
   (`getComputedStyle`, `getBoundingClientRect`, `scrollWidth > clientWidth`).
-- `npm run db:push` applique `supabase/*.sql`. `npm run db:scenarios` rejoue 59 scénarios
+- `npm run db:push` applique `supabase/*.sql`. `npm run db:scenarios` rejoue 91 scénarios
   RLS contre la vraie base, en transaction annulée — **rien ne persiste, jamais**.
+  `npm run db:query -- "select …"` pose **une** question à la vraie base (2026-08-17) : c'est
+  ce qui manquait pour savoir, avant d'écrire une contrainte, s'il existe des lignes qui la
+  violeraient. Rien ne s'y écrit — une correction tapée là ne survivrait pas au prochain
+  `db:push`, et personne ne saurait qu'elle a eu lieu.
 - `npm run db:round -- 2026-08-10 7` construit 7 manches de quiz d'avance depuis TMDB.
   `npm run db:stock` dit combien il en reste et **sort en échec** sous 7 : la réserve se
   vidait sans que rien ne le signale. Il n'est branché sur aucun cron — c'est une décision,
@@ -62,6 +66,19 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
 - **Le service worker sert l'ancien build.** Une mesure au navigateur qui ne voit pas une
   correction pourtant compilée n'est pas une correction fausse : désinscrire le SW, vider
   `caches`, et naviguer avec un paramètre neuf. Constaté encore le 2026-08-16 sur `tap-line`.
+- **🔴 Le guillemet double d'un `ilike` PostgREST entre dans le motif.** Mesuré le
+  2026-08-17 : `tags?tag=ilike."*dimanche*"` rend `200 []`, `ilike.*dimanche*` rend la ligne.
+  `searchLists` composait la première forme depuis sa livraison — donc **une recherche qui
+  ne pouvait rien trouver, pour personne**, avec l'écran exact d'« aucun résultat ». Il n'y a
+  rien à neutraliser dans un filtre simple (une virgule y est du texte, vérifié) ; ce qui doit
+  l'être, ce sont les jokers — `*di_anche*` trouve « le dimanche ». Voir `likePattern`.
+- **La largeur d'un téléphone reste non mesurable ici** (angle mort A1, reconfirmé deux fois
+  le 2026-08-17) : `resize_window` redimensionne bien la fenêtre, mais l'onglet piloté a
+  `document.hidden === true` et ne recalcule jamais son `innerWidth` (figé à 1054×633). Créer
+  l'onglet après le redimensionnement n'y change rien, `window.open` est bloqué sans geste
+  humain, et l'iframe est fermée par `X-Frame-Options: DENY` — qui est la bonne configuration.
+  Ce qui **se** mesure : le débordement d'un rail (`scrollWidth > clientWidth`), qui a révélé
+  trois faces coupées à 1054 px. Le reste demande une main humaine.
 - **Le panneau réseau du navigateur rend `503` pour toute réponse sans corps** — un `204` de
   `DELETE`, un `POST` en `Prefer: return=minimal`. Mesuré le 2026-08-17 : six requêtes d'un
   même chargement, `activity` et `profile_favorites` annoncées en échec, et `200`/`204` selon
