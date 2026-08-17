@@ -52,12 +52,74 @@ export function PublishActivity() {
   const lastStops = useRef<string | undefined>(undefined);
   const lastPinned = useRef<string | undefined>(undefined);
   const lastTags = useRef<string | undefined>(undefined);
+  /**
+   * ⚠️ **Ce que le SERVEUR porte deja**, demande une fois par montage — et c'est ce qui
+   * supprime deux ecritures par page vue.
+   *
+   * ## 🔴 Le cout mesure le 2026-08-18, sur une fiche serie
+   *
+   * Onze appels Supabase, dont **deux ecritures de mots** : `publishTags` efface puis
+   * reinsere, et la signature de reference (`lastTags`) vaut `undefined` a chaque montage.
+   * Un compte qui partage ses mots repayait donc `DELETE tags` + `POST tags` a **chaque
+   * chargement de page**, pour un vocabulaire qui change une fois par mois.
+   *
+   * ## Pourquoi une lecture plutot qu'une memoire persistante
+   *
+   * `D2` a refuse la signature en `sessionStorage`, et le refus tient : *« une couche de
+   * plus, et une couche qui peut se desynchroniser du serveur »*. Demander au serveur ce
+   * qu'il porte ne peut pas se desynchroniser — c'est **lui** la source. Une lecture
+   * remplace donc deux ecritures dans le cas courant (rien n'a change), et supprime au
+   * passage la fenetre destructrice : entre le `DELETE` et le `POST`, un reseau qui tombe
+   * laissait le profil sans aucun mot.
+   *
+   * ⚠️ Elle ne part **que si l'accord est donne** : sans `shareTags`, il n'y a rien a
+   * comparer et le vide se publie comme avant — c'est-a-dire qu'il efface, ce qui est tout
+   * l'objet du refus.
+   */
+  const serverTags = useRef<string | undefined>(undefined);
   const forgotten = useRef(false);
 
   const social = useSocial();
   const userId = account?.userId;
   const keepStopsPrivate = journal.keepStopsPrivate === true;
   const shareTags = journal.shareTags === true;
+
+  /**
+   * Ce que le serveur porte deja, lu **une fois** — voir {@link serverTags}.
+   *
+   * ⚠️ Un effet a part et non une ligne dans celui d'en dessous : celui-la se redeclenche a
+   * chaque frappe (le journal est dans ses dependances), et cette lecture ne doit partir
+   * qu'une fois par montage. Ses dependances sont donc le strict minimum.
+   *
+   * ⚠️ La forme lue est **normalisee comme celle qu'on enverrait** : comparer deux JSON
+   * construits differemment rendrait toujours « ca a change », donc republierait toujours —
+   * le defaut qu'on corrige, deguise en correctif.
+   */
+  useEffect(() => {
+    if (!configured || !ready || userId === undefined || !shareTags) return;
+    if (social === undefined || serverTags.current !== undefined) return;
+
+    let alive = true;
+    void social.tagsBy(userId).then((rows) => {
+      if (!alive) return;
+      serverTags.current = JSON.stringify(
+        [...rows]
+          .map((one) => ({
+            subject: one.subject,
+            tag: one.tag,
+            ...(one.title !== undefined ? { title: one.title } : {}),
+            ...(one.posterPath !== undefined ? { posterPath: one.posterPath } : {}),
+          }))
+          // Le meme ordre que la projection locale : la base rend `tag.asc`, le journal rend
+          // serie par serie. Deux ordres differents pour un meme contenu se compareraient
+          // comme deux contenus differents.
+          .sort((x, y) => (x.subject + x.tag < y.subject + y.tag ? -1 : 1)),
+      );
+    });
+    return () => {
+      alive = false;
+    };
+  }, [configured, ready, userId, social, shareTags]);
 
   useEffect(() => {
     if (!configured || !ready || userId === undefined) return;
@@ -119,7 +181,13 @@ export function PublishActivity() {
 
     const sendActivity = items.length > 0 && shape !== lastSent.current;
     const sendStops = stops.length > 0 && stopShape !== lastStops.current;
-    const wordShape = JSON.stringify(words);
+    // ⚠️ **Triee comme la lecture serveur**, sinon la comparaison serait toujours fausse :
+    // la projection locale sort serie par serie, la base rend `tag.asc`. Deux ordres pour un
+    // meme contenu se comparent comme deux contenus differents — et on republierait a chaque
+    // page, c'est-a-dire exactement le defaut qu'on corrige.
+    const wordShape = JSON.stringify(
+      [...words].sort((x, y) => (x.subject + x.tag < y.subject + y.tag ? -1 : 1)),
+    );
 
     /**
      * Un ETAT se republie quand il change — mais **un etat vide ne se publie pas au montage**.
@@ -150,7 +218,14 @@ export function PublishActivity() {
       forme !== dernier && (!vide || dernier !== undefined);
 
     const sendPinned = changeDEtat(pinnedShape, lastPinned.current, pinned.length === 0);
-    const sendTags = changeDEtat(wordShape, lastTags.current, words.length === 0);
+    // ⚠️ On compare a ce que le serveur porte **quand on le sait**, et a la derniere
+    // publication de cette session sinon. Sans la premiere, chaque chargement de page
+    // reecrivait un vocabulaire identique — deux ecritures pour rien.
+    const sendTags = changeDEtat(
+      wordShape,
+      lastTags.current ?? serverTags.current,
+      words.length === 0,
+    );
     // Le retrait ne part qu'une fois par session : la table est illisible, donc rien ne
     // permet de constater qu'elle est deja vide, et redemander a chaque frappe serait un
     // `DELETE` par touche.

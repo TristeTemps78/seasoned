@@ -100,6 +100,10 @@ vi.mock('@/app/social/socialFrom', () => ({
       envois.tags.push(items);
       return true;
     },
+    // ⚠️ Ajoutee le 2026-08-18 avec la lecture qui evite deux ecritures par page vue : le
+    // composant demande d'abord au serveur ce qu'il porte. Un double qui l'ignore fait
+    // lever l'effet — et c'est ce que ces tests ont attrape immediatement.
+    tagsBy: async () => [],
     forgetStops: async () => true,
   }),
 }));
