@@ -127,6 +127,28 @@ export interface TaggedSeries extends SeriesRef {
   readonly tag: string;
 }
 
+/**
+ * Une reponse a une critique.
+ *
+ * ⚠️ Porte l'identite de la critique commentee **et** celle de son propre auteur : les deux
+ * servent, et pas au meme endroit. La premiere range la reponse sous le bon texte, la seconde
+ * permet d'ouvrir un profil et de signaler — sans quoi une surface de discussion n'est pas
+ * moderable.
+ */
+export interface ReviewComment {
+  readonly id: string;
+  /** L'auteur de la CRITIQUE, pas de la reponse. */
+  readonly reviewAuthorId: string;
+  readonly subject: string;
+  readonly target: string;
+  readonly body: string;
+  readonly writtenAt: string;
+  readonly handle: string;
+  /** L'auteur de la reponse. */
+  readonly authorId: string;
+  readonly face?: FaceId;
+}
+
 /** Une question de la manche, telle que le serveur accepte de la montrer. */
 export interface QuizServed {
   readonly kind: string;
@@ -1341,6 +1363,83 @@ export class SocialClient {
             },
           ],
     );
+  }
+
+  /**
+   * Les reponses a une critique, dans l'ordre ou elles ont ete ecrites.
+   *
+   * ⚠️ **Un appel pour toute la fiche**, jamais un par critique : c'est la meme regle que
+   * {@link reviewLikes}, et pour la meme raison — une fiche en affiche dix. Le filtre porte
+   * donc sur le `subject`, et le rendu regroupe.
+   *
+   * ⚠️ `profiles!inner` et non `profiles` : sans `!inner`, PostgREST rend aussi les lignes
+   * dont le profil ne correspond pas, avec `profiles: null`. Un commentaire sans auteur
+   * lisible n'est pas affichable — on ne pourrait ni l'ouvrir ni le signaler.
+   */
+  async commentsOn(subject: string, limit = 200): Promise<readonly ReviewComment[]> {
+    const rows = await this.#rows<Record<string, unknown>>(
+      `review_comments?subject=eq.${encodeURIComponent(subject)}` +
+        `&select=id,review_author_id,subject,target,body,written_at,profiles!inner(handle,user_id,face)` +
+        `&order=written_at.asc&limit=${limit}`,
+    );
+    return rows.flatMap((row) => {
+      const author = row['profiles'] as
+        | { handle?: unknown; user_id?: unknown; face?: unknown }
+        | undefined;
+      if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
+      if (typeof row['id'] !== 'string' || typeof row['body'] !== 'string') return [];
+      const face = readFace(author.face);
+      return [
+        {
+          id: row['id'],
+          reviewAuthorId: String(row['review_author_id']),
+          subject: String(row['subject']),
+          target: String(row['target']),
+          body: row['body'],
+          writtenAt: String(row['written_at'] ?? ''),
+          handle: author.handle,
+          authorId: author.user_id,
+          ...(face !== undefined ? { face } : {}),
+        },
+      ];
+    });
+  }
+
+  /**
+   * Repondre a une critique.
+   *
+   * ⚠️ **Aucune idempotence ici, contrairement a presque tout le reste du client.** Deux
+   * envois du meme texte sont deux reponses : c'est un fait ecrit, pas un etat. Un
+   * `merge-duplicates` avalerait le second message de quelqu'un qui repete — et il exigerait
+   * une politique `UPDATE` que `024` refuse volontairement.
+   */
+  async comment(
+    authorId: string,
+    review: { readonly authorId: string; readonly subject: string; readonly target: string },
+    body: string,
+    lang: string,
+  ): Promise<boolean> {
+    return this.#write('review_comments', 'POST', {
+      review_author_id: review.authorId,
+      subject: review.subject,
+      target: review.target,
+      author_id: authorId,
+      body,
+      lang,
+    });
+  }
+
+  /**
+   * Retirer sa propre reponse.
+   *
+   * ⚠️ Une suppression **dure**, et c'est la difference avec une critique : `/regles` promet
+   * qu'une critique masquee reste consultable par la moderation, parce qu'elle a pu etre
+   * signalee. Ici la personne retire ses propres mots avant que quiconque ne s'en plaigne —
+   * et `review_comments_delete` la borne a `auth.uid()`, donc elle ne peut retirer que les
+   * siens.
+   */
+  async removeComment(id: string): Promise<boolean> {
+    return this.#write(`review_comments?id=eq.${encodeURIComponent(id)}`, 'DELETE');
   }
 
   /**

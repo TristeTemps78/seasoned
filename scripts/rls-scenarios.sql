@@ -1301,6 +1301,107 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- 024 — repondre a une critique, et surtout ce que ca n'ouvre PAS
+  -- ---------------------------------------------------------------------------
+  --
+  -- Le releve du 2026-08-16 hesitait a raison : « c'est aussi une surface de moderation
+  -- entiere ». Les quatre scenarios qui suivent gardent les deux refus qui font la decision —
+  -- on ne repond pas sous ce qu'on ne peut pas lire, et l'auteur d'une critique n'est PAS le
+  -- moderateur de son fil.
+
+  -- 69 — Le chemin normal : A repond sous une critique qu'il a le droit de lire (la sienne).
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.reviews (user_id, subject, target, body, through_season, lang)
+    values (a, tag || '_c24', 'series', 'Texte du scenario.', 0, 'fr')
+    on conflict do nothing;
+    perform set_config('role', 'authenticated', true);
+
+    insert into public.review_comments (review_author_id, subject, target, author_id, body, lang)
+    values (a, tag || '_c24', 'series', a, 'Une reponse.', 'fr');
+    obtenu := 'ok';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'ok';
+  rapport := rapport || format(E'  %s  %s. on repond sous une critique qu on peut lire (024)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 70 — 🔴 **Le refus qui empeche la sonde.** C2 a un profil `followers` que personne ne
+  --      suit, donc `can_see(c2)` est faux pour A : sa critique lui est invisible. Sans
+  --      `can_see(review_author_id)` dans le `with check`, A pourrait ecrire dessous — et
+  --      s'en servir pour apprendre qu'elle existe. Un commentaire est un revelateur de ce
+  --      qu'il commente.
+  --
+  --      ⚠️ C2 et non Z, et la premiere version se l'est fait dire par la base : `reviews`
+  --      porte une cle etrangere vers `profiles` (`reviews_author_profile`, posee par `009`),
+  --      donc un compte sans nom ne peut pas ecrire de critique du tout. Il fallait quelqu'un
+  --      d'invisible **et** nomme.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.profiles (user_id, handle, display_name, visibility)
+    values (c2, tag || 'c2', 'C2', 'followers') on conflict do nothing;
+    insert into public.reviews (user_id, subject, target, body, through_season, lang)
+    values (c2, tag || '_c24z', 'series', 'Texte du scenario.', 0, 'fr')
+    on conflict do nothing;
+    perform set_config('role', 'authenticated', true);
+
+    insert into public.review_comments (review_author_id, subject, target, author_id, body, lang)
+    values (c2, tag || '_c24z', 'series', a, 'Une reponse.', 'fr');
+    obtenu := 'acceptee';
+  exception when insufficient_privilege then
+    obtenu := 'refusee';
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. on ne repond PAS sous une critique invisible (024)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 71 — 🔴 **LA decision de fond de ce lot.** B repond sous la critique de A ; A tente de
+  --      l'effacer. Postgres applique `review_comments_delete`, borne a `auth.uid()`, donc
+  --      **zero ligne** part — et pas d'erreur, un `DELETE` qui ne trouve rien est un succes.
+  --      C'est pour ca que le scenario compte les lignes plutot que d'attendre un refus :
+  --      c'est exactement le piege du 28, ou un `DELETE` filtre repondait 204 sans rien faire.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.review_comments (review_author_id, subject, target, author_id, body, lang)
+    values (a, tag || '_c24', 'series', b, 'La reponse de B.', 'fr');
+    perform set_config('role', 'authenticated', true);
+
+    delete from public.review_comments
+     where review_author_id = a and subject = tag || '_c24' and author_id = b;
+    get diagnostics lignes = row_count;
+
+    perform set_config('role', 'postgres', true);
+    select format('%s efface / %s reste', lignes,
+                  (select count(*) from public.review_comments
+                    where review_author_id = a and subject = tag || '_c24' and author_id = b))
+      into obtenu;
+    perform set_config('role', 'authenticated', true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0 efface / 1 reste';
+  rapport := rapport || format(E'  %s  %s. l auteur d une critique n efface PAS les reponses (024)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 72 — La borne du texte mord. 600 la ou une critique en a 2000 : une critique est un texte
+  --      qu'on ecrit, une reponse est une reponse.
+  begin
+    insert into public.review_comments (review_author_id, subject, target, author_id, body, lang)
+    values (a, tag || '_c24', 'series', a, repeat('x', 601), 'fr');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '23514';
+  rapport := rapport || format(E'  %s  %s. une reponse de plus de 600 caracteres est refusee (024)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);

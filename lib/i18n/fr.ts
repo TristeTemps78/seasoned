@@ -1036,6 +1036,18 @@ export const FR = {
   // Le cœur d'une critique. ⚠️ Libellés d'accessibilité : le symbole seul n'apprend rien
   // à un lecteur d'écran, et « aimer » n'est pas « noter ».
   'shareReview.save': 'Partager en image',
+  // --- Répondre à une critique (F5) ----------------------------------------
+  // ⚠️ « Réponses » et non « commentaires » : le mot dit qu'on répond à quelqu'un, pas
+  // qu'on annote un objet. Voir 024_review_comments.sql pour ce que ce fil n'ouvre PAS.
+  'comments.count.one': '{n} réponse',
+  'comments.count.other': '{n} réponses',
+  'comments.write': 'Répondre à cette critique',
+  'comments.placeholder': 'Votre réponse…',
+  'comments.send': 'Répondre',
+  'comments.remove': 'Retirer ma réponse',
+  'comments.failed': 'Votre réponse n’est pas partie. Réessayez.',
+  'comments.needAccount': 'Répondre demande un compte.',
+  'comments.openOne': 'En ouvrir un',
   'review.like': 'J’aime cette critique',
   'review.unlike': 'Retirer mon cœur',
   'convert.missedTitle': 'Voir lesquelles',

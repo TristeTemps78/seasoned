@@ -20,7 +20,8 @@ import {
 } from '@/src/domain/review-order';
 import { ReviewHeart } from '@/app/components/ReviewHeart';
 import { ReviewSortMenu } from '@/app/components/ReviewSortMenu';
-import { type PublishedReview, type ReviewLikes } from '@/src/social/client';
+import { ReviewComments } from '@/app/components/ReviewComments';
+import { type PublishedReview, type ReviewComment, type ReviewLikes } from '@/src/social/client';
 import { formatDate } from '@/lib/format';
 import type { MessageKey } from '@/lib/i18n/engine';
 import { pathIn } from '@/lib/routes';
@@ -58,6 +59,13 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
   const [reviews, setReviews] = useState<readonly PublishedReview[] | undefined>(undefined);
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
   const [likes, setLikes] = useState<Readonly<Record<string, ReviewLikes>>>({});
+  /**
+   * Les reponses de TOUTE la fiche, en un appel — voir `commentsOn`.
+   *
+   * ⚠️ Un appel par critique serait dix appels sur une fiche qui en porte dix, et c'est
+   * exactement ce que `015` interdit pour les coeurs. Le regroupement se fait au rendu.
+   */
+  const [comments, setComments] = useState<readonly ReviewComment[]>([]);
   const [sort, setSort] = useState<ReviewSort>('recent');
   const [audience, setAudience] = useState<ReviewAudience>('everyone');
   /** Les identifiants des gens qu'on suit. Vide tant qu'on ne les a pas — jamais devine. */
@@ -84,6 +92,10 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
     void social.reviewLikes(key).then((rows) => {
       if (!alive) return;
       setLikes(Object.fromEntries(rows.map((one) => [`${one.authorId}:${one.target}`, one])));
+    });
+    // Les reponses aussi, et pour la meme raison : un appel pour la fiche entiere.
+    void social.commentsOn(key).then((rows) => {
+      if (alive) setComments(rows);
     });
     return () => {
       alive = false;
@@ -345,6 +357,56 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                     }}
                   />
                 ) : null}
+
+                {/* 🔴 **F5 — repondre a une critique.** Rien nulle part jusqu'au 2026-08-17.
+                    Voir `024_review_comments.sql` pour ce qui a ete refuse avec : aucun
+                    pouvoir de masquage cote client, et l'auteur de la critique ne peut PAS
+                    effacer les reponses des autres.
+
+                    ⚠️ **Le fil suit l'etat du texte.** Une reponse parle de ce qu'elle
+                    commente : l'afficher sous une critique caviardee revelerait par la bande
+                    ce que le caviardage protege — « il se passe quelque chose a la saison 6 »
+                    suffit a gacher. Masque avec elle, revele avec elle. */}
+                {review.hidden === true && !shown ? null : (
+                  <ReviewComments
+                    review={{
+                      authorId: review.authorId,
+                      subject: key,
+                      target: review.target,
+                    }}
+                    comments={comments.filter(
+                      (one) =>
+                        one.reviewAuthorId === review.authorId && one.target === review.target,
+                    )}
+                    onSend={async (body) => {
+                      const social = socialFrom(accessToken);
+                      if (social === undefined || account === undefined) return false;
+                      const ok = await social.comment(
+                        account.userId,
+                        { authorId: review.authorId, subject: key, target: review.target },
+                        body,
+                        locale,
+                      );
+                      // On relit plutot que d'ajouter localement : la ligne posee porte un
+                      // identifiant et une date que seule la base connait, et les inventer
+                      // ferait diverger l'ecran de ce qui est ecrit.
+                      if (ok) setComments(await social.commentsOn(key));
+                      return ok;
+                    }}
+                    onRemove={async (id) => {
+                      const social = socialFrom(accessToken);
+                      if (social === undefined) return false;
+                      const ok = await social.removeComment(id);
+                      if (ok) setComments((current) => current.filter((one) => one.id !== id));
+                      return ok;
+                    }}
+                    onReport={async (authorId, ground) => {
+                      const social = socialFrom(accessToken);
+                      if (social === undefined || account === undefined) return false;
+                      return social.report(account.userId, authorId, ground);
+                    }}
+                  />
+                )}
               </li>
             );
           })}

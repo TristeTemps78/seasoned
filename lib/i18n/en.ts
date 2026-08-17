@@ -873,6 +873,16 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'taste.basisEpisodes.other': ' and {n} episode ratings',
 
   'shareReview.save': 'Share as image',
+  // --- Replying to a review (F5) -------------------------------------------
+  'comments.count.one': '{n} reply',
+  'comments.count.other': '{n} replies',
+  'comments.write': 'Reply to this review',
+  'comments.placeholder': 'Your reply…',
+  'comments.send': 'Reply',
+  'comments.remove': 'Remove my reply',
+  'comments.failed': 'Your reply did not go through. Try again.',
+  'comments.needAccount': 'Replying needs an account.',
+  'comments.openOne': 'Open one',
   'review.like': 'I like this review',
   'review.unlike': 'Remove my heart',
   'convert.missedTitle': 'See which ones',
