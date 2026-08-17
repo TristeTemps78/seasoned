@@ -175,12 +175,18 @@
    * compense par une marge negative, donc la ligne garde sa hauteur et l'aspect « lien en
    * pointilles » reste intact. C'est la seule facon d'agrandir une cible sans defaire ce que
    * la classe existe pour obtenir.
+   *
+   * 🔴 **La media query a ete retiree le 2026-08-17, et c'etait elle le defaut.** Mesure sur
+   * la production a 1440 px : « Signaler » rendait **45 x 17**. La regle grandissait la cible
+   * sous 40 rem seulement, alors que WCAG 2.5.8 **ne connait pas le type de pointeur** — le
+   * depot l'ecrit lui-meme depuis le 2026-08-13, en montant `.grid-cell` a 24 et `.star-box`
+   * a 48 « parce que la norme ne distingue pas ». La condition etait donc une exception que
+   * rien ne justifiait, et elle ne coutait rien a retirer : le rembourrage est compense, donc
+   * le dessin est identique a toutes les largeurs.
    */
-  @media (width < 40rem) {
-    .quiet-action {
-      padding-block: 0.4375rem;
-      margin-block: -0.4375rem;
-    }
+  .quiet-action {
+    padding-block: 0.4375rem;
+    margin-block: -0.4375rem;
   }
   /**
    * =============================================================================
@@ -576,11 +582,28 @@
    * dans un paragraphe de prose, et l'appliquer partout gonflerait l'interligne de tous les
    * textes du site pour rien.
    */
+  /*
+   * 🔴 **`min-width` ajoute le 2026-08-17 : la classe ne garantissait que la moitie de la
+   * regle.** WCAG 2.5.8 borne la plus PETITE dimension ; une hauteur seule laisse passer une
+   * cible etroite, et c'est exactement ce que le coeur d'une critique rendait — **10 x 20**
+   * mesures sur la production, sur trois surfaces depuis le 2026-08-16. Un bouton a glyphe
+   * unique est large comme son glyphe.
+   *
+   * Sur un lien de texte la borne ne change rien : un mot fait plus de 24 px. Elle ne mord
+   * que la ou elle doit.
+   */
   .tap-line {
     display: inline-flex;
     align-items: center;
+    min-width: 1.5rem;
     min-height: 1.5rem;
   }
+  /*
+   * ⚠️ **Pas de `justify-content` sur la classe**, et la premiere version l'y avait mis. Un
+   * `.tap-line w-full` — le titre de la vitrine de critiques, mesure a 384 px le 2026-08-16 —
+   * aurait vu son texte se centrer. Le centrage n'a de sens que pour un glyphe seul, donc il
+   * se demande la ou il sert.
+   */
 
   /**
    * =============================================================================

@@ -101,7 +101,11 @@ export function ResumeStrip() {
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 panel px-4 py-3 text-sm">
       <Link
         href={seriesPath(parsed.providerId, locale)}
-        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 hover:text-(--color-volt)"
+        // ⚠️ `min-h-6` et non `tap-line` : ce lien porte deja `flex`, et `tap-line` declare
+        // `display: inline-flex` — les deux se disputeraient la cascade, exactement ce que
+        // `nav-target` documente en refusant de toucher a la disposition. Mesure du
+        // 2026-08-17 : 512 x 20, sur le geste de retour le plus frequent du produit.
+        className="flex min-h-6 min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 hover:text-(--color-volt)"
       >
         <span className="text-(--color-muted)">
           {item.daysUntilNext !== undefined ? t('resume.returning') : t('resume.resume')}

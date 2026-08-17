@@ -54,7 +54,11 @@ export function ReviewHeart({
         setBusy(true);
         void onToggle(!mine).finally(() => setBusy(false));
       }}
-      className={`inline-flex items-center gap-1.5 text-sm ${
+      // 🔴 **10 x 20 px** mesures sur la production le 2026-08-17, sur trois surfaces : un
+      // bouton a glyphe unique est large comme son glyphe, et le plancher de 24 px que ce
+      // depot s'applique depuis le 2026-08-13 n'avait jamais ete pose ici. `tap-line` porte
+      // les deux dimensions depuis ce jour ; `justify-center` centre le coeur dans sa cible.
+      className={`tap-line justify-center gap-1.5 text-sm ${
         mine ? 'text-(--color-volt)' : 'text-(--color-muted) hover:text-(--color-text)'
       }`}
     >
