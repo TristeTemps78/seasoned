@@ -62,6 +62,22 @@ export function PrivacyView({ locale }: { readonly locale: Locale }) {
         title={t(locale, 'privacy.rights.title')}
         body={t(locale, 'privacy.rights.body')}
       />
+      {/* 🔴 **Cette page annoncait le social au futur, six jours apres son ouverture** — et
+          elle promettait dans la meme phrase d'etre mise a jour « avant, pas apres ». Les
+          profils, les critiques, les listes et les reponses sont publics depuis le
+          2026-08-11 ; la seule page dont le role est de dire ce que le produit heberge le
+          disait au futur. Ces deux sections decrivent ce qui existe, et ce qui le defait.
+
+          ⚖️ Texte a faire relire, comme le reste de cette page. Ce qui est sur, c'est qu'une
+          politique en retard sur le produit est pire qu'une politique imparfaite. */}
+      <Section
+        title={t(locale, 'privacy.public.title')}
+        body={t(locale, 'privacy.public.body')}
+      />
+      <Section
+        title={t(locale, 'privacy.public.control.title')}
+        body={t(locale, 'privacy.public.control.body')}
+      />
       <Section title={t(locale, 'privacy.next.title')} body={t(locale, 'privacy.next.body')} />
     </div>
   );

@@ -621,7 +621,7 @@ export const FR = {
   'account.callback.nothing': 'Il n’y a rien à valider ici.',
   'account.callback.back': 'Retour à mon compte',
   'privacy.title': 'Confidentialité',
-  'privacy.updated': 'À jour du 10 août 2026.',
+  'privacy.updated': 'À jour du 17 août 2026.',
   'privacy.now.title': 'Sans compte, vos notes ne quittent pas ce navigateur',
   'privacy.now.body':
     'Il n’y a ni traceur, ni mesure d’audience, ni cookie publicitaire. Vos positions, vos notes et vos décisions sont écrites dans le stockage local de cet appareil. Sans compte, elles ne sont envoyées nulle part — et vous pouvez le vérifier : la politique de sécurité du site n’autorise le navigateur à contacter aucun serveur en dehors du nôtre.',
@@ -643,9 +643,20 @@ export const FR = {
   'privacy.rights.title': 'Vos données, et comment les récupérer',
   'privacy.rights.body':
     'L’export intégral est immédiat et sans condition : il se trouve dans votre bibliothèque, et il est calculé ici, sans rien demander à personne. Sans compte, effacer les données du navigateur suffit à tout supprimer. Avec un compte, il faut aussi supprimer le compte — c’est ce qui efface la copie conservée sur nos serveurs, et cela se fait en un clic depuis la page Compte.',
+  // 🔴 **Cette page annoncait le social au futur, six jours apres son ouverture.**
+  // `privacy.next` disait « viendront ensuite les profils et le fil d activite », et
+  // promettait dans la meme phrase que la page serait mise a jour « avant, pas apres ».
+  // Les profils, les critiques, les listes, les mots et les reponses sont publics depuis le
+  // 2026-08-11. La section decrit donc ce qui existe, et ce qui le rend reversible.
+  'privacy.public.title': 'Ce qui devient visible par d’autres, et quand',
+  'privacy.public.body':
+    'Rien ne sort de votre navigateur tant que vous n’avez pas pris un nom public. Une fois que vous en avez un, quatre choses peuvent être vues selon la visibilité réglée dans Compte : vos critiques publiées, vos listes, votre fil d’activité (ce que vous commencez, terminez, notez, aimez) et vos réponses aux critiques des autres. Vos mots, eux, restent privés tant que vous ne les partagez pas explicitement — c’est un réglage à part, fermé par défaut.',
+  'privacy.public.control.title': 'Ce que vous pouvez défaire',
+  'privacy.public.control.body':
+    'La visibilité se change à tout moment et vaut pour tout d’un coup : privé, réservé à vos abonnés, ou public. Une critique se retire, une liste se supprime, une réponse s’efface — par vous, immédiatement, sans passer par nous. Vous pouvez aussi bloquer quelqu’un : vous cessez de vous voir tous les deux, l’abonnement tombe des deux côtés, et la personne n’en est pas informée. Enfin, supprimer votre compte efface la copie serveur ; le journal de ce navigateur, lui, reste à vous.',
   'privacy.next.title': 'Ce qui changera ensuite',
   'privacy.next.body':
-    'Viendront ensuite les profils et le fil d’activité : ce que vous choisirez de rendre visible à d’autres personnes. Rien de ce que vous écrivez aujourd’hui ne le deviendra sans que vous le décidiez, et cette page sera mise à jour avant, pas après. C’est ainsi que la phrase « rien ne sort de ce navigateur » a été retirée le jour où les comptes sont arrivés, et non le jour où quelqu’un l’aurait remarqué.',
+    'Cette page a annoncé les profils au futur pendant six jours après leur ouverture, alors qu’elle promettait d’être mise à jour avant et non après. C’est corrigé, et c’est noté ici plutôt qu’effacé : une page qui dit ce que le produit héberge se relit à chaque fois qu’il héberge quelque chose de nouveau. Ce qui viendra ensuite y sera écrit avant d’exister.',
   'tallyPage.title': 'Mon bilan',
   'tallyPage.lede': 'Ce que vos séries disent de vous. Calculé ici, dans ce navigateur.',
   'tallyPage.empty.title': 'Rien à mesurer pour l’instant',
@@ -1236,6 +1247,13 @@ export const FR = {
     'Masquer est une décision de modération ; retirer est la vôtre. Une critique, une réponse ou une liste que vous retirez vous-même est **réellement supprimée**, avec les cœurs et les réponses qu’elle portait.',
   'rules.yours.journal':
     'Le texte, lui, reste dans votre journal, sur votre appareil et dans votre export : retirer une critique la dépublie, ça ne vous la reprend pas.',
+  // 031 — bloquer se soustrait, signaler demande qu'on regarde. La page qui dit les recours
+  // doit dire les deux, sinon elle n'en annonce qu'un.
+  'rules.block.title': 'Vous soustraire, sans attendre de réponse',
+  'rules.block.body':
+    'Signaler demande qu’on regarde, et cela prend jusqu’à {hours} heures. **Bloquer est immédiat et ne dépend de personne** : depuis le profil de la personne, vous cessez de vous voir tous les deux, l’abonnement tombe des deux côtés, et elle n’en est pas informée.',
+  'rules.block.limits':
+    'Le blocage ne supprime rien de ce qui est déjà écrit, et il n’est pas un signalement : si quelque chose enfreint les règles ci-dessus, dites-le aussi — c’est ce qui permet d’agir pour les autres, et pas seulement pour vous.',
   'rules.contact.title': 'Point de contact',
 
   // --- Decoupages concurrents (4.4) ----------------------------------------

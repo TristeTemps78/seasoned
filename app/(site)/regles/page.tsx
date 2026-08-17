@@ -24,11 +24,14 @@ import { REPORT_GROUNDS, REVIEW_DEADLINE_HOURS } from '@/src/domain/moderation';
  * pouvoir **trouver** cette page, y compris depuis un moteur. La mettre en `noindex` la
  * rendrait introuvable a ceux-la memes a qui elle s'adresse.
  *
- * ## Elle dit ce qui n'existe pas encore
+ * ## ⚠️ Elle disait « rien de tout cela n'est encore ouvert », et c'etait devenu faux
  *
- * Il n'y a aujourd'hui aucun profil public, aucun commentaire, aucune liste partagee. La page
- * le dit, au lieu de laisser croire a un espace social qui n'est pas ouvert — meme regle que
- * `/mentions` quand l'identite de l'editeur manque.
+ * Cette section affirmait qu'il n'existait « aucun profil public, aucun commentaire, aucune
+ * liste partagee ». Le lot 8 a livre les trois. La phrase est corrigee ici comme elle l'a ete
+ * dans la page : **une page dont le role est de dire ce que le produit heberge se relit a
+ * chaque fois qu'il heberge quelque chose de nouveau.** Elle porte desormais les deux voies
+ * de recours — signaler, qui demande qu'on regarde, et bloquer, qui ne demande rien a
+ * personne — et ce que son auteur peut defaire lui-meme.
  *
  * > ⚖️ **Textes a faire relire.** Le cadre general vient du DSA ; je ne suis pas une source
  * > juridique. Ce qui est sur, c'est qu'improviser au moment du premier signalement est pire.
@@ -112,11 +115,24 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
         </ul>
       </section>
 
+      {/* 🔴 **La page des recours n'en annoncait qu'un.** Signaler demande qu'on regarde ;
+          depuis le 2026-08-17 il existe un geste qu'une personne fait seule, immediatement,
+          sans que personne ne tranche. Une voie de recours qui n'est ecrite nulle part est
+          une voie que seuls ceux qui explorent l'interface trouvent — et ce sont rarement
+          ceux qui en ont besoin. */}
+      <section className="space-y-2">
+        <h2 className="section-heading">{t(locale, 'rules.block.title')}</h2>
+        <p className="text-sm">
+          {t(locale, 'rules.block.body', { hours: String(REVIEW_DEADLINE_HOURS) })}
+        </p>
+        <p className="meta">{t(locale, 'rules.block.limits')}</p>
+      </section>
+
       {/* 🔴 **La regle qui manquait pour qu'un geste puisse exister.** `unpublishReview()` a
           ete retiree du client le 2026-08-07 avec ce motif ecrit noir sur blanc : *« la phrase
           publique sur le retrait d'une critique par son auteur n'est pas encore ecrite : on
           avait donc du code qui supprime, et aucune regle publiee qui dise ce qu'il fait »*.
-          Conséquence mesurée le 2026-08-17 : `reviews_delete` existait dans la base depuis le
+          Consequence mesuree le 2026-08-17 : `reviews_delete` existait dans la base depuis le
           premier jour, **sans aucun appelant**, et une critique publiee etait definitive pour
           la personne qui l'avait ecrite.
 

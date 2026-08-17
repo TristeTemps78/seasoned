@@ -531,7 +531,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'account.callback.nothing': 'There is nothing to confirm here.',
   'account.callback.back': 'Back to my account',
   'privacy.title': 'Privacy',
-  'privacy.updated': 'Last updated 10 August 2026.',
+  'privacy.updated': 'Last updated 17 August 2026.',
   'privacy.now.title': 'Without an account, your notes never leave this browser',
   'privacy.account.title': 'If you create an account',
   'privacy.account.body':
@@ -553,9 +553,15 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'privacy.rights.title': 'Your data, and how to take it with you',
   'privacy.rights.body':
     'A full export is immediate and unconditional: you will find it in your library, and it is computed here, without asking anyone. Without an account, clearing your browser data deletes everything. With an account, you also need to delete the account — that is what erases the copy kept on our servers, and it takes one click on the Account page.',
+  'privacy.public.title': 'What becomes visible to others, and when',
+  'privacy.public.body':
+    'Nothing leaves your browser until you pick a public username. Once you have one, four things can be seen depending on the visibility set in Account: your published reviews, your lists, your activity feed (what you start, finish, rate, love) and your replies to other people’s reviews. Your words stay private until you explicitly share them — that is a separate setting, off by default.',
+  'privacy.public.control.title': 'What you can undo',
+  'privacy.public.control.body':
+    'Visibility changes at any time and applies to everything at once: private, followers only, or public. A review can be removed, a list deleted, a reply erased — by you, immediately, without going through us. You can also block someone: you both stop seeing each other, the follow drops on both sides, and they are not told. Finally, deleting your account erases the server copy; the journal in this browser stays yours.',
   'privacy.next.title': 'What changes next',
   'privacy.next.body':
-    'Profiles and the activity feed come next: what you choose to make visible to other people. Nothing you write today becomes visible without you deciding it, and this page is updated before that happens, not after. That is how the sentence “nothing leaves this browser” was removed the day accounts arrived, rather than the day somebody noticed.',
+    'This page announced profiles in the future tense for six days after they opened, while promising to be updated before rather than after. That is fixed, and it is written down here rather than erased: a page that says what the product hosts is re-read every time it hosts something new. Whatever comes next will be written here before it exists.',
   'tallyPage.title': 'My tally',
   'tallyPage.lede': 'What your shows say about you. Worked out here, in this browser.',
   'tallyPage.empty.title': 'Nothing to measure yet',
@@ -1036,6 +1042,11 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
     'Hiding is a moderation decision; removing is yours. A review, a reply or a list you remove yourself is **really deleted**, along with the hearts and replies it carried.',
   'rules.yours.journal':
     'The text stays in your journal, on your device and in your export: removing a review unpublishes it, it does not take it away from you.',
+  'rules.block.title': 'Removing yourself, without waiting for an answer',
+  'rules.block.body':
+    'Reporting asks someone to look, and that takes up to {hours} hours. **Blocking is immediate and depends on nobody**: from that person’s profile, you both stop seeing each other, the follow drops on both sides, and they are not told.',
+  'rules.block.limits':
+    'Blocking deletes nothing that is already written, and it is not a report: if something breaks the rules above, say so too — that is what makes it possible to act for others, not only for you.',
   'rules.contact.title': 'Point of contact',
 
   'ordering.title': 'This is not the only cut',
