@@ -62,6 +62,12 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
 - **Le service worker sert l'ancien build.** Une mesure au navigateur qui ne voit pas une
   correction pourtant compilée n'est pas une correction fausse : désinscrire le SW, vider
   `caches`, et naviguer avec un paramètre neuf. Constaté encore le 2026-08-16 sur `tap-line`.
+- **Le panneau réseau du navigateur rend `503` pour toute réponse sans corps** — un `204` de
+  `DELETE`, un `POST` en `Prefer: return=minimal`. Mesuré le 2026-08-17 : six requêtes d'un
+  même chargement, `activity` et `profile_favorites` annoncées en échec, et `200`/`204` selon
+  `performance.getEntriesByType('resource')` **et** selon les journaux Supabase. Le « 503
+  intermittent » du relevé du 2026-08-16 n'était que ça. Un échec réseau ne se conclut jamais
+  de ce panneau seul.
 - Pousser = déployer en public : décision de Tristan.
 - **Ce fichier est le seul.** Pas de `TASKS.md`, pas d'`AGENTS.md`, pas de `docs/` :
   supprimés le 2026-08-10, à la demande de Tristan. Ne pas les recréer. Ce qui reste à
