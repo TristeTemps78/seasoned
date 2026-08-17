@@ -10,6 +10,18 @@ import { DEFAULT_LOCALE, t, tn, type Locale } from '@/lib/i18n';
  * d'abord, le cache de donnees rendant les recherches repetees gratuites.
  */
 const HYDRATED_RESULTS = 8;
+
+/**
+ * Ce qu'une page de resultats compte chez le fournisseur.
+ *
+ * ⚠️ Vingt, et ce n'est pas un choix : c'est la taille de page de TMDB, qu'aucun parametre
+ * ne change. Elle sert **uniquement** a savoir s'il y a une suite — une page pleine veut dire
+ * « il y en a peut-etre d'autres », une page courte veut dire « c'est fini ». Le fournisseur
+ * rend bien un `total_pages`, et il n'arrive pas jusqu'ici : `mapSearchResults` ne projette
+ * que les series. Deduire la suite de la taille evite de faire traverser un compte a toute la
+ * chaine pour une fleche.
+ */
+const SEARCH_PAGE = 20;
 import { SearchForm } from '@/app/components/SearchForm';
 import { PageHeader } from '@/app/components/PageHeader';
 import { SeriesCard } from '@/app/components/SeriesCard';
@@ -19,9 +31,21 @@ import { ListResults } from '@/app/components/ListResults';
 import { ReviewResults } from '@/app/components/ReviewResults';
 import { WordResults } from '@/app/components/WordResults';
 import { discover } from '@/lib/catalog';
+import { pathIn } from '@/lib/routes';
 
 interface PageProps {
-  readonly searchParams: Promise<{ readonly q?: string }>;
+  readonly searchParams: Promise<{ readonly q?: string; readonly page?: string }>;
+}
+
+/**
+ * Le numero de page, borne des deux cotes — la meme fonction que `/parcourir`, et pour la
+ * meme raison : TMDB refuse `page` au-dela de 500, et une adresse fabriquee a la main ne doit
+ * pas transformer une recherche en erreur de fournisseur.
+ */
+export function readPage(raw: string | undefined): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(500, Math.max(1, Math.floor(n)));
 }
 
 export function searchMetadata(query: string | undefined, locale: Locale): Metadata {
@@ -49,9 +73,10 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
  * le formulaire d'une page francaise renvoyait vers la page anglaise — le francais
  * existait, et aucun chemin n'y restait.
  */
-export async function SearchView({ query, locale }: {
+export async function SearchView({ query, locale, page = 1 }: {
   readonly query: string;
   readonly locale: Locale;
+  readonly page?: number;
 }) {
   // Le catalogue est une dependance externe : il peut tomber, changer, ou n'etre pas
   // configure. Une recherche qui echoue doit rendre une page lisible, pas une 500 —
@@ -63,7 +88,7 @@ export async function SearchView({ query, locale }: {
 
   if (query.length > 0) {
     try {
-      const found = await searchSeries(query, locale);
+      const found = await searchSeries(query, locale, page);
       total = found.length;
       // Le statut n'est hydrate que sur les premiers resultats : cette page est
       // dynamique, donc un appel par element serait paye a chaque requete. Les
@@ -94,6 +119,18 @@ export async function SearchView({ query, locale }: {
    * `throughDiscover` etant memoise par TTL, meme une rafale d'echecs ne coute qu'un appel
    * TMDB par periode, pas un par visite.
    */
+  /**
+   * L'adresse d'une autre page, **avec la question intacte**.
+   *
+   * ⚠️ La page 1 ne porte pas de parametre : deux adresses pour un meme ecran seraient deux
+   * pages pour un moteur — et c'est aussi ce qui rend l'adresse partagee la plus courte.
+   */
+  const pageHref = (n: number) => {
+    const params = new URLSearchParams({ q: query });
+    if (n > 1) params.set('page', String(n));
+    return `${pathIn('/recherche', locale)}?${params.toString()}`;
+  };
+
   const suggestions =
     !unavailable && results.length === 0
       ? (await discover('popular', 3, locale)).slice(0, 12)
@@ -183,6 +220,33 @@ export async function SearchView({ query, locale }: {
               </li>
             ))}
           </ul>
+
+          {/* 🔴 **La recherche s'arretait a vingt resultats, sans page 2.** Le releve du
+              2026-08-16 le disait en une ligne — *« 20 resultats, pas de page 2, aucun
+              filtre »* — et `/parcourir` avait recu sa pagination le 2026-08-13 : la seule
+              page ou l'on arrive avec un titre en tete etait la derniere sans suite. Chercher
+              « alien » rendait vingt series et cachait le reste du catalogue.
+
+              ⚠️ Des LIENS, pas un bouton, exactement comme `/parcourir` : la page est un
+              composant serveur pur et marche sans JavaScript. L'adresse porte donc toujours
+              la question **et** la page, ce qui la rend partageable.
+
+              ⚠️ « Suivante » ne s'affiche que si le fournisseur a rendu une page pleine :
+              proposer une suite qui n'existe pas serait un bouton qui a l'air de marcher. */}
+          {page > 1 || total >= SEARCH_PAGE ? (
+            <nav className="flex items-center gap-3" aria-label={t(locale, 'browse.pages')}>
+              {page > 1 ? (
+                <a className="btn" href={pageHref(page - 1)} rel="prev">
+                  {t(locale, 'browse.previous')}
+                </a>
+              ) : null}
+              {total >= SEARCH_PAGE ? (
+                <a className="btn" href={pageHref(page + 1)} rel="next">
+                  {t(locale, 'browse.next')}
+                </a>
+              ) : null}
+            </nav>
+          ) : null}
         </>
       )}
 
@@ -217,6 +281,6 @@ export async function SearchView({ query, locale }: {
 }
 
 export default async function SearchPage({ searchParams }: PageProps) {
-  const { q } = await searchParams;
-  return <SearchView query={q?.trim() ?? ''} locale={DEFAULT_LOCALE} />;
+  const { q, page } = await searchParams;
+  return <SearchView query={q?.trim() ?? ''} locale={DEFAULT_LOCALE} page={readPage(page)} />;
 }

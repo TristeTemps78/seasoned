@@ -301,11 +301,15 @@ function keyIn(locale: Locale, key: string): string {
 export async function searchSeries(
   query: string,
   locale: Locale = DEFAULT_LOCALE,
+  page = 1,
 ): Promise<readonly SeriesSummary[]> {
   const trimmed = query.trim();
   if (trimmed.length === 0) return [];
-  return throughSearch(keyIn(locale, trimmed.toLowerCase()), () =>
-    getProvider(locale).search(trimmed),
+  // ⚠️ **La page entre dans la cle de cache**, et l'oublier serait la panne la plus
+  // difficile a voir : la page 2 servirait les resultats de la page 1, donc la pagination
+  // aurait l'air de marcher en rendant deux fois la meme chose. Meme forme que `discover`.
+  return throughSearch(keyIn(locale, `${trimmed.toLowerCase()}#${page}`), () =>
+    getProvider(locale).search(trimmed, page),
   );
 }
 

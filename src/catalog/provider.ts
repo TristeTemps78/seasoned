@@ -494,7 +494,8 @@ export interface CatalogProvider {
   /** Nom court, pour les journaux de diagnostic et l'attribution. */
   readonly name: string;
 
-  search(query: string): Promise<readonly SeriesSummary[]>;
+  /** @param page 1-indexee, comme partout chez les fournisseurs. */
+  search(query: string, page?: number): Promise<readonly SeriesSummary[]>;
 
   getSeries(providerId: string): Promise<SeriesDetail>;
 

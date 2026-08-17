@@ -693,10 +693,16 @@ export class TmdbProvider implements CatalogProvider {
 
   async search(
     query: string,
+    page = 1,
   ): Promise<readonly SeriesSummary[]> {
     const trimmed = query.trim();
     if (trimmed.length === 0) return [];
-    const raw = await this.#get('/search/tv', { query: trimmed });
+    // ⚠️ `page` n'est emis que passe la premiere, comme `discover` : une URL identique a
+    // celle d'avant garde le meme cache cote TMDB et la meme entree ici.
+    const raw = await this.#get('/search/tv', {
+      query: trimmed,
+      ...(page > 1 ? { page: String(page) } : {}),
+    });
     return mapSearchResults(raw);
   }
 
