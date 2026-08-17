@@ -22,8 +22,19 @@ import { useT } from '@/app/i18n/LocaleProvider';
  * l'import qui **fusionne** au lieu de remplacer : importer sur un appareil deja
  * utilise ne doit rien effacer de ce qu'on y a fait.
  */
-export function JournalTransfer({ onExport, onImport, count }: {
+export function JournalTransfer({ onExport, onExportCsv, onImport, count }: {
   readonly onExport: () => string;
+  /**
+   * **F6 — le meme journal, dans un tableau que d'autres savent lire.**
+   *
+   * ⚠️ Ce n'est pas un second bouton de sauvegarde : le JSON au-dessus est **integral et
+   * relisible ici**, c'est le pont entre appareils et la regle 9. Celui-ci **perd** ce que
+   * seul ce produit sait garder (marques d'episodes, exceptions de progression, pierres
+   * tombales) et gagne la seule chose que le JSON n'a pas : d'autres outils le lisent. Les
+   * deux boutons ne repondent donc pas a la meme question, et c'est pour ca qu'il y en a
+   * deux plutot qu'un menu de format.
+   */
+  readonly onExportCsv: () => string;
   readonly onImport: (raw: string) => number | undefined;
   readonly count: number;
 }) {
@@ -31,15 +42,25 @@ export function JournalTransfer({ onExport, onImport, count }: {
   const { t, tn } = useT();
   const [message, setMessage] = useState<string | undefined>(undefined);
 
-  const download = () => {
-    const blob = new Blob([onExport()], { type: 'application/json' });
+  /** Un fichier, telecharge. Le seul endroit qui fabrique une URL d'objet — et la revoque. */
+  const save = (contenu: string, type: string, extension: string) => {
+    const blob = new Blob([contenu], { type });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `voltface-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `voltface-${new Date().toISOString().slice(0, 10)}.${extension}`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const download = () => {
+    save(onExport(), 'application/json', 'json');
     setMessage(tn('backup.exported', count));
+  };
+
+  const downloadCsv = () => {
+    save(onExportCsv(), 'text/csv;charset=utf-8', 'csv');
+    setMessage(t('backup.exportedCsv'));
   };
 
   const upload = async (file: File) => {
@@ -74,6 +95,25 @@ export function JournalTransfer({ onExport, onImport, count }: {
           className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted) disabled:opacity-40 disabled:hover:border-(--color-edge)"
         >
           {t('backup.export')}
+        </button>
+
+        {/* 🔴 **F6 — le sens unique.** `/convertir` lit un export TV Time, Trakt ou Simkl
+            depuis le lot 7 ; rien ne ressortait. *Un produit dont on ne peut pas partir est
+            un produit dans lequel on hesite a entrer* — et c'est la promesse que ce bloc
+            entier existe pour tenir.
+
+            ⚠️ Aucun service n'est nomme sur ce bouton, et c'est la meme decision qu'a
+            l'import : je n'ai vu ni l'importeur de Trakt ni celui de Simkl, et Letterboxd ne
+            prend que des films. Un bouton « Exporter vers Trakt » promettrait un format
+            invente. On rend un tableau a colonnes avec l'identifiant TMDB en tete — ce que
+            tout importeur sait mapper, et ce qu'un tableur ouvre. */}
+        <button
+          type="button"
+          onClick={downloadCsv}
+          disabled={count === 0}
+          className="rounded-md border border-(--color-edge) px-3 py-1.5 text-sm hover:border-(--color-muted) disabled:opacity-40 disabled:hover:border-(--color-edge)"
+        >
+          {t('backup.exportCsv')}
         </button>
 
         <button

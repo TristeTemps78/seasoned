@@ -862,6 +862,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'backup.body.after':
     ', and nowhere else. It does not follow you from one device to another, and clearing your browsing data erases it. The file below is your copy: it can be read back here, or on another device — importing adds to what is there, it does not replace it.',
   'backup.export': 'Export my journal',
+  'backup.exportCsv': 'Take it elsewhere (table)',
+  'backup.exportedCsv':
+    'Table downloaded: one row per series, one per rated or reviewed season. The first column is the TMDB id — that is the one other tools can read.',
   'backup.import': 'Import a file',
   'backup.exported.one': '{n} series exported.',
   'backup.exported.other': '{n} series exported.',
@@ -888,6 +891,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'convert.honestTitle': 'What works, and what does not',
   'convert.honestBody':
     'We do not claim to know any format in particular: we look for TMDB identifiers wherever they are, in JSON as in a spreadsheet. A series without an identifier is not brought over — finding it by title would take one search per series, and would get remakes wrong, since they share their name. The count of what did not make it is shown: keep your original file.',
+  'convert.leaveTitle': 'And to leave for somewhere else',
+  'convert.leaveBody':
+    'The same journal downloads as a table — one row per series, one per rated or reviewed season, with the TMDB id in the first column. That is what other tools can read, and it opens in a spreadsheet too.',
+  'convert.leaveLink': 'Get the file from my library',
   'convert.mergeTitle': 'Importing adds, it does not replace',
   'convert.mergeBody':
     'Importing on a device you already use erases nothing you did there. You can import several files in a row.',

@@ -13,6 +13,7 @@ import { MyPlatforms } from '@/app/components/MyPlatforms';
 import { MyRegions } from '@/app/components/MyRegions';
 import { buildLibrary, type LibraryItem } from '@/src/domain/library';
 import { tagCounts } from '@/src/domain/journal';
+import { toPortableCsv } from '@/src/domain/export';
 import { RowHeader } from '@/app/components/RowHeader';
 
 /**
@@ -177,6 +178,10 @@ export function Library() {
 
       <JournalTransfer
         onExport={exportJournal}
+        // F6 — le meme journal, dans un tableau que d'autres savent lire. Le calcul vit dans
+        // le domaine (`src/domain/export.ts`), jamais dans le composant : c'est du format de
+        // fichier, donc testable seul, et c'est la seule facon d'en garder l'echappement.
+        onExportCsv={() => toPortableCsv(journal)}
         onImport={importJournal}
         count={library.total}
       />

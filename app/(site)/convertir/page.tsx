@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { ForeignImport } from '@/app/components/ForeignImport';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
-import { alternatesFor } from '@/lib/routes';
+import { alternatesFor, pathIn } from '@/lib/routes';
 
 /**
  * La page qui donne une adresse a l'import.
@@ -53,6 +54,23 @@ export function ConvertView({ locale }: { readonly locale: Locale }) {
         <h2 className="card-title">{t(locale, 'convert.mergeTitle')}</h2>
         <p className="text-xs leading-relaxed text-(--color-muted)">
           {t(locale, 'convert.mergeBody')}
+        </p>
+      </section>
+
+      {/* 🔴 **La page qui explique comment entrer ne disait pas comment sortir.** C'est le
+          sens unique du releve (F6) : trois formats en lecture, zero en ecriture. Le fichier
+          existe desormais, et il se prend sur `/moi` — la ou vit deja la sauvegarde, parce
+          que ce sont deux facons de tenir la meme promesse.
+
+          ⚠️ Un lien et non un second bouton d'export : dupliquer le geste demanderait de
+          dupliquer le journal dans cette page, qui est statique et n'en lit aucun. */}
+      <section className="space-y-2">
+        <h2 className="card-title">{t(locale, 'convert.leaveTitle')}</h2>
+        <p className="text-xs leading-relaxed text-(--color-muted)">
+          {t(locale, 'convert.leaveBody')}{' '}
+          <Link className="tap-line underline hover:text-(--color-volt)" href={pathIn('/moi', locale)}>
+            {t(locale, 'convert.leaveLink')}
+          </Link>
         </p>
       </section>
     </div>

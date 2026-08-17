@@ -1032,6 +1032,11 @@ export const FR = {
   'backup.body.after':
     ', et nulle part ailleurs. Elle ne suit pas d’un appareil à l’autre, et vider les données du navigateur l’efface. Le fichier ci-dessous est votre copie : il se relit ici même, ou sur un autre appareil — l’import complète, il ne remplace pas.',
   'backup.export': 'Exporter mon journal',
+  // F6 — aucun service n'est nomme : je n'ai vu ni l'importeur de Trakt ni celui de Simkl,
+  // et Letterboxd ne prend que des films. Le nom dit ce que le fichier EST.
+  'backup.exportCsv': 'Emporter ailleurs (tableau)',
+  'backup.exportedCsv':
+    'Tableau téléchargé : une ligne par série, une par saison notée ou commentée. La première colonne est l’identifiant TMDB — c’est elle que les autres outils savent lire.',
   'backup.import': 'Importer un fichier',
   'backup.exported.one': '{n} série exportée.',
   'backup.exported.other': '{n} séries exportées.',
@@ -1059,6 +1064,10 @@ export const FR = {
   'convert.honestTitle': 'Ce qui marche, et ce qui ne marche pas',
   'convert.honestBody':
     'Nous ne prétendons connaître aucun format en particulier : nous cherchons des identifiants TMDB partout où ils se trouvent, dans un JSON comme dans un tableau. Une série sans identifiant n’est pas reprise — la retrouver par son titre demanderait une recherche par série, et se tromperait sur les remakes, qui portent le même nom. Le compte de ce qui n’est pas passé s’affiche : gardez votre fichier d’origine.',
+  'convert.leaveTitle': 'Et pour repartir ailleurs',
+  'convert.leaveBody':
+    'Le même journal se télécharge en tableau — une ligne par série, une par saison notée ou commentée, avec l’identifiant TMDB en première colonne. C’est ce que les autres outils savent lire, et ça s’ouvre aussi dans un tableur.',
+  'convert.leaveLink': 'Prendre le fichier depuis ma bibliothèque',
   'convert.mergeTitle': 'L’import complète, il ne remplace pas',
   'convert.mergeBody':
     'Importer sur un appareil déjà utilisé n’efface rien de ce que vous y avez fait. Vous pouvez donc importer plusieurs fichiers à la suite.',
