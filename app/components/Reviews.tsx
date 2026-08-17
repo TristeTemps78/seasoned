@@ -300,8 +300,17 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                     </time>
                   </span>
                   {/* Signaler exige un compte : c'est l'auteur du signalement que la base
-                      enregistre, et un signalement anonyme n'est pas examinable. */}
-                  {account !== undefined ? (
+                      enregistre, et un signalement anonyme n'est pas examinable.
+
+                      🔴 **Et pas sur la sienne.** Vu a l'ecran le 2026-08-17 : « Signaler »
+                      s'affichait au-dessus de ma propre critique, donc le produit proposait
+                      de se denoncer soi-meme — un geste qui ouvrirait un vrai signalement sur
+                      un vrai compte, a examiner par une vraie personne. `ReviewComments` posait
+                      deja la condition (`account.userId !== one.authorId`) ; cette surface-ci
+                      l'avait oubliee, et c'est la seule ou l'on croise ses propres textes
+                      melanges a ceux des autres. Le geste qui manque a cette place existe
+                      desormais juste en dessous : retirer. */}
+                  {account !== undefined && account.userId !== review.authorId ? (
                     <ReportButton
                       onReport={async (ground) => {
                         if (social === undefined) return false;

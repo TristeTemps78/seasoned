@@ -501,6 +501,45 @@ function rowToList(row: Record<string, unknown>): readonly SeriesList[] {
   ];
 }
 
+/**
+ * Le motif d'un `ilike`, echappe — **et surtout pas entre guillemets**.
+ *
+ * ## 🔴 Ce que les guillemets faisaient vraiment, mesure le 2026-08-17
+ *
+ * `searchLists` composait `title=ilike."*motif*"` depuis le 2026-08-16, avec ce commentaire :
+ * *« le motif est echappe pour PostgREST, pas seulement pour l'URL : une virgule ou une
+ * parenthese dans un titre cherche sont de la syntaxe dans un filtre. Les guillemets doubles
+ * autour de la valeur les neutralisent »*. C'etait faux sur les deux moities :
+ *
+ * - **Les guillemets ne neutralisent rien ici, ils entrent dans le motif.** Mesure contre la
+ *   vraie base, sur une ligne dont le mot est `le dimanche` :
+ *
+ *       tags?tag=ilike."*dimanche*"  → 200 []
+ *       tags?tag=ilike.*dimanche*    → 200 [{"tag":"le dimanche"}]
+ *
+ *   La recherche de listes ne pouvait donc **rien trouver, jamais** — et c'est le defaut
+ *   10.0 sous sa forme la plus pure : un ecran identique a « aucun resultat », donc invisible.
+ *   Les tests doublent `fetch` : ils prouvaient la forme de l'URL, pas qu'elle trouve.
+ * - **Il n'y avait rien a neutraliser.** Une virgule et une parenthese dans la valeur d'un
+ *   filtre simple `col=op.valeur` sont du **texte** : verifie, elles repondent 200 et ne
+ *   correspondent a rien. Elles ne sont de la syntaxe que dans `in.(…)` et `or=(…)`.
+ *
+ * ## Ce qui doit vraiment etre echappe
+ *
+ * Les jokers, et eux seuls : `_` non echappe remplace **n'importe quel caractere** —
+ * `*di_anche*` trouve `le dimanche`, mesure aussi. Une recherche ou un souligne tape par
+ * quelqu'un elargit silencieusement le resultat n'est pas une recherche. La barre oblique
+ * inverse traverse PostgREST jusqu'a Postgres, ou elle est l'echappement par defaut de
+ * `like` : `\_` redevient un souligne litteral (verifie, 200 et zero ligne).
+ */
+function likePattern(raw: string): string {
+  return raw
+    .replaceAll('\\', '\\\\')
+    .replaceAll('%', '\\%')
+    .replaceAll('_', '\\_')
+    .replaceAll('*', '\\*');
+}
+
 function rowToProfile(row: Record<string, unknown>): Profile {
   const face = readFace(row['face']);
   return {
@@ -795,9 +834,8 @@ export class SocialClient {
   async tagged(tag: string, limit = 60): Promise<readonly TaggedByAuthor[]> {
     const clean = tag.trim();
     if (clean.length === 0) return [];
-    const motif = clean.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
     const rows = await this.#rows<Record<string, unknown>>(
-      `tags?tag=ilike."${encodeURIComponent(motif)}"` +
+      `tags?tag=ilike.${encodeURIComponent(likePattern(clean))}` +
         `&select=subject,tag,title,poster_path,profiles!inner(handle,user_id,face)` +
         `&limit=${limit}`,
     );
@@ -843,9 +881,8 @@ export class SocialClient {
     // Meme seuil que `searchLists` et `searchProfiles` : sous trois caracteres, on rendrait
     // la moitie du vocabulaire, ce qui est une enumeration et non une recherche.
     if (clean.length < 3) return [];
-    const motif = clean.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
     const rows = await this.#rows<Record<string, unknown>>(
-      `tags?tag=ilike."*${encodeURIComponent(motif)}*"&select=tag&limit=${limit * 25}`,
+      `tags?tag=ilike.*${encodeURIComponent(likePattern(clean))}*&select=tag&limit=${limit * 25}`,
     );
     const counted = new Map<string, { tag: string; count: number }>();
     for (const row of rows) {
@@ -1621,15 +1658,14 @@ export class SocialClient {
    * saison 6 : c'est `redactReviewsAcross` qui masque, comme sur toute autre surface. Ne
    * jamais afficher ces lignes brutes.
    *
-   * ⚠️ Le motif est **echappe pour PostgREST**, pas seulement pour l'URL : une virgule ou une
-   * parenthese tapees dans le champ sont de la syntaxe dans un filtre. Meme forme et meme
-   * seuil de trois caracteres que {@link searchLists}.
+   * ⚠️ Le motif passe par {@link likePattern} : les jokers sont neutralises, **et il n'y a
+   * pas de guillemets** — ils entreraient dans le motif et la recherche ne trouverait
+   * jamais rien. Meme seuil de trois caracteres que {@link searchLists}.
    */
   async searchReviews(query: string, limit = 8): Promise<readonly PublishedReview[]> {
     const clean = query.trim();
     if (clean.length < 3) return [];
-    const motif = clean.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
-    return this.#reviews(`body=ilike."*${encodeURIComponent(motif)}*"`, limit);
+    return this.#reviews(`body=ilike.*${encodeURIComponent(likePattern(clean))}*`, limit);
   }
 
   /**
@@ -2181,19 +2217,21 @@ export class SocialClient {
    * visiteur anonyme ne trouve que les publiques. Rejouer la regle ici en donnerait deux, et
    * c'est celle du client qui se perime.
    *
-   * ⚠️ Le motif est **echappe pour PostgREST**, pas seulement pour l'URL : une virgule ou une
-   * parenthese dans un titre cherche sont de la syntaxe dans un filtre. Les guillemets
-   * doubles autour de la valeur les neutralisent, et la barre oblique inverse les protege
-   * eux-memes.
+   * ## 🔴 Elle ne trouvait RIEN, du 2026-08-16 au 2026-08-17
+   *
+   * Le motif etait compose `title=ilike."*motif*"`, guillemets compris — et les guillemets
+   * entrent dans le motif. Aucune liste ne s'appelant `"quelque chose"`, cette recherche
+   * repondait vide **pour tout le monde, depuis toujours**, avec l'ecran exact d'« aucun
+   * resultat ». Mesure contre la vraie base ; voir {@link likePattern} pour la mesure et
+   * pour ce qui doit reellement etre echappe.
    */
   async searchLists(query: string, limit = 8): Promise<readonly DiscoverableList[]> {
     const clean = query.trim();
     // Sous trois caracteres, on se tait : deux lettres rendraient la moitie des listes, ce
     // qui est une enumeration et non une recherche. Meme seuil que `searchProfiles`.
     if (clean.length < 3) return [];
-    const motif = clean.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
     return this.#lists(
-      `&title=ilike."*${encodeURIComponent(motif)}*"&order=updated_at.desc`,
+      `&title=ilike.*${encodeURIComponent(likePattern(clean))}*&order=updated_at.desc`,
       limit,
     );
   }
