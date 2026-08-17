@@ -1401,6 +1401,197 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
+  -- ===========================================================================
+  -- 027 · 028 · 029 — compter sans trahir, aimer une liste, et pas soi-meme
+  -- ===========================================================================
+
+  -- 73 — 🔴 **La regle qui ne vivait qu'a l'ecran.** `Reviews.tsx` la porte depuis le
+  --      2026-08-15 (*« ce serait un compteur qu'on s'incremente soi-meme »*) et la base
+  --      repondait **201** : mesure depuis un vrai compte sur la production le 2026-08-17.
+  --      Une borne posee dans l'appelant n'est pas une borne — `029` en fait un `check`.
+  begin
+    insert into public.review_likes (liker_id, author_id, subject, target)
+    values (a, a, 'tmdb:1396', 'series');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '23514';
+  rapport := rapport || format(E'  %s  %s. on n aime pas sa propre critique (029)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 74 — Le coeur d'une liste, dans le bon sens : A aime la liste de B. `list_likes_insert`
+  --      exige un handle (comme `015` et `024`), et A en a un.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.lists (user_id, slug, title) values (b, tag || 'lb', 'La liste de B')
+    on conflict do nothing;
+    perform set_config('role', 'authenticated', true);
+
+    insert into public.list_likes (liker_id, author_id, slug) values (a, b, tag || 'lb');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'acceptee';
+  rapport := rapport || format(E'  %s  %s. on aime la liste de quelqu un d autre (028)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 75 — Et pas la sienne, pour la meme raison qu'au 73.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.lists (user_id, slug, title) values (a, tag || 'la', 'La liste de A')
+    on conflict do nothing;
+    perform set_config('role', 'authenticated', true);
+
+    insert into public.list_likes (liker_id, author_id, slug) values (a, a, tag || 'la');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '23514';
+  rapport := rapport || format(E'  %s  %s. on n aime pas sa propre liste (029)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 76 — Le compte des coeurs d'une liste est **stable pour tout le monde** : il vient d'une
+  --      fonction `security definer`, pas des lignes que RLS laisse voir. B a recu le coeur
+  --      de A au 74 ; A le compte, et doit voir 1.
+  begin
+    select likes into lignes from public.list_like_counts(b) where slug = tag || 'lb';
+    obtenu := coalesce(lignes::text, 'aucune ligne');
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. le coeur d une liste se compte pour tous (028)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 77 — 🔴 **Le compteur ne doit pas devenir un oracle.** Z est connecte sans nom ; il
+  --      demande les abonnes de C2, dont le profil est `followers` et que personne ne suit.
+  --      `follow_counts` rend **zero ligne**, pas zero abonne : la nuance est ce qui empeche
+  --      de tester des identifiants un par un pour savoir lesquels existent.
+  begin
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', z::text, 'role', 'authenticated')::text, true);
+    select count(*) into lignes from public.follow_counts(c2);
+    obtenu := lignes::text;
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. le compte d abonnes se tait sur un profil ferme (027)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 78 — Et il rend bien un chiffre quand le profil est visible : A est `public`, B le suit.
+  --      Sans cet ancrage, le 77 passerait aussi avec une fonction qui ne rend jamais rien.
+  begin
+    select followers into lignes from public.follow_counts(a);
+    obtenu := coalesce(lignes::text, 'aucune ligne');
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. et il compte quand le profil est visible (027)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 79 — 🔴 **Le compteur d'une serie ne compte QUE les profils publics.** B est en
+  --      `followers` et a note `tmdb:1396` (le semis) ; A est `public` et ne l'a pas touchee.
+  --      Le chiffre doit donc valoir **zero** malgre la ligne de B — sinon un agregat
+  --      trahirait, sur une base a deux comptes, ce qu'un profil ferme a fait.
+  begin
+    select watched into lignes from public.subject_counts(array['tmdb:1396']);
+    obtenu := coalesce(lignes::text, 'aucune ligne');
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. le compteur d une serie ignore les profils fermes (027)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 80 — L'ancrage du 79 : la meme fonction compte bien ce qui est public. A est `public`
+  --      et vient de commencer `tmdb:1400`. Sans ce scenario, le 79 passerait aussi avec une
+  --      fonction cassee qui ne compte jamais rien.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.activity (user_id, kind, subject, happened_on)
+    values (a, 'started', 'tmdb:1400', current_date) on conflict do nothing;
+    perform set_config('role', 'authenticated', true);
+
+    select watched into lignes from public.subject_counts(array['tmdb:1400']);
+    obtenu := coalesce(lignes::text, 'aucune ligne');
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. et il compte ce qui est public (027)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 81 — 🔴 **Retirer sa critique emporte son fil et ses coeurs.** C'est la cascade des cles
+  --      etrangeres composites de `015` et `024`, et c'est ce que le bouton de retrait (F10)
+  --      annonce en toutes lettres. Des reponses a rien ne se moderent pas.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.reviews (user_id, subject, target, body, through_season, lang)
+    values (a, tag || '_f10', 'series', 'A retirer.', 0, 'fr') on conflict do nothing;
+    insert into public.review_likes (liker_id, author_id, subject, target)
+    values (b, a, tag || '_f10', 'series') on conflict do nothing;
+    insert into public.review_comments (review_author_id, subject, target, author_id, body, lang)
+    values (a, tag || '_f10', 'series', b, 'Une reponse.', 'fr');
+    perform set_config('role', 'authenticated', true);
+
+    delete from public.reviews where user_id = a and subject = tag || '_f10' and target = 'series';
+
+    perform set_config('role', 'postgres', true);
+    select format('%s coeur / %s reponse',
+                  (select count(*) from public.review_likes
+                    where author_id = a and subject = tag || '_f10'),
+                  (select count(*) from public.review_comments
+                    where review_author_id = a and subject = tag || '_f10'))
+      into obtenu;
+    perform set_config('role', 'authenticated', true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0 coeur / 0 reponse';
+  rapport := rapport || format(E'  %s  %s. retirer sa critique emporte coeurs et reponses (F10)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 82 — Et on ne retire QUE la sienne : B tente de supprimer la critique de A.
+  --      `reviews_delete` est borne a `auth.uid()`, donc **zero ligne** part — sans erreur,
+  --      comme au 71. C'est pour ca que le scenario compte au lieu d'attendre un refus.
+  begin
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', b::text, 'role', 'authenticated')::text, true);
+    delete from public.reviews where user_id = a and subject = 'tmdb:1396' and target = 'series';
+    get diagnostics lignes = row_count;
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+
+    perform set_config('role', 'postgres', true);
+    select format('%s efface / %s reste', lignes,
+                  (select count(*) from public.reviews
+                    where user_id = a and subject = 'tmdb:1396' and target = 'series'))
+      into obtenu;
+    perform set_config('role', 'authenticated', true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0 efface / 1 reste';
+  rapport := rapport || format(E'  %s  %s. on ne retire pas la critique d un autre (F10)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
   -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------

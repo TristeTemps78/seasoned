@@ -214,6 +214,7 @@ export const FR = {
   'library.noTagTitle': 'Rien sous ce mot',
   'library.noTagBody':
     'Aucune série de votre bibliothèque ne porte ce mot pour l’instant. Choisissez « Tous » juste au-dessus, ou posez-le depuis une fiche.',
+  'tags.seePage': 'Qui d’autre range sous ce mot ?',
   'tags.filter': 'Mot',
   'tags.all': 'Tous',
   'favorites.title': 'Ma carte de visite',

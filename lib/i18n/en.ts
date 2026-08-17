@@ -189,6 +189,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'library.noTagTitle': 'Nothing under that word',
   'library.noTagBody':
     'No series in your library carries that word yet. Pick “All” just above, or add it from a series page.',
+  'tags.seePage': 'Who else files under this word?',
   'tags.filter': 'Word',
   'tags.all': 'All',
   'favorites.title': 'My calling card',

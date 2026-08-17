@@ -39,7 +39,7 @@ import { RowHeader } from '@/app/components/RowHeader';
  */
 export function Library() {
   const { journal, ready, exportJournal, importJournal } = useJournal();
-  const { t, tn } = useT();
+  const { t, tn, locale } = useT();
   const [tag, setTag] = useState<string | undefined>(undefined);
 
   const tags = useMemo(() => tagCounts(journal), [journal]);
@@ -89,19 +89,36 @@ export function Library() {
         // ⚠️ Le compte d'emplois (« sur 3 series ») etait un `title`, donc invisible au
         // clavier et au tactile. Il entre dans le libelle de l'option, ou tout le monde le
         // lit — c'est de la place qu'un menu a et qu'une pastille n'avait pas.
-        <Menu
-          id="library-tag"
-          label={t('tags.filter')}
-          value={tag ?? ''}
-          onChange={(value) => setTag(value === '' ? undefined : value)}
-          options={[
-            { value: '', label: t('tags.all') },
-            ...tags.map(({ tag: name, count }) => ({
-              value: name,
-              label: `${name} · ${tn('tags.usedOn', count, { n: count })}`,
-            })),
-          ]}
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Menu
+            id="library-tag"
+            label={t('tags.filter')}
+            value={tag ?? ''}
+            onChange={(value) => setTag(value === '' ? undefined : value)}
+            options={[
+              { value: '', label: t('tags.all') },
+              ...tags.map(({ tag: name, count }) => ({
+                value: name,
+                label: `${name} · ${tn('tags.usedOn', count, { n: count })}`,
+              })),
+            ]}
+          />
+          {/* 🔴 **Le mot filtrait chez soi et ne menait nulle part.** C'est le defaut N2 vu
+              de l'interieur : `/mot/<mot>` existe depuis le 2026-08-17 et montre qui d'autre
+              range sous ce mot — or c'est ici, en filtrant sa propre bibliotheque, qu'on se
+              demande pour la premiere fois si quelqu'un d'autre emploie le meme mot.
+
+              ⚠️ Seulement quand un mot est **choisi** : sans filtre actif il n'y a pas de
+              page a ouvrir, et un lien mort ne s'affiche pas (regle du 2026-08-09). */}
+          {tag !== undefined ? (
+            <Link
+              href={pathIn(`/mot/${encodeURIComponent(tag)}`, locale)}
+              className="tap-line meta underline hover:text-(--color-volt)"
+            >
+              {t('tags.seePage')}
+            </Link>
+          ) : null}
+        </div>
       ) : null}
 
       {/* Le vide **du filtre**, qui n'est pas le vide de la bibliotheque : le geste pour en
