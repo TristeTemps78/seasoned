@@ -370,6 +370,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'list.unknown.body':
     'Either it does not exist, or the person who keeps it does not show it. Profiles are private by default.',
   'list.unknown.browse': 'See public lists',
+  'list.mineEdit': 'Edit this list',
+  'list.needAccount': 'Taking this list or liking it needs an account.',
   'list.like': 'I like this list',
   'list.unlike': 'Remove my heart',
   'list.copy': 'Take this list',

@@ -166,6 +166,39 @@ export function PublicList({ handle, slug }: {
             ⚠️ Les deux exigent un compte et ne s'affichent pas sans : *un bouton qui ne peut
             pas marcher ne se degrade pas, il ne s'affiche pas* (regle du 2026-08-09).
             `list_likes_insert` exige en plus un handle, comme `015`. */}
+        {/* ⚠️ **Le proprietaire n'avait aucune issue depuis sa propre liste.** Les deux
+            gestes ci-dessous ne s'adressent qu'aux autres — c'est juste —, mais celui qui
+            ouvre la sienne (par exemple pour verifier le lien qu'il vient d'envoyer) se
+            retrouvait devant une page sans un seul bouton. Le geste existe, il vit sur
+            `/listes`, et une phrase l'y envoie plutot que de le recopier ici. */}
+        {myId !== undefined && myId === list.authorId ? (
+          <p className="pt-1 meta">
+            <Link
+              className="tap-line underline hover:text-(--color-volt)"
+              href={pathIn('/listes', locale)}
+            >
+              {t('list.mineEdit')}
+            </Link>
+          </p>
+        ) : null}
+
+        {/* Regle 4 : *un ecran sans issue, pas un ecran sans bouton.* Une liste s'ouvre
+            surtout par un lien recu — donc le plus souvent **sans compte**. Ne rien afficher
+            laissait croire qu'une liste ne se reprend pas ; le bouton, lui, ne peut pas
+            marcher (`list_likes_insert` et `lists_insert` exigent une session). On nomme donc
+            la porte et sa condition, ce qui n'est pas un bouton mort. */}
+        {myId === undefined ? (
+          <p className="pt-1 meta-sm">
+            {t('list.needAccount')}{' '}
+            <Link
+              className="tap-line underline hover:text-(--color-volt)"
+              href={pathIn('/compte', locale)}
+            >
+              {t('comments.openOne')}
+            </Link>
+          </p>
+        ) : null}
+
         {myId !== undefined && myId !== list.authorId ? (
           <p className="flex flex-wrap items-center gap-3 pt-1">
             <button

@@ -431,6 +431,8 @@ export const FR = {
   'list.unknown.browse': 'Voir les listes publiques',
   // N3 — le cœur d'une liste. Les réponses sur une liste sont refusées, et c'est écrit
   // dans `028_list_likes.sql` : un fil est une surface de modération entière.
+  'list.mineEdit': 'Modifier cette liste',
+  'list.needAccount': 'Reprendre cette liste ou l’aimer demande un compte.',
   'list.like': 'J’aime cette liste',
   'list.unlike': 'Retirer mon cœur',
   // F5 — la reprise. Le titre dit d'où elle vient : une copie sans provenance devient, au
