@@ -657,9 +657,21 @@ begin
 
   -- 29 — …d'ou la fonction. Elle efface reellement, et elle rend combien : sans ce nombre,
   --      le retrait resterait une promesse que personne ne peut verifier.
+  --
+  -- ⚠️ **TROIS et non deux, et le troisieme est la preuve manquante du 33.** A a semé
+  -- `_own` et `_m` ; la troisieme ligne est `_vol`, celle que le 33 a fait ecrire par
+  -- `publish_stops` en lui passant le `user_id` de B. Le 33 prouve seulement qu'elle n'est
+  -- PAS allee chez B — pas qu'elle soit allee chez A, ni qu'elle ait ete ecrite du tout.
+  -- Ce compte-ci ferme les deux trous.
+  --
+  -- 🔴 Le chiffre disait 2 parce qu'il a ete ecrit pendant que `019` n'etait pas applique :
+  -- les blocs du 32 et du 33 levaient `undefined_function`, et une exception dans un bloc
+  -- PL/pgSQL annule sa sous-transaction — leurs ecritures disparaissaient donc avant
+  -- d'arriver ici. Une attente calee sur une migration absente devient fausse le jour ou on
+  -- l'applique, et c'est le seul jour ou ca compte.
   select public.forget_stops()::text into obtenu;
-  n := n + 1; attendu := '2';
-  rapport := rapport || format(E'  %s  %s. forget_stops retire les 2 lignes de A (016)  [attendu %s, obtenu %s]\n',
+  n := n + 1; attendu := '3';
+  rapport := rapport || format(E'  %s  %s. forget_stops retire les 3 lignes de A, dont celle du 33 (016/019)  [attendu %s, obtenu %s]\n',
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
