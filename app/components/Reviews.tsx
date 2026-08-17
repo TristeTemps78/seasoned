@@ -25,7 +25,7 @@ import { type PublishedReview, type ReviewComment, type ReviewLikes } from '@/sr
 import { formatDate } from '@/lib/format';
 import type { MessageKey } from '@/lib/i18n/engine';
 import { pathIn } from '@/lib/routes';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 
 const AUDIENCE_LABEL = {
   everyone: 'review.audienceEveryone',
@@ -85,7 +85,11 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
   const [followed, setFollowed] = useState<ReadonlySet<string> | undefined>(undefined);
 
   const key = journalKey(seriesId);
-  const social = useSocial();
+  // 🔴 **La page la plus visitee disait « personne n'a encore ecrit » quand la lecture
+  // echouait.** Mesure le 2026-08-18, connexion coupee, sur une fiche qui porte cinq
+  // critiques : l'ecran invitait a ecrire la premiere. `useSocialRead` distingue les deux —
+  // voir le crochet pour les sept autres surfaces qui avaient le meme defaut.
+  const { social, unreadable } = useSocialRead();
   const userId = account?.userId;
 
   useEffect(() => {
@@ -163,13 +167,18 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
             la liste, donc l'ecran bascule sur ce retour anticipe. Ne la poser que dans la
             branche pleine la ferait disparaitre exactement quand elle est la plus utile. */}
         {removedNote ? <p className="meta">{t('review.removeKept')}</p> : null}
+        {unreadable ? (
+          <EmptyState status>{t('read.failed')}</EmptyState>
+        ) : null}
         {/* ⚠️ Sans `title` : la section qui l'entoure porte deja le sien, et un second niveau
             de titre y decrirait une hierarchie qui n'existe pas. Sans actions non plus — le
             champ d'ecriture est sur cette page, dans « Ou j'en suis », et la phrase l'y
             envoie par son nom plutot que par un lien qui ferait sortir de l'ecran. */}
-        <EmptyState>
-          {t('review.none')} {t('review.beFirst')}
-        </EmptyState>
+        {unreadable ? null : (
+          <EmptyState>
+            {t('review.none')} {t('review.beFirst')}
+          </EmptyState>
+        )}
       </section>
     );
   }

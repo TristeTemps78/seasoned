@@ -7,7 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
 import { Avatar } from '@/app/components/Avatar';
 import { type Discoverable } from '@/src/social/client';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 
 /**
  * « Des gens a decouvrir » — la reponse au demarrage a froid du social.
@@ -54,7 +54,9 @@ export function Discover() {
   const [people, setPeople] = useState<readonly Discoverable[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  const social = useSocial();
+  // ⚠️ Voir `useSocialRead` : sans lui, « personne n'a encore rendu son profil public »
+  // s'affichait aussi quand la lecture avait echoue.
+  const { social, unreadable } = useSocialRead();
   const myId = account?.userId;
 
   useEffect(() => {
@@ -81,7 +83,9 @@ export function Discover() {
       <h2 className="row-title">{t('discover.title')}</h2>
       <p className="meta">{t('discover.why')}</p>
       {others.length === 0 ? (
-        <p className="prose-note">{t('discover.nobody')}</p>
+        <p className="prose-note" {...(unreadable ? { role: 'status' as const } : {})}>
+          {t(unreadable ? 'read.failed' : 'discover.nobody')}
+        </p>
       ) : (
       <ul className="flex flex-wrap gap-2">
         {others.map((person) => (
