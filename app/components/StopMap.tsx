@@ -8,7 +8,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { readAttrition, type StopBucket } from '@/src/domain/attrition';
 import { journalKey } from '@/src/domain/journal';
 import type { SeasonSize } from '@/src/domain/remaining';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 
 /**
  * Ou la foule decroche — et sur quel effectif.
@@ -52,18 +52,17 @@ export function StopMap({
   readonly episodeCount: number;
 }) {
   const { t, tn, n } = useT();
-  const { configured, account } = useAuth();
+  const { configured } = useAuth();
   const { journal, ready } = useJournal();
   const [buckets, setBuckets] = useState<readonly StopBucket[]>([]);
 
   const key = journalKey(seriesId);
-  const accessToken = account?.accessToken;
+  const social = useSocial();
 
   useEffect(() => {
     // Lue sans compte : `stop_map` est executable par `anon`, et le lecteur qu'elle sert le
     // mieux est justement celui qui hesite a commencer — souvent quelqu'un qui arrive d'un
     // moteur de recherche. Exiger une session la fermerait a son meilleur public.
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -73,7 +72,7 @@ export function StopMap({
     return () => {
       alive = false;
     };
-  }, [accessToken, key]);
+  }, [social, key]);
 
   const entry = journal.entries[key];
   const p = entry?.position;

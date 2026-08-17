@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 import { pathIn } from '@/lib/routes';
 import { Icon } from '@/app/components/Icon';
 import type { Locale } from '@/lib/i18n';
@@ -84,17 +84,15 @@ export function AccountMenu({ locale }: { readonly locale: Locale }) {
   const [profile, setProfile] = useState<{ readonly userId: string; readonly handle?: string }>();
 
   const userId = account?.userId;
-  const accessToken = account?.accessToken;
+  const social = useSocial();
 
   const warm = useCallback(() => {
-    if (userId === undefined || accessToken === undefined) return;
+    if (userId === undefined || social === undefined) return;
     if (profile?.userId === userId) return;
-    const social = socialFrom(accessToken);
-    if (social === undefined) return;
     void social.myProfile(userId).then((found) => {
       setProfile({ userId, ...(found?.handle !== undefined ? { handle: found.handle } : {}) });
     });
-  }, [userId, accessToken, profile]);
+  }, [userId, social, profile]);
 
   // Le volet ne survit pas a la page : l'en-tete est le meme noeud d'une page a l'autre.
   useEffect(() => setOpen(false), [pathname]);

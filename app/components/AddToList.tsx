@@ -7,7 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { journalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { type SeriesList } from '@/src/social/client';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 
 /**
  * « Ajouter a une liste », depuis la fiche serie.
@@ -57,7 +57,7 @@ export function AddToList({
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
   const userId = account?.userId;
   const subject = journalKey(seriesId);
 
@@ -67,7 +67,6 @@ export function AddToList({
       setLoaded(true);
       return;
     }
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
     void social.listsBy(userId).then((rows) => {
       if (!alive) return;
@@ -77,12 +76,11 @@ export function AddToList({
     return () => {
       alive = false;
     };
-  }, [userId, accessToken]);
+  }, [userId, social]);
 
   const add = useCallback(
     async (slug: string) => {
       if (userId === undefined) return;
-      const social = socialFrom(accessToken);
       if (social === undefined) return;
       // ⚠️ L'ajout est **idempotent** cote base (`ignore-duplicates` — la cle *est* le fait
       // entier) : cliquer deux fois ne remonte pas une erreur de cle dupliquee pour un geste
@@ -96,7 +94,7 @@ export function AddToList({
         setAdded((current) => new Set([...current, slug]));
       }
     },
-    [userId, accessToken, subject, title, posterPath],
+    [userId, social, subject, title, posterPath],
   );
 
   // Tant qu'on ne sait pas, on ne dit rien — la seule retenue qui reste ici.

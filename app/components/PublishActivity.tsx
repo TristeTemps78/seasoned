@@ -7,7 +7,7 @@ import { useJournal } from '@/app/journal/useJournal';
 import { projectActivity } from '@/src/domain/activity';
 import { projectStops } from '@/src/domain/attrition';
 import { favoritesOf, seriesEntries, tagsOf } from '@/src/domain/journal';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 
 /**
  * Pousse l'activite publiable, **depuis n'importe quelle page**.
@@ -54,7 +54,7 @@ export function PublishActivity() {
   const lastTags = useRef<string | undefined>(undefined);
   const forgotten = useRef(false);
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
   const userId = account?.userId;
   const keepStopsPrivate = journal.keepStopsPrivate === true;
   const shareTags = journal.shareTags === true;
@@ -63,7 +63,6 @@ export function PublishActivity() {
     if (!configured || !ready || userId === undefined) return;
     // ⚠️ **Avant le minuteur, pas dedans.** Sans configuration il n'y a rien a envoyer, et
     // programmer un envoi qui ne partira pas ferait vivre un minuteur par frappe pour rien.
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     const items = projectActivity(journal, new Date());
@@ -120,15 +119,38 @@ export function PublishActivity() {
 
     const sendActivity = items.length > 0 && shape !== lastSent.current;
     const sendStops = stops.length > 0 && stopShape !== lastStops.current;
-    // ⚠️ **Pas de `length > 0` ici**, contrairement aux deux au-dessus, et c'est la
-    // difference entre un fait et un etat : depingler sa derniere serie doit RETIRER les
-    // quatre du profil. La condition des faits laisserait l'ancienne selection en place pour
-    // toujours — un profil qui montre un gout qu'on vient d'effacer.
-    const sendPinned = pinnedShape !== lastPinned.current;
-    // ⚠️ Meme absence de `length > 0` que les epinglees, et pour la meme raison : retirer son
-    // dernier mot doit le retirer du profil. Un etat se reecrit, un fait s'ajoute.
     const wordShape = JSON.stringify(words);
-    const sendTags = wordShape !== lastTags.current;
+
+    /**
+     * Un ETAT se republie quand il change — mais **un etat vide ne se publie pas au montage**.
+     *
+     * ## 🔴 Ce que la premiere version coutait, mesure le 2026-08-17
+     *
+     * `pinnedShape !== lastPinned.current` suffisait, et la reference vaut `undefined` au
+     * premier rendu : chaque chargement de page envoyait donc `DELETE profile_favorites` et
+     * `DELETE tags`, **pour un compte qui n'a jamais epingle ni partage un mot**. Deux
+     * ecritures par page vue, pour toujours, sans rien changer.
+     *
+     * ## Pourquoi une clause plutot qu'une memoire persistante
+     *
+     * La reponse evidente etait de garder la signature dans `sessionStorage` : une couche de
+     * plus, et une couche qui peut se desynchroniser du serveur.
+     *
+     * ⚠️ **Publier le vide au montage ne peut QUE detruire.** Ca ne repare jamais une
+     * ecriture manquee — une ecriture manquee de `[]` voudrait dire que le serveur porte
+     * encore ce que la personne a retire, et si elle l'a retire, c'est dans une session qui a
+     * publie le retrait. Le vide n'a donc de sens que comme **transition**.
+     *
+     * D'ou la seconde moitie de la condition : on publie un etat vide seulement si l'on a
+     * deja publie quelque chose dans cette session. Depingler sa derniere serie retire
+     * toujours les quatre du profil — c'est le cas que la condition `length > 0` des faits ne
+     * couvre pas, et il reste couvert.
+     */
+    const changeDEtat = (forme: string, dernier: string | undefined, vide: boolean) =>
+      forme !== dernier && (!vide || dernier !== undefined);
+
+    const sendPinned = changeDEtat(pinnedShape, lastPinned.current, pinned.length === 0);
+    const sendTags = changeDEtat(wordShape, lastTags.current, words.length === 0);
     // Le retrait ne part qu'une fois par session : la table est illisible, donc rien ne
     // permet de constater qu'elle est deja vide, et redemander a chaque frappe serait un
     // `DELETE` par touche.
@@ -172,7 +194,7 @@ export function PublishActivity() {
     }, 4_000);
 
     return () => clearTimeout(timer);
-  }, [configured, ready, journal, userId, accessToken, keepStopsPrivate, shareTags]);
+  }, [configured, ready, journal, userId, social, keepStopsPrivate, shareTags]);
 
   // Reprendre le consentement doit pouvoir redemander un retrait plus tard.
   useEffect(() => {

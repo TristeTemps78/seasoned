@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { parseJournalKey } from '@/src/domain/journal';
@@ -10,7 +9,7 @@ import { redactReviewsAcross } from '@/src/domain/spoiler';
 import { pathIn } from '@/lib/routes';
 import { formatDate } from '@/lib/format';
 import { type PublishedReview } from '@/src/social/client';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
@@ -53,7 +52,6 @@ import { useReviewHearts } from '@/app/social/useReviewHearts';
  * est la meme — {@link redactReviewsAcross}, dans le domaine.
  */
 export function DiscoverReviews() {
-  const { account } = useAuth();
   const { t, locale } = useT();
   const { journal } = useJournal();
   const [reviews, setReviews] = useState<readonly PublishedReview[] | undefined>(undefined);
@@ -64,10 +62,9 @@ export function DiscoverReviews() {
    */
   const { hearts, mine, canHeart, toggle } = useReviewHearts(reviews);
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
 
   useEffect(() => {
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -77,7 +74,7 @@ export function DiscoverReviews() {
     return () => {
       alive = false;
     };
-  }, [accessToken]);
+  }, [social]);
 
   // Rien tant qu'on ne sait pas : annoncer « personne n'a rien ecrit » avant d'avoir lu
   // serait le meme mensonge que le bandeau qui parlait avant d'avoir lu le journal.

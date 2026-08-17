@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 import type { Visibility } from '@/src/social/client';
 
 /**
@@ -43,11 +43,10 @@ export function ProfileSettings() {
   const [loaded, setLoaded] = useState(false);
 
   const userId = account?.userId;
-  const accessToken = account?.accessToken;
+  const social = useSocial();
 
   useEffect(() => {
     if (userId === undefined) return;
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -63,12 +62,11 @@ export function ProfileSettings() {
     return () => {
       alive = false;
     };
-  }, [userId, accessToken]);
+  }, [userId, social]);
 
   const choose = useCallback(
     (value: Visibility) => {
       if (userId === undefined || profile === undefined) return;
-      const social = socialFrom(accessToken);
       if (social === undefined) return;
       // ⚠️ L'etat local ne bouge **qu'apres** un succes. L'inverse — l'optimisme — est
       // exactement ce qui a fait qu'un suivi refuse en 42501 ressemblait a un suivi reussi
@@ -77,7 +75,7 @@ export function ProfileSettings() {
         if (ok) setProfile({ ...profile, visibility: value });
       });
     },
-    [userId, accessToken, profile],
+    [userId, social, profile],
   );
 
   // Tant qu'on ne sait pas, on ne dit rien : afficher « vous n'avez pas de nom » a quelqu'un

@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { type DiscoverableList } from '@/src/social/client';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
@@ -31,8 +30,8 @@ import { resolveSeriesRef } from '@/app/components/seriesRef';
  *
  * ## ⚠️ Sans compte, et c'est le point
  *
- * Le composant ne demande **aucune session** : `socialFrom(undefined)` construit un client
- * anonyme et RLS decide. Exiger un compte ici fermerait la page a exactement les gens qu'un
+ * Le composant ne demande **aucune session** : `useSocial()` construit un client anonyme
+ * des que l'etat de la session est connu, et RLS decide. Exiger un compte ici fermerait la page a exactement les gens qu'un
  * lien de partage amene — le defaut que la regle 4 a fait retirer de `/amis` et `/listes`.
  *
  * ## Le lien va au profil, pas a la liste
@@ -42,15 +41,13 @@ import { resolveSeriesRef } from '@/app/components/seriesRef';
  * par liste ajouterait une surface pour montrer ce qu'une page existante montre deja.
  */
 export function DiscoverLists() {
-  const { account } = useAuth();
   const { t, tn, locale } = useT();
   const { journal } = useJournal();
   const [lists, setLists] = useState<readonly DiscoverableList[] | undefined>(undefined);
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
 
   useEffect(() => {
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -60,7 +57,7 @@ export function DiscoverLists() {
     return () => {
       alive = false;
     };
-  }, [accessToken]);
+  }, [social]);
 
   // Rien tant qu'on ne sait pas : annoncer « personne n'a rien range » avant d'avoir lu
   // serait le meme mensonge que le bandeau qui parlait avant d'avoir lu le journal.

@@ -78,7 +78,7 @@ describe('la fusion de deux appareils', () => {
 // Le cablage : rien ne part sans accord
 // ---------------------------------------------------------------------------
 
-const envois = vi.hoisted(() => ({ tags: [] as unknown[][] }));
+const envois = vi.hoisted(() => ({ tags: [] as unknown[][], pins: [] as unknown[][] }));
 
 vi.mock('@/app/auth/AuthProvider', () => ({
   useAuth: () => ({
@@ -92,7 +92,10 @@ vi.mock('@/app/social/socialFrom', () => ({
   socialFrom: () => ({
     publish: async () => true,
     publishStops: async () => true,
-    publishFavorites: async () => true,
+    publishFavorites: async (_id: string, items: unknown[]) => {
+      envois.pins.push(items);
+      return true;
+    },
     publishTags: async (_id: string, items: unknown[]) => {
       envois.tags.push(items);
       return true;
@@ -113,6 +116,7 @@ function journalWithWord(share: boolean) {
 
 beforeEach(() => {
   envois.tags = [];
+  envois.pins = [];
   window.localStorage.clear();
   vi.useFakeTimers();
 });
@@ -127,9 +131,36 @@ describe('PublishActivity et les mots', () => {
     render(<PublishActivity />);
     await vi.advanceTimersByTimeAsync(6_000);
 
-    // ⚠️ Le tableau vide EST un envoi legitime — il retire ce qui aurait ete publie avant une
-    // reprise d'accord. Ce qui ne doit jamais arriver, c'est qu'un MOT y figure.
-    expect(envois.tags.flat()).toEqual([]);
+    // ⚠️ **Pas un seul appel**, et c'est plus fort qu'un appel au tableau vide.
+    //
+    // La premiere version envoyait `[]`, ce qui etait defendable en principe — un etat vide
+    // retire ce qui a ete publie avant — et coutait en pratique un `DELETE` par chargement de
+    // page a tout le monde. Mesure du 2026-08-17 : deux suppressions par page vue, pour un
+    // compte qui n'a jamais rien partage. Publier le vide au MONTAGE ne peut que detruire ;
+    // il n'a de sens qu'en transition, et c'est ce que le test suivant garde.
+    expect(envois.tags).toEqual([]);
+    expect(envois.pins).toEqual([]);
+  });
+
+  it('🔴 mais retire bien ce qui a ete publie, quand l’etat DEVIENT vide', async () => {
+    // Le cas que la clause doit garder : on partage un mot, puis on le retire. Sans le second
+    // envoi, le profil montrerait un mot que la personne vient d'effacer.
+    window.localStorage.setItem(STORAGE_KEY, serializeJournal(journalWithWord(true)));
+    render(<PublishActivity />);
+    for (let i = 0; i < 6 && envois.tags.length === 0; i += 1) {
+      await vi.advanceTimersByTimeAsync(5_000);
+    }
+    expect(envois.tags.flat()).toHaveLength(1);
+
+    // Le mot disparait du journal, l'accord reste donne.
+    const sansMot = setShareTags(EMPTY_JOURNAL, true);
+    window.localStorage.setItem(STORAGE_KEY, serializeJournal(sansMot));
+    window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
+    for (let i = 0; i < 6 && envois.tags.length < 2; i += 1) {
+      await vi.advanceTimersByTimeAsync(5_000);
+    }
+
+    expect(envois.tags[1], 'le retrait n’est pas parti').toEqual([]);
   });
 
   it('envoie le mot une fois l’accord donne, avec son instantane', async () => {

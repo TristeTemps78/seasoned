@@ -10,7 +10,7 @@ import { formatDate } from '@/lib/format';
 import { pathIn } from '@/lib/routes';
 import { type DiscoverableList, type SeriesRef } from '@/src/social/client';
 import { resolveSeriesRef } from '@/app/components/seriesRef';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PageHeader } from '@/app/components/PageHeader';
@@ -47,20 +47,19 @@ export function PublicList({ handle, slug }: {
   readonly slug: string;
 }) {
   const { t, tn, locale } = useT();
-  const { configured, ready, account } = useAuth();
+  const { configured, ready } = useAuth();
   const { journal } = useJournal();
 
   const [list, setList] = useState<DiscoverableList | undefined>(undefined);
   const [items, setItems] = useState<readonly SeriesRef[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
 
   const load = useCallback(async () => {
     // ⚠️ Construit meme sans compte : une liste d'un profil `public` se lit par un visiteur
     // anonyme, et c'est RLS qui tranche. Exiger une session fermerait la page a exactement
     // les gens qu'un lien de partage amene — c'est-a-dire a son seul public.
-    const social = socialFrom(accessToken);
     if (social === undefined) {
       setLoaded(true);
       return;
@@ -70,7 +69,7 @@ export function PublicList({ handle, slug }: {
     setLoaded(true);
     if (found === undefined) return;
     setItems(await social.listItems(found.authorId, slug));
-  }, [handle, slug, accessToken]);
+  }, [handle, slug, social]);
 
   useEffect(() => {
     void load();

@@ -17,7 +17,7 @@ import type { SocialOptions } from '@/src/social/client';
  *
  * ## Pourquoi un module et pas un contexte React
  *
- * Douze composants appellent `socialFrom(accessToken)`. Un contexte obligerait chacun a lire
+ * Douze composants demandent un client social. Un contexte obligerait chacun a lire
  * un hook et a repasser le rappel — c'est-a-dire douze fichiers a toucher, exactement ce que
  * `socialFrom` existe pour eviter, et exactement la raison pour laquelle `onFailure` n'a
  * jamais ete branche. Ici l'abonnement est **le defaut** de `socialFrom` : aucun appelant

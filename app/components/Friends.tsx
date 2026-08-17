@@ -25,7 +25,7 @@ import { FriendQuiz } from '@/app/components/FriendQuiz';
 import { Avatar } from '@/app/components/Avatar';
 import { FriendsFeed } from '@/app/components/FriendsFeed';
 import { pathIn } from '@/lib/routes';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 
 /**
  * La face « Mes amis » : reclamer un nom, suivre quelqu'un, lire le fil.
@@ -49,7 +49,6 @@ export function Friends() {
   const { configured, ready, account } = useAuth();
   const { journal } = useJournal();
 
-  const [client, setClient] = useState<SocialClient | undefined>(undefined);
   const [profile, setProfile] = useState<Profile | undefined>(undefined);
   const [loaded, setLoaded] = useState(false);
   const [handle, setHandle] = useState('');
@@ -69,12 +68,7 @@ export function Friends() {
   const [unreadable, setUnreadable] = useState(false);
 
   const userId = account?.userId;
-  const accessToken = account?.accessToken;
-
-  useEffect(() => {
-    if (userId === undefined) return;
-    setClient(socialFrom(accessToken, () => setUnreadable(true)));
-  }, [userId, accessToken]);
+  const client = useSocial(useCallback(() => setUnreadable(true), []));
 
   const refresh = useCallback(
     async (social: SocialClient, id: string) => {

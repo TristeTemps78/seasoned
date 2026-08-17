@@ -7,7 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
 import { Avatar } from '@/app/components/Avatar';
 import { type Discoverable } from '@/src/social/client';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 
 /**
  * « Des gens a decouvrir » — la reponse au demarrage a froid du social.
@@ -54,14 +54,13 @@ export function Discover() {
   const [people, setPeople] = useState<readonly Discoverable[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
   const myId = account?.userId;
 
   useEffect(() => {
     let alive = true;
     // Construit meme sans compte : un profil `public` se lit par un visiteur anonyme, et
     // c'est RLS qui tranche.
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
     void social.discoverable().then((rows) => {
       if (!alive) return;
@@ -71,7 +70,7 @@ export function Discover() {
     return () => {
       alive = false;
     };
-  }, [accessToken]);
+  }, [social]);
 
   // Se soi-meme n'est pas une decouverte.
   const others = people.filter((p) => p.userId !== myId);

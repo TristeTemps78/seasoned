@@ -25,7 +25,7 @@ import { type PublishedReview, type ReviewComment, type ReviewLikes } from '@/sr
 import { formatDate } from '@/lib/format';
 import type { MessageKey } from '@/lib/i18n/engine';
 import { pathIn } from '@/lib/routes';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 
 const AUDIENCE_LABEL = {
   everyone: 'review.audienceEveryone',
@@ -72,7 +72,7 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
   const [followed, setFollowed] = useState<ReadonlySet<string> | undefined>(undefined);
 
   const key = journalKey(seriesId);
-  const accessToken = account?.accessToken;
+  const social = useSocial();
   const userId = account?.userId;
 
   useEffect(() => {
@@ -80,7 +80,6 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
     // est lisible par un visiteur anonyme. Exiger une session ici fermerait les critiques a
     // l'audience qui vient du moteur de recherche — celle pour qui elles sont ecrites.
 
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -100,7 +99,7 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
     return () => {
       alive = false;
     };
-  }, [accessToken, key]);
+  }, [social, key]);
 
   /**
    * Qui je suis — **lu seulement le jour ou l'on s'en sert**.
@@ -116,7 +115,6 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
   useEffect(() => {
     if (audience !== 'following' || followed !== undefined || userId === undefined) return;
 
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -126,7 +124,7 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
     return () => {
       alive = false;
     };
-  }, [audience, followed, userId, accessToken]);
+  }, [audience, followed, userId, social]);
 
   // Rien tant qu'on ne sait pas : annoncer « personne n'a rien ecrit » avant d'avoir lu
   // serait le meme mensonge que le bandeau qui parlait avant d'avoir lu le journal.
@@ -267,7 +265,7 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                     <FaceDot face={review.face} />
                     <Link
                       href={pathIn(`/u/${review.handle}`, locale)}
-                      className="text-sm font-medium hover:text-(--color-volt)"
+                      className="tap-line text-sm font-medium hover:text-(--color-volt)"
                     >
                       @{review.handle}
                     </Link>
@@ -287,7 +285,6 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                   {account !== undefined ? (
                     <ReportButton
                       onReport={async (ground) => {
-                        const social = socialFrom(accessToken);
                         if (social === undefined) return false;
                         return social.report(account.userId, review.authorId, ground);
                       }}
@@ -331,7 +328,6 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                     count={likes[id]?.likes ?? 0}
                     mine={likes[id]?.mine ?? false}
                     onToggle={async (next) => {
-                      const social = socialFrom(accessToken);
                       if (social === undefined) return false;
                       const ok = await social.likeReview(
                         account.userId,
@@ -379,7 +375,6 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                         one.reviewAuthorId === review.authorId && one.target === review.target,
                     )}
                     onSend={async (body) => {
-                      const social = socialFrom(accessToken);
                       if (social === undefined || account === undefined) return false;
                       const ok = await social.comment(
                         account.userId,
@@ -394,14 +389,12 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                       return ok;
                     }}
                     onRemove={async (id) => {
-                      const social = socialFrom(accessToken);
                       if (social === undefined) return false;
                       const ok = await social.removeComment(id);
                       if (ok) setComments((current) => current.filter((one) => one.id !== id));
                       return ok;
                     }}
                     onReport={async (authorId, ground) => {
-                      const social = socialFrom(accessToken);
                       if (social === undefined || account === undefined) return false;
                       return social.report(account.userId, authorId, ground);
                     }}

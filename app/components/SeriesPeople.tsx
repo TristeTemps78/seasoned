@@ -8,7 +8,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { journalKey } from '@/src/domain/journal';
 import { type SocialClient, type FeedItem } from '@/src/social/client';
 import { pathIn } from '@/lib/routes';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 
 /**
  * Qui d'autre a aime ou termine cette serie.
@@ -53,14 +53,13 @@ export function SeriesPeople({ seriesId }: { readonly seriesId: string }) {
   const [people, setPeople] = useState<readonly FeedItem[]>([]);
 
   const key = journalKey(seriesId);
-  const accessToken = account?.accessToken;
+  const social = useSocial();
   const myId = account?.userId;
 
   useEffect(() => {
     // Construit meme sans compte : l'activite d'un profil `public` se lit par un visiteur
     // anonyme, et c'est RLS qui tranche. Exiger une session fermerait cet encart a
     // exactement l'audience qui arrive par un moteur de recherche.
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -70,7 +69,7 @@ export function SeriesPeople({ seriesId }: { readonly seriesId: string }) {
     return () => {
       alive = false;
     };
-  }, [accessToken, key]);
+  }, [social, key]);
 
   // Une ligne par personne, pas par fait : quelqu'un qui a aime **et** termine apparaitrait
   // deux fois, ce qui laisserait croire a deux personnes. Le fil arrive du plus recent au

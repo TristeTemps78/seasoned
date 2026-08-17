@@ -23,7 +23,7 @@ import { pathIn } from '@/lib/routes';
 import { Menu } from '@/app/components/Menu';
 import { type SeriesRef, type SeriesList } from '@/src/social/client';
 import { resolveSeriesRef } from '@/app/components/seriesRef';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 import { AccountGate } from '@/app/components/AccountGate';
 import { EmptyState } from '@/app/components/EmptyState';
 import { PosterChip } from '@/app/components/PosterChip';
@@ -162,7 +162,7 @@ export function Lists({ ownerId, ownerHandle }: {
   /** Le nom de l'auteur, donne par l'appelant ou lu une fois — voir `ownerHandle`. */
   const [handle, setHandle] = useState<string | undefined>(ownerHandle);
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
   const myId = account?.userId;
   const subjectId = ownerId ?? myId;
   const editable = ownerId === undefined || ownerId === myId;
@@ -171,8 +171,8 @@ export function Lists({ ownerId, ownerHandle }: {
     // ⚠️ Construit **meme sans compte** : une liste d'un profil `public` se lit par un
     // visiteur anonyme, et c'est RLS qui tranche. Exiger une session fermerait la page a
     // exactement les gens qu'un lien de partage amene.
-    return socialFrom(accessToken);
-  }, [accessToken]);
+    return social;
+  }, [social]);
 
   const load = useCallback(async () => {
     const social = clientFor();

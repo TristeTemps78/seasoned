@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
 import { type DiscoverableList } from '@/src/social/client';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 import { FaceDot } from '@/app/components/FaceDot';
 
 /**
@@ -34,14 +33,12 @@ import { FaceDot } from '@/app/components/FaceDot';
  * deja — c'est le raisonnement de `DiscoverLists`, et il n'a pas change.
  */
 export function ListResults({ query }: { readonly query: string }) {
-  const { account } = useAuth();
   const { t, tn, locale } = useT();
   const [lists, setLists] = useState<readonly DiscoverableList[]>([]);
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
 
   useEffect(() => {
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -51,7 +48,7 @@ export function ListResults({ query }: { readonly query: string }) {
     return () => {
       alive = false;
     };
-  }, [accessToken, query]);
+  }, [social, query]);
 
   // Silencieux quand il n'y a rien : la page porte deja son propre « aucun resultat », et
   // « aucune liste ne s'appelle comme ca » sous chaque recherche de titre serait du bruit sur

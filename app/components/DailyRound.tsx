@@ -13,7 +13,7 @@ import {
   type QuizServed,
   type QuizVerdict,
 } from '@/src/social/client';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 
 /**
  * La manche du jour : les memes questions pour tout le monde, chronometrees.
@@ -60,7 +60,6 @@ export function DailyRound() {
   const { t } = useT();
   const { configured, ready, account } = useAuth();
 
-  const [client, setClient] = useState<SocialClient | undefined>(undefined);
   const [ordinal, setOrdinal] = useState(1);
   const [question, setQuestion] = useState<QuizServed | undefined>(undefined);
   const [verdict, setVerdict] = useState<QuizVerdict | undefined>(undefined);
@@ -71,11 +70,7 @@ export function DailyRound() {
   const [over, setOver] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
-  const accessToken = account?.accessToken;
-
-  useEffect(() => {
-    setClient(socialFrom(accessToken));
-  }, [accessToken]);
+  const client = useSocial();
 
   const load = useCallback(
     async (social: SocialClient, want: number) => {

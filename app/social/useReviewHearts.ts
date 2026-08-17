@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/app/auth/AuthProvider';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 import type { ReviewLikes } from '@/src/social/client';
 
 /**
@@ -71,7 +71,7 @@ export function useReviewHearts(reviews: readonly HeartedReview[] | undefined): 
   const { account } = useAuth();
   const [counts, setCounts] = useState<Readonly<Record<string, ReviewLikes>>>({});
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
   const userId = account?.userId;
 
   const subjects = useMemo(
@@ -84,7 +84,6 @@ export function useReviewHearts(reviews: readonly HeartedReview[] | undefined): 
     // ⚠️ Aucun compte n'est requis : `review_like_counts_across` est `security definer` et
     // rend le meme compte a tout le monde. Exiger une session fermerait le chiffre a
     // l'audience qui vient d'un lien de partage — celle pour qui ces pages existent.
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -94,7 +93,7 @@ export function useReviewHearts(reviews: readonly HeartedReview[] | undefined): 
     return () => {
       alive = false;
     };
-  }, [subjects, accessToken]);
+  }, [subjects, social]);
 
   const hearts = useCallback(
     (review: HeartedReview) => counts[heartKey(review)]?.likes ?? 0,
@@ -114,7 +113,6 @@ export function useReviewHearts(reviews: readonly HeartedReview[] | undefined): 
   const toggle = useCallback(
     async (review: HeartedReview, next: boolean) => {
       if (userId === undefined) return false;
-      const social = socialFrom(accessToken);
       if (social === undefined) return false;
       const ok = await social.likeReview(
         userId,
@@ -140,7 +138,7 @@ export function useReviewHearts(reviews: readonly HeartedReview[] | undefined): 
       });
       return true;
     },
-    [accessToken, userId],
+    [social, userId],
   );
 
   return { hearts, mine, canHeart, toggle };

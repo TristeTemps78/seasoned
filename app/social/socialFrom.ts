@@ -31,15 +31,20 @@ import { reportFailure } from '@/app/social/failures';
  * plutot qu'afficher un ecran qui ne peut pas marcher — meme regle que `authConfigFromEnv`,
  * dont ce module ne fait que prolonger le contrat.
  *
- * ## ⚠️ Le jeton est relu a chaque appel, jamais capture
+ * ## ⚠️ Le jeton arrive en LECTEUR, pas en valeur
  *
- * `accessToken: () => accessToken` ferme sur la **variable**, pas sur sa valeur : un jeton
- * se rafraichit, et un client construit au montage doit continuer d'emettre le jeton
- * courant. C'est le contrat de {@link SocialOptions.accessToken}, et le respecter ici evite
- * d'avoir a y penser douze fois.
+ * `readToken()` est appele a chaque requete : un jeton se rafraichit, et un client construit
+ * au montage doit continuer d'emettre le jeton courant. C'est le contrat de
+ * {@link SocialOptions.accessToken}, et le respecter ici evite d'avoir a y penser douze fois.
+ *
+ * ⚠️ **C'etait une valeur jusqu'au 2026-08-17, et ca coutait une lecture sur deux.** La
+ * fermeture `() => accessToken` respectait bien le contrat cote client — mais cote appelant,
+ * le parametre etait une **dependance d'effet**, et il passait de `undefined` a la session.
+ * Chaque lecture sociale partait donc deux fois, la premiere en visiteur anonyme. Le lecteur
+ * deplace cette laisserie a la frontiere : voir `useSocial`, seul appelant de cette fonction.
  */
 export function socialFrom(
-  accessToken: string | undefined,
+  readToken: () => string | undefined,
   onFailure?: SocialOptions['onFailure'],
 ): SocialClient | undefined {
   const config = authConfigFromEnv();
@@ -48,7 +53,7 @@ export function socialFrom(
   return new SocialClient({
     url: config.url,
     anonKey: config.anonKey,
-    accessToken: () => accessToken,
+    accessToken: readToken,
     // 🔴 **L'abonnement est le DEFAUT, et c'est la correction du 2026-08-16.** `onFailure`
     // etait propage jusqu'ici depuis le 2026-08-11 et **aucun des douze appelants ne le
     // passait** : le rappel existait, documente et teste, sans un seul abonne. Le laisser

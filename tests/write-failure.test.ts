@@ -41,7 +41,7 @@ describe('le canal des pannes d ecriture', () => {
     const off = onWriteFailure((failure) => seen.push(failure.where));
 
     vi.stubGlobal('fetch', async () => new Response('nope', { status: 403 }));
-    const social = socialFrom('jeton');
+    const social = socialFrom(() => 'jeton');
     expect(social).toBeDefined();
 
     await social?.follow('moi', 'toi');
@@ -62,7 +62,7 @@ describe('le canal des pannes d ecriture', () => {
     const off = onWriteFailure((failure) => seen.push(failure.where));
 
     vi.stubGlobal('fetch', async () => new Response('nope', { status: 500 }));
-    await socialFrom('jeton')?.feed();
+    await socialFrom(() => 'jeton')?.feed();
 
     expect(seen).toEqual([]);
     off();
@@ -105,7 +105,7 @@ describe('le canal des pannes d ecriture', () => {
     const off = onWriteFailure((failure) => commun.push(failure.where));
 
     vi.stubGlobal('fetch', async () => new Response('nope', { status: 403 }));
-    await socialFrom('jeton', (where) => propre.push(where))?.follow('moi', 'toi');
+    await socialFrom(() => 'jeton', (where) => propre.push(where))?.follow('moi', 'toi');
 
     expect(propre).toEqual(['follows']);
     expect(commun).toEqual([]);
@@ -122,7 +122,7 @@ describe('le canal des pannes d ecriture', () => {
     const off = onWriteFailure((failure) => seen.push(failure.where));
 
     vi.stubGlobal('fetch', OK);
-    await socialFrom('jeton')?.follow('moi', 'toi');
+    await socialFrom(() => 'jeton')?.follow('moi', 'toi');
 
     expect(seen).toEqual([]);
     off();

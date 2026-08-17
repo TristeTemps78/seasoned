@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
 import { type Profile } from '@/src/social/client';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 import { Avatar } from '@/app/components/Avatar';
 import { FaceDot } from '@/app/components/FaceDot';
 
@@ -37,14 +36,12 @@ import { FaceDot } from '@/app/components/FaceDot';
  * recherches, pour une question que presque personne ne posait.
  */
 export function PeopleResults({ query }: { readonly query: string }) {
-  const { account } = useAuth();
   const { t, locale } = useT();
   const [people, setPeople] = useState<readonly Profile[]>([]);
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
 
   useEffect(() => {
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
 
     let alive = true;
@@ -54,7 +51,7 @@ export function PeopleResults({ query }: { readonly query: string }) {
     return () => {
       alive = false;
     };
-  }, [accessToken, query]);
+  }, [social, query]);
 
   if (people.length === 0) return null;
 

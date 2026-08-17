@@ -28,7 +28,7 @@ import { CONTROLS_FROM, orderReviews, type ReviewSort } from '@/src/domain/revie
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
-import { socialFrom } from '@/app/social/socialFrom';
+import { useSocial } from '@/app/social/useSocial';
 
 /**
  * La page publique de quelqu'un — `/u/<nom>`.
@@ -129,7 +129,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
    */
   const [sort, setSort] = useState<ReviewSort>('recent');
 
-  const accessToken = account?.accessToken;
+  const social = useSocial();
   const userId = account?.userId;
 
   /**
@@ -143,7 +143,6 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     // ⚠️ Le client est construit **meme sans compte** : un profil `public` se lit par un
     // visiteur anonyme, et c'est RLS qui tranche. Exiger une session ici fermerait la page
     // a exactement les gens qu'un lien de partage amene.
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
     const found = await social.findByHandle(handle.toLowerCase());
     setProfile(found);
@@ -180,7 +179,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     setFollowing(mine.some((p) => p.userId === found.userId));
     setFollowsMe(theirs.some((p) => p.userId === found.userId));
     setNamed(me !== undefined);
-  }, [handle, accessToken, userId]);
+  }, [handle, social, userId]);
 
   useEffect(() => {
     void load();
@@ -188,13 +187,12 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
 
   const toggleFollow = useCallback(async () => {
     if (userId === undefined || profile === undefined) return;
-    const social = socialFrom(accessToken);
     if (social === undefined) return;
     const ok = following
       ? await social.unfollow(userId, profile.userId)
       : await social.follow(userId, profile.userId);
     if (ok) setFollowing(!following);
-  }, [following, profile, userId, accessToken]);
+  }, [following, profile, userId, social]);
 
   if (!configured) return <p className="prose-note">{t('account.unavailable.body')}</p>;
   // Le silence tant qu'on ne sait pas : annoncer « profil introuvable » avant d'avoir lu
