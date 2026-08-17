@@ -314,7 +314,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'report.open': 'Report',
   'report.which': 'On what ground? This list is the rules, and nothing else gets removed.',
   'report.cancel': 'Cancel',
-  'report.sent': 'Report received. We answer within 72 h, at the address on the rules page.',
+  'report.sent': 'Report received. We answer within {hours} h, at the address on the rules page.',
   'report.failed': 'The report did not go through. Try again, or write to us.',
   'face.friends': 'Friends',
   'face.lists': 'Lists',

@@ -351,7 +351,7 @@ export const FR = {
   'report.open': 'Signaler',
   'report.which': 'Pour quel motif ? Cette liste est celle des règles, et rien d’autre ne se retire.',
   'report.cancel': 'Annuler',
-  'report.sent': 'Signalement reçu. Nous répondons sous 72 h, à l’adresse des règles.',
+  'report.sent': 'Signalement reçu. Nous répondons sous {hours} h, à l’adresse des règles.',
   'report.failed': 'Le signalement n’est pas parti. Réessayez, ou écrivez-nous.',
   'face.friends': 'Mes amis',
   'face.lists': 'Mes listes',

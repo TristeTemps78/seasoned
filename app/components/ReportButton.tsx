@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { REVIEW_DEADLINE_HOURS } from '@/src/domain/moderation';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { REPORT_GROUNDS } from '@/src/domain/moderation';
 
@@ -35,7 +36,16 @@ export function ReportButton({ onReport }: {
   const [failed, setFailed] = useState(false);
 
   if (state === 'sent') {
-    return <span className="meta-sm">{t('report.sent')}</span>;
+    // 🔴 **Le delai etait ecrit en dur dans la phrase**, alors que `/regles` l'interpole
+    // depuis `REVIEW_DEADLINE_HOURS`. Les deux disent 72 h aujourd'hui ; le jour ou la
+    // constante bouge, seule la page des regles suit — et l'accuse de reception promet un
+    // delai que le triage n'applique plus. C'est exactement ce que le commentaire de
+    // `/regles` interdit : *« annoncer ici un delai different de celui que le triage applique
+    // serait une promesse que le code ne tient pas »*. Trouve en declenchant un vrai
+    // signalement le 2026-08-18 — l'angle mort A5, ferme.
+    return (
+      <span className="meta-sm">{t('report.sent', { hours: String(REVIEW_DEADLINE_HOURS) })}</span>
+    );
   }
 
   if (state !== 'open') {
