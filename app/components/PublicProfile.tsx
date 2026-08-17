@@ -31,6 +31,7 @@ import { FaceDot } from '@/app/components/FaceDot';
 import { ReportButton } from '@/app/components/ReportButton';
 import { PosterChip } from '@/app/components/PosterChip';
 import { useSocial } from '@/app/social/useSocial';
+import { reportFailure } from '@/app/social/failures';
 
 /**
  * La page publique de quelqu'un — `/u/<nom>`.
@@ -149,7 +150,27 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
    */
   const [sort, setSort] = useState<ReviewSort>('recent');
 
-  const social = useSocial();
+  /**
+   * 🔴 **« Ce profil n'existe pas » etait aussi l'ecran d'une panne.**
+   *
+   * Mesure le 2026-08-18, base coupee depuis la console sur la production : `findByHandle`
+   * rend `undefined` quand la lecture echoue — le module ne leve jamais —, et cette page le
+   * lisait comme « ce nom n'existe pas ». Elle **affirmait** donc le contraire de ce qui
+   * s'etait passe, sur la seule page dont l'ambiguite est deliberee : « inconnu » et
+   * « invisible » s'y disent pareil **pour ne pas devenir un oracle**, et une panne s'etait
+   * glissee dans la meme phrase sans que personne ne l'ait decide.
+   *
+   * ⚠️ Le rappel **remplace** celui de `failures.ts` (voir `socialFrom`), donc il doit faire
+   * les deux : marquer la lecture illisible, et laisser les echecs d'ecriture remonter a la
+   * banniere commune — sinon suivre quelqu'un echouerait ici en silence.
+   */
+  const [unreadable, setUnreadable] = useState(false);
+  const social = useSocial(
+    useCallback((where: string, status: number | undefined, kind?: 'read' | 'write') => {
+      if (kind === 'write') reportFailure(where, status, kind);
+      else setUnreadable(true);
+    }, []),
+  );
   const userId = account?.userId;
 
   /**
@@ -164,6 +185,9 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     // visiteur anonyme, et c'est RLS qui tranche. Exiger une session ici fermerait la page
     // a exactement les gens qu'un lien de partage amene.
     if (social === undefined) return;
+    // Remis a zero **avant** la lecture : sans ca, une panne passagere marquerait l'ecran
+    // jusqu'au rechargement, y compris apres le retour du reseau.
+    setUnreadable(false);
     const found = await social.findByHandle(handle.toLowerCase());
     setProfile(found);
     setLoaded(true);
@@ -232,6 +256,23 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   // Le silence tant qu'on ne sait pas : annoncer « profil introuvable » avant d'avoir lu
   // serait le meme mensonge que le bandeau qui parlait avant d'avoir lu le journal.
   if (!ready || !loaded) return <div className="h-64" aria-hidden="true" />;
+  // ⚠️ **Avant** la phrase d'ambiguite : « inconnu » et « invisible » se disent pareil par
+  // decision, « je n'ai pas pu lire » est un troisieme cas et il se dit autrement.
+  if (profile === undefined && unreadable) {
+    return (
+      <EmptyState
+        status
+        title={t('profile.unreadable.title')}
+        actions={
+          <button type="button" className="btn btn-primary" onClick={() => void load()}>
+            {t('friends.unreadable.retry')}
+          </button>
+        }
+      >
+        {t('profile.unreadable.body')}
+      </EmptyState>
+    );
+  }
   if (profile === undefined) return <p className="prose-note">{t('profile.unknown')}</p>;
 
   // Ce qui reste apres un blocage : le nom, ce qui vient de se passer, et le chemin du

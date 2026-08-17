@@ -19,6 +19,7 @@ import {
 } from '@/src/social/client';
 import { ReportButton } from '@/app/components/ReportButton';
 import { AccountGate } from '@/app/components/AccountGate';
+import { EmptyState } from '@/app/components/EmptyState';
 import { Discover } from '@/app/components/Discover';
 import { DailyRound } from '@/app/components/DailyRound';
 import { FriendQuiz } from '@/app/components/FriendQuiz';
@@ -215,6 +216,41 @@ export function Friends() {
     if (!(await client.follow(userId, found.userId))) return;
     setLookup('');
     void refresh(client, userId);
+  }
+
+  /* 🔴 **L'ecran d'une panne etait celui de quelqu'un qui n'a pas de nom.** Mesure le
+     2026-08-18, en coupant la base depuis la console sur la production : `/amis` affichait
+     « Choisissez votre nom » a un compte qui en a un depuis des semaines. `myProfile()` rend
+     `undefined` quand la lecture echoue — le module ne leve jamais —, et cette branche lit
+     `undefined` comme « pas encore de profil ».
+
+     C'est le defaut 10.0 dans sa forme la plus couteuse : l'ecran n'est pas silencieux, il
+     **affirme le contraire** de ce qui s'est passe, et il invite a un geste — reclamer un
+     nom — qui n'a aucun sens pour qui en a deja un.
+
+     ⚠️ `unreadable` existait deja, branche par `onFailure` depuis le 2026-08-16 : il
+     n'arrivait qu'au fil, deux cents lignes plus bas, donc **jamais** quand c'est la lecture
+     du profil qui a echoue — le seul cas ou l'ecran ment. */
+  if (profile === undefined && unreadable) {
+    return (
+      <EmptyState
+        status
+        title={t('friends.unreadable.title')}
+        actions={
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              if (client !== undefined && userId !== undefined) void refresh(client, userId);
+            }}
+          >
+            {t('friends.unreadable.retry')}
+          </button>
+        }
+      >
+        {t('friends.unreadable.body')}
+      </EmptyState>
+    );
   }
 
   if (profile === undefined) {

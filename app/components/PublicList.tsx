@@ -12,6 +12,7 @@ import { type DiscoverableList, type SeriesRef } from '@/src/social/client';
 import { resolveSeriesRef } from '@/app/components/seriesRef';
 import { LIST_TITLE_MAX, uniqueSlug } from '@/src/domain/lists';
 import { useSocial } from '@/app/social/useSocial';
+import { reportFailure } from '@/app/social/failures';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PageHeader } from '@/app/components/PageHeader';
@@ -71,7 +72,19 @@ export function PublicList({ handle, slug }: {
   const [copied, setCopied] = useState<string | undefined>(undefined);
 
   const { account } = useAuth();
-  const social = useSocial();
+  /**
+   * 🔴 Meme defaut que sur un profil, mesure le meme jour : « Cette liste ne s'ouvre pas »
+   * etait aussi l'ecran d'une panne reseau. La phrase est deliberement ambigue entre
+   * « elle n'existe pas » et « on ne vous la montre pas » — pour ne pas devenir un oracle a
+   * listes —, et une panne s'etait glissee dans la meme phrase.
+   */
+  const [unreadable, setUnreadable] = useState(false);
+  const social = useSocial(
+    useCallback((where: string, status: number | undefined, kind?: 'read' | 'write') => {
+      if (kind === 'write') reportFailure(where, status, kind);
+      else setUnreadable(true);
+    }, []),
+  );
   const myId = account?.userId;
 
   const load = useCallback(async () => {
@@ -82,6 +95,7 @@ export function PublicList({ handle, slug }: {
       setLoaded(true);
       return;
     }
+    setUnreadable(false);
     const found = await social.listBy(handle, slug);
     setList(found);
     setLoaded(true);
@@ -105,6 +119,22 @@ export function PublicList({ handle, slug }: {
   // Le silence tant qu'on ne sait pas : annoncer « cette liste n'existe pas » avant d'avoir lu
   // serait le meme mensonge que le bandeau qui parlait avant d'avoir lu le journal.
   if (!ready || !loaded) return <div className="h-64" aria-hidden="true" />;
+
+  if (list === undefined && unreadable) {
+    return (
+      <EmptyState
+        status
+        title={t('list.unreadable.title')}
+        actions={
+          <button type="button" className="btn btn-primary" onClick={() => void load()}>
+            {t('friends.unreadable.retry')}
+          </button>
+        }
+      >
+        {t('list.unreadable.body')}
+      </EmptyState>
+    );
+  }
 
   if (list === undefined) {
     return (

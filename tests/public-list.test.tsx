@@ -72,6 +72,8 @@ describe('listBy — un seul aller-retour, et le nom sert de filtre', () => {
 const base = vi.hoisted(() => ({
   liste: undefined as unknown,
   items: [] as unknown[],
+  /** La lecture echoue-t-elle ? Le double appelle alors `onFailure`, comme le vrai client. */
+  panne: false,
 }));
 
 vi.mock('@/app/auth/AuthProvider', () => ({
@@ -79,8 +81,18 @@ vi.mock('@/app/auth/AuthProvider', () => ({
 }));
 
 vi.mock('@/app/social/socialFrom', () => ({
-  socialFrom: () => ({
-    listBy: async () => base.liste,
+  // ⚠️ Le double recoit `onFailure` et s'en sert : c'est **le** point du test ci-dessous.
+  // `SocialClient` ne leve jamais — une lecture ratee rend `undefined` **et** previent par
+  // ce rappel. Un double qui ignorerait le rappel rendrait le meme `undefined` qu'une liste
+  // absente, donc mesurerait exactement le defaut au lieu de le garder.
+  socialFrom: (_readToken: unknown, onFailure?: (w: string, s?: number, k?: string) => void) => ({
+    listBy: async () => {
+      if (base.panne) {
+        onFailure?.('lists', undefined, 'read');
+        return undefined;
+      }
+      return base.liste;
+    },
     listItems: async () => base.items,
     // ⚠️ Ajoutee avec N3 : le `Promise.all` de la page rejette sans elle, et plus rien ne
     // rend. Ces doubles disent, negativement, tout ce que la page appelle.
@@ -102,6 +114,7 @@ function mount(handle = 'marie', slug = 'a-voir-cet-hiver') {
 beforeEach(() => {
   base.liste = undefined;
   base.items = [];
+  base.panne = false;
   window.localStorage.clear();
 });
 
@@ -117,6 +130,25 @@ describe('PublicList — le silence qui refuse d’etre un oracle', () => {
     // le profil — proposer « voir son profil » affirmerait que ce nom existe.
     const sortie = screen.getByRole('link', { name: /listes publiques/i });
     expect(sortie.getAttribute('href')).toBe('/fr/listes');
+  });
+});
+
+describe('PublicList — une panne n’est pas une absence', () => {
+  it('🔴 ne dit pas « elle n’existe pas » quand la lecture a echoue', async () => {
+    // Mesure le 2026-08-18, base coupee depuis la console sur la production : trois pages
+    // affirmaient le contraire de ce qui s'etait passe — `/amis` proposait de « choisir un
+    // nom » a un compte qui en a un, et cette page annoncait une liste inexistante. Le
+    // `undefined` d'une lecture ratee et celui d'une ligne absente sont indistinguables :
+    // seul `onFailure` fait la difference, et il n'arrivait jusqu'a aucun de ces ecrans.
+    base.panne = true;
+    mount();
+
+    expect(await screen.findByText(/n’a pas pu être lue/)).toBeDefined();
+    expect(screen.queryByText(/Soit elle n’existe pas/)).toBeNull();
+    // ⚠️ `role=status` : une panne **survient**, contrairement a un vide ordinaire — c'est la
+    // seule chose de cette page qu'un lecteur d'ecran doit entendre sans la chercher.
+    expect(screen.getByRole('status')).toBeDefined();
+    expect(screen.getByRole('button', { name: /Réessayer/ })).toBeDefined();
   });
 });
 

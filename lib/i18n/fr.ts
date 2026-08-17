@@ -508,6 +508,13 @@ export const FR = {
   // promet rien : il dit ce qu'on sait, c'est-à-dire qu'on ne sait pas.
   'friends.feed.unreadable':
     'Le fil n’a pas pu être chargé. Ce n’est pas qu’il est vide — réessayez dans un instant.',
+  // 🔴 Mesure le 2026-08-18 : quand la base ne repond pas, `/amis` affichait « Choisissez
+  // votre nom » a quelqu'un qui en a un. Un ecran qui affirme le contraire de la verite est
+  // pire qu'un ecran vide — il invite a un geste qui n'a aucun sens.
+  'friends.unreadable.title': 'Votre profil n’a pas pu être lu',
+  'friends.unreadable.body':
+    'Ce n’est pas que vous n’avez pas de nom : la connexion à nos serveurs a échoué. Vos notes, elles, sont sur cet appareil et n’ont pas bougé.',
+  'friends.unreadable.retry': 'Réessayer',
   'friends.item.rated_season': 'a noté',
   'friends.item.finished': 'a terminé une série',
   'friends.item.started': 'a commencé une série',
@@ -959,6 +966,12 @@ export const FR = {
   'account.blocks.title': 'Les personnes que vous avez bloquées',
   'account.blocks.none': 'Vous n’avez bloqué personne.',
   'account.blocks.undo': 'Débloquer',
+  'profile.unreadable.title': 'Ce profil n’a pas pu être lu',
+  'profile.unreadable.body':
+    'Ce n’est pas qu’il n’existe pas : la connexion à nos serveurs a échoué. Réessayez dans un instant.',
+  'list.unreadable.title': 'Cette liste n’a pas pu être lue',
+  'list.unreadable.body':
+    'Ce n’est pas qu’elle n’existe pas : la connexion à nos serveurs a échoué. Réessayez dans un instant.',
   'profile.followsYou': 'vous suit',
   'profile.needName': 'Prenez un nom pour suivre',
   // Les trois faces (9.1). ⚠️ Ce sont des LIBELLÉS, pas des noms de baptême : les vrais

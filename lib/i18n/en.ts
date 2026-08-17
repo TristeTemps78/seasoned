@@ -435,6 +435,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
     'Nothing yet. Follow somebody, or give them your name — the feed fills up as you go.',
   'friends.feed.unreadable':
     'The feed could not be loaded. It is not that it is empty — try again in a moment.',
+  'friends.unreadable.title': 'Your profile could not be read',
+  'friends.unreadable.body':
+    'It is not that you have no username: the connection to our servers failed. Your notes are on this device and have not moved.',
+  'friends.unreadable.retry': 'Try again',
   'friends.item.rated_season': 'rated',
   'friends.item.finished': 'finished a series',
   'friends.item.started': 'started a series',
@@ -806,6 +810,12 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'account.blocks.title': 'People you have blocked',
   'account.blocks.none': 'You have not blocked anyone.',
   'account.blocks.undo': 'Unblock',
+  'profile.unreadable.title': 'This profile could not be read',
+  'profile.unreadable.body':
+    'It is not that it does not exist: the connection to our servers failed. Try again in a moment.',
+  'list.unreadable.title': 'This list could not be read',
+  'list.unreadable.body':
+    'It is not that it does not exist: the connection to our servers failed. Try again in a moment.',
   'profile.followsYou': 'follows you',
   'profile.needName': 'Claim a name to follow',
   'face.finisher': 'Goes the distance',
