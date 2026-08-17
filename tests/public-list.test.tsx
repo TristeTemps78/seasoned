@@ -82,6 +82,9 @@ vi.mock('@/app/social/socialFrom', () => ({
   socialFrom: () => ({
     listBy: async () => base.liste,
     listItems: async () => base.items,
+    // ⚠️ Ajoutee avec N3 : le `Promise.all` de la page rejette sans elle, et plus rien ne
+    // rend. Ces doubles disent, negativement, tout ce que la page appelle.
+    listLikes: async () => [],
   }),
 }));
 

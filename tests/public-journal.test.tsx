@@ -71,6 +71,9 @@ vi.mock('@/app/social/socialFrom', () => ({
     tagsBy: async () => [],
     listsBy: async () => [],
     reviewLikesAcross: async () => [],
+    // ⚠️ Ajoutee avec F2 : sans elle, le `Promise.all` de la page rejette et plus rien ne
+    // rend. Ces doubles disent, negativement, tout ce que le composant appelle.
+    followCounts: async () => undefined,
   }),
 }));
 

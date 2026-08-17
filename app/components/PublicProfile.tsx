@@ -13,6 +13,7 @@ import { pathIn } from '@/lib/routes';
 import { formatDate } from '@/lib/format';
 import {
   type FeedItem,
+  type FollowCounts,
   type Profile,
   type PublishedReview,
   type SeriesRef,
@@ -93,6 +94,14 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   const [done, setDone] = useState<readonly FeedItem[]>([]);
   /** Les mots de cette personne — vides tant qu'elle n'a pas accepte de les montrer. */
   const [words, setWords] = useState<readonly TaggedSeries[]>([]);
+  /**
+   * Abonnes et abonnements, en nombre — F2.
+   *
+   * ⚠️ `undefined` veut dire **« on ne dit rien »**, jamais zero : `follow_counts` rend zero
+   * ligne quand le lecteur n'a pas le droit de voir ce profil. Afficher « 0 abonne » sur un
+   * profil ferme en ferait un oracle — le defaut exact que `/u/<nom>` refuse pour les noms.
+   */
+  const [counts, setCounts] = useState<FollowCounts | undefined>(undefined);
   const [pinned, setPinned] = useState<readonly SeriesRef[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [following, setFollowing] = useState(false);
@@ -150,7 +159,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     if (found === undefined) return;
     // Les deux ensemble : c'est ce que la page montre l'un sous l'autre, et les enchainer
     // ferait apparaitre le gout apres les mots, dans une page qui commence par le gout.
-    const [written, hearts, favorites, journal, tagged] = await Promise.all([
+    const [written, hearts, favorites, journal, tagged, counted] = await Promise.all([
       social.reviewsBy(found.userId),
       social.lovedBy(found.userId),
       // Les epinglees dans le meme paquet que les deux autres : elles s'affichent au-dessus,
@@ -161,12 +170,26 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
       // sans rien redemander, et c'est ecrit dans le commentaire de `tab`.
       social.journalBy(found.userId),
       social.tagsBy(found.userId),
+      /**
+       * 🔴 **F2 — le compte d'abonnes, et pourquoi il ne se lit pas dans `followers()`.**
+       *
+       * `follows_select_mine` ne rend que **ses propres** lignes : compter celles de
+       * quelqu'un d'autre donnerait zero, ou un chiffre qui ne parle que de soi. C'est le
+       * piege refuse par le lot 10.2 pour les compteurs de series, et la sortie est la meme
+       * — une fonction `security definer` qui ne rend que des agregats.
+       *
+       * ⚠️ Dans **ce** paquet, donc sans compte : un visiteur anonyme voit les chiffres
+       * d'un profil public. Les mettre dans le paquet d'en dessous — celui qui decide du
+       * bouton « Suivre » — les aurait reserves aux gens connectes, sans aucune raison.
+       */
+      social.followCounts(found.userId),
     ]);
     setReviews(written);
     setLoved(hearts);
     setPinned(favorites);
     setDone(journal);
     setWords(tagged);
+    setCounts(counted);
     if (userId === undefined) return;
     // Les trois d'un coup : elles decident **ensemble** de ce que la zone d'action affiche —
     // le bouton, la mention « vous suit », ou l'invitation a prendre un nom. Les enchainer
@@ -256,6 +279,19 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
                 que vous pouvez faire. Ici, le lecteur ne peut rien pour les critiques que
                 quelqu'un d'autre n'a pas ecrites — et la section plus bas le dit deja. */}
             {reviews.length > 0 ? <span>{tn('profile.count', reviews.length)}</span> : null}
+            {/* 🔴 **F2.** Ce profil disait ce qu'il avait ecrit et **rien de qui le lit** :
+                deux chiffres que la reference met sous chaque nom, et que ce produit
+                calculait deja sans les montrer. Ils vivent dans la meme ligne que la face et
+                le nombre de critiques — trois mesures d'une personne, jamais un tableau de
+                bord.
+
+                ⚠️ Rien du tout quand `follow_counts` s'est tu : voir l'etat. */}
+            {counts !== undefined ? (
+              <>
+                <span>{tn('profile.followers', counts.followers)}</span>
+                <span>{tn('profile.following', counts.following)}</span>
+              </>
+            ) : null}
           </p>
         </div>
 

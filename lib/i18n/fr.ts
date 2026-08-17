@@ -428,6 +428,18 @@ export const FR = {
   'list.unknown.body':
     'Soit elle n’existe pas, soit la personne qui la tient ne la montre pas. Les profils sont privés par défaut.',
   'list.unknown.browse': 'Voir les listes publiques',
+  // N3 — le cœur d'une liste. Les réponses sur une liste sont refusées, et c'est écrit
+  // dans `028_list_likes.sql` : un fil est une surface de modération entière.
+  'list.like': 'J’aime cette liste',
+  'list.unlike': 'Retirer mon cœur',
+  // F5 — la reprise. Le titre dit d'où elle vient : une copie sans provenance devient, au
+  // bout de trois, une liste dont on ne sait plus qui l'a faite.
+  'list.copy': 'Reprendre cette liste',
+  'list.copying': 'Reprise…',
+  'list.copyTitle': '{title} — d’après @{who}',
+  'list.copied': 'Elle est chez vous.',
+  'list.copied.open': 'Voir mes listes',
+  'list.copyFailed': 'La reprise n’est pas partie. Réessayez.',
   'lists.remove': 'Retirer',
   'lists.delete': 'Supprimer la liste',
   // 🔴 `lists.needAccount` disait la bonne chose dans un paragraphe gris seul sur la page.
@@ -517,6 +529,23 @@ export const FR = {
   'word.search': 'Mots',
   'word.searchCount.one': '{n} série rangée sous ce mot',
   'word.searchCount.other': '{n} séries rangées sous ce mot',
+
+  // F1 — les compteurs sociaux. « Au moins » n'est pas une prudence de style : la fonction
+  // ne compte que les profils publics (`027_counts.sql`), donc annoncer un total serait faux.
+  'counts.here': 'Ici, au moins',
+  'counts.watched.one': '{n} personne l’a regardée',
+  'counts.watched.other': '{n} personnes l’ont regardée',
+  'counts.loved.one': '{n} l’aime',
+  'counts.loved.other': '{n} l’aiment',
+  'counts.listed.one': 'dans {n} liste',
+  'counts.listed.other': 'dans {n} listes',
+
+  // F2 — abonnés et abonnements. Absents si le profil n'est pas visible : un compteur sur
+  // un profil fermé en ferait un oracle (voir `follow_counts`).
+  'profile.followers.one': '{n} abonné',
+  'profile.followers.other': '{n} abonnés',
+  'profile.following.one': '{n} abonnement',
+  'profile.following.other': '{n} abonnements',
   // Le quiz personnel. ⚠️ Il se calcule sur le journal local : aucune de ces phrases ne
   // doit promettre un score ou un classement — il n'y en a pas, et il ne peut pas y en
   // avoir sans un calcul serveur.
@@ -818,6 +847,10 @@ export const FR = {
   'review.none': 'Personne n’a encore écrit sur cette série.',
   'reviews.discover.title':
     'Ce que les gens écrivent',
+  // F3 — le titre dit LEQUEL des deux on lit : « les plus aimées cette semaine » au-dessus
+  // des six plus récentes de tous les temps serait un classement inventé.
+  'reviews.popular.title':
+    'Les critiques les plus aimées cette semaine',
   'reviews.discover.none':
     'Personne n’a encore publié de critique. La vôtre serait la première — le geste vit sur n’importe quelle fiche série, sous « Où j’en suis ».',
   'review.beFirst':

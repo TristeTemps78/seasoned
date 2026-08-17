@@ -16,6 +16,7 @@ import { PosterChip } from '@/app/components/PosterChip';
 import { ReviewBody } from '@/app/components/ReviewBody';
 import { ReviewHeart } from '@/app/components/ReviewHeart';
 import { useReviewHearts } from '@/app/social/useReviewHearts';
+import { orderReviews } from '@/src/domain/review-order';
 
 /**
  * Ce que les gens ecrivent — **et qui ne menait nulle part**.
@@ -51,10 +52,35 @@ import { useReviewHearts } from '@/app/social/useReviewHearts';
  * saison 6 de l'autre. C'est exactement le piege que `PublicProfile` documente, et la reponse
  * est la meme — {@link redactReviewsAcross}, dans le domaine.
  */
+/** Sept jours — la fenetre d'un classement hebdomadaire. */
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Le vivier, plus large que ce qu'on affiche.
+ *
+ * ⚠️ On ne peut pas demander a PostgREST de trier sur un nombre de coeurs qui vit dans une
+ * autre table : il faut donc avoir sous la main plus de critiques qu'on n'en montre pour que
+ * « les plus aimees » veuille dire quelque chose. Meme raisonnement que `discoverable` et
+ * `discoverLists`, et meme prix assume — une critique tres aimee mais hors des trente plus
+ * recentes de la semaine n'y entre pas.
+ */
+const POOL = 30;
+
+/** Ce que la vitrine montre, une fois classe. */
+const SHOWN = 6;
+
 export function DiscoverReviews() {
   const { t, locale } = useT();
   const { journal } = useJournal();
   const [reviews, setReviews] = useState<readonly PublishedReview[] | undefined>(undefined);
+  /**
+   * Est-on dans la fenetre de la semaine, ou dans le repli ?
+   *
+   * ⚠️ Ce n'est pas cosmetique : le titre **doit** dire lequel des deux on lit. « Les plus
+   * aimees cette semaine » au-dessus des six plus recentes de tous les temps serait un
+   * classement invente — exactement le genre d'affirmation fausse que ce depot traque.
+   */
+  const [windowed, setWindowed] = useState(true);
   /**
    * ⚠️ Appele avec la liste BRUTE et avant le retour anticipe : un crochet ne se met pas
    * derriere une condition. Le caviardage ne touche que le texte, jamais l'identite d'une
@@ -68,9 +94,25 @@ export function DiscoverReviews() {
     if (social === undefined) return;
 
     let alive = true;
-    void social.feedReviews(6).then((rows) => {
-      if (alive) setReviews(rows);
-    });
+    void (async () => {
+      const week = await social.popularReviews(new Date(Date.now() - WEEK_MS), POOL);
+      if (!alive) return;
+      if (week.length > 0) {
+        setReviews(week);
+        return;
+      }
+      // ⚠️ **Le repli, et il n'est pas une politesse.** Une fenetre de sept jours *filtre*,
+      // et ce depot a deja ecrit pourquoi c'est dangereux : `discoverable` refuse d'ecarter
+      // les profils sans contenu parce que la surface *« se serait tue precisement le jour
+      // ou elle sert »*. Une semaine sans critique publiee — l'etat normal aujourd'hui —
+      // aurait vide la vitrine de l'accueil. On classe donc quand il y a de la matiere, et
+      // on montre les plus recentes quand il n'y en a pas.
+      const ever = await social.feedReviews(POOL);
+      if (alive) {
+        setReviews(ever);
+        setWindowed(false);
+      }
+    })();
     return () => {
       alive = false;
     };
@@ -96,11 +138,27 @@ export function DiscoverReviews() {
     };
   });
 
-  return (
-    <section className="space-y-3" aria-label={t('reviews.discover.title')}>
-      <h2 className="section-heading">{t('reviews.discover.title')}</h2>
+  // 🔴 **F3 — le classement qui manquait.** La vitrine servait les six plus recentes, alors
+  // que chez la reference c'est un classement hebdomadaire — et que c'est la seule page qui
+  // fasse decouvrir quelqu'un qu'on ne suit pas. Les coeurs existent sur cette surface depuis
+  // le 2026-08-17 : la matiere etait la, il manquait l'ordre et la fenetre.
+  //
+  // ⚠️ Le tri vit dans le domaine (`orderReviews`), pas ici : c'est le meme code qui range la
+  // fiche serie et le profil, donc « les plus aimees » veut dire la meme chose aux trois
+  // endroits. Une seconde comparaison ecrite ici finirait par diverger de celle-la.
+  const listed = orderReviews(
+    visible,
+    { sort: windowed ? 'liked' : 'recent', audience: 'everyone' },
+    { hearts },
+  ).slice(0, SHOWN);
 
-      {visible.length === 0 ? (
+  const title = windowed ? t('reviews.popular.title') : t('reviews.discover.title');
+
+  return (
+    <section className="space-y-3" aria-label={title}>
+      <h2 className="section-heading">{title}</h2>
+
+      {listed.length === 0 ? (
         /* Regle 4 : un ecran qui n'a rien a montrer dit quoi faire. Sans bouton — le geste
            d'ecrire vit sur une fiche serie, et les rangees d'affiches de cette page en
            proposent une douzaine juste au-dessus. */
@@ -109,7 +167,7 @@ export function DiscoverReviews() {
         // Deux colonnes, comme sur un profil : une opinion courte est le cas le plus
         // frequent, et elle ne merite pas la largeur d'un article.
         <ul className="grid gap-3 sm:grid-cols-2">
-          {visible.map((shown) => {
+          {listed.map((shown) => {
             const parsed = parseJournalKey(shown.subject);
             const title =
               shown.title ??

@@ -369,6 +369,14 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'list.unknown.body':
     'Either it does not exist, or the person who keeps it does not show it. Profiles are private by default.',
   'list.unknown.browse': 'See public lists',
+  'list.like': 'I like this list',
+  'list.unlike': 'Remove my heart',
+  'list.copy': 'Take this list',
+  'list.copying': 'Taking…',
+  'list.copyTitle': '{title} — after @{who}',
+  'list.copied': 'It is yours now.',
+  'list.copied.open': 'See my lists',
+  'list.copyFailed': 'The copy did not go through. Try again.',
   'lists.remove': 'Remove',
   'lists.delete': 'Delete the list',
   'lists.gate.title': 'Set series aside for later, or for someone',
@@ -444,6 +452,19 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'word.search': 'Words',
   'word.searchCount.one': '{n} series filed under this word',
   'word.searchCount.other': '{n} series filed under this word',
+
+  'counts.here': 'Here, at least',
+  'counts.watched.one': '{n} person watched it',
+  'counts.watched.other': '{n} people watched it',
+  'counts.loved.one': '{n} loves it',
+  'counts.loved.other': '{n} love it',
+  'counts.listed.one': 'in {n} list',
+  'counts.listed.other': 'in {n} lists',
+
+  'profile.followers.one': '{n} follower',
+  'profile.followers.other': '{n} followers',
+  'profile.following.one': '{n} following',
+  'profile.following.other': '{n} following',
   'quiz.title': 'A question for you',
   'quiz.onDay': 'Which series were you watching on {date}?',
   'quiz.byCurve': 'Which series has this trajectory?',
@@ -703,6 +724,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'review.none': 'Nobody has written about this series yet.',
   'reviews.discover.title':
     'What people are writing',
+  'reviews.popular.title':
+    'The most loved reviews this week',
   'reviews.discover.none':
     'Nobody has published a review yet. Yours would be the first — the gesture lives on any series page, under “Where I am”.',
   'review.beFirst':

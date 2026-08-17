@@ -103,6 +103,10 @@ vi.mock('@/app/auth/AuthProvider', () => ({
 vi.mock('@/app/social/socialFrom', () => ({
   socialFrom: () => ({
     feedReviews: async () => base.reviews,
+    // F3 : la vitrine demande d'abord la fenetre de la semaine, et se replie sur
+    // `feedReviews` quand elle est vide. Le double rend la meme matiere aux deux, sans quoi
+    // ces tests mesureraient le repli en croyant mesurer le classement.
+    popularReviews: async () => base.reviews,
     reviewsBy: async () => base.reviews,
     reviewLikesAcross: async () => base.likes,
     likeReview: async (_me: string, author: string, subject: string, target: string, on: boolean) => {
@@ -118,6 +122,9 @@ vi.mock('@/app/social/socialFrom', () => ({
     following: async () => [],
     followers: async () => [],
     myProfile: async () => ({ handle: 'moi' }),
+    // ⚠️ Ajoutee avec F2 : le `Promise.all` de `PublicProfile` rejette sans elle, et la page
+    // entiere cesse de rendre. Ces doubles disent, negativement, tout ce que la page appelle.
+    followCounts: async () => undefined,
   }),
 }));
 

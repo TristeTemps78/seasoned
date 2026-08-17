@@ -43,6 +43,7 @@ import { MyProgress } from '@/app/components/MyProgress';
 import { Cast } from '@/app/components/Cast';
 import { ProductionDetails } from '@/app/components/ProductionDetails';
 import { Reviews } from '@/app/components/Reviews';
+import { SocialCounts } from '@/app/components/SocialCounts';
 import { SeriesPeople } from '@/app/components/SeriesPeople';
 import { AddToList } from '@/app/components/AddToList';
 import { ProgressSummary } from '@/app/components/ProgressSummary';
@@ -473,6 +474,20 @@ export async function SeriesView({ id, locale }: {
                 />
               ) : null}
             </dl>
+
+            {/* 🔴 **F1 — les compteurs sociaux, sous les mesures de la serie.** La fiche
+                disait tout de l'oeuvre (saisons, episodes, engagement, note du public) et
+                **rien des gens** : la seule chose qui distingue ce produit d'une fiche TMDB
+                n'apparaissait nulle part sur la page la plus visitee.
+
+                ⚠️ Ici et non dans la colonne de gauche : cette section ferme l'en-tete, donc
+                elle est le dernier chiffre lu avant de decider. Et un chiffre social pose a
+                cote de « ce que la serie vous demande » se lit comme ce qu'il est — une
+                seconde mesure de la meme oeuvre, par les gens plutot que par sa duree.
+
+                Se tait entierement a zero, et paie zero appel serveur : la page reste
+                statique, la lecture part du navigateur. */}
+            <SocialCounts seriesId={id} />
         </section>
       </header>
       </div>

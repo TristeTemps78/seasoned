@@ -10,6 +10,7 @@ import { formatDate } from '@/lib/format';
 import { pathIn } from '@/lib/routes';
 import { type DiscoverableList, type SeriesRef } from '@/src/social/client';
 import { resolveSeriesRef } from '@/app/components/seriesRef';
+import { LIST_TITLE_MAX, uniqueSlug } from '@/src/domain/lists';
 import { useSocial } from '@/app/social/useSocial';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
@@ -53,8 +54,25 @@ export function PublicList({ handle, slug }: {
   const [list, setList] = useState<DiscoverableList | undefined>(undefined);
   const [items, setItems] = useState<readonly SeriesRef[]>([]);
   const [loaded, setLoaded] = useState(false);
+  /** Les coeurs de cette liste : combien, et si j'en fais partie (N3). */
+  const [likes, setLikes] = useState<{ readonly count: number; readonly mine: boolean }>({
+    count: 0,
+    mine: false,
+  });
+  /**
+   * Ou en est la reprise — F5.
+   *
+   * `undefined` : rien fait. `'copying'` : en cours. `'done'` : la copie est chez moi, et
+   * l'ecran doit le **dire** — une copie silencieuse laisse croire que le bouton n'a rien
+   * fait, et on recliquerait pour en fabriquer une deuxieme.
+   */
+  const [copy, setCopy] = useState<'copying' | 'done' | 'failed' | undefined>(undefined);
+  /** Le slug de la copie, pour pouvoir l'ouvrir tout de suite. */
+  const [copied, setCopied] = useState<string | undefined>(undefined);
 
+  const { account } = useAuth();
   const social = useSocial();
+  const myId = account?.userId;
 
   const load = useCallback(async () => {
     // ⚠️ Construit meme sans compte : une liste d'un profil `public` se lit par un visiteur
@@ -68,7 +86,15 @@ export function PublicList({ handle, slug }: {
     setList(found);
     setLoaded(true);
     if (found === undefined) return;
-    setItems(await social.listItems(found.authorId, slug));
+    // Les deux ensemble : le contenu et les coeurs s'affichent au meme endroit, et les
+    // enchainer ferait apparaitre le compte apres la liste qu'il decrit.
+    const [content, hearts] = await Promise.all([
+      social.listItems(found.authorId, slug),
+      social.listLikes(found.authorId),
+    ]);
+    setItems(content);
+    const mine = hearts.find((one) => one.slug === slug);
+    if (mine !== undefined) setLikes({ count: mine.likes, mine: mine.mine });
   }, [handle, slug, social]);
 
   useEffect(() => {
@@ -122,6 +148,106 @@ export function PublicList({ handle, slug }: {
             {t('lists.updated', { date: formatDate(new Date(list.updatedAt), locale) })}
           </time>
         </p>
+
+        {/* =============================================================================
+            🔴 UNE LISTE AVAIT UNE ADRESSE, ET RIEN POUR Y REAGIR
+            =============================================================================
+
+            Depuis le 2026-08-16, une critique porte un coeur et des reponses ; une liste
+            porte une adresse partageable — c'est-a-dire qu'on l'envoie a quelqu'un — et
+            celui qui la recevait n'avait **aucun** moyen de repondre autrement qu'en dehors
+            du produit. La seule surface faite pour etre envoyee etait la seule sans retour.
+
+            ⚠️ Deux gestes et pas trois : le coeur (`028`) et la reprise. **Les reponses sont
+            refusees**, et c'est ecrit dans `028_list_likes.sql` — un fil de discussion est
+            une surface de moderation entiere, et personne n'a encore demande a discuter une
+            liste. Le jour ou l'on voudra, `024` est le patron a recopier.
+
+            ⚠️ Les deux exigent un compte et ne s'affichent pas sans : *un bouton qui ne peut
+            pas marcher ne se degrade pas, il ne s'affiche pas* (regle du 2026-08-09).
+            `list_likes_insert` exige en plus un handle, comme `015`. */}
+        {myId !== undefined && myId !== list.authorId ? (
+          <p className="flex flex-wrap items-center gap-3 pt-1">
+            <button
+              type="button"
+              className={`btn rounded-full ${likes.mine ? 'btn-primary' : ''}`}
+              aria-pressed={likes.mine}
+              onClick={async () => {
+                if (social === undefined) return;
+                const next = !likes.mine;
+                const ok = await social.likeList(myId, list.authorId, slug, next);
+                // On ajuste **localement** plutot que de relire : une lecture de plus par
+                // clic couterait un appel pour un chiffre qu'on connait deja. Meme choix que
+                // le coeur d'une critique.
+                if (ok) {
+                  setLikes((current) => ({
+                    count: Math.max(0, current.count + (next ? 1 : -1)),
+                    mine: next,
+                  }));
+                }
+              }}
+            >
+              {likes.mine ? t('list.unlike') : t('list.like')}
+              {likes.count > 0 ? <span className="ps-2">{likes.count}</span> : null}
+            </button>
+
+            {/* F5 — la reprise. Copier une liste chez soi pour la suivre est le geste qui
+                fait circuler les listes : sans lui, une liste partagee se lit et se referme.
+
+                ⚠️ Une **copie**, jamais un abonnement : voir `copyList`. Ce qui est repris
+                est a soi — on peut y ajouter, en retirer, la renommer. */}
+            {copied === undefined ? (
+              <button
+                type="button"
+                className="btn rounded-full"
+                disabled={copy === 'copying'}
+                onClick={async () => {
+                  if (social === undefined) return;
+                  setCopy('copying');
+                  // ⚠️ Le slug se decide contre **mes** listes, pas contre celles de
+                  // l'auteur : deux listes de meme titre sont deux listes, et `createList`
+                  // s'interdit tout `upsert` — le suffixe vient du domaine, en amont et
+                  // visiblement.
+                  const existing = await social.listsBy(myId);
+                  const wanted = uniqueSlug(slug, new Set(existing.map((one) => one.slug)));
+                  const ok = await social.copyList(
+                    myId,
+                    {
+                      slug: wanted,
+                      // Le titre dit d'ou elle vient : une copie sans provenance devient,
+                      // au bout de trois, une liste dont on ne sait plus qui l'a faite.
+                      title: t('list.copyTitle', { title: list.title, who: list.handle }).slice(
+                        0,
+                        LIST_TITLE_MAX,
+                      ),
+                    },
+                    items,
+                  );
+                  setCopy(ok ? 'done' : 'failed');
+                  if (ok) setCopied(wanted);
+                }}
+              >
+                {copy === 'copying' ? t('list.copying') : t('list.copy')}
+              </button>
+            ) : (
+              // Ce qui vient de se passer se dit, **avec le chemin vers la copie** : une
+              // reprise qui ne mene nulle part laisse chercher ou la liste est partie.
+              <span className="flex flex-wrap items-center gap-2 meta">
+                {t('list.copied')}
+                <Link
+                  className="tap-line underline hover:text-(--color-volt)"
+                  href={pathIn('/listes', locale)}
+                >
+                  {t('list.copied.open')}
+                </Link>
+              </span>
+            )}
+
+            {copy === 'failed' ? (
+              <span className="text-sm text-(--color-warn)">{t('list.copyFailed')}</span>
+            ) : null}
+          </p>
+        ) : null}
       </PageHeader>
 
       {items.length === 0 ? (
