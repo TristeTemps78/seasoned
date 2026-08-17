@@ -289,3 +289,61 @@ describe('SocialClient.listsBy — l apercu voyage avec le compte', () => {
     ]);
   });
 });
+
+/**
+ * **Le doublon d'affiche, vu a l'ecran le 2026-08-17.**
+ *
+ * `/u/test` montrait **deux fois Breaking Bad** dans « ce qu'il aime ». La cle naturelle
+ * d'`activity` porte `happened_on` (017), donc aimer une serie, la retirer et la reaimer un
+ * autre jour pose deux lignes — toutes deux vraies, toutes deux `liked`. Une carte de visite
+ * qui repete une affiche donne un gout deux fois plus etroit qu'il n'est.
+ *
+ * ⚠️ Aucun test ne pouvait le voir avant celui-ci : la forme de l'URL etait juste, et c'est
+ * le **contenu** rendu par la base qui portait le doublon. C'est exactement la limite que ce
+ * fichier documente — les tests doublent `fetch`. Ce qu'ils peuvent garder, c'est le
+ * dedoublonnage lui-meme.
+ */
+describe('une affiche par serie, une ligne par personne', () => {
+  function servingRows(rows: readonly unknown[]) {
+    const fetchImpl = (async () =>
+      new Response(JSON.stringify(rows), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })) as unknown as typeof fetch;
+    return new SocialClient({ ...OPTIONS, fetchImpl });
+  }
+
+  const ligne = (subject: string, handle: string, when: string, kind = 'liked') => ({
+    kind,
+    subject,
+    happened_on: when,
+    profiles: { handle, user_id: `u-${handle}` },
+  });
+
+  it('`lovedBy` ne rend pas deux fois la meme serie', async () => {
+    const client = servingRows([
+      ligne('tmdb:1396', 'marie', '2026-08-17'),
+      ligne('tmdb:1396', 'marie', '2026-08-10'),
+      ligne('tmdb:94605', 'marie', '2026-08-09'),
+    ]);
+
+    const found = await client.lovedBy('u-marie');
+    expect(found.map((one) => one.subject)).toEqual(['tmdb:1396', 'tmdb:94605']);
+    // ⚠️ Le plus RECENT survit : les lignes arrivent triees par la base, et le premier de
+    // chaque est celui qu'on garde. Sans cet ancrage, garder le dernier passerait aussi.
+    expect(found[0]?.happenedOn).toBe('2026-08-17');
+  });
+
+  it('`watchersOf` ne rend pas deux fois la meme personne', async () => {
+    // Quelqu'un qui a **aime et termine** la meme serie : deux genres, deux lignes, une
+    // seule personne. Elle apparaissait deux fois, sous deux phrases differentes.
+    const client = servingRows([
+      ligne('tmdb:1396', 'marie', '2026-08-17', 'finished'),
+      ligne('tmdb:1396', 'marie', '2026-08-16', 'liked'),
+      ligne('tmdb:1396', 'jean', '2026-08-15', 'liked'),
+    ]);
+
+    const found = await client.watchersOf('tmdb:1396');
+    expect(found.map((one) => one.handle)).toEqual(['marie', 'jean']);
+  });
+});

@@ -147,12 +147,25 @@ export function SiteChrome({ locale, Messages, children }: {
                 `hidden`/`lg:hidden` et non `sr-only` : `display: none` sort du parcours de
                 tabulation, alors qu'un champ `sr-only` resterait focalisable et muet — le
                 defaut exact que `a11y-hidden-controls` garde. */}
-            <div className="hidden min-w-0 shrink lg:block lg:w-56">
+            {/* 🔴 **La mesure disait 1280, la regle disait 1024** — et entre les deux, trois
+                faces sur six etaient coupees. Mesure au navigateur le 2026-08-17, a 1054 px :
+                le ruban des faces demande **673 px** (`scrollWidth`) et n'en recoit que
+                **422** ; « Mon bilan » est tranche au milieu du mot, « Mes amis » et « Mes
+                listes » n'apparaissent plus du tout. Rien n'etait casse — `.face-rail` defile
+                et son voile le laisse deviner — mais la moitie de la navigation principale
+                demandait un geste pour exister, a une largeur d'ecran de bureau ordinaire.
+
+                Le commentaire ci-dessus portait pourtant le bon chiffre : *« a 1280 px le
+                ruban a 311 px de libre »*. Le seuil applique etait `lg` (1024 px), c'est-a-dire
+                **une mesure faite a une largeur et une regle ecrite pour une autre**. `xl`
+                (1280 px) est la largeur ou la mesure a ete faite ; en dessous, l'icone mene a
+                la page ou le champ a toute la place. */}
+            <div className="hidden min-w-0 shrink xl:block xl:w-56">
               <SearchForm locale={locale} compact />
             </div>
             <Link
               href={pathIn('/recherche', locale)}
-              className="nav-target flex shrink-0 items-center justify-center meta-sm hover:text-(--color-text) lg:hidden"
+              className="nav-target flex shrink-0 items-center justify-center meta-sm hover:text-(--color-text) xl:hidden"
             >
               <Icon name="search" />
               <span className="sr-only">{t(locale, 'search.submit')}</span>

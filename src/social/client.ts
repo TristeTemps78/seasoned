@@ -547,6 +547,24 @@ function likePattern(raw: string): string {
     .replaceAll('*', '\\*');
 }
 
+/**
+ * Le premier de chaque — **et l'ordre d'entree est l'arbitre**.
+ *
+ * ⚠️ Employe sur des listes deja triees par la base (`happened_on desc`), donc « le premier »
+ * veut dire « le plus recent ». Trier ici en plus donnerait deux ordres a tenir d'accord ;
+ * s'en remettre a celui de la requete est ce qui rend cette fonction sure — et c'est aussi ce
+ * qui interdit de l'employer sur une liste dont l'ordre n'a pas ete demande.
+ */
+function uniqueBy<T>(rows: readonly T[], key: (row: T) => string): readonly T[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const id = key(row);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
 function rowToProfile(row: Record<string, unknown>): Profile {
   const face = readFace(row['face']);
   return {
@@ -1230,10 +1248,20 @@ export class SocialClient {
    * critiques juste au-dessus.
    */
   async lovedBy(userId: string, limit = 8): Promise<readonly FeedItem[]> {
-    return this.#activity(
+    // 🔴 **La meme affiche apparaissait deux fois.** Vu a l'ecran le 2026-08-17 sur
+    // `/u/test` : deux fois Breaking Bad dans « ce qu'il aime ». La cle naturelle
+    // d'`activity` porte `happened_on` (017), donc aimer une serie, la retirer, et la
+    // reaimer un autre jour pose **deux lignes** — toutes deux vraies, toutes deux `liked`.
+    // Une carte de visite qui repete une affiche donne un gout deux fois plus etroit qu'il
+    // n'est.
+    //
+    // ⚠️ On demande **plus large que ce qu'on montre**, sinon dedoublonner reduirait la
+    // rangee : huit lignes dont trois doublons ne feraient que cinq affiches.
+    const rows = await this.#activity(
       `user_id=eq.${encodeURIComponent(userId)}&kind=eq.liked&`,
-      limit,
+      limit * 3,
     );
+    return uniqueBy(rows, (row) => row.subject).slice(0, limit);
   }
 
   /**
@@ -1290,10 +1318,15 @@ export class SocialClient {
    * ce qu'on en a pense, donc ils ne donnent aucune envie d'ouvrir un profil.
    */
   async watchersOf(subject: string, limit = 12): Promise<readonly FeedItem[]> {
-    return this.#activity(
+    // ⚠️ **Une personne, une ligne.** Le filtre accepte deux genres : quelqu'un qui a aime
+    // **et** termine la meme serie apparaissait deux fois dans « qui d'autre l'a vue », sous
+    // deux phrases differentes. C'est le meme defaut que le doublon d'affiches de
+    // {@link lovedBy}, sur l'autre dimension — la personne au lieu de l'oeuvre.
+    const rows = await this.#activity(
       `subject=eq.${encodeURIComponent(subject)}&kind=in.(liked,finished)&`,
-      limit,
+      limit * 3,
     );
+    return uniqueBy(rows, (row) => row.authorId).slice(0, limit);
   }
 
   /**

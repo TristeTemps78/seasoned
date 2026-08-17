@@ -203,8 +203,13 @@ export async function SearchView({ query, locale, page = 1 }: {
         </>
       ) : (
         <>
+          {/* ⚠️ **Le numero de page se dit, et il le doit.** Le compte porte sur ce qui est
+              a l'ecran — vingt, la taille d'une page du fournisseur —, pas sur le total : sur
+              la page 2, « 20 resultats » sans autre mot laisserait croire qu'on relit les
+              memes vingt. Meme forme que `/parcourir`. */}
           <p className="meta">
             {tn(locale, 'search.count', total, { q: query })}
+            {page > 1 ? ` · ${t(locale, 'browse.page', { n: String(page) })}` : ''}
           </p>
           {/* ⚠️ Cette page avait sa propre grille (`sm:grid-cols-3 md:grid-cols-5`), donc
               une affiche changeait de taille selon la page d'ou l'on venait — le defaut que
