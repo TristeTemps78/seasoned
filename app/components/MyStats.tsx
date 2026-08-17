@@ -81,6 +81,15 @@ export function MyStats() {
           sur 1090 px de haut. La bande est faite de vos propres affiches, deja dans le
           journal — aucun appel, rien d'invente. Elle se retire d'elle-meme sous quatre
           series, et rend alors ses enfants tels quels. */}
+      {/* ⚠️ **Cet en-tete reste client, et c'est un refus assume.** Mesure du 2026-08-17 :
+          `/bilan` et `/journal` servent un HTML sans `<h1>`, comme `/calendrier` avant que le
+          sien ne remonte au serveur. La difference tient a ce qui l'entoure : ici le titre est
+          **dans** `FaceHero`, une bande faite des affiches du journal du lecteur ; sur
+          `/journal` il porte le filtre par annee, construit a partir des annees reellement
+          notees. Les remonter demanderait de couper chaque composant en deux pour un titre
+          que **personne ne lit** — les deux pages sont `robots: index: false` par
+          construction, et un lecteur d'ecran l'obtient a l'hydratation. C'est une couche pour
+          rien : on ne la pose pas. */}
       <FaceHero>
         <PageHeader title={t('tallyPage.title')} lede={t('tallyPage.lede')} />
       </FaceHero>

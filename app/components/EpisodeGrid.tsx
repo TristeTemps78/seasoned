@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
+import { formatDate } from '@/lib/format';
 import { StarRating } from '@/app/components/StarRating';
 import { episodeKey, journalKey } from '@/src/domain/journal';
 import { COLOR_CEILING, COLOR_FLOOR, ratingHue } from '@/src/domain/rating-scale';
@@ -15,6 +16,8 @@ export interface GridEpisode {
   readonly title?: string;
   readonly voteAverage: number;
   readonly voteCount: number;
+  /** Quand il est sorti, quand TMDB le sait — voir `EpisodeRating.airedAt`. */
+  readonly airedAt?: Date;
 }
 
 export interface GridSeason {
@@ -52,7 +55,7 @@ export function EpisodeGrid({ seriesId, seasons }: {
   readonly seasons: readonly GridSeason[];
 }) {
   const { journal, ready, setPosition, setEpisodeRating, setEpisodeMark } = useJournal();
-  const { t, n } = useT();
+  const { t, n, locale } = useT();
   const [selected, setSelected] = useState<GridEpisode | undefined>(undefined);
   const [layer, setLayer] = useState<Layer>('public');
 
@@ -161,6 +164,14 @@ export function EpisodeGrid({ seriesId, seasons }: {
                           episode.title !== undefined ? ` — ${episode.title}` : ''
                         } · ${n(episode.voteAverage, 1)}/10${
                           stars !== undefined ? ` · ${t('grid.you')} : ${n(stars)}/5` : ''
+                        }${
+                          // La date de diffusion : elle arrivait dans la meme reponse que la
+                          // note et n'etait lue nulle part. « C'est sorti quand ? » est une
+                          // vraie question sur une grille d'episodes, et l'infobulle est le
+                          // seul endroit ou elle tient sans prendre un pixel.
+                          episode.airedAt !== undefined
+                            ? ` · ${formatDate(episode.airedAt, locale)}`
+                            : ''
                         }`}
                       >
                         <span className="sr-only">

@@ -18,7 +18,7 @@ import { ReportButton } from '@/app/components/ReportButton';
  * qu'un client peut etre en retard sur elle. 600 la ou une critique en a 2000 : une critique
  * est un texte qu'on ecrit, une reponse est une reponse.
  */
-export const MAX_COMMENT_CHARS = 600;
+const MAX_COMMENT_CHARS = 600;
 
 /**
  * Repondre a une critique — F5.

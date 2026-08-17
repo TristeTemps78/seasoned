@@ -705,6 +705,20 @@ export interface EpisodeRating {
   readonly title?: string;
   readonly voteAverage: number;
   readonly voteCount: number;
+  /**
+   * Quand l'episode est sorti.
+   *
+   * 🔴 **Lue chez TMDB depuis toujours, et jetee.** `tmdb.ts` la parse (`air_date`),
+   * `EpisodeDetail.airedAt` la porte, et l'audit du 2026-08-17 n'a trouve **aucun lecteur**
+   * dans tout le depot. Cinquieme fois que ce depot rencontre ce motif, apres la note du
+   * public, le creux de la trajectoire, `publishedAt` et `updated_at` — et
+   * `ProductionDetails.tsx` l'a deja ecrit : *le defaut recurrent de ce depot n'est pas de
+   * mal chercher la donnee, c'est de ne pas afficher celle qu'il a*.
+   *
+   * ⚠️ Facultative : beaucoup d'episodes anciens n'en ont pas chez TMDB, et une grille sans
+   * date vaut infiniment mieux qu'une grille absente.
+   */
+  readonly airedAt?: Date;
 }
 
 /** Une saison et ses episodes notes. */
@@ -754,6 +768,7 @@ export async function episodeRatings(
             voteAverage: e.voteAverage,
             voteCount: e.voteCount,
             ...(e.title !== undefined ? { title: e.title } : {}),
+            ...(e.airedAt !== undefined ? { airedAt: e.airedAt } : {}),
           }))
           .sort((a, b) => a.episodeNumber - b.episodeNumber);
         return { seasonNumber, episodes };

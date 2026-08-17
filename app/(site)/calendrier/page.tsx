@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { Agenda } from '@/app/components/Agenda';
+import { PageHeader } from '@/app/components/PageHeader';
 import { FaceDiscovery } from '@/app/components/FaceDiscovery';
 import { PosterRail } from '@/app/components/PosterRail';
 import { discover } from '@/lib/catalog';
@@ -52,6 +53,15 @@ export async function AgendaView({ locale }: { readonly locale: Locale }) {
 
   return (
     <>
+      {/* 🔴 **L'en-tete etait DANS le composant client, donc absent du HTML servi.** Mesure
+          du 2026-08-17 : `/calendrier` sort de Vercel sans un seul `<h1>`, il n'arrive
+          qu'apres hydratation. Le titre est pourtant du texte fixe — seul le contenu a
+          besoin du journal.
+
+          ⚠️ Et il etait ecrit **deux fois** dans `Agenda`, une par branche : le remonter ici
+          supprime la copie en meme temps qu'il repare le HTML. */}
+      <PageHeader title={t(locale, 'agenda.title')} lede={t(locale, 'agenda.lede')} />
+
       {/* La locale voyage par le contexte (`LocaleProvider`), pose par la disposition
           racine : `Agenda` est un composant client et lit `useT()`. */}
       <Agenda />
