@@ -6,7 +6,7 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
 import { BIO_MAX, DISPLAY_NAME_MAX, checkBio, checkDisplayName } from '@/src/domain/handles';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 import type { Visibility } from '@/src/social/client';
 
 /**
@@ -62,7 +62,12 @@ export function ProfileSettings() {
   const [blocks, setBlocks] = useState<readonly { readonly userId: string; readonly handle: string }[]>([]);
 
   const userId = account?.userId;
-  const social = useSocial();
+  /**
+   * ⚠️ **Le mensonge le plus cher de cette famille.** « Vous n'avez bloque personne » est
+   * exactement ce qu'on vient verifier quand on se demande si on est protege de quelqu'un.
+   * Le dire sur une lecture ratee serait rassurer a tort — voir `useSocialRead`.
+   */
+  const { social, unreadable } = useSocialRead();
 
   useEffect(() => {
     if (userId === undefined) return;
@@ -221,7 +226,9 @@ export function ProfileSettings() {
           <div className="space-y-2 text-sm">
             <p className="text-(--color-muted)">{t('account.blocks.title')}</p>
             {blocks.length === 0 ? (
-              <p className="meta-sm">{t('account.blocks.none')}</p>
+              <p className="meta-sm" {...(unreadable ? { role: 'status' as const } : {})}>
+                {t(unreadable ? 'read.failed' : 'account.blocks.none')}
+              </p>
             ) : (
               <ul className="space-y-1">
                 {blocks.map((one) => (

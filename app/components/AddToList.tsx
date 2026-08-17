@@ -7,7 +7,7 @@ import { useT } from '@/app/i18n/LocaleProvider';
 import { journalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { type SeriesList } from '@/src/social/client';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 
 /**
  * « Ajouter a une liste », depuis la fiche serie.
@@ -57,7 +57,10 @@ export function AddToList({
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
 
-  const social = useSocial();
+  // ⚠️ Voir `useSocialRead` : sans lui, « vous n'avez pas encore de liste » s'affichait
+  // aussi quand la lecture avait echoue — et le lien invitait alors a en creer une
+  // deuxieme par-dessus la premiere.
+  const { social, unreadable } = useSocialRead();
   const userId = account?.userId;
   const subject = journalKey(seriesId);
 
@@ -129,8 +132,8 @@ export function AddToList({
         lists.length === 0 ? (
           // On ne propose pas de creer une liste ici : ce serait un second formulaire a tenir
           // d'accord avec celui de `/listes`. Un lien y mene.
-          <p className="meta">
-            {t('addToList.none')}{' '}
+          <p className="meta" {...(unreadable ? { role: 'status' as const } : {})}>
+            {t(unreadable ? 'read.failed' : 'addToList.none')}{' '}
             <Link className="tap-line underline hover:text-(--color-volt)" href={pathIn('/listes', locale)}>
               {t('addToList.goToLists')}
             </Link>

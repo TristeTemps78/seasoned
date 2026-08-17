@@ -13,7 +13,7 @@ import {
   type QuizServed,
   type QuizVerdict,
 } from '@/src/social/client';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 
 /**
  * La manche du jour : les memes questions pour tout le monde, chronometrees.
@@ -70,7 +70,9 @@ export function DailyRound() {
   const [over, setOver] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
-  const client = useSocial();
+  // ⚠️ Voir `useSocialRead` : « rien a afficher pour aujourd'hui » etait aussi ce que le
+  // classement disait quand il n'avait pas pu etre lu.
+  const { social: client, unreadable } = useSocialRead();
 
   const load = useCallback(
     async (social: SocialClient, want: number) => {
@@ -113,7 +115,9 @@ export function DailyRound() {
         {board.length === 0 ? (
           // Mieux vaut se taire que compter zero : un classement vide dit qu'il n'y a
           // rien a montrer, pas que le produit est casse.
-          <p className="prose-note">{t('round.empty')}</p>
+          <p className="prose-note" {...(unreadable ? { role: 'status' as const } : {})}>
+            {t(unreadable ? 'read.failed' : 'round.empty')}
+          </p>
         ) : (
           <ol className="space-y-1 text-sm">
             {board.map((line, rank) => (
