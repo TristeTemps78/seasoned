@@ -11,6 +11,7 @@ import { MyFace } from '@/app/components/MyFace';
 import { FaceSwitch } from '@/app/components/FaceSwitch';
 import { Faces } from '@/app/components/Faces';
 import { AccountMenu } from '@/app/components/AccountMenu';
+import { WatchMenu } from '@/app/components/WatchMenu';
 import { SearchForm } from '@/app/components/SearchForm';
 import { Icon } from '@/app/components/Icon';
 import { AuthProvider } from '@/app/auth/AuthProvider';
@@ -166,6 +167,16 @@ export function SiteChrome({ locale, Messages, children }: {
                 budget en pixels, ce menu ouvre quatre destinations sans en prendre un de plus.
                 Voir `AccountMenu` pour les quatre, et pour ce qu'elles avaient de commun —
                 aucune porte. */}
+            {/* 🔴 **D12 — sept liens de navigation, une recherche, et rien pour FAIRE quelque
+                chose.** Releve le 2026-08-16 face a Letterboxd, qui garde un « + LOG » sur
+                toutes ses pages. Le geste central d'ici est celui de TV Time — « j'ai vu le
+                suivant » — et il n'existait qu'a deux endroits : la bande de reprise de
+                l'accueil, et les vignettes de `/moi`. Depuis une fiche, une recherche ou un
+                profil, avancer d'un episode demandait de revenir en arriere.
+
+                ⚠️ **Avant le compte et apres la recherche** : c'est l'ordre de frequence. On
+                avance un episode tous les jours, on ouvre ses reglages deux fois par an. */}
+            <WatchMenu locale={locale} />
             <AccountMenu locale={locale} />
             <LanguagePicker />
           </div>

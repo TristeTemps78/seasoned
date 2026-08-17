@@ -991,6 +991,12 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'entry.body.other':
     'The first {n} episodes are rated {before}/10; what follows, {after}/10. It picks up at S{s}E{e}.',
 
+  // --- The header action (D12) ---------------------------------------------
+  'advance.nav': 'I watched…',
+  'advance.aria': 'Move a series forward',
+  'advance.none': 'Nothing to move forward: you are not following any series yet.',
+  'advance.browse': 'Browse series',
+  'advance.all': 'My whole library',
   'traj.aria': 'Trajectory',
   'traj.srTitle': 'Season-by-season trajectory',
   'traj.yours': 'How far you have come',

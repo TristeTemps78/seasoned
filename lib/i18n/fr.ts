@@ -1184,6 +1184,18 @@ export const FR = {
     'Les {n} premiers épisodes sont notés {before}/10 ; la suite, {after}/10. Ça décolle à S{s}E{e}.',
 
   // --- Trajectoire ---------------------------------------------------------
+  // --- L’action de l’en-tête (D12) -----------------------------------------
+  // ⚠️ « J’ai vu… » et non « Noter » : le geste que ce volet rend possible est celui de
+  // TV Time, et il s’écrit dans le journal sans quitter la page. Un libellé « Noter »
+  // aurait promis la page de la série, c’est-à-dire exactement le détour qu’on supprime.
+  // ⚠️ Le préfixe est `advance.` et non `watch.` : `watch.aria` existe déjà, et c'est
+  // « Où regarder » — la section des plateformes. Deux familles de sens différents sous le
+  // même mot finiraient par se marcher dessus ; `tsc` l'a signalé au premier essai.
+  'advance.nav': 'J’ai vu…',
+  'advance.aria': 'Avancer une série',
+  'advance.none': 'Rien à avancer : vous ne suivez encore aucune série.',
+  'advance.browse': 'Parcourir les séries',
+  'advance.all': 'Toute ma bibliothèque',
   'traj.aria': 'Trajectoire',
   'traj.srTitle': 'Trajectoire saison par saison',
   'traj.yours': 'Jusqu’où vous en êtes',
