@@ -1076,6 +1076,62 @@ export class SocialClient {
     }
   }
 
+  /**
+   * **Se soustraire a quelqu'un** — 031.
+   *
+   * ## Le seul recours du produit etait de demander de l'aide
+   *
+   * Signaler (`004`) demande a quelqu'un d'autre de trancher, sous 48 heures ; passer son
+   * profil en `private` se retire de **tout le monde** pour se retirer d'un seul. Il
+   * n'existait aucun geste qu'une personne puisse faire seule, et ce manque ne se voit qu'au
+   * premier incident.
+   *
+   * ⚠️ **Les deux cotes cessent de se voir, et le suivi tombe** — c'est la base qui le fait
+   * (`blocked_with` dans `can_see`, et un declencheur sur `blocks`). Le client ne pose qu'une
+   * ligne : refaire ces effets ici en donnerait deux versions, et c'est celle du client qui
+   * se perime.
+   *
+   * ⚠️ **Rien n'est efface et rien n'est annonce.** Une reponse deja ecrite reste ecrite ; la
+   * personne bloquee ne l'apprend pas. Voir `031_blocks.sql` pour les deux raisons.
+   *
+   * ⚠️ `ignore-duplicates` : bloquer deux fois est le meme etat, et la cle **est** le fait
+   * entier — voir {@link IDEMPOTENCE}. `merge-duplicates` demanderait une politique `UPDATE`
+   * que `031` n'ouvre pas, et rendrait **42501** en silence.
+   */
+  async block(userId: string, targetId: string): Promise<boolean> {
+    return this.#write(
+      'blocks',
+      'POST',
+      { blocker_id: userId, blocked_id: targetId },
+      'resolution=ignore-duplicates,return=minimal',
+    );
+  }
+
+  /** Defaire un blocage. La visibilite revient des deux cotes ; le suivi, lui, ne revient pas. */
+  async unblock(userId: string, targetId: string): Promise<boolean> {
+    return this.#write(
+      `blocks?blocker_id=eq.${encodeURIComponent(userId)}&blocked_id=eq.${encodeURIComponent(targetId)}`,
+      'DELETE',
+    );
+  }
+
+  /**
+   * Les gens que j'ai bloques, **avec leur nom**.
+   *
+   * 🔴 Le piege que ce lot fabrique lui-meme : bloquer rend le profil illisible, donc la
+   * table ne rend plus que des identifiants. Une page de reglages afficherait des UUID, et
+   * debloquer demanderait de reconnaitre quelqu'un a son identifiant. La fonction
+   * `security definer` ne rend que ce que l'appelant a lui-meme ecrit.
+   */
+  async myBlocks(): Promise<readonly { readonly userId: string; readonly handle: string }[]> {
+    const rows = await this.#rpc<Record<string, unknown>>('my_blocks', {});
+    return rows.flatMap((row) =>
+      typeof row['user_id'] !== 'string' || typeof row['handle'] !== 'string'
+        ? []
+        : [{ userId: row['user_id'], handle: row['handle'] }],
+    );
+  }
+
   /** Les profils que je suis. */
   async following(followerId: string): Promise<readonly Profile[]> {
     return this.#follows(

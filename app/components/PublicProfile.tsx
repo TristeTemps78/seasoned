@@ -28,6 +28,7 @@ import { useReviewHearts } from '@/app/social/useReviewHearts';
 import { CONTROLS_FROM, orderReviews, type ReviewSort } from '@/src/domain/review-order';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
+import { ReportButton } from '@/app/components/ReportButton';
 import { PosterChip } from '@/app/components/PosterChip';
 import { useSocial } from '@/app/social/useSocial';
 
@@ -102,6 +103,16 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
    * profil ferme en ferait un oracle — le defaut exact que `/u/<nom>` refuse pour les noms.
    */
   const [counts, setCounts] = useState<FollowCounts | undefined>(undefined);
+  /**
+   * Le blocage, en deux temps puis pose — 031.
+   *
+   * ⚠️ `blocked` remplace la page entiere plutot que de la laisser telle quelle : ce qui est
+   * a l'ecran a ete lu **avant** le blocage, et le garder afficherait le contenu de quelqu'un
+   * qu'on vient de se cacher. Recharger ferait pire — la page dirait « ce profil n'existe
+   * pas », ce qui est vrai du point de vue de RLS et faux du point de vue de la personne.
+   */
+  const [confirmBlock, setConfirmBlock] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const [pinned, setPinned] = useState<readonly SeriesRef[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [following, setFollowing] = useState(false);
@@ -222,6 +233,23 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   // serait le meme mensonge que le bandeau qui parlait avant d'avoir lu le journal.
   if (!ready || !loaded) return <div className="h-64" aria-hidden="true" />;
   if (profile === undefined) return <p className="prose-note">{t('profile.unknown')}</p>;
+
+  // Ce qui reste apres un blocage : le nom, ce qui vient de se passer, et le chemin du
+  // retour. Rien de ce que la personne a ecrit — c'est exactement ce qu'on vient de demander.
+  if (blocked) {
+    return (
+      <EmptyState
+        title={t('profile.blocked.title', { who: `@${profile.handle}` })}
+        actions={
+          <Link className="btn" href={pathIn('/compte', locale)}>
+            {t('profile.blocked.manage')}
+          </Link>
+        }
+      >
+        {t('profile.blocked.body')}
+      </EmptyState>
+    );
+  }
 
   const isSelf = userId !== undefined && userId === profile.userId;
 
@@ -348,6 +376,59 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
               <Link className="btn" href={pathIn('/amis', locale)}>
                 {t('profile.needName')}
               </Link>
+            )}
+
+            {/* 🔴 **Les deux voies de recours n'existaient nulle part sur cette page.** On
+                pouvait signaler une ligne du fil ou une reponse, jamais **quelqu'un** depuis
+                l'endroit ou l'on decide que ca suffit : sa page. Et il n'existait aucun geste
+                qu'une personne puisse faire seule — signaler demande a la moderation de
+                trancher sous 48 heures, passer en `private` se retire de tout le monde pour
+                se retirer d'un seul.
+
+                ⚠️ Les deux cote a cote, et ils ne disent pas la meme chose : **bloquer se
+                soustrait, signaler demande qu'on regarde.** L'un est immediat et prive,
+                l'autre est examine. Voir `031_blocks.sql` pour ce que le blocage ne fait
+                pas — il n'efface rien et ne s'annonce pas.
+
+                ⚠️ En deux temps, comme le retrait d'une critique : le geste est sans dommage
+                (il se defait depuis `/compte`) mais il fait disparaitre quelqu'un de la page
+                qu'on est en train de lire, et une disparition qu'on n'a pas confirmee se lit
+                comme une panne. */}
+            <ReportButton
+              onReport={async (ground: string) => {
+                if (social === undefined) return false;
+                return social.report(account.userId, profile.userId, ground);
+              }}
+            />
+            {confirmBlock ? (
+              <>
+                <button
+                  type="button"
+                  className="quiet-action text-(--color-warn)"
+                  onClick={async () => {
+                    if (social === undefined) return;
+                    const ok = await social.block(account.userId, profile.userId);
+                    if (ok) setBlocked(true);
+                  }}
+                >
+                  {t('profile.blockConfirm')}
+                </button>
+                <button
+                  type="button"
+                  className="quiet-action"
+                  onClick={() => setConfirmBlock(false)}
+                >
+                  {t('profile.blockCancel')}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="quiet-action"
+                onClick={() => setConfirmBlock(true)}
+              >
+                {t('profile.block')}
+              </button>
             )}
           </div>
         )}

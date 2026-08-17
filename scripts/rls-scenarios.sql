@@ -1592,6 +1592,152 @@ begin
                                case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
+  -- ===========================================================================
+  -- 031 — se soustraire a quelqu'un
+  -- ===========================================================================
+
+  -- 83 — 🔴 **LE scenario de ce lot.** A est `public` : `profiles_select_visible` le rendait
+  --      par le raccourci `visibility = 'public'`, **sans passer par `can_see`**. Un blocage
+  --      pose sur un profil public n'aurait donc rien fait, et le geste aurait eu l'air de
+  --      marcher. On mesure depuis B, apres que A l'ait bloque.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.blocks (blocker_id, blocked_id) values (a, b) on conflict do nothing;
+    perform set_config('role', 'authenticated', true);
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', b::text, 'role', 'authenticated')::text, true);
+
+    select count(*) into lignes from public.profiles p where p.user_id = a;
+    obtenu := lignes::text;
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. un profil PUBLIC cesse d etre lisible par qui l a bloque (031)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 84 — Et son contenu avec : les critiques de A passent par `reviews_select`, donc par
+  --      `can_see`. Sans le blocage dans `can_see`, elles resteraient lisibles alors que le
+  --      profil ne l'est plus — un demi-blocage est pire qu'aucun, il rassure a tort.
+  begin
+    select count(*) into lignes from public.reviews r where r.user_id = a;
+    obtenu := lignes::text;
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. ses critiques disparaissent aussi (031)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 85 — 🔴 **Le suivi tombe, sinon le blocage ne bloque rien.** B suivait A depuis le semis.
+  --      Sans le declencheur, cet abonnement survivrait — et `can_see` continuerait de rendre
+  --      vrai pour un profil `followers`. On compte les lignes restantes entre les deux, dans
+  --      les deux sens.
+  begin
+    perform set_config('role', 'postgres', true);
+    select count(*) into lignes from public.follows f
+     where (f.follower_id = a and f.followee_id = b) or (f.follower_id = b and f.followee_id = a);
+    obtenu := lignes::text;
+    perform set_config('role', 'authenticated', true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. le suivi tombe des DEUX cotes (031)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 86 — Et il ne se refait pas : `is_followable` refuse tant que le blocage tient.
+  begin
+    insert into public.follows (follower_id, followee_id) values (b, a);
+    obtenu := 'acceptee';
+  exception when insufficient_privilege then
+    obtenu := 'refusee';
+  when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. et il ne se refait pas (031)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 87 — ⚠️ **Rien n'est annonce.** B, qui est bloque, ne doit pas pouvoir l'apprendre :
+  --      `blocks_select_mine` ne rend que ses propres lignes de bloqueur. Un blocage qui se
+  --      signale est un blocage qu'on hesite a poser.
+  begin
+    select count(*) into lignes from public.blocks;
+    obtenu := lignes::text;
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '0';
+  rapport := rapport || format(E'  %s  %s. la personne bloquee ne l apprend pas (031)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 88 — L'ancrage du 87 : celui qui a bloque, lui, voit sa propre ligne. Sans ca, le
+  --      scenario ci-dessus passerait aussi avec une table que personne ne peut lire — donc
+  --      avec une liste des blocages impossible a afficher.
+  begin
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+    select count(*) into lignes from public.blocks;
+    obtenu := lignes::text;
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. mais celui qui bloque voit sa liste (031)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 89 — Debloquer rend la visibilite. Un blocage qu'on ne peut pas defaire serait une porte
+  --      sans retour, et personne ne pose une porte sans retour.
+  begin
+    delete from public.blocks where blocker_id = a and blocked_id = b;
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', b::text, 'role', 'authenticated')::text, true);
+    select count(*) into lignes from public.profiles p where p.user_id = a;
+    obtenu := lignes::text;
+    perform set_config('request.jwt.claims',
+                       json_build_object('sub', a::text, 'role', 'authenticated')::text, true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. debloquer rend la visibilite (031)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 90 — On ne bloque pas pour quelqu'un d'autre.
+  begin
+    insert into public.blocks (blocker_id, blocked_id) values (b, c2);
+    obtenu := 'acceptee';
+  exception when insufficient_privilege then
+    obtenu := 'refusee';
+  when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'refusee';
+  rapport := rapport || format(E'  %s  %s. on ne bloque pas au nom d un autre (031)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 91 — Et pas soi-meme : troisieme fois que ce schema l'ecrit, apres `follows_not_self`
+  --      (003) et `review_likes_not_self` (029). Un geste social suppose quelqu'un d'autre.
+  begin
+    insert into public.blocks (blocker_id, blocked_id) values (a, a);
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '23514';
+  rapport := rapport || format(E'  %s  %s. on ne se bloque pas soi-meme (031)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
   -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------

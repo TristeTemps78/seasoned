@@ -52,6 +52,14 @@ export function ProfileSettings() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [saved, setSaved] = useState<'ok' | 'too_long' | 'failed' | undefined>(undefined);
+  /**
+   * Les gens qu'on a bloques — 031.
+   *
+   * ⚠️ Ils viennent d'une fonction `security definer` et non de la table : bloquer rend le
+   * profil illisible (c'est le point), donc une lecture ordinaire ne rendrait que des
+   * identifiants. Debloquer demanderait alors de reconnaitre quelqu'un a son UUID.
+   */
+  const [blocks, setBlocks] = useState<readonly { readonly userId: string; readonly handle: string }[]>([]);
 
   const userId = account?.userId;
   const social = useSocial();
@@ -61,6 +69,9 @@ export function ProfileSettings() {
     if (social === undefined) return;
 
     let alive = true;
+    void social.myBlocks().then((rows) => {
+      if (alive) setBlocks(rows);
+    });
     void social.myProfile(userId).then((found) => {
       if (!alive) return;
       setProfile(
@@ -197,6 +208,40 @@ export function ProfileSettings() {
                 </span>
               ) : null}
             </div>
+          </div>
+
+          {/* 🔴 **Un blocage qu'on ne peut pas defaire serait une porte sans retour**, et
+              personne ne pose une porte sans retour. C'est le seul endroit du produit ou la
+              liste existe : le profil bloque, lui, n'est plus lisible — c'est exactement ce
+              qu'on a demande.
+
+              ⚠️ Toujours affichee, meme vide, contrairement au reste de cette page : une
+              personne qui vient chercher « ai-je bloque quelqu'un ? » doit obtenir une
+              reponse, et l'absence de section n'en est pas une (regle 4). */}
+          <div className="space-y-2 text-sm">
+            <p className="text-(--color-muted)">{t('account.blocks.title')}</p>
+            {blocks.length === 0 ? (
+              <p className="meta-sm">{t('account.blocks.none')}</p>
+            ) : (
+              <ul className="space-y-1">
+                {blocks.map((one) => (
+                  <li key={one.userId} className="flex flex-wrap items-center gap-3">
+                    <span className="font-medium">@{one.handle}</span>
+                    <button
+                      type="button"
+                      className="quiet-action"
+                      onClick={async () => {
+                        if (userId === undefined || social === undefined) return;
+                        const ok = await social.unblock(userId, one.userId);
+                        if (ok) setBlocks((current) => current.filter((x) => x.userId !== one.userId));
+                      }}
+                    >
+                      {t('account.blocks.undo')}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="space-y-1 text-sm">

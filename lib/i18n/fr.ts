@@ -934,6 +934,17 @@ export const FR = {
   'profile.follow': 'Suivre',
   'profile.unfollow': 'Ne plus suivre',
   'profile.self': 'C’est vous.',
+  // 031 — bloquer se soustrait, signaler demande qu'on regarde. Les deux cote à côte.
+  'profile.block': 'Bloquer',
+  'profile.blockConfirm': 'Confirmer : ne plus se voir',
+  'profile.blockCancel': 'Annuler',
+  'profile.blocked.title': 'Vous ne verrez plus {who}',
+  'profile.blocked.body':
+    'Et cette personne ne vous verra plus non plus. Elle n’en est pas informée, rien n’est effacé, et l’abonnement est retiré des deux côtés. Vous pouvez revenir dessus quand vous voulez.',
+  'profile.blocked.manage': 'Voir mes blocages',
+  'account.blocks.title': 'Les personnes que vous avez bloquées',
+  'account.blocks.none': 'Vous n’avez bloqué personne.',
+  'account.blocks.undo': 'Débloquer',
   'profile.followsYou': 'vous suit',
   'profile.needName': 'Prenez un nom pour suivre',
   // Les trois faces (9.1). ⚠️ Ce sont des LIBELLÉS, pas des noms de baptême : les vrais
