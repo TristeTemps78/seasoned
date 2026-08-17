@@ -194,11 +194,23 @@ export interface ListLikes {
  * quand on l'ouvre.
  */
 export interface Feedback {
-  /** `heart` : quelqu'un a aime. `reply` : quelqu'un a repondu. */
-  readonly kind: 'heart' | 'reply';
-  /** La cle de journal de l'oeuvre — `tmdb:1396`. */
+  /**
+   * `heart` : quelqu'un a aime une critique. `reply` : quelqu'un a repondu.
+   * `listHeart` : quelqu'un a aime une **liste**.
+   *
+   * ⚠️ Le coeur d'une liste est un genre a part et non un `heart` avec un autre sujet : il
+   * ne porte pas de cle de journal, donc rien ne mene a une fiche serie. Les confondre
+   * ferait un lien mort une ligne sur trois.
+   */
+  readonly kind: 'heart' | 'reply' | 'listHeart';
+  /**
+   * La cle de journal de l'oeuvre — `tmdb:1396`.
+   *
+   * ⚠️ Pour un `listHeart`, c'est le **slug** de la liste : il n'existe pas de cle de
+   * journal pour une liste, et l'appelant le sait par `kind`.
+   */
   readonly subject: string;
-  /** `series` ou `season:3`. */
+  /** `series` ou `season:3`. Vide pour un `listHeart`. */
   readonly target: string;
   /** Quand — le plus recent des faits regroupes ici. */
   readonly at: string;
@@ -1970,7 +1982,7 @@ export class SocialClient {
    * faire dans le composant en donnerait deux copies le jour ou une seconde surface l'affiche.
    */
   async feedbackFor(userId: string, limit = 40): Promise<readonly Feedback[]> {
-    const [hearts, replies] = await Promise.all([
+    const [hearts, replies, listHearts] = await Promise.all([
       this.#rows<Record<string, unknown>>(
         `review_likes?author_id=eq.${encodeURIComponent(userId)}` +
           `&select=subject,target,created_at&order=created_at.desc&limit=${limit * 4}`,
@@ -1980,6 +1992,16 @@ export class SocialClient {
           `&author_id=neq.${encodeURIComponent(userId)}` +
           `&select=subject,target,body,written_at,profiles!inner(handle,face)` +
           `&order=written_at.desc&limit=${limit}`,
+      ),
+      // ⚠️ **Le coeur d'une liste avait le meme vide que celui d'une critique.** `028` l'a
+      // ouvert le 2026-08-17 en citant `015` — *« ecrire dans le vide est ce qui fait
+      // arreter d'ecrire »* — et le retour, lui, ne revenait pas non plus. Le titre voyage
+      // par la cle etrangere composite de `028` : sans lui, la ligne dirait « votre liste
+      // a-voir-cet-hiver », c'est-a-dire une adresse la ou on attend un nom.
+      this.#rows<Record<string, unknown>>(
+        `list_likes?author_id=eq.${encodeURIComponent(userId)}` +
+          `&select=slug,created_at,lists!inner(title)` +
+          `&order=created_at.desc&limit=${limit * 4}`,
       ),
     ]);
 
@@ -2000,8 +2022,42 @@ export class SocialClient {
       }
     }
 
+    // Meme regroupement que les coeurs de critiques, et pour la meme raison : trois coeurs
+    // sur une liste sont une ligne « 3 », jamais trois lignes.
+    const byList = new Map<string, { slug: string; title: string; at: string; count: number }>();
+    for (const row of listHearts) {
+      const slug = row['slug'];
+      const liste = row['lists'] as { title?: unknown } | undefined;
+      if (typeof slug !== 'string') continue;
+      const seen = byList.get(slug);
+      if (seen === undefined) {
+        byList.set(slug, {
+          slug,
+          // ⚠️ Vide plutot que le slug : un slug est une **adresse**, pas un nom. C'est la
+          // meme regle que « jamais `tmdb:94997` a l'ecran » (018), sur l'autre table — et
+          // c'est le rendu qui choisit la phrase de repli, pas le transport.
+          title: typeof liste?.title === 'string' ? liste.title : '',
+          at: String(row['created_at'] ?? ''),
+          count: 1,
+        });
+      } else {
+        seen.count += 1;
+      }
+    }
+
     const items: Feedback[] = [
       ...[...grouped.values()].map((one) => ({ kind: 'heart' as const, ...one })),
+      ...[...byList.values()].map((one) => ({
+        kind: 'listHeart' as const,
+        subject: one.slug,
+        target: '',
+        at: one.at,
+        count: one.count,
+        // Le titre voyage dans `body` : c'est le champ que le rendu affiche deja en clair
+        // sous la ligne, et en ajouter un quatrieme pour un seul genre ferait un type dont
+        // trois quarts des champs sont vides selon les cas.
+        ...(one.title === '' ? {} : { body: one.title }),
+      })),
       ...replies.flatMap((row) => {
         const author = row['profiles'] as { handle?: unknown; face?: unknown } | undefined;
         if (typeof author?.handle !== 'string' || typeof row['body'] !== 'string') return [];

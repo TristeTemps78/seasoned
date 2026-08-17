@@ -448,6 +448,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
     'Hearts and replies land on the series page. They are gathered here so you do not have to go back for them.',
   'feedback.hearts.one': '{n} heart',
   'feedback.hearts.other': '{n} hearts',
+  'feedback.listHearts.one': '{n} heart on your list',
+  'feedback.listHearts.other': '{n} hearts on your list',
+  'feedback.someList': 'one of your lists',
   'feedback.reply': '{who} replied to you',
   'feedback.new': 'new',
 

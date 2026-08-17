@@ -82,6 +82,8 @@ export function Feedback() {
    * rendu. Le seuil se fige une fois, a l'arrivee.
    */
   const [since, setSince] = useState<string | undefined>(undefined);
+  /** Mon nom public — l'adresse d'une de mes listes le porte. */
+  const [myHandle, setMyHandle] = useState<string | undefined>(undefined);
 
   const userId = account?.userId;
 
@@ -90,6 +92,11 @@ export function Feedback() {
     setSince(lastSeen());
 
     let alive = true;
+    // ⚠️ Demande **avec** les retours et non avant : les deux partent ensemble, et enchainer
+    // ferait apparaitre les lignes puis leurs liens, donc bouger une cible sous le doigt.
+    void social.myProfile(userId).then((mine) => {
+      if (alive) setMyHandle(mine?.handle);
+    });
     void social.feedbackFor(userId).then((rows) => {
       if (!alive) return;
       setItems(rows);
@@ -116,21 +123,39 @@ export function Feedback() {
 
       <ul className="space-y-2">
         {items.map((one) => {
-          const parsed = parseJournalKey(one.subject);
+          // ⚠️ Un coeur de liste ne porte pas de cle de journal : son `subject` est un slug.
+          // Le passer a `parseJournalKey` rendrait `undefined`, donc pas de lien — mais on
+          // veut un lien, vers la liste. D'ou la branche, plutot qu'un repli silencieux.
+          const surListe = one.kind === 'listHeart';
+          const parsed = surListe ? undefined : parseJournalKey(one.subject);
           // ⚠️ Le titre vient du journal **du lecteur**, et c'est le seul endroit du produit
           // ou ce repli est sur : ces critiques sont les siennes, donc la serie est
           // forcement dans son journal. Ailleurs (fil, vitrine, listes) elle ne l'est pas,
           // et c'est pour ca que l'instantane voyage depuis `018`.
-          const title = journal.entries[one.subject]?.snapshot?.title ?? t('feed.someSeries');
-          const href =
-            parsed === undefined ? undefined : pathIn(`/serie/${parsed.providerId}`, locale);
+          // ⚠️ Jamais le slug en repli : c'est une adresse, pas un nom — meme regle que
+          // « jamais `tmdb:94997` a l'ecran », et `no-raw-journal-key` la garde.
+          const title = surListe
+            ? (one.body ?? t('feedback.someList'))
+            : (journal.entries[one.subject]?.snapshot?.title ?? t('feed.someSeries'));
+          const href = surListe
+            ? // ⚠️ `handle` vient du compte et non de la ligne : c'est **ma** liste, donc mon
+              // nom. Le demander a la base serait un appel de plus pour une information que
+              // la session porte deja.
+              (myHandle === undefined
+                ? undefined
+                : pathIn(`/u/${myHandle}/liste/${one.subject}`, locale))
+            : parsed === undefined
+              ? undefined
+              : pathIn(`/serie/${parsed.providerId}`, locale);
           const fresh = since === undefined || one.at > since;
 
           const line = (
             <>
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                {one.kind === 'heart' ? (
-                  <span className="text-sm">{tn('feedback.hearts', one.count)}</span>
+                {one.kind === 'heart' || one.kind === 'listHeart' ? (
+                  <span className="text-sm">
+                    {tn(one.kind === 'listHeart' ? 'feedback.listHearts' : 'feedback.hearts', one.count)}
+                  </span>
                 ) : (
                   <span className="flex items-center gap-1.5 text-sm">
                     <FaceDot face={one.face} />
@@ -145,7 +170,9 @@ export function Feedback() {
                   {formatDate(new Date(one.at), locale)}
                 </time>
               </span>
-              {one.body !== undefined ? (
+              {/* Le corps est le texte d'une reponse — pour un coeur de liste, il porte le
+                  titre, deja affiche a cote. L'afficher deux fois ferait un doublon. */}
+              {one.body !== undefined && one.kind === 'reply' ? (
                 <span className="block text-sm whitespace-pre-line">{one.body}</span>
               ) : null}
             </>

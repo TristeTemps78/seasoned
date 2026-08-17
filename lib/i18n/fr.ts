@@ -526,6 +526,9 @@ export const FR = {
     'Les cœurs et les réponses arrivent sur la fiche de la série. Ils sont rassemblés ici pour que vous n’ayez pas à y repasser.',
   'feedback.hearts.one': '{n} cœur',
   'feedback.hearts.other': '{n} cœurs',
+  'feedback.listHearts.one': '{n} cœur sur votre liste',
+  'feedback.listHearts.other': '{n} cœurs sur votre liste',
+  'feedback.someList': 'une de vos listes',
   'feedback.reply': '{who} vous a répondu',
   'feedback.new': 'nouveau',
 
