@@ -548,6 +548,7 @@ export const FR = {
   'feedback.listHearts.other': '{n} cœurs sur votre liste',
   'feedback.someList': 'une de vos listes',
   'feedback.reply': '{who} vous a répondu',
+  'feedback.follow': '{who} vous suit',
   'feedback.new': 'nouveau',
 
   // N2 — la page d'un mot. Un mot est un index, pas une etiquette.

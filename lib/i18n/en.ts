@@ -464,6 +464,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'feedback.listHearts.other': '{n} hearts on your list',
   'feedback.someList': 'one of your lists',
   'feedback.reply': '{who} replied to you',
+  'feedback.follow': '{who} follows you',
   'feedback.new': 'new',
 
   'word.title': 'A word',

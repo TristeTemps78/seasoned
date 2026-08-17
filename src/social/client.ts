@@ -202,7 +202,7 @@ export interface Feedback {
    * ne porte pas de cle de journal, donc rien ne mene a une fiche serie. Les confondre
    * ferait un lien mort une ligne sur trois.
    */
-  readonly kind: 'heart' | 'reply' | 'listHeart';
+  readonly kind: 'heart' | 'reply' | 'listHeart' | 'follow';
   /**
    * La cle de journal de l'oeuvre — `tmdb:1396`.
    *
@@ -1982,7 +1982,7 @@ export class SocialClient {
    * faire dans le composant en donnerait deux copies le jour ou une seconde surface l'affiche.
    */
   async feedbackFor(userId: string, limit = 40): Promise<readonly Feedback[]> {
-    const [hearts, replies, listHearts] = await Promise.all([
+    const [hearts, replies, listHearts, suivis] = await Promise.all([
       this.#rows<Record<string, unknown>>(
         `review_likes?author_id=eq.${encodeURIComponent(userId)}` +
           `&select=subject,target,created_at&order=created_at.desc&limit=${limit * 4}`,
@@ -2002,6 +2002,19 @@ export class SocialClient {
         `list_likes?author_id=eq.${encodeURIComponent(userId)}` +
           `&select=slug,created_at,lists!inner(title)` +
           `&order=created_at.desc&limit=${limit * 4}`,
+      ),
+      // 🔴 **Le troisieme retour qui n'en etait pas un.** On apprenait qu'on avait un nouvel
+      // abonne en ouvrant `/amis` et en remarquant qu'une liste s'etait allongee —
+      // c'est-a-dire jamais. `follows_select_mine` rend ces lignes depuis le lot 6, et `026`
+      // a pose la cle etrangere qui permet d'en lire le nom au passage.
+      //
+      // ⚠️ `!inner` : un abonne dont le profil ne m'est plus visible — parce qu'il m'a bloque
+      // entre-temps (`031`), ou qu'il a retire son nom — disparait de la liste plutot que d'y
+      // laisser une ligne sans nom et sans lien.
+      this.#rows<Record<string, unknown>>(
+        `follows?followee_id=eq.${encodeURIComponent(userId)}` +
+          `&select=created_at,profiles!follows_follower_profile!inner(handle,face)` +
+          `&order=created_at.desc&limit=${limit}`,
       ),
     ]);
 
@@ -2047,6 +2060,25 @@ export class SocialClient {
 
     const items: Feedback[] = [
       ...[...grouped.values()].map((one) => ({ kind: 'heart' as const, ...one })),
+      ...suivis.flatMap((row) => {
+        const qui = row['profiles'] as { handle?: unknown; face?: unknown } | undefined;
+        if (typeof qui?.handle !== 'string') return [];
+        const face = readFace(qui.face);
+        return [
+          {
+            kind: 'follow' as const,
+            // ⚠️ Le `subject` porte le handle : c'est ce qui identifie la ligne, et le rendu
+            // en fait une adresse `/u/<nom>`. Un `subject` vide obligerait le composant a
+            // lire `handle` dans un cas et `subject` dans les trois autres.
+            subject: qui.handle,
+            target: '',
+            at: String(row['created_at'] ?? ''),
+            count: 1,
+            handle: qui.handle,
+            ...(face !== undefined ? { face } : {}),
+          },
+        ];
+      }),
       ...[...byList.values()].map((one) => ({
         kind: 'listHeart' as const,
         subject: one.slug,

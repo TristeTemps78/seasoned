@@ -127,6 +127,7 @@ export function Feedback() {
           // Le passer a `parseJournalKey` rendrait `undefined`, donc pas de lien — mais on
           // veut un lien, vers la liste. D'ou la branche, plutot qu'un repli silencieux.
           const surListe = one.kind === 'listHeart';
+          const surQuelquun = one.kind === 'follow';
           const parsed = surListe ? undefined : parseJournalKey(one.subject);
           // ⚠️ Le titre vient du journal **du lecteur**, et c'est le seul endroit du produit
           // ou ce repli est sur : ces critiques sont les siennes, donc la serie est
@@ -137,7 +138,9 @@ export function Feedback() {
           const title = surListe
             ? (one.body ?? t('feedback.someList'))
             : (journal.entries[one.subject]?.snapshot?.title ?? t('feed.someSeries'));
-          const href = surListe
+          const href = surQuelquun
+            ? pathIn(`/u/${one.subject}`, locale)
+            : surListe
             ? // ⚠️ `handle` vient du compte et non de la ligne : c'est **ma** liste, donc mon
               // nom. Le demander a la base serait un appel de plus pour une information que
               // la session porte deja.
@@ -152,7 +155,12 @@ export function Feedback() {
           const line = (
             <>
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                {one.kind === 'heart' || one.kind === 'listHeart' ? (
+                {surQuelquun ? (
+                  <span className="flex items-center gap-1.5 text-sm">
+                    <FaceDot face={one.face} />
+                    {t('feedback.follow', { who: `@${one.handle ?? ''}` })}
+                  </span>
+                ) : one.kind === 'heart' || one.kind === 'listHeart' ? (
                   <span className="text-sm">
                     {tn(one.kind === 'listHeart' ? 'feedback.listHearts' : 'feedback.hearts', one.count)}
                   </span>
