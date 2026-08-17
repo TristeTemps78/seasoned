@@ -105,7 +105,18 @@ function ListPreview({ journal }: { readonly journal: Journal }) {
   );
 }
 
-export function Lists({ ownerId }: { readonly ownerId?: string }) {
+export function Lists({ ownerId, ownerHandle }: {
+  readonly ownerId?: string;
+  /**
+   * Le nom de l'auteur, quand l'appelant le connait deja — ce qui rend chaque titre cliquable
+   * vers `/u/<nom>/liste/<slug>`.
+   *
+   * ⚠️ Il n'est pas deduit d'`ownerId` : une liste a besoin du **nom** pour avoir une adresse,
+   * et le resoudre ici demanderait un appel de plus par montage. `PublicProfile` l'a deja ;
+   * sur ses propres listes, il est lu une seule fois dans le meme paquet que les listes.
+   */
+  readonly ownerHandle?: string;
+}) {
   const { t, tn, locale } = useT();
   const { configured, ready, account } = useAuth();
   const { journal } = useJournal();
@@ -148,6 +159,8 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
    * poser a l'initialisation, avant que `listsBy` ait repondu — donc a deviner.
    */
   const [creating, setCreating] = useState(false);
+  /** Le nom de l'auteur, donne par l'appelant ou lu une fois — voir `ownerHandle`. */
+  const [handle, setHandle] = useState<string | undefined>(ownerHandle);
 
   const accessToken = account?.accessToken;
   const myId = account?.userId;
@@ -167,9 +180,19 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
       setLoaded(true);
       return;
     }
-    setLists(await social.listsBy(subjectId));
+    // ⚠️ Le nom part **avec** les listes et non apres : enchainer les deux ferait apparaitre
+    // les cartes muettes puis cliquables, donc bouger une cible sous le doigt. Et il n'est
+    // demande que s'il manque — sur un profil, l'appelant l'a deja.
+    const [found, mine] = await Promise.all([
+      social.listsBy(subjectId),
+      ownerHandle === undefined && myId !== undefined
+        ? social.myProfile(myId)
+        : Promise.resolve(undefined),
+    ]);
+    setLists(found);
+    if (mine !== undefined) setHandle(mine.handle);
     setLoaded(true);
-  }, [clientFor, subjectId]);
+  }, [clientFor, subjectId, ownerHandle, myId]);
 
   useEffect(() => {
     void load();
@@ -369,7 +392,23 @@ export function Lists({ ownerId }: { readonly ownerId?: string }) {
             return (
               <li key={list.slug} className="card space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h3 className="card-title">{list.title}</h3>
+                  {/* 🔴 **Une liste n'avait pas d'adresse.** Le titre etait du texte, et
+                      partager « la troisieme liste de @machin » demandait d'envoyer un profil
+                      avec une consigne. Depuis le 2026-08-17 chaque liste a la sienne.
+                      ⚠️ Le lien n'apparait que si le nom est connu — un lien vers
+                      `/u/undefined/liste/...` serait un bouton qui ne peut pas marcher. */}
+                  <h3 className="card-title">
+                    {handle === undefined ? (
+                      list.title
+                    ) : (
+                      <Link
+                        className="tap-line hover:text-(--color-volt)"
+                        href={pathIn(`/u/${handle}/liste/${list.slug}`, locale)}
+                      >
+                        {list.title}
+                      </Link>
+                    )}
+                  </h3>
                   <span className="meta-sm">
                     {tn('lists.count', list.count)}
                   </span>

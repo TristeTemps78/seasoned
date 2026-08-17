@@ -1572,6 +1572,38 @@ export class SocialClient {
   }
 
   /**
+   * UNE liste, par le nom de son auteur et son identifiant d'URL — ce que `/u/<nom>/liste/…`
+   * demande.
+   *
+   * ## 🔴 Le manque que ca comble
+   *
+   * `DiscoverLists.tsx` documentait la decision inverse : les listes n'existaient que
+   * **groupees**, sous un onglet de profil. C'etait defendable et ca interdisait le geste que
+   * « faire une liste pour quelqu'un » suppose — l'envoyer. Une liste sans adresse a elle ne
+   * se partage pas ; on partage un profil et on dit « c'est la troisieme ».
+   *
+   * ## ⚠️ Un seul aller-retour, et le nom sert de filtre
+   *
+   * La reponse evidente etait `findByHandle` puis `listsBy` puis chercher le bon `slug` — deux
+   * appels et une liste entiere pour une carte. `profiles!inner(handle)` porte le filtre dans
+   * la meme requete que le contenu, exactement comme {@link discoverLists} le fait pour la
+   * visibilite.
+   *
+   * ⚠️ **Aucun controle de visibilite ecrit ici**, comme {@link searchLists} : `lists_select`
+   * porte `can_see(user_id)`. Une liste privee rend donc `undefined` — la meme reponse qu'un
+   * `slug` inexistant, ce qui est exactement ce qu'il faut : distinguer les deux ferait de
+   * cette adresse un oracle a listes, le defaut que `/u/<nom>` refuse deja pour les noms.
+   */
+  async listBy(handle: string, slug: string): Promise<DiscoverableList | undefined> {
+    const found = await this.#lists(
+      `&slug=eq.${encodeURIComponent(slug)}` +
+        `&profiles.handle=eq.${encodeURIComponent(handle.toLowerCase())}`,
+      1,
+    );
+    return found[0];
+  }
+
+  /**
    * Le corps commun des deux lectures de listes — elles ne different que par leur filtre.
    *
    * Meme motif que `#reviews` et `#activity`, et pour la meme raison : ce parsing tolerant

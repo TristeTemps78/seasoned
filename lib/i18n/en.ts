@@ -353,6 +353,12 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'lists.discover.none':
     'Nobody has a list on a public profile yet. Profiles are private by default — the ones you see here are the ones their authors chose to show.',
   'lists.empty': 'This list is empty. Add a series from its page.',
+  // --- One list, on its own page -------------------------------------------
+  'list.title': 'A list',
+  'list.unknown.title': 'This list will not open',
+  'list.unknown.body':
+    'Either it does not exist, or the person who keeps it does not show it. Profiles are private by default.',
+  'list.unknown.browse': 'See public lists',
   'lists.remove': 'Remove',
   'lists.delete': 'Delete the list',
   'lists.gate.title': 'Set series aside for later, or for someone',

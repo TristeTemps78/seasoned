@@ -552,7 +552,9 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
         >
           {/* `Lists` porte deja son propre vide de visiteur (`lists.noneOther`) : lui en
               ajouter un ici ferait dire deux fois la meme chose. */}
-          <Lists ownerId={profile.userId} />
+          {/* Le nom part avec l'identifiant : il est deja la, et sans lui chaque titre de
+              liste resterait du texte au lieu de mener a son adresse. */}
+          <Lists ownerId={profile.userId} ownerHandle={profile.handle} />
         </section>
       ) : null}
     </div>

@@ -82,7 +82,18 @@ export function DiscoverLists() {
           {lists.map((list) => (
             <li key={`${list.authorId}:${list.slug}`} className="card space-y-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="card-title">{list.title}</h3>
+                {/* 🔴 **Le titre menait nulle part.** Cette vitrine existe pour faire
+                    decouvrir des listes, et il fallait deja savoir qu'elles vivaient sous un
+                    onglet de profil pour en ouvrir une. Depuis le 2026-08-17 une liste a son
+                    adresse — c'est ce qui permet enfin d'en **envoyer** une. */}
+                <h3 className="card-title">
+                  <Link
+                    className="tap-line hover:text-(--color-volt)"
+                    href={pathIn(`/u/${list.handle}/liste/${list.slug}`, locale)}
+                  >
+                    {list.title}
+                  </Link>
+                </h3>
                 <span className="meta-sm">{tn('lists.count', list.count)}</span>
               </div>
 

@@ -407,6 +407,14 @@ export const FR = {
   'lists.discover.none':
     'Personne n’a encore de liste sur un profil public. Les profils sont privés par défaut — celles que vous voyez ici sont celles que leurs auteurs ont choisi de montrer.',
   'lists.empty': 'Cette liste est vide. Ajoutez-y une série depuis sa fiche.',
+  // --- Une liste, seule, à son adresse -------------------------------------
+  // ⚠️ « N’existe pas OU n’est pas montrée » en une seule phrase, exprès : distinguer les
+  // deux ferait de cette adresse un oracle à listes — voir `PublicList.tsx`.
+  'list.title': 'Une liste',
+  'list.unknown.title': 'Cette liste ne s’ouvre pas',
+  'list.unknown.body':
+    'Soit elle n’existe pas, soit la personne qui la tient ne la montre pas. Les profils sont privés par défaut.',
+  'list.unknown.browse': 'Voir les listes publiques',
   'lists.remove': 'Retirer',
   'lists.delete': 'Supprimer la liste',
   // 🔴 `lists.needAccount` disait la bonne chose dans un paragraphe gris seul sur la page.
