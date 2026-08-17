@@ -66,6 +66,19 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
 - **Le service worker sert l'ancien build.** Une mesure au navigateur qui ne voit pas une
   correction pourtant compilée n'est pas une correction fausse : désinscrire le SW, vider
   `caches`, et naviguer avec un paramètre neuf. Constaté encore le 2026-08-16 sur `tap-line`.
+- **🔴 Une lecture ratée rend `[]`, donc un écran qui n'a pas vérifié AFFIRME un vide.**
+  Mesuré le 2026-08-18 sur la production, connexion coupée depuis la console : dix surfaces
+  disaient le contraire de ce qui venait de se passer — « choisissez votre nom » à un compte
+  qui en a un, « personne n'a encore écrit » sur une fiche qui porte cinq critiques, « vous
+  n'avez bloqué personne » sur la page qu'on vient précisément vérifier. `useSocialRead` est
+  le seul crochet qui distingue les deux, `no-false-empty.test.ts` refuse le onzième écran, et
+  **la mesure se refait en coupant `fetch` puis en naviguant en SPA** — une navigation complète
+  reconstruit le client et ne mesure rien.
+- **Un correctif non remesuré est une hypothèse.** Le même jour : la lecture ajoutée pour
+  éviter deux écritures de mots s'y **ajoutait** (3 appels au lieu de 2), parce que la décision
+  d'envoyer était prise avant que la réponse n'arrive. Une `ref` ne pouvait pas le corriger —
+  il fallait que l'arrivée de la réponse rejoue l'effet. Vert, poussé, et faux jusqu'à la
+  seconde mesure.
 - **🔴 Le guillemet double d'un `ilike` PostgREST entre dans le motif.** Mesuré le
   2026-08-17 : `tags?tag=ilike."*dimanche*"` rend `200 []`, `ilike.*dimanche*` rend la ligne.
   `searchLists` composait la première forme depuis sa livraison — donc **une recherche qui
