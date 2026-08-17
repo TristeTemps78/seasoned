@@ -42,6 +42,18 @@ export function Library() {
   const { journal, ready, exportJournal, importJournal } = useJournal();
   const { t, tn, locale } = useT();
   const [tag, setTag] = useState<string | undefined>(undefined);
+  /**
+   * **Chercher dans sa propre bibliotheque** — et rien ne part sur le reseau.
+   *
+   * 🔴 Le filtre par mot existait ; le titre, non. Passe une trentaine de series, retrouver
+   * « celle avec les avocats » demandait de parcourir quatre rangees a l'oeil — sur la seule
+   * page du produit qui contient **deja** tout ce qu'on cherche, dans le navigateur.
+   *
+   * ⚠️ Aucun appel : la bibliotheque est construite depuis le journal local (voir l'en-tete
+   * de ce fichier). Une recherche qui interrogerait le catalogue ici couterait un appel par
+   * frappe pour trouver ce qu'on a deja sous la main.
+   */
+  const [query, setQuery] = useState('');
 
   const tags = useMemo(() => tagCounts(journal), [journal]);
 
@@ -49,14 +61,22 @@ export function Library() {
      rangees selon des regles qui lui appartiennent, et refiltrer apres coup obligerait a
      les connaitre ici. Filtrer avant, c'est reutiliser le rangement tel quel (regle 3). */
   const shown = useMemo(() => {
-    if (tag === undefined) return journal;
+    const cherche = query.trim().toLocaleLowerCase();
+    if (tag === undefined && cherche === '') return journal;
     return {
       ...journal,
       entries: Object.fromEntries(
-        Object.entries(journal.entries).filter(([, e]) => e.tags?.[tag] !== undefined),
+        Object.entries(journal.entries).filter(([, e]) => {
+          if (tag !== undefined && e.tags?.[tag] === undefined) return false;
+          if (cherche === '') return true;
+          // ⚠️ Sur l'instantane, donc sur le titre **qu'on a vu** — jamais sur la cle. Une
+          // serie dont l'instantane a expire sort de la recherche et garde sa place dans les
+          // rangees : mieux vaut ne pas la trouver que la faire disparaitre.
+          return (e.snapshot?.title ?? '').toLocaleLowerCase().includes(cherche);
+        }),
       ),
     };
-  }, [journal, tag]);
+  }, [journal, tag, query]);
 
   // Recalcule seulement quand le journal change : le rangement traverse toutes les
   // entrees, et il n'a aucune raison de recommencer a chaque rendu.
@@ -79,6 +99,32 @@ export function Library() {
       {/* Le filtre par mot. Absent tant qu'aucun mot n'existe : un filtre a une seule
           option (« Tous ») est un bouton qui ne fait rien, et il apprendrait a ignorer la
           ligne le jour ou elle servira. */}
+      {/* ⚠️ Le champ est **au-dessus** du filtre par mot et toujours visible, contrairement a
+          lui : on cherche un titre bien plus souvent qu'on ne filtre par vocabulaire, et un
+          champ qui apparait selon l'etat du journal apprend a ne pas etre cherche. */}
+      <form
+        className="flex flex-wrap items-center gap-2"
+        onSubmit={(e) => e.preventDefault()}
+        role="search"
+      >
+        <label className="sr-only" htmlFor="library-search">
+          {t('library.search')}
+        </label>
+        <input
+          id="library-search"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('library.search')}
+          className="field w-full max-w-xs text-sm"
+        />
+        {query.trim() !== '' ? (
+          <button type="button" className="quiet-action" onClick={() => setQuery('')}>
+            {t('library.search.clear')}
+          </button>
+        ) : null}
+      </form>
+
       {tags.length > 0 ? (
         // ⚠️ **Un menu et non une rangee, parce que le nombre de mots n'a aucune borne.**
         // Les mots sont tapes par le lecteur : trois aujourd'hui, quarante dans un an. Une
@@ -134,7 +180,9 @@ export function Library() {
           signaler, et le jour ou il arrivera il ne faudra pas afficher « votre bibliotheque
           est vide » a quelqu'un qui suit quarante series. */}
       {library.total === 0 ? (
-        <EmptyState title={t('library.noTagTitle')}>{t('library.noTagBody')}</EmptyState>
+        <EmptyState title={t(query.trim() === '' ? 'library.noTagTitle' : 'library.noMatchTitle')}>
+          {t(query.trim() === '' ? 'library.noTagBody' : 'library.noMatchBody')}
+        </EmptyState>
       ) : null}
       {/* Meme decision que sur l'accueil : la rangee de tete repond a la question qu'on se
           pose en ouvrant l'ecran. Quatre rangees identiques ne disaient pas laquelle lire. */}

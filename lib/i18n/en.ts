@@ -190,6 +190,11 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'tags.reuse': 'Words you already use:',
   'tags.usedOn.one': 'on {n} series',
   'tags.usedOn.other': 'on {n} series',
+  'library.search': 'Search my library',
+  'library.search.clear': 'Clear',
+  'library.noMatchTitle': 'None of your series has that title',
+  'library.noMatchBody':
+    'This searches only what you already follow. To find a series you do not have yet, use the site search.',
   'library.noTagTitle': 'Nothing under that word',
   'library.noTagBody':
     'No series in your library carries that word yet. Pick “All” just above, or add it from a series page.',

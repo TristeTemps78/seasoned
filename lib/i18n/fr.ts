@@ -215,6 +215,12 @@ export const FR = {
   'tags.reuse': 'Des mots que vous employez déjà :',
   'tags.usedOn.one': 'sur {n} série',
   'tags.usedOn.other': 'sur {n} séries',
+  // Chercher dans sa propre bibliotheque : tout est deja dans le navigateur, donc zero appel.
+  'library.search': 'Chercher dans ma bibliothèque',
+  'library.search.clear': 'Effacer',
+  'library.noMatchTitle': 'Aucune de vos séries ne porte ce titre',
+  'library.noMatchBody':
+    'La recherche ne regarde que ce que vous suivez déjà. Pour trouver une série que vous n’avez pas encore, passez par la recherche du site.',
   'library.noTagTitle': 'Rien sous ce mot',
   'library.noTagBody':
     'Aucune série de votre bibliothèque ne porte ce mot pour l’instant. Choisissez « Tous » juste au-dessus, ou posez-le depuis une fiche.',
