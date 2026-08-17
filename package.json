@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run test",
     "check:supabase": "node scripts/check-supabase.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs",
     "db:push": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/db-push.mjs",
     "db:scenarios": "node scripts/db-scenarios.mjs",
     "db:query": "node scripts/db-query.mjs",
