@@ -698,6 +698,11 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'review.showEveryone': 'Show every review',
   'review.count.one': '{n} review',
   'review.count.other': '{n} reviews',
+  'review.remove': 'Remove my review',
+  'review.removeConfirm': 'Confirm: remove the text, its hearts and its replies',
+  'review.removeCancel': 'Keep it',
+  'review.removeFailed': 'The removal did not go through. Try again.',
+  'review.removeKept': 'Removed from here. The text stays in your journal and your export.',
 
   // Voir `fr.ts` : une seule phrase pour « inconnu » et « invisible », sans quoi la page
   // devient un oracle permettant d'enumerer les comptes.
@@ -945,6 +950,11 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
     'Its author is told, with the ground — not merely “your content was removed”.',
   'rules.decision.contest':
     'They can contest it at the same address. A process that can remove but not restore is not moderation.',
+  'rules.yours.title': 'Removing what you wrote',
+  'rules.yours.body':
+    'Hiding is a moderation decision; removing is yours. A review, a reply or a list you remove yourself is **really deleted**, along with the hearts and replies it carried.',
+  'rules.yours.journal':
+    'The text stays in your journal, on your device and in your export: removing a review unpublishes it, it does not take it away from you.',
   'rules.contact.title': 'Point of contact',
 
   'ordering.title': 'This is not the only cut',

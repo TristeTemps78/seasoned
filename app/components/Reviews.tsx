@@ -54,7 +54,7 @@ const AUDIENCE_LABEL = {
  */
 export function Reviews({ seriesId }: { readonly seriesId: string }) {
   const { account } = useAuth();
-  const { journal, ready } = useJournal();
+  const { journal, ready, withholdReview } = useJournal();
   const { t, tn, locale } = useT();
   const [reviews, setReviews] = useState<readonly PublishedReview[] | undefined>(undefined);
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
@@ -68,6 +68,19 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
   const [comments, setComments] = useState<readonly ReviewComment[]>([]);
   const [sort, setSort] = useState<ReviewSort>('recent');
   const [audience, setAudience] = useState<ReviewAudience>('everyone');
+  /**
+   * Le retrait, en deux temps — **F10**.
+   *
+   * `undefined` : rien n'est en cours. Une cle `auteur:cible` : cette critique attend sa
+   * confirmation. Un `window.confirm` aurait tenu en une ligne et il est le seul dialogue que
+   * ce produit s'interdit partout ailleurs — il bloque la page, il ne se traduit pas, et son
+   * libelle ne peut pas dire *ce qui tombe avec le texte*.
+   */
+  const [removing, setRemoving] = useState<string | undefined>(undefined);
+  /** Le retrait qui n'est pas parti. Une ecriture ratee n'a aucun ecran par elle-meme. */
+  const [removeFailed, setRemoveFailed] = useState(false);
+  /** Le retrait qui est parti — dit une fois, la ou le texte etait. */
+  const [removedNote, setRemovedNote] = useState(false);
   /** Les identifiants des gens qu'on suit. Vide tant qu'on ne les a pas — jamais devine. */
   const [followed, setFollowed] = useState<ReadonlySet<string> | undefined>(undefined);
 
@@ -146,6 +159,10 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
     return (
       <section className="space-y-3" aria-label={t('review.title')}>
         <h2 className="section-heading">{t('review.title')}</h2>
+        {/* ⚠️ La phrase du retrait doit vivre **ici aussi** : retirer sa seule critique vide
+            la liste, donc l'ecran bascule sur ce retour anticipe. Ne la poser que dans la
+            branche pleine la ferait disparaitre exactement quand elle est la plus utile. */}
+        {removedNote ? <p className="meta">{t('review.removeKept')}</p> : null}
         {/* ⚠️ Sans `title` : la section qui l'entoure porte deja le sien, et un second niveau
             de titre y decrirait une hierarchie qui n'existe pas. Sans actions non plus — le
             champ d'ecriture est sur cette page, dans « Ou j'en suis », et la phrase l'y
@@ -192,6 +209,8 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
   return (
     <section className="space-y-3" aria-label={t('review.title')}>
       <h2 className="section-heading">{t('review.title')}</h2>
+
+      {removedNote ? <p className="meta">{t('review.removeKept')}</p> : null}
 
       {withControls ? (
         // ⚠️ **Des menus dans une colonne qui porte deja onze blocs.** Cinq boutons sur deux
@@ -323,6 +342,91 @@ export function Reviews({ seriesId }: { readonly seriesId: string }) {
                     pas marcher ne se degrade pas, il ne s'affiche pas (regle du 2026-08-09).
                     On ne peut pas non plus aimer sa propre critique : ce serait un compteur
                     qu'on s'incremente soi-meme. */}
+                {/* 🔴 **F10 — retirer sa propre critique.** `006_reviews.sql` porte
+                    `reviews_delete` depuis le premier jour : la base autorisait, **rien
+                    n'appelait**. Une critique publiee etait donc definitive du point de vue
+                    de la personne qui l'avait ecrite, alors que « Retirer ma reponse » existe
+                    depuis `024` pour un message de 600 caracteres.
+
+                    ⚠️ **En deux temps, et le second libelle dit ce qui tombe avec le texte** :
+                    `015` et `024` accrochent les coeurs et les reponses a la cle naturelle de
+                    la critique, donc la cascade les emporte. L'apprendre apres coup serait une
+                    perte que personne n'a acceptee.
+
+                    ⚠️ **Deux ecritures, et le journal en fait partie** : sans le drapeau,
+                    `Friends.refresh()` republierait la critique a la prochaine ouverture de
+                    `/amis`. Le texte, lui, reste — voir `/regles`. */}
+                {account !== undefined && account.userId === review.authorId ? (
+                  <div className="space-y-1">
+                    {removing === id ? (
+                      <p className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          className="quiet-action text-(--color-warn)"
+                          onClick={async () => {
+                            if (social === undefined) return;
+                            const ok = await social.unpublishReview(
+                              account.userId,
+                              key,
+                              review.target,
+                            );
+                            setRemoveFailed(!ok);
+                            if (!ok) return;
+                            withholdReview(key, review.target);
+                            setRemoving(undefined);
+                            // Ce qui vient de se passer se dit **la ou la ligne etait** : le
+                            // texte a disparu de l'ecran, et sans un mot on ne peut pas
+                            // savoir s'il est parti d'ici ou de partout. La phrase repete la
+                            // seule chose qui compte — le journal l'a toujours.
+                            setRemovedNote(true);
+                            // On retire de l'ecran plutot que de relire : la ligne vient de
+                            // partir, et une lecture de plus dirait la meme chose en un appel.
+                            setReviews((current) =>
+                              current?.filter(
+                                (one) =>
+                                  one.authorId !== review.authorId ||
+                                  one.target !== review.target,
+                              ),
+                            );
+                            setComments((current) =>
+                              current.filter(
+                                (one) =>
+                                  one.reviewAuthorId !== review.authorId ||
+                                  one.target !== review.target,
+                              ),
+                            );
+                          }}
+                        >
+                          {t('review.removeConfirm')}
+                        </button>
+                        <button
+                          type="button"
+                          className="quiet-action"
+                          onClick={() => setRemoving(undefined)}
+                        >
+                          {t('review.removeCancel')}
+                        </button>
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        className="quiet-action"
+                        onClick={() => {
+                          setRemoveFailed(false);
+                          setRemoving(id);
+                        }}
+                      >
+                        {t('review.remove')}
+                      </button>
+                    )}
+                    {/* Une ecriture ratee n'a **aucun** ecran par elle-meme : le geste a
+                        l'air d'avoir marche. C'est la distinction que `onFailure` documente. */}
+                    {removeFailed && removing === id ? (
+                      <p className="text-sm text-(--color-warn)">{t('review.removeFailed')}</p>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {account !== undefined && account.userId !== review.authorId ? (
                   <ReviewHeart
                     count={likes[id]?.likes ?? 0}

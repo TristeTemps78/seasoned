@@ -272,6 +272,11 @@ function parseReviews(raw: unknown): Record<string, JournalReview> {
       at: readInstant(source, 'at', UNDATED),
       throughSeason: typeof through === 'number' && through >= 0 ? Math.floor(through) : 0,
       ...(typeof lang === 'string' && lang.length > 0 ? { lang } : {}),
+      // ⚠️ **Relu ici, sinon il serait ecrit puis efface a la premiere sauvegarde** — le
+      // defaut de 10.4bis, mot pour mot : ce parsing reconstruit un objet neuf a partir des
+      // seuls champs qu'il connait. Un retrait de publication (F10) aurait donc dure jusqu'au
+      // rechargement de la page, et la critique serait revenue toute seule.
+      ...(source['unpublished'] === true ? { unpublished: true as const } : {}),
     };
   }
   return out;

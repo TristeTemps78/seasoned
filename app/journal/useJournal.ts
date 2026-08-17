@@ -27,6 +27,7 @@ import {
   setLiked as setLikedIn,
   setEpisodeMark as setEpisodeMarkIn,
   setReview as setReviewIn,
+  withholdReview as withholdReviewIn,
   type Journal,
   type JournalKey,
   type JournalSnapshot,
@@ -254,6 +255,18 @@ export function useJournal() {
         target: string,
         review: { readonly text: string; readonly throughSeason: number; readonly lang?: string },
       ) => mutate((j) => setReviewIn(j, key, target, review)),
+      [mutate],
+    ),
+    /**
+     * Retirer une critique de la publication sans effacer le texte — F10.
+     *
+     * ⚠️ Le geste complet est **en deux moitiés** et l'appelant doit faire les deux : celle-ci
+     * pour que le journal cesse de la republier, `unpublishReview()` cote client pour retirer
+     * la copie deja publiee. L'une sans l'autre laisse soit une critique qui revient a la
+     * page suivante, soit un texte qui reste en ligne.
+     */
+    withholdReview: useCallback(
+      (key: JournalKey, target: string) => mutate((j) => withholdReviewIn(j, key, target)),
       [mutate],
     ),
     setLiked: useCallback(

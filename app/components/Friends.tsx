@@ -98,25 +98,31 @@ export function Friends() {
       // `(user_id, subject, target)` absorbe les republications, donc renvoyer tout est plus
       // sur que tenir la liste de ce qui a deja ete envoye.
       //
-      // ⚠️ Ce qui n'a PAS de texte n'est pas publie — et une critique effacee du journal
-      // disparait donc du serveur au passage suivant. C'est la seule facon de depublier
-      // sans inventer un second etat qu'il faudrait garder d'accord avec le premier.
+      // 🔴 **Et c'est ce qui rendait un retrait impossible, jusqu'au 2026-08-17.** Le
+      // commentaire qui vivait ici affirmait qu'*« une critique effacee du journal disparait
+      // du serveur au passage suivant »* : c'etait faux, et personne ne l'avait mesure. Ne
+      // plus publier ne supprime rien — la ligne reste, avec ses coeurs et ses reponses,
+      // pour toujours. Le retrait est un **geste**, il vit dans `Reviews` et il appelle
+      // `unpublishReview()` ; le drapeau relu ci-dessous est l'autre moitie, sans laquelle
+      // cette boucle le defairait a la page suivante. Voir `JournalReview.unpublished`.
       await Promise.all(
         seriesEntries(journal).flatMap(([subject, entry]) =>
-          Object.entries(entry.reviews ?? {}).map(([target, review]) =>
-            social.publishReview(id, subject, target, {
-              text: review.text,
-              throughSeason: review.throughSeason,
-              lang: review.lang ?? 'fr',
-              // ⚠️ L'instantane part **avec** la critique (018) : sans lui, le fil affichait
-              // « a ecrit sur tmdb:94997 » a quiconque n'avait pas deja la serie dans son
-              // propre journal — c'est-a-dire a tous ceux pour qui le fil sert a decouvrir.
-              ...(entry.snapshot?.title !== undefined ? { title: entry.snapshot.title } : {}),
-              ...(entry.snapshot?.posterPath !== undefined
-                ? { posterPath: entry.snapshot.posterPath }
-                : {}),
-            }),
-          ),
+          Object.entries(entry.reviews ?? {})
+            .filter(([, review]) => review.unpublished !== true)
+            .map(([target, review]) =>
+              social.publishReview(id, subject, target, {
+                text: review.text,
+                throughSeason: review.throughSeason,
+                lang: review.lang ?? 'fr',
+                // ⚠️ L'instantane part **avec** la critique (018) : sans lui, le fil affichait
+                // « a ecrit sur tmdb:94997 » a quiconque n'avait pas deja la serie dans son
+                // propre journal — c'est-a-dire a tous ceux pour qui le fil sert a decouvrir.
+                ...(entry.snapshot?.title !== undefined ? { title: entry.snapshot.title } : {}),
+                ...(entry.snapshot?.posterPath !== undefined
+                  ? { posterPath: entry.snapshot.posterPath }
+                  : {}),
+              }),
+            ),
         ),
       );
 

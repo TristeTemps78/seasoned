@@ -364,6 +364,39 @@ export function setReview(
 }
 
 /**
+ * Retirer une critique de la publication — **sans toucher au texte** (F10).
+ *
+ * ⚠️ Ce n'est pas `setReview(…, '')`, et la difference est toute la decision : effacer
+ * detruirait le texte que la regle 9 promet de garder et que `/regles` annonce comme restant
+ * « dans votre journal ». Voir {@link JournalReview.unpublished} pour le raisonnement complet.
+ *
+ * ⚠️ **La date est repoussee**, sinon la fusion perdrait le retrait : `mergeDated` garde la
+ * version la plus recente d'une critique, donc un appareil qui porte encore l'ancienne
+ * (publiable) l'emporterait au prochain accord et la republierait.
+ *
+ * ⚠️ Sans effet si la critique n'existe pas : retirer ce qui n'a jamais ete ecrit n'est pas
+ * une erreur, c'est le meme geste rejoue — comme partout ailleurs ici.
+ */
+export function withholdReview(
+  journal: Journal,
+  key: JournalKey,
+  target: string,
+  now = new Date(),
+): Journal {
+  const entry = journal.entries[key];
+  const review = entry?.reviews?.[target];
+  if (entry === undefined || review === undefined) return journal;
+
+  return withEntry(journal, key, {
+    ...entry,
+    reviews: {
+      ...entry.reviews,
+      [target]: { ...review, at: now.toISOString(), unpublished: true },
+    },
+  });
+}
+
+/**
  * Les marques d'une entree, dans la forme qu'attend le domaine du calcul.
  *
  * La table du journal est indexee par `saison:episode` — pratique pour fusionner, illisible

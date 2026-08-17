@@ -116,30 +116,39 @@ describe('SocialClient.followers', () => {
   }
 
   it('interroge `followee_id`, la ou `following` interroge `follower_id`', async () => {
-    const mine = recording([[{ follower_id: 'u2' }], [{ user_id: 'u2', handle: 'marie' }]]);
+    const mine = recording([[{ profiles: { user_id: 'u2', handle: 'marie' } }]]);
     await mine.client.followers('moi');
 
     expect(mine.asked[0]).toContain('followee_id=eq.moi');
-    expect(mine.asked[0]).toContain('select=follower_id');
+    // ⚠️ **La contrainte est nommee, et c'est de l'API.** `follows` reference `profiles`
+    // deux fois depuis `026` : `profiles!inner` tout court rendrait **300 PGRST201**
+    // (« more than one relationship found »), mesure contre la vraie base le 2026-08-17.
+    // Un test de forme est ici la seule garde possible — les tests doublent `fetch`.
+    expect(mine.asked[0]).toContain('profiles!follows_follower_profile!inner');
 
     // L'ancrage par le miroir : sans lui, les deux assertions ci-dessus passeraient encore
     // avec une methode qui interroge toujours la meme colonne dans les deux sens.
-    const theirs = recording([[{ followee_id: 'u2' }], [{ user_id: 'u2', handle: 'marie' }]]);
+    const theirs = recording([[{ profiles: { user_id: 'u2', handle: 'marie' } }]]);
     await theirs.client.following('moi');
 
     expect(theirs.asked[0]).toContain('follower_id=eq.moi');
-    expect(theirs.asked[0]).toContain('select=followee_id');
+    expect(theirs.asked[0]).toContain('profiles!follows_followee_profile!inner');
   });
 
-  it('rend les profils des abonnes, pas leurs identifiants', async () => {
-    const { client } = recording([
-      [{ follower_id: 'u2' }],
-      [{ user_id: 'u2', handle: 'marie', visibility: 'followers' }],
+  it('rend les profils des abonnes en UN seul appel', async () => {
+    const { asked, client } = recording([
+      [{ profiles: { user_id: 'u2', handle: 'marie', visibility: 'followers' } }],
     ]);
 
     await expect(client.followers('moi')).resolves.toEqual([
       { userId: 'u2', handle: 'marie', visibility: 'followers' },
     ]);
+
+    // 🔴 L'ancrage qui compte : ces deux lectures faisaient **deux** allers-retours chacune
+    // — la liste des identifiants, puis les profils —, soit quatre pour un profil. C'est le
+    // dernier doublon mesure le 2026-08-17, et rien d'autre qu'un compte d'appels ne peut
+    // dire qu'il est parti.
+    expect(asked).toHaveLength(1);
   });
 
   it('watchersOf ne demande que les genres qui ne portent pas de saison', async () => {

@@ -294,6 +294,30 @@ export interface JournalReview {
   readonly throughSeason: number;
   /** Langue **declaree** a l'ecriture. Irrattrapable apres coup (A9). */
   readonly lang?: string;
+  /**
+   * **Ecrit, et retire de la publication** — F10, le 2026-08-17.
+   *
+   * ## Pourquoi un drapeau plutot qu'un effacement
+   *
+   * Retirer sa critique du serveur ne suffit pas : `Friends.refresh()` republie **tout** ce
+   * que le journal porte a chaque ouverture de `/amis`, precisement pour n'avoir aucun etat
+   * « deja envoye » a tenir d'accord. Sans ce drapeau, un retrait durerait donc jusqu'a la
+   * page suivante — et l'ecran aurait affirme le contraire de ce qui s'est passe, le seul
+   * defaut que ce depot considere comme pire qu'un echec visible.
+   *
+   * Effacer le texte du journal au passage aurait ete l'autre reponse, et elle contredit la
+   * regle 9 (export integral) autant que la promesse de `/regles` : *« le texte reste dans
+   * votre journal, sur votre appareil et dans votre export »*. Ecrire et publier sont deux
+   * gestes depuis le premier jour ; defaire le second ne doit pas defaire le premier.
+   *
+   * ⚠️ **Absent = publiable**, donc tout le fond existant garde son comportement et aucun
+   * appelant n'a a connaitre ce champ pour continuer a marcher.
+   *
+   * ⚠️ Reecrire le texte le **remet** en publication : {@link setReview} reconstruit l'objet
+   * sans ce drapeau. C'est voulu — corriger puis renvoyer est le geste, et une critique
+   * qu'on reecrit sans qu'elle reparaisse serait un texte qui disparait en silence.
+   */
+  readonly unpublished?: true;
 }
 
 /** Plafond d'une critique. Meme ordre de grandeur que la note d'un signalement. */

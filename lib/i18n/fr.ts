@@ -812,6 +812,15 @@ export const FR = {
   'review.showEveryone': 'Voir toutes les critiques',
   'review.count.one': '{n} critique',
   'review.count.other': '{n} critiques',
+  // F10 — le retrait, en deux temps. Le second libelle dit ce qui va disparaitre avec le
+  // texte : les cœurs et les reponses tombent avec lui (cascade de `015` et `024`), et
+  // l'apprendre apres coup serait une perte que personne n'a acceptee.
+  'review.remove': 'Retirer ma critique',
+  'review.removeConfirm': 'Confirmer : retirer le texte, ses cœurs et ses réponses',
+  'review.removeCancel': 'Garder',
+  'review.removeFailed': 'Le retrait n’est pas parti. Réessayez.',
+  'review.removeKept':
+    'Retirée d’ici. Le texte reste dans votre journal et dans votre export.',
 
   // ⚠️ Une seule phrase pour « ce nom n'existe pas » ET « ce profil ne vous est pas
   // visible ». Les distinguer ferait de la page un oracle : on testerait des noms un par un
@@ -1119,6 +1128,14 @@ export const FR = {
     'Son auteur est informé, avec le motif — pas seulement « votre contenu a été retiré ».',
   'rules.decision.contest':
     'Il peut contester à la même adresse. Un dispositif qui sait retirer mais pas rendre n’est pas de la modération.',
+  // ⚠️ Cette section existe parce que le code la rendait necessaire, et non l'inverse.
+  // `unpublishReview()` avait ete retiree le 2026-08-07 avec ce motif : *« aucune regle
+  // publiee ne dit ce que fait ce geste »*. La regle est ecrite ici, le geste peut exister.
+  'rules.yours.title': 'Retirer ce que vous avez écrit',
+  'rules.yours.body':
+    'Masquer est une décision de modération ; retirer est la vôtre. Une critique, une réponse ou une liste que vous retirez vous-même est **réellement supprimée**, avec les cœurs et les réponses qu’elle portait.',
+  'rules.yours.journal':
+    'Le texte, lui, reste dans votre journal, sur votre appareil et dans votre export : retirer une critique la dépublie, ça ne vous la reprend pas.',
   'rules.contact.title': 'Point de contact',
 
   // --- Decoupages concurrents (4.4) ----------------------------------------

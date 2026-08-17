@@ -112,6 +112,24 @@ export function RulesView({ locale }: { readonly locale: Locale }) {
         </ul>
       </section>
 
+      {/* 🔴 **La regle qui manquait pour qu'un geste puisse exister.** `unpublishReview()` a
+          ete retiree du client le 2026-08-07 avec ce motif ecrit noir sur blanc : *« la phrase
+          publique sur le retrait d'une critique par son auteur n'est pas encore ecrite : on
+          avait donc du code qui supprime, et aucune regle publiee qui dise ce qu'il fait »*.
+          Conséquence mesurée le 2026-08-17 : `reviews_delete` existait dans la base depuis le
+          premier jour, **sans aucun appelant**, et une critique publiee etait definitive pour
+          la personne qui l'avait ecrite.
+
+          ⚠️ La distinction porte tout : « on masque, on ne supprime jamais » parle de ce que
+          **la moderation** retire — une erreur doit rester reparable et une contestation
+          examinable. Ce que son auteur defait lui-meme n'a ni erreur ni contestation a
+          preserver. C'est deja ce que `deleteList` et « Retirer ma reponse » (024) font. */}
+      <section className="space-y-2">
+        <h2 className="section-heading">{t(locale, 'rules.yours.title')}</h2>
+        <p className="text-sm">{t(locale, 'rules.yours.body')}</p>
+        <p className="meta">{t(locale, 'rules.yours.journal')}</p>
+      </section>
+
       <section className="space-y-2">
         <h2 className="section-heading">
           {t(locale, 'rules.contact.title')}

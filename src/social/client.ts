@@ -128,6 +128,93 @@ export interface TaggedSeries extends SeriesRef {
 }
 
 /**
+ * Le meme mot, **plus la personne qui l'a pose** — ce que la page d'un mot montre.
+ *
+ * ⚠️ L'auteur est rendu en plus pour la meme raison que sur une liste ou une critique : sur
+ * un profil on sait de qui on lit le vocabulaire, sur `/mot/<mot>` non. Un index de mots sans
+ * ses auteurs ne serait qu'une seconde liste de series — or tout son interet est de croiser
+ * deux personnes qui rangent sous le meme mot.
+ */
+export interface TaggedByAuthor extends TaggedSeries {
+  readonly handle: string;
+  readonly authorId: string;
+  readonly face?: FaceId;
+}
+
+/** Combien d'abonnes, combien d'abonnements. Voir {@link SocialClient.followCounts}. */
+export interface FollowCounts {
+  readonly followers: number;
+  readonly following: number;
+}
+
+/**
+ * Ce qu'une serie a recu — **parmi les profils publics uniquement**.
+ *
+ * ⚠️ Sous-compte volontairement, et le rendu doit le dire : « au moins N », jamais
+ * « N personnes ». Voir `027_counts.sql` pour la raison, qui tient a l'anonymat.
+ */
+export interface SubjectCounts {
+  readonly subject: string;
+  /** Des gens qui l'ont commencee, finie, ou dont une saison est notee. */
+  readonly watched: number;
+  /** Des gens qui l'ont aimee. */
+  readonly loved: number;
+  /** Des listes ou elle est rangee. */
+  readonly listed: number;
+}
+
+/** Les coeurs d'une liste : combien, et si j'en fais partie. */
+export interface ListLikes {
+  readonly slug: string;
+  readonly likes: number;
+  readonly mine: boolean;
+}
+
+/**
+ * Un retour recu sur ce qu'on a ecrit — **le chemin de retour qui manquait**.
+ *
+ * ## 🔴 Pourquoi ce type existe
+ *
+ * Une critique pouvait recevoir un coeur (`015`) et une reponse (`024`), et **aucun des deux
+ * ne revenait vers son auteur** : les deux ne s'affichent que sur la fiche de la bonne serie,
+ * ou personne ne repasse trois semaines apres avoir ecrit. `015` avait pourtant ecrit la
+ * raison d'etre du coeur en une phrase : *« ecrire dans le vide est ce qui fait arreter
+ * d'ecrire »*.
+ *
+ * ⚠️ **Ce n'est pas une notification**, et la nuance est le produit entier : rien n'est
+ * pousse, rien n'est stocke, rien ne coute par utilisateur — c'est le cout par utilisateur
+ * qui a tue TV Time. C'est un retour **au retour** : la page ne dit ce qu'elle a recu que
+ * quand on l'ouvre.
+ */
+export interface Feedback {
+  /** `heart` : quelqu'un a aime. `reply` : quelqu'un a repondu. */
+  readonly kind: 'heart' | 'reply';
+  /** La cle de journal de l'oeuvre — `tmdb:1396`. */
+  readonly subject: string;
+  /** `series` ou `season:3`. */
+  readonly target: string;
+  /** Quand — le plus recent des faits regroupes ici. */
+  readonly at: string;
+  /**
+   * Combien de coeurs ; toujours 1 pour une reponse.
+   *
+   * ⚠️ Les coeurs sont **regroupes par critique** : trois coeurs sur un meme texte sont une
+   * ligne « 3 », jamais trois lignes. Un retour qui se compte en lignes deviendrait un flux,
+   * donc quelque chose a rattraper — exactement ce que ce produit refuse d'imposer.
+   */
+  readonly count: number;
+  /**
+   * Qui a repondu. **Absent pour un coeur, et c'est deliberé** : nommer qui aime demanderait
+   * de projeter `liker_id`, or `015` ne le projette nulle part et sa fonction de comptage
+   * s'en interdit le principe — *un agregat n'est pas un annuaire*. Un coeur dit qu'on a ete
+   * lu, pas par qui.
+   */
+  readonly handle?: string;
+  /** Le texte de la reponse, pour un `reply`. */
+  readonly body?: string;
+}
+
+/**
  * Une reponse a une critique.
  *
  * ⚠️ Porte l'identite de la critique commentee **et** celle de son propre auteur : les deux
@@ -683,6 +770,95 @@ export class SocialClient {
     });
   }
 
+  /**
+   * **Un mot, et tout le monde qui l'emploie** — N2, la page qui manquait.
+   *
+   * ## Ce que les mots etaient, et ce qui leur manquait
+   *
+   * `023` les a publies le 2026-08-16, et un onglet de profil les montre groupes. Il n'y avait
+   * **ni page par mot, ni recherche par mot** : aucune facon de croiser deux personnes qui
+   * rangent sous « le dimanche ». Chez la reference un mot est un **index navigable**, et
+   * c'est tout son interet — *le vocabulaire de quelqu'un ne vaut que confronte a celui des
+   * autres.*
+   *
+   * ⚠️ **Correspondance exacte, et insensible a la casse.** Un mot est ce que la personne a
+   * tape : « Le Dimanche » et « le dimanche » sont le meme rangement, et les separer ferait
+   * deux pages a moitie vides pour un seul vocabulaire. Ce n'est pas une recherche
+   * approchante — `ilike` sans joker ne peut pas enumerer les mots des autres.
+   *
+   * ⚠️ **Aucun controle de visibilite ecrit ici** : `tags_select` porte `can_see(user_id)`.
+   * Un mot pose par quelqu'un qu'on ne peut pas voir n'arrive donc jamais — et la page ne
+   * dit pas qu'il existe.
+   */
+  async tagged(tag: string, limit = 60): Promise<readonly TaggedByAuthor[]> {
+    const clean = tag.trim();
+    if (clean.length === 0) return [];
+    const motif = clean.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+    const rows = await this.#rows<Record<string, unknown>>(
+      `tags?tag=ilike."${encodeURIComponent(motif)}"` +
+        `&select=subject,tag,title,poster_path,profiles!inner(handle,user_id,face)` +
+        `&limit=${limit}`,
+    );
+    return rows.flatMap((row) => {
+      const author = row['profiles'] as
+        | { handle?: unknown; user_id?: unknown; face?: unknown }
+        | undefined;
+      if (typeof author?.handle !== 'string' || typeof author.user_id !== 'string') return [];
+      const word = row['tag'];
+      const subject = row['subject'];
+      if (typeof word !== 'string' || typeof subject !== 'string') return [];
+      const face = readFace(author.face);
+      const title = row['title'];
+      const posterPath = row['poster_path'];
+      return [
+        {
+          tag: word,
+          subject,
+          handle: author.handle,
+          authorId: author.user_id,
+          ...(face !== undefined ? { face } : {}),
+          ...(typeof title === 'string' && title !== '' ? { title } : {}),
+          ...(typeof posterPath === 'string' && posterPath !== '' ? { posterPath } : {}),
+        },
+      ];
+    });
+  }
+
+  /**
+   * Chercher un mot — l'entree de {@link tagged} depuis `/recherche` (F4).
+   *
+   * ⚠️ Rend des **mots**, pas des series : la reponse a « dimanche » est la page du mot, ou
+   * plusieurs vocabulaires se croisent. Rendre directement les series ferait doublon avec la
+   * recherche de series, qui est deja au-dessus sur la meme page.
+   *
+   * ⚠️ Le regroupement se fait **ici** et non en SQL : `tags_select` filtre par lecteur, donc
+   * un `group by` cote base rendrait de toute facon un compte par lecteur. Compter des lignes
+   * deja filtrees est la seule facon honnete — et c'est le meme raisonnement que
+   * {@link tagsBy}, qui rend la liste telle quelle en laissant `tagCounts` (domaine) grouper.
+   */
+  async searchTags(query: string, limit = 8): Promise<readonly { readonly tag: string; readonly count: number }[]> {
+    const clean = query.trim();
+    // Meme seuil que `searchLists` et `searchProfiles` : sous trois caracteres, on rendrait
+    // la moitie du vocabulaire, ce qui est une enumeration et non une recherche.
+    if (clean.length < 3) return [];
+    const motif = clean.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+    const rows = await this.#rows<Record<string, unknown>>(
+      `tags?tag=ilike."*${encodeURIComponent(motif)}*"&select=tag&limit=${limit * 25}`,
+    );
+    const counted = new Map<string, { tag: string; count: number }>();
+    for (const row of rows) {
+      const tag = row['tag'];
+      if (typeof tag !== 'string') continue;
+      // La casse ne fait pas deux mots, comme dans `tagged` : c'est la premiere graphie
+      // rencontree qui s'affiche, et les deux comptent ensemble.
+      const key = tag.toLocaleLowerCase();
+      const seen = counted.get(key);
+      if (seen === undefined) counted.set(key, { tag, count: 1 });
+      else seen.count += 1;
+    }
+    return [...counted.values()].sort((a, b) => b.count - a.count).slice(0, limit);
+  }
+
   /** Les epinglees de quelqu'un, dans l'ordre choisi. RLS decide de qui les voit. */
   async favoritesBy(userId: string): Promise<readonly SeriesRef[]> {
     const rows = await this.#rows<Record<string, unknown>>(
@@ -804,10 +980,10 @@ export class SocialClient {
 
   /** Les profils que je suis. */
   async following(followerId: string): Promise<readonly Profile[]> {
-    const rows = await this.#rows<{ followee_id: string }>(
-      `follows?follower_id=eq.${encodeURIComponent(followerId)}&select=followee_id`,
+    return this.#follows(
+      `follower_id=eq.${encodeURIComponent(followerId)}`,
+      'follows_followee_profile',
     );
-    return this.#profilesOf(rows.map((row) => row.followee_id));
   }
 
   /**
@@ -820,33 +996,109 @@ export class SocialClient {
    * `followers` — la valeur par defaut — n'aurait donc **aucun nom** a afficher.
    *
    * ⚠️ La liste rendue peut etre **plus courte** que le nombre d'abonnements, et c'est
-   * voulu : un compte sans handle n'a pas de ligne dans `profiles`, donc rien a montrer.
-   * `008` refuse desormais qu'il suive — mais les lignes anterieures, elles, restent.
-   * C'est aussi pourquoi rien n'affiche de **compteur** : il ne collerait pas aux noms.
+   * voulu : un profil que le lecteur n'a pas le droit de voir disparait de la jointure.
+   * C'est pourquoi le **compteur** ne se lit pas ici mais par {@link followCounts} : il
+   * n'aurait pas colle aux noms.
    */
   async followers(followeeId: string): Promise<readonly Profile[]> {
-    const rows = await this.#rows<{ follower_id: string }>(
-      `follows?followee_id=eq.${encodeURIComponent(followeeId)}&select=follower_id`,
+    return this.#follows(
+      `followee_id=eq.${encodeURIComponent(followeeId)}`,
+      'follows_follower_profile',
     );
-    return this.#profilesOf(rows.map((row) => row.follower_id));
   }
 
   /**
-   * Les profils d'une liste d'identifiants, en un appel.
+   * Le corps commun de {@link following} et {@link followers} — **un seul aller-retour**.
    *
-   * Le corps commun de {@link following} et {@link followers}, qui ne different que par la
-   * colonne lue. Meme motif que {@link #reviews}, et pour la meme raison : deux copies du
-   * meme parsing finissent par se repondre differemment le jour ou l'une est corrigee.
+   * ## 🔴 Le dernier doublon d'un profil, mesure le 2026-08-17
    *
-   * L'appel est evite quand il n'y a rien a demander — `in.()` est une requete vide envoyee
-   * pour rien.
+   * Ces deux methodes lisaient `follows` pour en tirer des identifiants, puis rappelaient
+   * `profiles` pour les resoudre : **deux appels chacune, quatre pour un profil**. C'etait
+   * le seul reste apres `useSocial()`, qui avait ramene un profil de 23 appels a 15.
+   *
+   * La sortie etait connue et ecrite deux fois dans ce fichier : `discoverLists` et `listBy`
+   * portent leur filtre **et** leur auteur dans la meme requete. Ce qui manquait n'etait pas
+   * l'idee mais la **cle etrangere** — PostgREST n'embarque que ce qu'une contrainte relie,
+   * et `follows` n'en avait aucune vers `profiles`. C'est `026_embed_paths.sql`, et c'est la
+   * huitieme fois que ce depot paie cette forme.
+   *
+   * ⚠️ **La contrainte se nomme, et ce n'est pas un detail de style.** `follows` reference
+   * `profiles` deux fois — le suiveur et le suivi. `profiles!inner(...)` tout court est alors
+   * **ambigu** et PostgREST refuse la requete entiere (300, « more than one relationship
+   * found »). Les deux noms sont donc de l'API : voir le commentaire de `026`.
+   *
+   * ⚠️ `!inner` et non un embarquement decoratif : sans lui, une ligne dont le profil n'est
+   * pas visible reviendrait avec `profiles: null` et il faudrait la filtrer ici. Le comportement
+   * est le meme qu'avant — un profil qu'on n'a pas le droit de voir n'a pas de nom a afficher.
    */
-  async #profilesOf(ids: readonly string[]): Promise<readonly Profile[]> {
-    if (ids.length === 0) return [];
+  async #follows(filter: string, constraint: string): Promise<readonly Profile[]> {
     const rows = await this.#rows<Record<string, unknown>>(
-      `profiles?user_id=in.(${ids.map(encodeURIComponent).join(',')})&select=*`,
+      `follows?${filter}&select=profiles!${constraint}!inner(user_id,handle,display_name,visibility,face)`,
     );
-    return rows.map(rowToProfile);
+    return rows.flatMap((row) => {
+      const profile = row['profiles'] as Record<string, unknown> | undefined;
+      // ⚠️ Verifie et non transtype : `!inner` promet la ligne, il ne promet pas sa forme.
+      // Meme prudence que partout ici — le serveur peut etre en avance sur ce navigateur.
+      if (profile === undefined || typeof profile['user_id'] !== 'string') return [];
+      return [rowToProfile(profile)];
+    });
+  }
+
+  /**
+   * Combien d'abonnes, combien d'abonnements — **F2**.
+   *
+   * ## Pourquoi une fonction et pas `count(*)` sur `follows`
+   *
+   * `follows_select_mine` ne rend que **ses propres** lignes : un lecteur qui compte les
+   * abonnes de quelqu'un d'autre obtiendrait zero, ou un chiffre qui ne parle que de lui.
+   * C'est le piege que le lot 10.2 a refuse pour les compteurs de series, et la sortie est
+   * la meme depuis : une fonction `security definer` qui ne rend que des agregats.
+   *
+   * ⚠️ **Zero ligne quand le profil n'est pas visible**, et c'est une garantie du serveur,
+   * pas une politesse du client : sans elle, « 3 abonnes » sur un profil ferme en ferait un
+   * oracle — exactement ce que `/u/<nom>` refuse d'etre pour les noms. Rend donc `undefined`,
+   * que l'appelant doit traiter comme « on ne dit rien », jamais comme zero.
+   */
+  async followCounts(userId: string): Promise<FollowCounts | undefined> {
+    const rows = await this.#rpc<Record<string, unknown>>('follow_counts', {
+      for_user: userId,
+    });
+    const row = rows[0];
+    if (row === undefined) return undefined;
+    return {
+      followers: Number(row['followers'] ?? 0),
+      following: Number(row['following'] ?? 0),
+    };
+  }
+
+  /**
+   * Combien de gens ont vu, aime, range ces series — **F1**.
+   *
+   * ⚠️ Le chiffre ne compte **que les profils publics** (`027_counts.sql`), donc il
+   * sous-compte volontairement : c'est ce qui le rend stable pour tout le monde sans rien
+   * reveler de plus que ce qu'un inconnu pourrait deja denombrer profil par profil. Le rendu
+   * doit le dire dans ses mots — « au moins N », jamais « N personnes ».
+   *
+   * ⚠️ Un lot, jamais une serie a la fois : une page de catalogue en affiche vingt, et vingt
+   * appels seraient vingt fois le cout que ce produit refuse partout. Meme borne qu'en `022`.
+   */
+  async subjectCounts(subjects: readonly string[]): Promise<readonly SubjectCounts[]> {
+    if (subjects.length === 0) return [];
+    const rows = await this.#rpc<Record<string, unknown>>('subject_counts', {
+      for_subjects: [...subjects],
+    });
+    return rows.flatMap((row) =>
+      typeof row['subject'] !== 'string'
+        ? []
+        : [
+            {
+              subject: row['subject'],
+              watched: Number(row['watched'] ?? 0),
+              loved: Number(row['loved'] ?? 0),
+              listed: Number(row['listed'] ?? 0),
+            },
+          ],
+    );
   }
 
   /**
@@ -1226,23 +1478,49 @@ export class SocialClient {
     }
   }
 
-  /** Retire une critique publiee. Le texte reste dans le journal de son auteur. */
   /**
-   * ⚠️ **Ici vivait `unpublishReview()`, retiree le 2026-08-07.**
+   * Retirer sa propre critique — **F10, et le geste manquait depuis le 2026-08-07**.
    *
-   * Zero appelant, zero test — le motif exact que ce depot documente comme sa panne la
-   * plus chere : `setVisibility()` et `unfollow()` ont vecu deux lots sans appelant, ce qui
-   * rendait tout le social illisible sans que rien ne le signale.
+   * ## Ce que la version precedente attendait, et qui est maintenant ecrit
    *
-   * 🔴 **Et la garder etait pire que l'oublier.** Elle faisait un `DELETE` dur, alors que
-   * `/regles` promet « on masque, on ne supprime jamais » et que `006_reviews.sql` porte
-   * `hidden_at` precisement pour rendre cette promesse executable. La phrase publique sur
-   * le **retrait d'une critique par son auteur** n'est pas encore ecrite :
-   * on avait donc du code qui supprime, et aucune regle publiee qui dise ce qu'il fait.
+   * `unpublishReview()` a ete retiree ce jour-la pour deux raisons, et les deux sont levees :
    *
-   * *On ecrit le geste le jour ou l'on ecrit ce qu'il promet* — 8.9 tranchera masquer ou
-   * supprimer, et la methode reviendra avec son bouton.
+   * 1. *Zero appelant* — le motif que ce depot documente comme sa panne la plus chere.
+   *    Elle revient **avec son bouton** : `Reviews` le pose sous sa propre critique, et
+   *    `ReviewEditor` l'offre a cote du texte. Sans bouton, ne pas la reecrire.
+   * 2. *Aucune regle publiee ne disait ce qu'elle fait.* `/regles` promet « on masque, on ne
+   *    supprime jamais » — et cette phrase parle de la **moderation**, pas de son auteur.
+   *    C'est exactement la distinction que {@link deleteList} porte deja : *« `hidden_at`
+   *    reste la colonne de la moderation ; personne d'autre que l'auteur ne peut passer par
+   *    ici »*. `/regles` le dit desormais en toutes lettres, sinon ce code promettrait une
+   *    chose et la page publique une autre.
+   *
+   * ## 🔴 Le cout de son absence, mesure le 2026-08-17
+   *
+   * `reviews_delete` existe dans `006_reviews.sql` depuis le premier jour : **la base
+   * autorisait, et rien n'appelait**. Une critique publiee etait donc definitive du point de
+   * vue de la personne qui l'avait ecrite — alors que « Retirer ma reponse » existe depuis
+   * `024` pour un commentaire de 600 caracteres. Les deux surfaces d'ecriture du produit ne
+   * se traitaient pas pareil, et c'est la plus engageante qui n'avait pas de sortie.
+   *
+   * ⚠️ **Une suppression dure, et les cascades avec.** `015` et `024` accrochent les coeurs
+   * et les reponses a la cle naturelle de la critique : retirer le texte emporte donc son
+   * fil et ses coeurs, ce qui est la seule forme coherente — des reponses a rien ne se
+   * moderent pas.
+   *
+   * ⚠️ **Ne retire QUE la copie publiee.** Le texte reste dans le journal de son auteur, qui
+   * est la source de verite (regle 9). L'appelant qui veut les deux doit aussi effacer
+   * l'entree locale — sinon `Friends.refresh()` la republierait au passage suivant, ce qui
+   * ferait ressusciter une critique retiree.
    */
+  async unpublishReview(userId: string, subject: string, target: string): Promise<boolean> {
+    return this.#write(
+      `reviews?user_id=eq.${encodeURIComponent(userId)}` +
+        `&subject=eq.${encodeURIComponent(subject)}` +
+        `&target=eq.${encodeURIComponent(target)}`,
+      'DELETE',
+    );
+  }
 
   /**
    * Les critiques publiees sur une serie.
@@ -1294,6 +1572,62 @@ export class SocialClient {
     // moities se rangent ensemble dans `src/domain/feed.ts`, donc n'en filtrer qu'une
     // laisserait ses propres critiques sous un titre qui dit « eux ».
     return this.#reviews(except === undefined ? '' : `user_id=neq.${encodeURIComponent(except)}&`, limit);
+  }
+
+  /**
+   * Les critiques d'une **fenetre de temps** — la matiere d'un classement hebdomadaire (F3).
+   *
+   * ## Ce qui manquait, et ce qui ne manquait pas
+   *
+   * La vitrine de l'accueil servait les six plus recentes. Chez la reference, c'est un
+   * classement de la semaine — et c'est la seule page qui fasse decouvrir quelqu'un qu'on ne
+   * suit pas. Les coeurs existent depuis le 2026-08-17 sur cette surface : **la matiere etait
+   * la**, il manquait l'ordre et la fenetre.
+   *
+   * ## ⚠️ Le tri n'est PAS fait ici, et ce n'est pas un oubli
+   *
+   * Le nombre de coeurs vit dans une autre table et se lit par une fonction
+   * ({@link reviewLikesAcross}). Trier en SQL demanderait une troisieme fonction
+   * `security definer` qui projetterait le **texte** de critiques que RLS filtre — c'est-a-dire
+   * qui contournerait `reviews_select`. On rend donc la fenetre, filtree par RLS comme
+   * partout, et `orderReviews` (domaine) la classe avec les coeurs deja charges. Deux appels
+   * bornes, aucune regle de visibilite reecrite.
+   *
+   * ⚠️ Le **vivier** est plus large que ce qu'on affiche, comme `discoverable` : on ne peut
+   * pas demander a PostgREST de trier sur un compte qu'il ne connait pas.
+   */
+  async popularReviews(since: Date, pool = 30): Promise<readonly PublishedReview[]> {
+    return this.#reviews(
+      `published_at=gte.${encodeURIComponent(since.toISOString())}`,
+      pool,
+    );
+  }
+
+  /**
+   * Chercher dans **le texte** des critiques — F4, l'index qui manquait le plus.
+   *
+   * ## 🔴 Ce que la recherche ne trouvait pas
+   *
+   * Series, personnes, listes : trois index sur les six de la reference. Les critiques sont
+   * pourtant **la moitie de la cible** et le corpus existe deja.
+   *
+   * ⚠️ **Aucun filtre de visibilite ecrit ici**, comme {@link searchLists} : `reviews_select`
+   * porte `can_see(user_id)` et ecarte ce qui est masque. Chercher ne donne donc jamais acces
+   * a un texte qu'on n'aurait pas pu lire en arrivant par la fiche.
+   *
+   * ⚠️ **Le caviardage, lui, reste au rendu.** Une critique trouvee ici peut parler de la
+   * saison 6 : c'est `redactReviewsAcross` qui masque, comme sur toute autre surface. Ne
+   * jamais afficher ces lignes brutes.
+   *
+   * ⚠️ Le motif est **echappe pour PostgREST**, pas seulement pour l'URL : une virgule ou une
+   * parenthese tapees dans le champ sont de la syntaxe dans un filtre. Meme forme et meme
+   * seuil de trois caracteres que {@link searchLists}.
+   */
+  async searchReviews(query: string, limit = 8): Promise<readonly PublishedReview[]> {
+    const clean = query.trim();
+    if (clean.length < 3) return [];
+    const motif = clean.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+    return this.#reviews(`body=ilike."*${encodeURIComponent(motif)}*"`, limit);
   }
 
   /**
@@ -1440,6 +1774,86 @@ export class SocialClient {
    */
   async removeComment(id: string): Promise<boolean> {
     return this.#write(`review_comments?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+  }
+
+  /**
+   * **Ce que mes textes ont recu** — coeurs et reponses, ensemble et dates.
+   *
+   * ## Le manque que ca comble, et pourquoi il etait le plus cher
+   *
+   * Les deux canaux de retour du produit ne s'affichent que sur la fiche de la bonne serie.
+   * L'auteur d'une critique n'y repasse pas : il verrait ses reponses uniquement en rouvrant
+   * par hasard la page ou il a ecrit, il y a trois semaines. Il y avait donc **deux** canaux
+   * de retour et **aucun** qui revienne.
+   *
+   * ## ⚠️ Deux lectures, et aucune table de plus
+   *
+   * `review_likes_select` porte `author_id = auth.uid()` depuis `015` : les coeurs recus sont
+   * lisibles depuis toujours, personne ne les lisait. `review_comments_select` fait de meme
+   * pour les reponses. Zero migration, zero etat « lu / non lu » cote serveur — voir
+   * {@link Feedback} pour pourquoi ce n'est pas, et ne doit pas devenir, une notification.
+   *
+   * ⚠️ **Ses propres reponses sont retirees a la requete** (`author_id=neq`), comme `feed()`
+   * retire ses propres faits : repondre a un fil sous sa propre critique n'est pas un retour
+   * recu, et l'ecran dirait « quelqu'un vous a repondu » pour se citer soi-meme.
+   *
+   * ⚠️ Les coeurs sont **regroupes ici**, pas au rendu : la ligne montree est « 3 coeurs sur
+   * cette critique », et le regroupement decide de la date affichee (la plus recente). Le
+   * faire dans le composant en donnerait deux copies le jour ou une seconde surface l'affiche.
+   */
+  async feedbackFor(userId: string, limit = 40): Promise<readonly Feedback[]> {
+    const [hearts, replies] = await Promise.all([
+      this.#rows<Record<string, unknown>>(
+        `review_likes?author_id=eq.${encodeURIComponent(userId)}` +
+          `&select=subject,target,created_at&order=created_at.desc&limit=${limit * 4}`,
+      ),
+      this.#rows<Record<string, unknown>>(
+        `review_comments?review_author_id=eq.${encodeURIComponent(userId)}` +
+          `&author_id=neq.${encodeURIComponent(userId)}` +
+          `&select=subject,target,body,written_at,profiles!inner(handle)` +
+          `&order=written_at.desc&limit=${limit}`,
+      ),
+    ]);
+
+    // Un coeur par critique, jamais un par ligne : la cle est la critique, la valeur son
+    // compte et sa date la plus recente. Les lignes arrivent deja triees, donc la premiere
+    // vue est la plus recente.
+    const grouped = new Map<string, { subject: string; target: string; at: string; count: number }>();
+    for (const row of hearts) {
+      const subject = row['subject'];
+      const target = row['target'];
+      if (typeof subject !== 'string' || typeof target !== 'string') continue;
+      const key = `${subject}:${target}`;
+      const seen = grouped.get(key);
+      if (seen === undefined) {
+        grouped.set(key, { subject, target, at: String(row['created_at'] ?? ''), count: 1 });
+      } else {
+        seen.count += 1;
+      }
+    }
+
+    const items: Feedback[] = [
+      ...[...grouped.values()].map((one) => ({ kind: 'heart' as const, ...one })),
+      ...replies.flatMap((row) => {
+        const author = row['profiles'] as { handle?: unknown } | undefined;
+        if (typeof author?.handle !== 'string' || typeof row['body'] !== 'string') return [];
+        return [
+          {
+            kind: 'reply' as const,
+            subject: String(row['subject']),
+            target: String(row['target']),
+            at: String(row['written_at'] ?? ''),
+            count: 1,
+            handle: author.handle,
+            body: row['body'],
+          },
+        ];
+      }),
+    ];
+
+    // Un seul ordre pour les deux genres : ce qui vient d'arriver est en haut, quelle que
+    // soit sa nature. Deux colonnes separees demanderaient de comparer deux dates soi-meme.
+    return items.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)).slice(0, limit);
   }
 
   /**
@@ -1926,6 +2340,116 @@ export class SocialClient {
         title: snapshot?.title ?? null,
         poster_path: snapshot?.posterPath ?? null,
       },
+      'resolution=ignore-duplicates,return=minimal',
+    );
+  }
+
+  /**
+   * **Reprendre la liste de quelqu'un** — F5, le geste qui fait circuler les listes.
+   *
+   * Copier une liste chez soi pour la suivre est ce qui la fait voyager. Sans lui, une liste
+   * partagee se lit et se referme — c'est-a-dire que l'adresse partageable ouverte le
+   * 2026-08-16 ne menait a aucun geste.
+   *
+   * ## ⚠️ Une copie, jamais un lien
+   *
+   * La liste reprise est **a soi** : on peut y ajouter, en retirer, la renommer. Un abonnement
+   * a la liste de quelqu'un d'autre serait un second etat a tenir d'accord avec le premier —
+   * et il faudrait decider ce qui arrive quand l'original disparait. Une copie ne pose aucune
+   * de ces questions. C'est le meme raisonnement qui fait voyager les instantanes de titre
+   * avec chaque ligne depuis `020`.
+   *
+   * ⚠️ **Le slug est decide par l'appelant**, pas ici : `uniqueSlug` vit dans le domaine avec
+   * le reste des regles de nommage, et il lui faut la liste des slugs deja pris. Le client ne
+   * decide rien, il transporte — c'est la premiere phrase de ce fichier.
+   *
+   * ⚠️ **Les elements partent en UN seul POST**, jamais un par serie : PostgREST accepte un
+   * tableau, et une liste de vingt series ferait sinon vingt allers-retours pour un geste.
+   * `ignore-duplicates` comme {@link addToList}, pour la meme raison — la cle *est* le fait.
+   *
+   * ⚠️ L'insertion des elements ne part **qu'apres** la creation reussie : dans l'autre sens,
+   * une panne entre les deux poserait des lignes rattachees a une liste qui n'existe pas — et
+   * la cle etrangere les refuserait de toute facon, en laissant croire a un echec de copie.
+   */
+  async copyList(
+    userId: string,
+    list: { readonly slug: string; readonly title: string; readonly note?: string },
+    items: readonly SeriesRef[],
+  ): Promise<boolean> {
+    const created = await this.createList(userId, list);
+    if (!created) return false;
+    if (items.length === 0) return true;
+    return this.#write(
+      'list_items',
+      'POST',
+      items.map((one) => ({
+        user_id: userId,
+        slug: list.slug,
+        subject: one.subject,
+        title: one.title ?? null,
+        poster_path: one.posterPath ?? null,
+      })),
+      'resolution=ignore-duplicates,return=minimal',
+    );
+  }
+
+  /**
+   * Les coeurs des listes de quelqu'un : combien, et si j'en fais partie — N3.
+   *
+   * ⚠️ **Un appel pour toutes ses listes**, jamais un par liste : c'est la meme regle que
+   * {@link reviewLikes}, et pour la meme raison — un profil en affiche dix. Le filtre porte
+   * donc sur l'auteur, exactement comme {@link listsBy}.
+   *
+   * ⚠️ Le compte vient d'une fonction `security definer`, donc il est **le meme pour tout le
+   * monde**. Compter les lignes visibles donnerait un chiffre different par lecteur.
+   *
+   * ⚠️ Sans `028` applique, rend `[]` — donc des coeurs a zero, cliquables. Meme degradation
+   * douce que {@link reviewLikesAcross} : `#rpc` ne leve jamais.
+   */
+  async listLikes(authorId: string): Promise<readonly ListLikes[]> {
+    const rows = await this.#rpc<Record<string, unknown>>('list_like_counts', {
+      for_author: authorId,
+    });
+    return rows.flatMap((row) =>
+      typeof row['slug'] !== 'string'
+        ? []
+        : [
+            {
+              slug: row['slug'],
+              likes: Number(row['likes'] ?? 0),
+              mine: row['mine'] === true,
+            },
+          ],
+    );
+  }
+
+  /**
+   * Aimer une liste, ou retirer son coeur.
+   *
+   * Meme mecanique que {@link likeReview}, et les memes deux raisons :
+   * `resolution=ignore-duplicates` parce que la cle **est** le fait entier (voir
+   * {@link IDEMPOTENCE} — `merge-duplicates` emprunterait le chemin `UPDATE`, que `028`
+   * n'ouvre pas et qui rend **42501** en silence), et une suppression reelle parce qu'un
+   * coeur se reprend.
+   */
+  async likeList(
+    userId: string,
+    authorId: string,
+    slug: string,
+    liked: boolean,
+  ): Promise<boolean> {
+    if (!liked) {
+      return this.#write(
+        `list_likes?liker_id=eq.${encodeURIComponent(userId)}` +
+          `&author_id=eq.${encodeURIComponent(authorId)}` +
+          `&slug=eq.${encodeURIComponent(slug)}`,
+        'DELETE',
+      );
+    }
+    return this.#write(
+      'list_likes',
+      'POST',
+      { liker_id: userId, author_id: authorId, slug },
       'resolution=ignore-duplicates,return=minimal',
     );
   }
