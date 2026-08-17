@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { csvRowCount, toPortableCsv } from '../src/domain/export';
+import { csvRowCount, listsToCsv, toPortableCsv } from '../src/domain/export';
 import {
   EMPTY_JOURNAL,
   journalKey,
@@ -149,5 +149,47 @@ describe('ce qu on n exporte pas', () => {
       entries: { 'imdb:tt0903747': { wanted: { at: '2026-08-17T10:00:00.000Z' } } },
     };
     expect(csvRowCount(journal)).toBe(0);
+  });
+});
+
+/**
+ * **Les listes, la seconde moitie de la porte de sortie.**
+ *
+ * 🔴 L'export du journal tient la regle 9 pour ce que le journal contient. Les listes vivent
+ * sur le serveur — c'est la seule partie du produit qui **exige un compte pour exister** — et
+ * elles ne partaient dans aucun fichier : quelqu'un qui s'en va perdait exactement ce qu'il
+ * avait fabrique pour quelqu'un d'autre.
+ */
+describe('les listes s emportent aussi', () => {
+  const listes = [
+    { slug: 'a-voir', title: 'À voir cet hiver' },
+    { slug: 'vide', title: 'Rien dedans, pour l’instant' },
+  ];
+
+  it('rend une ligne par (liste, serie), avec le rang', () => {
+    const csv = listsToCsv(listes, [
+      { slug: 'a-voir', subject: 'tmdb:1396', title: 'Breaking Bad', ordinal: 1 },
+      { slug: 'a-voir', subject: 'tmdb:94605', title: 'Arcane', ordinal: 2 },
+    ]);
+    const lignes = csv.trimEnd().split('\r\n');
+
+    expect(lignes[0]).toBe('list_slug,list_title,rank,tmdb_id,title');
+    expect(parseCsvLine(lignes[1] ?? '')).toEqual(['a-voir', 'À voir cet hiver', '1', '1396', 'Breaking Bad']);
+    expect(parseCsvLine(lignes[2] ?? '')[2]).toBe('2');
+  });
+
+  it('🔴 une liste vide occupe quand meme une ligne', () => {
+    // Elle existe, elle a un titre, et un export qui l'oublierait ferait disparaitre le
+    // travail de la nommer — c'est-a-dire la seule chose qu'elle porte encore.
+    const csv = listsToCsv(listes, []);
+    const lignes = csv.trimEnd().split('\r\n');
+
+    expect(lignes).toHaveLength(3);
+    expect(parseCsvLine(lignes[2] ?? '')).toEqual(['vide', 'Rien dedans, pour l’instant', '', '', '']);
+  });
+
+  it('un titre a virgule ne decale pas les colonnes ici non plus', () => {
+    const csv = listsToCsv([{ slug: 'x', title: 'Pour Léa, et personne d’autre' }], []);
+    expect(parseCsvLine(csv.trimEnd().split('\r\n')[1] ?? '')[1]).toBe('Pour Léa, et personne d’autre');
   });
 });

@@ -6,6 +6,7 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { checkList, uniqueSlug, type ListRejection } from '@/src/domain/lists';
+import { listsToCsv } from '@/src/domain/export';
 import {
   ALL_LIST_SORTS,
   DEFAULT_LIST_SORT,
@@ -328,6 +329,33 @@ export function Lists({ ownerId, ownerHandle }: {
     [items, myId, clientFor],
   );
 
+  /**
+   * **Emporter ses listes** — la seconde moitie de la porte de sortie (F6).
+   *
+   * 🔴 L'export du journal tient la regle 9 pour ce que le journal contient. Les listes, elles,
+   * sont la seule partie du produit qui **exige un compte pour exister et vit sur le serveur**
+   * : elles ne partaient dans aucun fichier. Quelqu'un qui s'en va perdait donc exactement ce
+   * qu'il avait fabrique pour quelqu'un d'autre.
+   *
+   * ⚠️ **Un seul appel** pour tout le contenu de toutes les listes (`allListItems`) : une
+   * lecture par liste ferait onze requetes pour dix listes, ce que ce fichier s'interdit deja
+   * pour le compte et pour l'apercu.
+   */
+  const exportLists = useCallback(async () => {
+    const social = clientFor();
+    if (social === undefined || myId === undefined) return;
+    const items = await social.allListItems(myId);
+    const csv = listsToCsv(lists, items);
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `voltface-listes-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [clientFor, myId, lists]);
+
   const remove = useCallback(
     async (slug: string, subject: string) => {
       const social = clientFor();
@@ -421,14 +449,28 @@ export function Lists({ ownerId, ownerHandle }: {
             </div>
           </section>
         ) : (
-          <button
-            type="button"
-            className="btn btn-primary"
-            aria-expanded={false}
-            onClick={() => setCreating(true)}
-          >
-            {t('lists.new')}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="btn btn-primary"
+              aria-expanded={false}
+              onClick={() => setCreating(true)}
+            >
+              {t('lists.new')}
+            </button>
+            {/* 🔴 **Les listes ne partaient dans aucun fichier.** L'export du journal tient la
+                regle 9 pour ce que le journal contient ; les listes vivent sur le serveur, et
+                quelqu'un qui s'en va perdait exactement ce qu'il avait fabrique pour
+                quelqu'un d'autre.
+
+                ⚠️ Seulement quand il y a quelque chose a emporter : un bouton d'export sur
+                zero liste rendrait un fichier d'une ligne d'en-tete. */}
+            {lists.length > 0 ? (
+              <button type="button" className="quiet-action" onClick={() => void exportLists()}>
+                {t('lists.export')}
+              </button>
+            ) : null}
+          </div>
         )
       ) : null}
 

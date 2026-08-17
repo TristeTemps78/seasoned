@@ -391,6 +391,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'list.copyFailed': 'The copy did not go through. Try again.',
   'lists.moveUp': 'Move {title} up',
   'lists.moveDown': 'Move {title} down',
+  'lists.export': 'Take my lists elsewhere (table)',
   'lists.remove': 'Remove',
   'lists.delete': 'Delete the list',
   'lists.rename': 'Edit the title',

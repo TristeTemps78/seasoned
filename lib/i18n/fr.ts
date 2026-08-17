@@ -457,6 +457,7 @@ export const FR = {
   // sans reimplementer un protocole entier, et il se comporte mal sur un ecran qui defile.
   'lists.moveUp': 'Monter {title}',
   'lists.moveDown': 'Descendre {title}',
+  'lists.export': 'Emporter mes listes (tableau)',
   'lists.remove': 'Retirer',
   'lists.delete': 'Supprimer la liste',
   // `lists_update` existait depuis le premier jour, sans appelant : corriger un titre

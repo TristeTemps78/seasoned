@@ -259,7 +259,10 @@ describe('SocialClient.listsBy — l apercu voyage avec le compte', () => {
     // Borne cote serveur, jamais cote client : sans `preview.limit`, une liste de 500 series
     // ferait voyager 500 cles pour en afficher quatre.
     expect(asked[0]).toContain('preview.limit=4');
-    expect(asked[0]).toContain('preview.order=added_at.asc');
+    // ⚠️ Le meme ordre que le contenu de la liste depuis `032` : la vignette de tete doit
+    // etre la premiere de la liste ouverte, sinon la carte annonce un ordre que l'ouverture
+    // dement. `nullslast` parce que Postgres met les `null` EN TETE sur un tri ascendant.
+    expect(asked[0]).toContain('preview.order=ordinal.asc.nullslast,added_at.asc');
 
     expect(lists[0]?.count).toBe(12);
     // L'instantane voyage avec la ligne quand elle en a un, et son absence n'ecarte rien.

@@ -77,6 +77,15 @@ const COLUMNS = [
 ] as const;
 
 /**
+ * La fin de ligne du RFC 4180 — nommee une fois, pour les deux exports.
+ *
+ * ⚠️ Litterale et non `\r\n` recopie a chaque appel : ce fichier a ete casse trois fois de
+ * suite le 2026-08-18 par des reecritures automatiques qui transformaient l'echappement en
+ * vraie coupure de ligne. Une constante ne peut pas se faire ca.
+ */
+const CRLF = String.fromCharCode(13, 10);
+
+/**
  * Un champ CSV, echappe.
  *
  * ⚠️ Les trois cas qui cassent un CSV et **rien d'autre** : la virgule, le guillemet, le
@@ -217,6 +226,74 @@ export function toPortableCsv(journal: Journal): string {
   // ⚠️ `\r\n` et non `\n` : c'est ce que le RFC 4180 demande, et c'est la seule difference
   // qui fasse ouvrir ou non le fichier correctement dans les tableurs de Windows.
   return `${lines.join('\r\n')}\r\n`;
+}
+
+/**
+ * Les colonnes d'un export de listes. Meme discipline que celles du journal : anglais,
+ * `snake_case`, l'identifiant TMDB en tete de ce qui identifie une oeuvre.
+ */
+const LIST_COLUMNS = [
+  /** L'identifiant d'URL de la liste — stable, c'est lui qui la designe. */
+  'list_slug',
+  /** Son titre au moment de l'export. */
+  'list_title',
+  /** Le rang choisi a la main (032), vide si la liste n'a jamais ete classee. */
+  'rank',
+  'tmdb_id',
+  'title',
+] as const;
+
+/**
+ * **Les listes, en tableau** — la seconde moitie de la porte de sortie.
+ *
+ * ## 🔴 Ce que l'export du journal ne pouvait pas contenir
+ *
+ * La regle 9 promet l'export integral, et {@link toPortableCsv} la tient **pour le journal**
+ * — positions, notes, textes, mots. Les listes, elles, ne vivent pas dans le journal : elles
+ * sont la seule partie du produit qui **exige un compte pour exister et vit sur le serveur**
+ * (`007`). Elles ne partaient donc dans aucun fichier, et quelqu'un qui s'en va les perdait
+ * — alors que ce sont precisement celles qu'on a fabriquees pour quelqu'un d'autre.
+ *
+ * ⚠️ Une ligne par **(liste, serie)** : c'est la forme qu'un tableur pivote et qu'un
+ * importeur regroupe. Une ligne par liste avec les series en colonne serait illisible des la
+ * onzieme.
+ *
+ * ⚠️ Une liste **vide** occupe quand meme une ligne, sans identifiant de serie : elle existe,
+ * elle a un titre, et un export qui l'oublierait ferait disparaitre le travail de la nommer.
+ */
+export function listsToCsv(
+  lists: readonly { readonly slug: string; readonly title: string }[],
+  items: readonly {
+    readonly slug: string;
+    readonly subject: string;
+    readonly title?: string;
+    readonly ordinal?: number;
+  }[],
+): string {
+  const lines: string[] = [LIST_COLUMNS.join(',')];
+
+  for (const list of lists) {
+    const dedans = items.filter((one) => one.slug === list.slug);
+    if (dedans.length === 0) {
+      lines.push([field(list.slug), field(list.title), field(''), field(''), field('')].join(','));
+      continue;
+    }
+    for (const one of dedans) {
+      lines.push(
+        [
+          field(list.slug),
+          field(list.title),
+          field(one.ordinal),
+          field(tmdbOf(one.subject)),
+          field(one.title),
+        ].join(','),
+      );
+    }
+  }
+
+  // Meme fin de ligne que l'autre export : RFC 4180, et c'est ce qui fait ouvrir le fichier
+  // correctement dans les tableurs de Windows.
+  return `${lines.join(CRLF)}${CRLF}`;
 }
 
 /** Combien de lignes le fichier portera — l'en-tete ne compte pas. */

@@ -2336,7 +2336,9 @@ export class SocialClient {
     const rows = await this.#rows<Record<string, unknown>>(
       `lists?user_id=eq.${encodeURIComponent(userId)}` +
         `&select=slug,title,note,updated_at,list_items(count),preview:list_items(subject,title,poster_path)` +
-        `&preview.order=added_at.asc&preview.limit=${LIST_PREVIEW}` +
+        // ⚠️ Le meme ordre que le contenu de la liste (`032`), sinon la carte annoncerait un
+        // ordre que l'ouverture dementirait — la vignette de tete ne serait pas la premiere.
+        `&preview.order=ordinal.asc.nullslast,added_at.asc&preview.limit=${LIST_PREVIEW}` +
         `&order=updated_at.desc&limit=${limit}`,
     );
     return rows.flatMap(rowToList);
@@ -2465,7 +2467,9 @@ export class SocialClient {
     const rows = await this.#rows<Record<string, unknown>>(
       `lists?select=slug,title,note,updated_at,list_items(count),preview:list_items(subject,title,poster_path),profiles!inner(handle,user_id,face)` +
         filter +
-        `&preview.order=added_at.asc&preview.limit=${LIST_PREVIEW}` +
+        // ⚠️ Le meme ordre que le contenu de la liste (`032`), sinon la carte annoncerait un
+        // ordre que l'ouverture dementirait — la vignette de tete ne serait pas la premiere.
+        `&preview.order=ordinal.asc.nullslast,added_at.asc&preview.limit=${LIST_PREVIEW}` +
         `&limit=${limit}`,
     );
     return rows.flatMap((row) => {
@@ -2539,6 +2543,39 @@ export class SocialClient {
       })),
       'resolution=merge-duplicates,return=minimal',
     );
+  }
+
+  /**
+   * **Tout ce qu'on a range, en un appel** — la matiere de l'export des listes.
+   *
+   * ## Pourquoi pas une boucle sur {@link listItems}
+   *
+   * C'est la reponse evidente, et {@link SeriesList.count} l'interdit deux fois dans ce
+   * fichier : *« une page de profil qui montre dix listes en ferait sinon onze »*. Ici le
+   * filtre porte sur la **personne** et non sur la liste, donc dix listes coutent un appel.
+   *
+   * ⚠️ Le `slug` est projete **avec** chaque ligne : sans lui, on aurait le contenu de dix
+   * listes melange sans savoir laquelle est laquelle.
+   */
+  async allListItems(
+    userId: string,
+    limit = 2000,
+  ): Promise<readonly (SeriesRef & { readonly slug: string; readonly ordinal?: number })[]> {
+    const rows = await this.#rows<Record<string, unknown>>(
+      `list_items?user_id=eq.${encodeURIComponent(userId)}` +
+        `&select=slug,subject,title,poster_path,ordinal` +
+        `&order=slug.asc,ordinal.asc.nullslast,added_at.asc&limit=${limit}`,
+    );
+    return rows.flatMap((row) => {
+      const slug = row['slug'];
+      if (typeof slug !== 'string') return [];
+      const ordinal = row['ordinal'];
+      return rowToSeriesRef(row).map((ref) => ({
+        ...ref,
+        slug,
+        ...(typeof ordinal === 'number' ? { ordinal } : {}),
+      }));
+    });
   }
 
   /**
