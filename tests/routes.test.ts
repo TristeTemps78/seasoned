@@ -11,6 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, localeTag } from '../lib/i18n';
 import { alternatesFor, languageLinks, localePrefix, pathIn, seriesPath } from '../lib/routes';
+import { handleFromPath } from '../src/domain/handles';
 
 describe('les prefixes', () => {
   it('ne prefixe pas la langue par defaut : les URL deja indexees ne bougent pas', () => {
@@ -110,5 +111,34 @@ describe('languageLinks — le selecteur', () => {
     for (const link of languageLinks('/serie/1396', DEFAULT_LOCALE)) {
       expect(link.href).toContain('/serie/1396');
     }
+  });
+});
+
+/**
+ * **Les cartes de partage, et le nom qu'on ose y recopier.**
+ *
+ * 🔴 Mesure le 2026-08-18 sur la production : envoyer une liste montrait au destinataire une
+ * carte qui parlait du **site** — `og:title` valait « Voltface — est-ce que ca vaut le
+ * coup ? ». Sur la seule surface dont l'existence entiere tient au partage, l'apercu ne
+ * disait rien de ce qu'on venait d'envoyer.
+ *
+ * ⚠️ Le nom vient de l'adresse, et `dynamicParams` y laisse arriver n'importe quelle chaine.
+ * Le recopier sans le verifier reviendrait a laisser **celui qui envoie le lien** ecrire la
+ * carte que voit celui qui le recoit. C'est ce que garde ce bloc.
+ */
+describe('handleFromPath — ce qu on ose recopier dans une carte de partage', () => {
+  it('accepte un handle de la forme attendue, en minuscules', () => {
+    expect(handleFromPath('Marie')).toBe('marie');
+    expect(handleFromPath('  test_2  ')).toBe('test_2');
+  });
+
+  it('refuse tout ce qui n en est pas un', () => {
+    // Une phrase fabriquee pour l'apercu, un caractere hors alphabet, deux lettres, ou une
+    // longueur qui deborde : l'appelant retombe sur un titre generique **vrai**.
+    expect(handleFromPath('Voltface est nul, allez ailleurs')).toBeUndefined();
+    expect(handleFromPath('ma')).toBeUndefined();
+    expect(handleFromPath('a'.repeat(21))).toBeUndefined();
+    expect(handleFromPath('<script>')).toBeUndefined();
+    expect(handleFromPath('nеtflix')).toBeUndefined(); // « е » cyrillique
   });
 });

@@ -16,6 +16,15 @@ interface PageProps {
   readonly params: Promise<{ readonly handle: string; readonly slug: string }>;
 }
 
+/**
+ * ⚠️ La carte de partage passe par la **même** fonction que la page anglaise : deux versions
+ * d'un apercu de lien finiraient par n'en dire la meme chose que dans une des deux langues.
+ */
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { handle } = await params;
+  return ListMetadata('fr', decodeURIComponent(handle));
+}
+
 export default async function FrenchListPage({ params }: PageProps) {
   return <ListView params={params} />;
 }

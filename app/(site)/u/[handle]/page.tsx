@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, t, type Locale } from '@/lib/i18n';
 import { PublicProfile } from '@/app/components/PublicProfile';
+import { handleFromPath } from '@/src/domain/handles';
 
 /**
  * La page publique de quelqu'un — `/u/<nom>`.
@@ -30,14 +31,36 @@ interface PageProps {
   readonly params: Promise<{ readonly handle: string }>;
 }
 
-export function ProfileMetadata(locale: Locale): Metadata {
+/**
+ * ⚠️ Meme raisonnement que pour une liste, et meme garde : le nom vient de l'adresse, verifie
+ * par `handleFromPath`, et rien n'est lu en base — le contenu depend de qui regarde, donc
+ * une carte de partage ne peut annoncer que ce que l'adresse dit deja.
+ */
+export function ProfileMetadata(locale: Locale, handle?: string): Metadata {
+  const named = handle === undefined ? undefined : handleFromPath(handle);
+  const title =
+    named === undefined
+      ? t(locale, 'profile.title')
+      : t(locale, 'profile.share.title', { who: named });
+
   return {
-    title: t(locale, 'profile.title'),
+    title,
     robots: { index: false, follow: false },
+    openGraph: {
+      title,
+      description: t(locale, 'profile.share.body'),
+      type: 'profile',
+    },
+    twitter: { card: 'summary', title, description: t(locale, 'profile.share.body') },
   };
 }
 
 export const metadata: Metadata = ProfileMetadata(DEFAULT_LOCALE);
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { handle } = await params;
+  return ProfileMetadata(DEFAULT_LOCALE, decodeURIComponent(handle));
+}
 
 /**
  * ⚠️ Aucune prop `locale` n'est passee au composant : il lit la sienne dans

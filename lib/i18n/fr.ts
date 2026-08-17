@@ -979,6 +979,15 @@ export const FR = {
   'read.failed':
     'Cette partie n’a pas pu être chargée. Ce n’est pas qu’elle est vide — réessayez dans un instant.',
   'read.failed.title': 'Rien n’a pu être lu',
+  // 🔴 L'apercu d'un lien partage parlait du site, pas de ce qu'on envoyait (2026-08-18).
+  // Le nom vient de l'adresse et il est verifie : sinon la carte serait ecrite par celui qui
+  // envoie le lien.
+  'list.share.title': 'Une liste de @{who}',
+  'list.share.body':
+    'Des séries rangées par quelqu’un, sur Voltface. Ouvrez-la pour voir ce qu’il y a dedans.',
+  'profile.share.title': '@{who} sur Voltface',
+  'profile.share.body':
+    'Ce que cette personne regarde, note et écrit — série par série, saison par saison.',
   'profile.followsYou': 'vous suit',
   'profile.needName': 'Prenez un nom pour suivre',
   // Les trois faces (9.1). ⚠️ Ce sont des LIBELLÉS, pas des noms de baptême : les vrais

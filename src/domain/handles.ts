@@ -171,6 +171,26 @@ function checkProfileText(raw: string, max: number): ProfileTextCheck {
   return { ok: true, value };
 }
 
+/**
+ * Le handle d'une URL, **ou rien** — pour ce qu'on ose recopier dans une page.
+ *
+ * ## 🔴 Pourquoi il ne suffit pas de reprendre le segment d'adresse
+ *
+ * `/u/[handle]` est `force-static` avec `dynamicParams` : **n'importe quelle chaine** y
+ * arrive, y compris une phrase de deux cents caracteres fabriquee pour qu'un apercu de lien
+ * dise ce que son auteur veut. Les metadonnees d'une page partagee sont la premiere chose
+ * qu'un destinataire voit, souvent la seule ; les composer avec du texte non verifie
+ * reviendrait a laisser ecrire la carte de partage a celui qui envoie le lien.
+ *
+ * Rendre `undefined` plutot qu'une valeur nettoyee est deliberé : l'appelant retombe alors
+ * sur un titre generique **vrai**, au lieu d'annoncer un nom qui n'a pas pu exister.
+ */
+export function handleFromPath(raw: string): string | undefined {
+  const handle = raw.trim().toLowerCase();
+  if (handle.length < HANDLE_MIN_LENGTH || handle.length > HANDLE_MAX_LENGTH) return undefined;
+  return HANDLE_PATTERN.test(handle) ? handle : undefined;
+}
+
 export function checkDisplayName(raw: string): ProfileTextCheck {
   return checkProfileText(raw, DISPLAY_NAME_MAX);
 }

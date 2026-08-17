@@ -819,6 +819,12 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'read.failed':
     'This part could not be loaded. It is not that it is empty — try again in a moment.',
   'read.failed.title': 'Nothing could be read',
+  'list.share.title': 'A list by @{who}',
+  'list.share.body':
+    'Series filed by someone, on Voltface. Open it to see what is inside.',
+  'profile.share.title': '@{who} on Voltface',
+  'profile.share.body':
+    'What this person watches, rates and writes — series by series, season by season.',
   'profile.followsYou': 'follows you',
   'profile.needName': 'Claim a name to follow',
   'face.finisher': 'Goes the distance',
