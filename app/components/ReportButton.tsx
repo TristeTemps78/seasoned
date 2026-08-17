@@ -43,7 +43,12 @@ export function ReportButton({ onReport }: {
       <button
         type="button"
         onClick={() => setState('open')}
-        className="meta-sm underline-offset-2 hover:text-(--color-warn) hover:underline"
+        // 🔴 **`quiet-action`, et c'etait deja la classe a employer.** Mesure du 2026-08-17 :
+        // 45 x 17 sur la production, sous le plancher de 24 px. `controls.css` nomme cette
+        // classe « l'action qui defait — recopiee quatre fois avant d'etre nommee » ; ce
+        // bouton etait la cinquieme copie, et il n'avait donc recu ni la cible ni le
+        // dessin. Signaler EST une action discrete : c'est exactement sa definition.
+        className="quiet-action hover:text-(--color-warn)"
       >
         {t('report.open')}
       </button>

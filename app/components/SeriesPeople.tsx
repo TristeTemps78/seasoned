@@ -99,7 +99,10 @@ export function SeriesPeople({ seriesId }: { readonly seriesId: string }) {
             <span>
               <Link
                 href={pathIn(`/u/${item.handle}`, locale)}
-                className="font-medium hover:text-(--color-volt)"
+                // Troisieme lien `@nom` du produit a passer sous le plancher : mesure du
+                // 2026-08-17, 103 x 17 sur « Qui d'autre l'a vue ». `tap-line` existe pour
+                // ca depuis le 2026-08-16.
+                className="tap-line font-medium hover:text-(--color-volt)"
               >
                 @{item.handle}
               </Link>{' '}
