@@ -816,6 +816,9 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'list.unreadable.title': 'This list could not be read',
   'list.unreadable.body':
     'It is not that it does not exist: the connection to our servers failed. Try again in a moment.',
+  'read.failed':
+    'This part could not be loaded. It is not that it is empty — try again in a moment.',
+  'read.failed.title': 'Nothing could be read',
   'profile.followsYou': 'follows you',
   'profile.needName': 'Claim a name to follow',
   'face.finisher': 'Goes the distance',

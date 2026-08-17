@@ -9,7 +9,7 @@ import { redactReviewsAcross } from '@/src/domain/spoiler';
 import { pathIn } from '@/lib/routes';
 import { formatDate } from '@/lib/format';
 import { type PublishedReview } from '@/src/social/client';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
@@ -88,7 +88,9 @@ export function DiscoverReviews() {
    */
   const { hearts, mine, canHeart, toggle } = useReviewHearts(reviews);
 
-  const social = useSocial();
+  // ⚠️ Voir `useSocialRead` : sans lui, une panne annoncait que personne n'avait jamais
+  // publie de critique, et proposait a la personne d'ecrire la premiere.
+  const { social, unreadable } = useSocialRead();
 
   useEffect(() => {
     if (social === undefined) return;
@@ -162,7 +164,9 @@ export function DiscoverReviews() {
         /* Regle 4 : un ecran qui n'a rien a montrer dit quoi faire. Sans bouton — le geste
            d'ecrire vit sur une fiche serie, et les rangees d'affiches de cette page en
            proposent une douzaine juste au-dessus. */
-        <EmptyState>{t('reviews.discover.none')}</EmptyState>
+        <EmptyState status={unreadable}>
+          {t(unreadable ? 'read.failed' : 'reviews.discover.none')}
+        </EmptyState>
       ) : (
         // Deux colonnes, comme sur un profil : une opinion courte est le cas le plus
         // frequent, et elle ne merite pas la largeur d'un article.

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
@@ -36,12 +36,13 @@ import type { TaggedByAuthor } from '@/src/social/client';
  */
 export function WordPage({ word }: { readonly word: string }) {
   const { t, tn, locale } = useT();
-  const social = useSocial();
+  const { social, unreadable, reset } = useSocialRead();
   const [rows, setRows] = useState<readonly TaggedByAuthor[] | undefined>(undefined);
 
   useEffect(() => {
     if (social === undefined) return;
     let alive = true;
+    reset();
     void social.tagged(word).then((found) => {
       if (alive) setRows(found);
     });
@@ -84,7 +85,8 @@ export function WordPage({ word }: { readonly word: string }) {
            cette page — un mot se pose depuis la fiche d'une serie —, donc on le nomme et on
            donne le chemin. */
         <EmptyState
-          title={t('word.none.title')}
+          status={unreadable}
+          title={t(unreadable ? 'read.failed.title' : 'word.none.title')}
           actions={
             <Link href={pathIn('/parcourir', locale)} className="btn btn-primary">
               {t('word.none.browse')}

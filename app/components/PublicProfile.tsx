@@ -30,8 +30,7 @@ import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { ReportButton } from '@/app/components/ReportButton';
 import { PosterChip } from '@/app/components/PosterChip';
-import { useSocial } from '@/app/social/useSocial';
-import { reportFailure } from '@/app/social/failures';
+import { useSocialRead } from '@/app/social/useSocial';
 
 /**
  * La page publique de quelqu'un — `/u/<nom>`.
@@ -164,13 +163,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
    * les deux : marquer la lecture illisible, et laisser les echecs d'ecriture remonter a la
    * banniere commune — sinon suivre quelqu'un echouerait ici en silence.
    */
-  const [unreadable, setUnreadable] = useState(false);
-  const social = useSocial(
-    useCallback((where: string, status: number | undefined, kind?: 'read' | 'write') => {
-      if (kind === 'write') reportFailure(where, status, kind);
-      else setUnreadable(true);
-    }, []),
-  );
+  const { social, unreadable, reset } = useSocialRead();
   const userId = account?.userId;
 
   /**
@@ -187,7 +180,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     if (social === undefined) return;
     // Remis a zero **avant** la lecture : sans ca, une panne passagere marquerait l'ecran
     // jusqu'au rechargement, y compris apres le retour du reseau.
-    setUnreadable(false);
+    reset();
     const found = await social.findByHandle(handle.toLowerCase());
     setProfile(found);
     setLoaded(true);
@@ -237,7 +230,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     setFollowing(mine.some((p) => p.userId === found.userId));
     setFollowsMe(theirs.some((p) => p.userId === found.userId));
     setNamed(me !== undefined);
-  }, [handle, social, userId]);
+  }, [handle, social, userId, reset]);
 
   useEffect(() => {
     void load();

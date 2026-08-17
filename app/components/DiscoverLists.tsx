@@ -7,7 +7,7 @@ import { useJournal } from '@/app/journal/useJournal';
 import { parseJournalKey } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
 import { type DiscoverableList } from '@/src/social/client';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PosterChip } from '@/app/components/PosterChip';
@@ -45,7 +45,9 @@ export function DiscoverLists() {
   const { journal } = useJournal();
   const [lists, setLists] = useState<readonly DiscoverableList[] | undefined>(undefined);
 
-  const social = useSocial();
+  // ⚠️ `useSocialRead` et non `useSocial` : sans lui, une lecture ratee annoncait que
+  // « personne n'a encore de liste sur un profil public » — une affirmation, pas un silence.
+  const { social, unreadable } = useSocialRead();
 
   useEffect(() => {
     if (social === undefined) return;
@@ -73,7 +75,9 @@ export function DiscoverLists() {
         /* ⚠️ Sans actions : le geste est deja sur cette page — le formulaire de creation est
            quelques centaines de pixels au-dessus. Un bouton menerait hors de l'ecran ou
            l'action se trouve (`EmptyState`, `actions` facultatif). */
-        <EmptyState>{t('lists.discover.none')}</EmptyState>
+        <EmptyState status={unreadable}>
+          {t(unreadable ? 'read.failed' : 'lists.discover.none')}
+        </EmptyState>
       ) : (
         <ul className="space-y-3">
           {lists.map((list) => (

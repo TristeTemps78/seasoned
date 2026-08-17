@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { socialFrom } from '@/app/social/socialFrom';
+import { reportFailure } from '@/app/social/failures';
 import type { SocialClient, SocialOptions } from '@/src/social/client';
 
 /**
@@ -69,4 +70,51 @@ export function useSocial(onFailure?: SocialOptions['onFailure']): SocialClient 
     () => (ready ? socialFrom(() => token.current, onFailure) : undefined),
     [ready, onFailure],
   );
+}
+
+/**
+ * Le meme client, **plus la distinction entre « rien » et « je n'ai pas pu lire »**.
+ *
+ * ## 🔴 Le defaut que ce crochet supprime, et il touchait sept ecrans
+ *
+ * Mesure le 2026-08-18, base coupee depuis la console sur la production : `/amis` affichait
+ * « Choisissez votre nom » a un compte qui en a un, `/u/<nom>` annoncait un profil
+ * inexistant, `/u/<nom>/liste/<slug>` une liste inexistante, et les trois vitrines
+ * annoncaient que personne n'avait rien publie. `SocialClient` **ne leve jamais** : une
+ * lecture ratee rend `undefined` ou `[]`, exactement comme une absence. L'ecran n'etait donc
+ * pas silencieux — il **affirmait** le contraire de ce qui s'etait passe.
+ *
+ * `onFailure` existait pour ca depuis le 2026-08-11, et `Friends` etait le seul abonne — au
+ * fil, pas au profil. Le corriger ecran par ecran aurait demande a chaque composant de se
+ * souvenir de trois lignes ; c'est exactement le raisonnement qui a fait de `reportFailure`
+ * le **defaut** de `socialFrom`, et la meme reponse s'applique : le crochet fait le travail,
+ * l'appelant ne choisit que sa phrase.
+ *
+ * ⚠️ **Les ecritures continuent de remonter a la banniere commune.** Un rappel passe a
+ * `useSocial` *remplace* `reportFailure` (voir `socialFrom`) : sans ce renvoi, brancher la
+ * lecture d'un ecran ferait taire ses echecs d'ecriture — on aurait echange un mensonge
+ * contre un autre.
+ *
+ * ⚠️ `reset` est a appeler **avant** chaque relecture : sans lui, une panne passagere
+ * marquerait l'ecran jusqu'au rechargement de la page, y compris apres le retour du reseau.
+ */
+export function useSocialRead(): {
+  readonly social: SocialClient | undefined;
+  readonly unreadable: boolean;
+  readonly reset: () => void;
+} {
+  const [unreadable, setUnreadable] = useState(false);
+
+  const social = useSocial(
+    useCallback((where: string, status: number | undefined, kind?: 'read' | 'write') => {
+      if (kind === 'write') reportFailure(where, status, kind);
+      else setUnreadable(true);
+    }, []),
+  );
+
+  return {
+    social,
+    unreadable,
+    reset: useCallback(() => setUnreadable(false), []),
+  };
 }

@@ -23,7 +23,7 @@ import { pathIn } from '@/lib/routes';
 import { Menu } from '@/app/components/Menu';
 import { type SeriesRef, type SeriesList } from '@/src/social/client';
 import { resolveSeriesRef } from '@/app/components/seriesRef';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 import { AccountGate } from '@/app/components/AccountGate';
 import { EmptyState } from '@/app/components/EmptyState';
 import { PosterChip } from '@/app/components/PosterChip';
@@ -173,7 +173,9 @@ export function Lists({ ownerId, ownerHandle }: {
   /** Le nom de l'auteur, donne par l'appelant ou lu une fois — voir `ownerHandle`. */
   const [handle, setHandle] = useState<string | undefined>(ownerHandle);
 
-  const social = useSocial();
+  // ⚠️ `useSocialRead` : sans lui, une lecture ratee annoncait « vous n'avez pas encore de
+  // liste » a quelqu'un qui en a — et proposait d'en creer une par-dessus.
+  const { social, unreadable, reset } = useSocialRead();
   const myId = account?.userId;
   const subjectId = ownerId ?? myId;
   const editable = ownerId === undefined || ownerId === myId;
@@ -194,6 +196,7 @@ export function Lists({ ownerId, ownerHandle }: {
     // ⚠️ Le nom part **avec** les listes et non apres : enchainer les deux ferait apparaitre
     // les cartes muettes puis cliquables, donc bouger une cible sous le doigt. Et il n'est
     // demande que s'il manque — sur un profil, l'appelant l'a deja.
+    reset();
     const [found, mine] = await Promise.all([
       social.listsBy(subjectId),
       ownerHandle === undefined && myId !== undefined
@@ -423,7 +426,9 @@ export function Lists({ ownerId, ownerHandle }: {
         // au-dessus, sur cette meme page. *Un ecran sans issue, pas un ecran sans bouton.*
         // Et sans action pour un visiteur non plus : il ne peut rien pour les listes que
         // quelqu'un d'autre n'a pas faites.
-        <EmptyState>{editable ? t('lists.none') : t('lists.noneOther')}</EmptyState>
+        <EmptyState status={unreadable}>
+          {t(unreadable ? 'read.failed' : editable ? 'lists.none' : 'lists.noneOther')}
+        </EmptyState>
       ) : (
         // ⚠️ Une **grille** et non une pile : une liste est un objet qu'on parcourt du regard
         // pour choisir, pas un article qu'on lit de haut en bas. Empilees pleine largeur, dix

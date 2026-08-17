@@ -26,7 +26,7 @@ import { FriendQuiz } from '@/app/components/FriendQuiz';
 import { Avatar } from '@/app/components/Avatar';
 import { FriendsFeed } from '@/app/components/FriendsFeed';
 import { pathIn } from '@/lib/routes';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 
 /**
  * La face « Mes amis » : reclamer un nom, suivre quelqu'un, lire le fil.
@@ -66,16 +66,17 @@ export function Friends() {
    * le meme ecran. C'est ce qui a laisse 10.0 invisible pendant trois sessions — trois
    * lectures sociales repondaient 400 depuis toujours, et l'ecran disait « rien a lire ».
    */
-  const [unreadable, setUnreadable] = useState(false);
 
   const userId = account?.userId;
-  const client = useSocial(useCallback(() => setUnreadable(true), []));
+  // ⚠️ Le crochet depuis le 2026-08-18 : il tenait dans ce fichier, et **six autres ecrans
+  // en avaient besoin sans l'avoir**. Voir `useSocialRead` pour ce que chacun affirmait.
+  const { social: client, unreadable, reset: resetUnreadable } = useSocialRead();
 
   const refresh = useCallback(
     async (social: SocialClient, id: string) => {
       // ⚠️ Remis a zero **avant** la lecture : sans ca, une panne passagere marquerait
       // l'ecran jusqu'au rechargement de la page, y compris apres un retour du reseau.
-      setUnreadable(false);
+      resetUnreadable();
       const mine = await social.myProfile(id);
       setProfile(mine);
       setLoaded(true);
@@ -145,7 +146,7 @@ export function Friends() {
       setFeed(facts);
       setWritten(texts);
     },
-    [journal],
+    [journal, resetUnreadable],
   );
 
   useEffect(() => {

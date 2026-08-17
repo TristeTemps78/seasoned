@@ -11,8 +11,7 @@ import { pathIn } from '@/lib/routes';
 import { type DiscoverableList, type SeriesRef } from '@/src/social/client';
 import { resolveSeriesRef } from '@/app/components/seriesRef';
 import { LIST_TITLE_MAX, uniqueSlug } from '@/src/domain/lists';
-import { useSocial } from '@/app/social/useSocial';
-import { reportFailure } from '@/app/social/failures';
+import { useSocialRead } from '@/app/social/useSocial';
 import { EmptyState } from '@/app/components/EmptyState';
 import { FaceDot } from '@/app/components/FaceDot';
 import { PageHeader } from '@/app/components/PageHeader';
@@ -78,13 +77,7 @@ export function PublicList({ handle, slug }: {
    * « elle n'existe pas » et « on ne vous la montre pas » — pour ne pas devenir un oracle a
    * listes —, et une panne s'etait glissee dans la meme phrase.
    */
-  const [unreadable, setUnreadable] = useState(false);
-  const social = useSocial(
-    useCallback((where: string, status: number | undefined, kind?: 'read' | 'write') => {
-      if (kind === 'write') reportFailure(where, status, kind);
-      else setUnreadable(true);
-    }, []),
-  );
+  const { social, unreadable, reset } = useSocialRead();
   const myId = account?.userId;
 
   const load = useCallback(async () => {
@@ -95,7 +88,7 @@ export function PublicList({ handle, slug }: {
       setLoaded(true);
       return;
     }
-    setUnreadable(false);
+    reset();
     const found = await social.listBy(handle, slug);
     setList(found);
     setLoaded(true);
@@ -109,7 +102,7 @@ export function PublicList({ handle, slug }: {
     setItems(content);
     const mine = hearts.find((one) => one.slug === slug);
     if (mine !== undefined) setLikes({ count: mine.likes, mine: mine.mine });
-  }, [handle, slug, social]);
+  }, [handle, slug, social, reset]);
 
   useEffect(() => {
     void load();

@@ -972,6 +972,13 @@ export const FR = {
   'list.unreadable.title': 'Cette liste n’a pas pu être lue',
   'list.unreadable.body':
     'Ce n’est pas qu’elle n’existe pas : la connexion à nos serveurs a échoué. Réessayez dans un instant.',
+  // 🔴 Une lecture ratee et un vide rendaient le meme ecran sur sept surfaces (2026-08-18).
+  // Cette phrase est celle des vitrines ; les trois pages ou le mensonge coutait le plus —
+  // « choisissez un nom », « ce profil n'existe pas », « cette liste ne s'ouvre pas » — ont
+  // la leur, parce qu'elles doivent dire QUOI n'a pas pu etre lu.
+  'read.failed':
+    'Cette partie n’a pas pu être chargée. Ce n’est pas qu’elle est vide — réessayez dans un instant.',
+  'read.failed.title': 'Rien n’a pu être lu',
   'profile.followsYou': 'vous suit',
   'profile.needName': 'Prenez un nom pour suivre',
   // Les trois faces (9.1). ⚠️ Ce sont des LIBELLÉS, pas des noms de baptême : les vrais
