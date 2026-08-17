@@ -2332,6 +2332,47 @@ export class SocialClient {
   }
 
   /**
+   * **Renommer une liste, ou reecrire sa phrase.**
+   *
+   * ## 🔴 Le geste qui manquait, et son cout reel
+   *
+   * `007_lists.sql` porte `lists_update` depuis le premier jour ; aucun appelant, aucun
+   * bouton. Une faute de frappe dans un titre ne se corrigeait donc qu'en **supprimant la
+   * liste** — ce qui emporte son contenu par cascade, et son adresse avec. C'est le meme
+   * motif que `reviews_delete` (F10) : la base autorisait, le produit ne proposait pas.
+   *
+   * ## ⚠️ Le `slug` ne bouge PAS, et c'est la decision
+   *
+   * Il est l'adresse partageable de la liste (`/u/<nom>/liste/<slug>`) depuis le
+   * 2026-08-16. Le recalculer depuis le nouveau titre casserait tous les liens deja
+   * envoyes — c'est exactement le raisonnement qui interdit le prefixe `/en/` dans
+   * `lib/routes.ts` : *l'asymetrie est le prix de la continuite.* Une liste renommee garde
+   * donc une adresse qui parle de son ancien nom, et c'est le bon prix.
+   *
+   * ⚠️ `note: null` efface la phrase — `undefined` ne l'aurait pas envoyee, donc l'aurait
+   * laissee en place. C'est le meme piege que `?? null` dans `publishReview`, et il se paie
+   * ici de la meme facon : une phrase qu'on ne peut plus retirer.
+   */
+  async updateList(
+    userId: string,
+    slug: string,
+    list: { readonly title: string; readonly note?: string },
+  ): Promise<boolean> {
+    return this.#write(
+      `lists?user_id=eq.${encodeURIComponent(userId)}&slug=eq.${encodeURIComponent(slug)}`,
+      'PATCH',
+      {
+        title: list.title,
+        note: list.note ?? null,
+        // ⚠️ Pose a la main : `updated_at` a un defaut a la creation et **aucun declencheur**
+        // ne le rafraichit. Sans cette ligne, une liste renommee garderait la date de sa
+        // creation, et `discoverLists` la classerait comme si rien n'avait bouge.
+        updated_at: new Date().toISOString(),
+      },
+    );
+  }
+
+  /**
    * Supprime une liste, et ses elements avec elle (la cascade est dans le SQL).
    *
    * ⚠️ **Une suppression dure, et c'est la difference avec une critique.** `/regles` promet

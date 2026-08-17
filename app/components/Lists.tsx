@@ -152,6 +152,17 @@ export function Lists({ ownerId, ownerHandle }: {
   const [note, setNote] = useState('');
   const [error, setError] = useState<ListRejection | 'failed' | undefined>(undefined);
   /**
+   * La liste en cours de renommage, et les deux champs qui la portent.
+   *
+   * ⚠️ **Un seul jeu de champs pour toutes les listes** : `editing` designe laquelle est
+   * ouverte, donc en ouvrir une seconde referme la premiere. Un etat par liste ferait dix
+   * brouillons invisibles qu'on croirait enregistres.
+   */
+  const [editing, setEditing] = useState<string | undefined>(undefined);
+  const [editTitle, setEditTitle] = useState('');
+  const [editNote, setEditNote] = useState('');
+  const [editError, setEditError] = useState<ListRejection | 'failed' | undefined>(undefined);
+  /**
    * Le formulaire de creation est-il demande ?
    *
    * ⚠️ Il n'est pas la seule condition : il s'ouvre **aussi** tant qu'il n'y a aucune liste
@@ -242,6 +253,39 @@ export function Lists({ ownerId, ownerHandle }: {
     setCreating(false);
     await load();
   }, [title, note, clientFor, myId, lists, load]);
+
+  /**
+   * Renommer une liste, ou reecrire sa phrase.
+   *
+   * ⚠️ La verification vient du **domaine** (`checkList`), la meme que la creation : deux
+   * copies d'une regle de nommage finissent par diverger, et c'est deja arrive entre le
+   * domaine et le SQL. Une liste renommee en quelque chose d'invalide serait refusee par la
+   * base **apres** que l'ecran ait dit oui.
+   */
+  const rename = useCallback(
+    async (slug: string) => {
+      const checked = checkList(editTitle, editNote);
+      if (!checked.ok) {
+        setEditError(checked.reason);
+        return;
+      }
+      const social = clientFor();
+      if (social === undefined || myId === undefined) return;
+
+      const ok = await social.updateList(myId, slug, {
+        title: checked.title,
+        ...(checked.note !== undefined ? { note: checked.note } : {}),
+      });
+      if (!ok) {
+        setEditError('failed');
+        return;
+      }
+      setEditing(undefined);
+      setEditError(undefined);
+      await load();
+    },
+    [editTitle, editNote, clientFor, myId, load],
+  );
 
   const remove = useCallback(
     async (slug: string, subject: string) => {
@@ -482,12 +526,79 @@ export function Lists({ ownerId, ownerHandle }: {
                   {/* ⚠️ `quiet-action` et non `.btn` : supprimer une liste est **irreversible**
                       (la cascade est dans le SQL), et lui donner le meme poids visuel que
                       « Voir » met un geste sans retour a cote d'un geste sans consequence. */}
+                  {/* 🔴 **On ne pouvait pas corriger un titre.** `007_lists.sql` porte
+                      `lists_update` depuis le premier jour, sans aucun appelant : une faute
+                      de frappe ne se reparait qu'en **supprimant la liste**, ce qui emporte
+                      son contenu par cascade et son adresse avec. C'est le motif de F10, sur
+                      une autre table — la base autorisait, le produit ne proposait pas.
+
+                      ⚠️ Le `slug` ne change pas : c'est l'adresse partageable depuis le
+                      2026-08-16, et la recalculer casserait tous les liens deja envoyes. */}
+                  {editable ? (
+                    <button
+                      type="button"
+                      className="quiet-action"
+                      aria-expanded={editing === list.slug}
+                      onClick={() => {
+                        setEditing(editing === list.slug ? undefined : list.slug);
+                        setEditTitle(list.title);
+                        setEditNote(list.note ?? '');
+                        setEditError(undefined);
+                      }}
+                    >
+                      {t('lists.rename')}
+                    </button>
+                  ) : null}
+                  {/* ⚠️ `quiet-action` et non `.btn` : supprimer une liste est **irreversible**
+                      (la cascade est dans le SQL), et lui donner le meme poids visuel que
+                      « Voir » met un geste sans retour a cote d'un geste sans consequence. */}
                   {editable ? (
                     <button type="button" className="quiet-action" onClick={() => drop(list.slug)}>
                       {t('lists.delete')}
                     </button>
                   ) : null}
                 </div>
+
+                {editing === list.slug ? (
+                  <div className="space-y-2 border-t border-(--color-edge) pt-3">
+                    <input
+                      className="field w-full"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      aria-label={t('lists.titleLabel')}
+                    />
+                    <input
+                      className="field w-full"
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
+                      placeholder={t('lists.notePlaceholder')}
+                      aria-label={t('lists.noteLabel')}
+                    />
+                    {editError !== undefined ? (
+                      <p className="text-sm text-(--color-warn)">{t(`lists.error.${editError}`)}</p>
+                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => void rename(list.slug)}
+                      >
+                        {t('lists.save')}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => setEditing(undefined)}
+                      >
+                        {t('lists.cancel')}
+                      </button>
+                    </div>
+                    {/* ⚠️ Dit ici et pas ailleurs : quelqu'un qui renomme s'attend a ce que
+                        l'adresse suive, et elle ne suit pas. Une surprise annoncee n'est plus
+                        une surprise. */}
+                    <p className="meta-sm">{t('lists.renameKeepsUrl')}</p>
+                  </div>
+                ) : null}
 
                 {isOpen ? (
                   shown.length === 0 ? (

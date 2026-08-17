@@ -380,6 +380,10 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'list.copyFailed': 'The copy did not go through. Try again.',
   'lists.remove': 'Remove',
   'lists.delete': 'Delete the list',
+  'lists.rename': 'Edit the title',
+  'lists.save': 'Save',
+  'lists.renameKeepsUrl':
+    'The list address does not change: links you already sent keep working.',
   'lists.gate.title': 'Set series aside for later, or for someone',
   'lists.gate.body':
     'A list lives on our servers, because a list nobody can read is not a list. It is the only part of the product that needs an account.',

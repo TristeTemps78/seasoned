@@ -443,6 +443,12 @@ export const FR = {
   'list.copyFailed': 'La reprise n’est pas partie. Réessayez.',
   'lists.remove': 'Retirer',
   'lists.delete': 'Supprimer la liste',
+  // `lists_update` existait depuis le premier jour, sans appelant : corriger un titre
+  // demandait de supprimer la liste, donc son contenu et son adresse.
+  'lists.rename': 'Modifier le titre',
+  'lists.save': 'Enregistrer',
+  'lists.renameKeepsUrl':
+    'L’adresse de la liste ne change pas : les liens déjà envoyés continuent de fonctionner.',
   // 🔴 `lists.needAccount` disait la bonne chose dans un paragraphe gris seul sur la page.
   // Le texte est repris tel quel ; ce qui change est qu'il porte désormais un titre, deux
   // boutons, et — juste dessous — la démonstration avec les séries du lecteur.
