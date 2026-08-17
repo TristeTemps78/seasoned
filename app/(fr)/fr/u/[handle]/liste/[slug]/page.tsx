@@ -10,8 +10,6 @@ import { ListMetadata, ListView } from '@/app/(site)/u/[handle]/liste/[slug]/pag
  */
 export const dynamic = 'force-static';
 
-export const metadata: Metadata = ListMetadata('fr');
-
 interface PageProps {
   readonly params: Promise<{ readonly handle: string; readonly slug: string }>;
 }

@@ -55,7 +55,9 @@ export function ProfileMetadata(locale: Locale, handle?: string): Metadata {
   };
 }
 
-export const metadata: Metadata = ProfileMetadata(DEFAULT_LOCALE);
+/* ⚠️ Pas de `metadata` constante a cote : Next refuse les deux exports ensemble, et c'est
+   la fonction qui sait lire l'adresse. Le `ProfileMetadata` exporte reste la source des deux
+   langues — la jumelle francaise l'appelle avec la sienne. */
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { handle } = await params;

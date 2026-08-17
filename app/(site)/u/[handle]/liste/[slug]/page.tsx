@@ -69,7 +69,7 @@ export function ListMetadata(locale: Locale, handle?: string): Metadata {
   };
 }
 
-export const metadata: Metadata = ListMetadata(DEFAULT_LOCALE);
+/* ⚠️ Pas de `metadata` constante : Next refuse les deux exports ensemble. */
 
 /**
  * ⚠️ Les metadonnees sont **par requete** ici, alors que la page reste `force-static` : Next

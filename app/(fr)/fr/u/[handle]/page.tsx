@@ -10,8 +10,6 @@ import { ProfileMetadata, ProfileView } from '@/app/(site)/u/[handle]/page';
  */
 export const dynamic = 'force-static';
 
-export const metadata: Metadata = ProfileMetadata('fr');
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { handle } = await params;
   return ProfileMetadata('fr', decodeURIComponent(handle));
