@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useJournal } from '@/app/journal/useJournal';
@@ -76,7 +76,7 @@ export function PublishActivity() {
    * comparer et le vide se publie comme avant — c'est-a-dire qu'il efface, ce qui est tout
    * l'objet du refus.
    */
-  const serverTags = useRef<string | undefined>(undefined);
+  const [serverTags, setServerTags] = useState<string | undefined>(undefined);
   const forgotten = useRef(false);
 
   const social = useSocial();
@@ -97,12 +97,13 @@ export function PublishActivity() {
    */
   useEffect(() => {
     if (!configured || !ready || userId === undefined || !shareTags) return;
-    if (social === undefined || serverTags.current !== undefined) return;
+    if (social === undefined || serverTags !== undefined) return;
 
     let alive = true;
     void social.tagsBy(userId).then((rows) => {
       if (!alive) return;
-      serverTags.current = JSON.stringify(
+      setServerTags(
+        JSON.stringify(
         [...rows]
           .map((one) => ({
             subject: one.subject,
@@ -113,13 +114,14 @@ export function PublishActivity() {
           // Le meme ordre que la projection locale : la base rend `tag.asc`, le journal rend
           // serie par serie. Deux ordres differents pour un meme contenu se compareraient
           // comme deux contenus differents.
-          .sort((x, y) => (x.subject + x.tag < y.subject + y.tag ? -1 : 1)),
+            .sort((x, y) => (x.subject + x.tag < y.subject + y.tag ? -1 : 1)),
+        ),
       );
     });
     return () => {
       alive = false;
     };
-  }, [configured, ready, userId, social, shareTags]);
+  }, [configured, ready, userId, social, shareTags, serverTags]);
 
   useEffect(() => {
     if (!configured || !ready || userId === undefined) return;
@@ -223,7 +225,7 @@ export function PublishActivity() {
     // reecrivait un vocabulaire identique — deux ecritures pour rien.
     const sendTags = changeDEtat(
       wordShape,
-      lastTags.current ?? serverTags.current,
+      lastTags.current ?? serverTags,
       words.length === 0,
     );
     // Le retrait ne part qu'une fois par session : la table est illisible, donc rien ne
@@ -269,7 +271,13 @@ export function PublishActivity() {
     }, 4_000);
 
     return () => clearTimeout(timer);
-  }, [configured, ready, journal, userId, social, keepStopsPrivate, shareTags]);
+    // ⚠️ `serverTags` est dans les dependances, et c'est **tout le correctif** : sans lui, la
+    // decision d'envoyer etait prise au montage — donc avant que la lecture ne reponde — et
+    // le minuteur de quatre secondes partait quand meme. Mesure du 2026-08-18 : la lecture
+    // s'ajoutait aux deux ecritures au lieu de les remplacer, soit **trois** appels la ou il
+    // y en avait deux. Quand la lecture arrive, cet effet rejoue, annule son minuteur, et
+    // recompare.
+  }, [configured, ready, journal, userId, social, keepStopsPrivate, shareTags, serverTags]);
 
   // Reprendre le consentement doit pouvoir redemander un retrait plus tard.
   useEffect(() => {
