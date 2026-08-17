@@ -457,7 +457,7 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
 
   'feedback.title': 'What your writing got back',
   'feedback.lede':
-    'Hearts and replies land on the series page. They are gathered here so you do not have to go back for them.',
+    'Hearts, replies and new followers each land on a different page. They are gathered here so you do not have to go back for them.',
   'feedback.hearts.one': '{n} heart',
   'feedback.hearts.other': '{n} hearts',
   'feedback.listHearts.one': '{n} heart on your list',

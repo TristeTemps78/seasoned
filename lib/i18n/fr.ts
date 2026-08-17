@@ -541,7 +541,7 @@ export const FR = {
   // projette pas `liker_id`, et un agrégat n'est pas un annuaire.
   'feedback.title': 'Ce que vos textes ont reçu',
   'feedback.lede':
-    'Les cœurs et les réponses arrivent sur la fiche de la série. Ils sont rassemblés ici pour que vous n’ayez pas à y repasser.',
+    'Les cœurs, les réponses et les nouveaux abonnés arrivent chacun sur une page différente. Ils sont rassemblés ici pour que vous n’ayez pas à y repasser.',
   'feedback.hearts.one': '{n} cœur',
   'feedback.hearts.other': '{n} cœurs',
   'feedback.listHearts.one': '{n} cœur sur votre liste',

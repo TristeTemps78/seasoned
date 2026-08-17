@@ -135,9 +135,14 @@ export function Feedback() {
           // et c'est pour ca que l'instantane voyage depuis `018`.
           // ⚠️ Jamais le slug en repli : c'est une adresse, pas un nom — meme regle que
           // « jamais `tmdb:94997` a l'ecran », et `no-raw-journal-key` la garde.
-          const title = surListe
-            ? (one.body ?? t('feedback.someList'))
-            : (journal.entries[one.subject]?.snapshot?.title ?? t('feed.someSeries'));
+          // ⚠️ Vide pour un abonnement : il ne parle d'aucune oeuvre, et le repli
+          // « une serie » y affichait litteralement « @x vous suit · une serie » — mesure a
+          // l'ecran le 2026-08-18, deux minutes apres la livraison.
+          const title = surQuelquun
+            ? ''
+            : surListe
+              ? (one.body ?? t('feedback.someList'))
+              : (journal.entries[one.subject]?.snapshot?.title ?? t('feed.someSeries'));
           const href = surQuelquun
             ? pathIn(`/u/${one.subject}`, locale)
             : surListe
