@@ -676,6 +676,14 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
 
   // Le profil, sur « Mon compte » — voir `ProfileSettings`.
   'account.profile.title': 'My profile here',
+  'account.profile.name': 'Your name, as it shows',
+  'account.profile.namePlaceholder': 'Accents, spaces, capitals — what a username forbids',
+  'account.profile.bio': 'A sentence about you',
+  'account.profile.bioPlaceholder': 'What you watch, what you are looking for…',
+  'account.profile.save': 'Save',
+  'account.profile.ok': 'Saved.',
+  'account.profile.too_long': 'Too long: the name fits in 40 characters, the sentence in 160.',
+  'account.profile.failed': 'Saving did not go through. Try again.',
   'account.profile.youAre': 'You are',
   'account.profile.noHandle': 'You have not picked a name yet, so nobody can follow you.',
   'account.profile.claimThere': 'Pick one on Friends',

@@ -126,6 +126,59 @@ export function checkHandle(raw: string, taken: ReadonlySet<string> = new Set())
   return { ok: true, handle };
 }
 
+// ---------------------------------------------------------------------------
+// Ce qu'un handle ne peut pas porter, et qui doit vivre quelque part (030)
+// ---------------------------------------------------------------------------
+//
+// 🔴 **`display_name` existe dans le schema depuis `003` et n'etait ni ecrit ni affiche.**
+// Ce fichier promettait pourtant, vingt lignes plus haut, qu'*« un nom d'affichage libre
+// porte le reste »* — les accents, les espaces, les majuscules, que l'alphabet d'un handle
+// interdit pour de bonnes raisons. La promesse etait ecrite, la colonne etait la, et le
+// produit affichait `@test` partout.
+//
+// Les deux bornes ci-dessous vivent **aussi** dans la base (`030_profile_words.sql`), et ce
+// n'est pas une duplication : le client peut etre en retard sur la base, et c'est la base qui
+// garantit. Ici, la borne sert a **le dire avant** plutot qu'a subir un 23514 muet.
+
+/** Un nom lisible tient sur une ligne, a cote d'un `@handle`. */
+export const DISPLAY_NAME_MAX = 40;
+
+/**
+ * Une phrase de profil, et pas un article.
+ *
+ * 160 caracteres : ce qui tient sous un nom sans devenir une critique posee sur un profil.
+ * Deux surfaces d'ecriture pour un seul geste obligeraient la moderation a trancher laquelle
+ * elle lit.
+ */
+export const BIO_MAX = 160;
+
+export type ProfileTextCheck =
+  | { readonly ok: true; readonly value: string | undefined }
+  | { readonly ok: false; readonly reason: 'too_long' };
+
+/**
+ * Verifie un texte libre de profil, et rend sa forme rangee.
+ *
+ * ⚠️ **Vide rend `undefined` et non une chaine vide** : c'est la difference entre « je n'en
+ * veux pas » et « j'en veux un vide ». La base n'accepte pas la seconde (`between 1 and N`
+ * sur le texte rogne), donc l'appelant doit envoyer `null` — et `undefined` est ce qui le
+ * lui dit.
+ */
+function checkProfileText(raw: string, max: number): ProfileTextCheck {
+  const value = raw.trim();
+  if (value.length === 0) return { ok: true, value: undefined };
+  if (value.length > max) return { ok: false, reason: 'too_long' };
+  return { ok: true, value };
+}
+
+export function checkDisplayName(raw: string): ProfileTextCheck {
+  return checkProfileText(raw, DISPLAY_NAME_MAX);
+}
+
+export function checkBio(raw: string): ProfileTextCheck {
+  return checkProfileText(raw, BIO_MAX);
+}
+
 /**
  * Age minimum pour ouvrir un compte seul.
  *

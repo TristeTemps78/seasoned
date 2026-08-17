@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { pathIn } from '@/lib/routes';
+import { BIO_MAX, DISPLAY_NAME_MAX, checkBio, checkDisplayName } from '@/src/domain/handles';
 import { useSocial } from '@/app/social/useSocial';
 import type { Visibility } from '@/src/social/client';
 
@@ -41,6 +42,16 @@ export function ProfileSettings() {
     readonly visibility: Visibility;
   }>();
   const [loaded, setLoaded] = useState(false);
+  /**
+   * Le nom lisible et la phrase — 030.
+   *
+   * ⚠️ Deux brouillons locaux, enregistres par un bouton : un envoi a chaque frappe ferait
+   * une ecriture par caractere. C'est la difference avec la visibilite juste dessous, qui est
+   * un choix parmi trois et part au clic.
+   */
+  const [name, setName] = useState('');
+  const [bio, setBio] = useState('');
+  const [saved, setSaved] = useState<'ok' | 'too_long' | 'failed' | undefined>(undefined);
 
   const userId = account?.userId;
   const social = useSocial();
@@ -57,6 +68,11 @@ export function ProfileSettings() {
           ? undefined
           : { handle: found.handle, visibility: found.visibility },
       );
+      // ⚠️ Les champs sont remplis avec ce qui est **deja publie**, jamais laisses vides :
+      // un formulaire vide devant un nom existant fait croire qu'il n'y en a pas, et
+      // l'enregistrer l'effacerait sans que personne ne l'ait demande.
+      setName(found?.displayName ?? '');
+      setBio(found?.bio ?? '');
       setLoaded(true);
     });
     return () => {
@@ -77,6 +93,28 @@ export function ProfileSettings() {
     },
     [userId, social, profile],
   );
+
+  /**
+   * Enregistre le nom et la phrase.
+   *
+   * ⚠️ La verification vient du **domaine** : la base porte la meme borne (`030`), et deux
+   * copies d'une regle finissent par diverger — c'est deja arrive entre le domaine et le SQL
+   * pour les handles. Ici, elle sert a le dire avant plutot qu'a subir un 23514 muet.
+   */
+  const saveWords = useCallback(async () => {
+    if (userId === undefined || social === undefined) return;
+    const checkedName = checkDisplayName(name);
+    const checkedBio = checkBio(bio);
+    if (!checkedName.ok || !checkedBio.ok) {
+      setSaved('too_long');
+      return;
+    }
+    const ok = await social.setProfileWords(userId, {
+      ...(checkedName.value !== undefined ? { displayName: checkedName.value } : {}),
+      ...(checkedBio.value !== undefined ? { bio: checkedBio.value } : {}),
+    });
+    setSaved(ok ? 'ok' : 'failed');
+  }, [userId, social, name, bio]);
 
   // Tant qu'on ne sait pas, on ne dit rien : afficher « vous n'avez pas de nom » a quelqu'un
   // qui en a un, une demi-seconde, serait pire que d'attendre.
@@ -105,6 +143,61 @@ export function ProfileSettings() {
               @{profile.handle}
             </Link>
           </p>
+
+          {/* 🔴 **`display_name` existait dans le schema depuis `003` et n'avait aucun
+              chemin d'ecriture.** Le produit affichait `@test` partout, alors que
+              `handles.ts` promettait qu'*« un nom d'affichage libre porte le reste »* — les
+              accents, les espaces, les majuscules qu'un handle interdit. C'est ici que le
+              chemin manquait, et la phrase (`bio`) l'accompagne parce que les deux repondent
+              a la meme question : qui etes-vous, au-dela d'un pseudo.
+
+              ⚠️ Les deux champs sont facultatifs et le restent : un profil sans nom lisible
+              s'affiche sous son handle, comme avant. */}
+          <div className="space-y-2 text-sm">
+            <label className="block text-(--color-muted)" htmlFor="profile-name">
+              {t('account.profile.name')}
+            </label>
+            <input
+              id="profile-name"
+              className="field w-full"
+              value={name}
+              maxLength={DISPLAY_NAME_MAX}
+              placeholder={t('account.profile.namePlaceholder')}
+              onChange={(e) => {
+                setName(e.target.value);
+                setSaved(undefined);
+              }}
+            />
+            <label className="block text-(--color-muted)" htmlFor="profile-bio">
+              {t('account.profile.bio')}
+            </label>
+            <input
+              id="profile-bio"
+              className="field w-full"
+              value={bio}
+              maxLength={BIO_MAX}
+              placeholder={t('account.profile.bioPlaceholder')}
+              onChange={(e) => {
+                setBio(e.target.value);
+                setSaved(undefined);
+              }}
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" className="btn" onClick={() => void saveWords()}>
+                {t('account.profile.save')}
+              </button>
+              {/* Une ecriture qui rate n'a aucun ecran par elle-meme : le geste a l'air
+                  d'avoir marche. On dit les trois issues. */}
+              {saved !== undefined ? (
+                <span
+                  aria-live="polite"
+                  className={saved === 'ok' ? 'meta' : 'text-sm text-(--color-warn)'}
+                >
+                  {t(`account.profile.${saved}`)}
+                </span>
+              ) : null}
+            </div>
+          </div>
 
           <div className="space-y-1 text-sm">
             <p className="text-(--color-muted)">{t('friends.visibility')}</p>

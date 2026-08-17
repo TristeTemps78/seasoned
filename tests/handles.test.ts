@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BIO_MAX,
+  checkBio,
+  checkDisplayName,
   checkHandle,
+  DISPLAY_NAME_MAX,
   HANDLE_MAX_LENGTH,
   HANDLE_MIN_LENGTH,
   MINIMUM_AGE,
@@ -110,5 +114,39 @@ describe('l age minimum', () => {
     // la ou l'Etat l'a abaisse. Pour un produit international, le plus eleve est le
     // seul qui ne demande pas de logique par pays.
     expect(MINIMUM_AGE).toBe(16);
+  });
+});
+
+/**
+ * **030 — le nom lisible et la phrase.**
+ *
+ * 🔴 `display_name` existait dans le schema depuis `003`, `rowToProfile` la lisait, et rien
+ * ne l'ecrivait ni ne l'affichait. Ce fichier promettait pourtant qu'*« un nom d'affichage
+ * libre porte le reste »* : la promesse etait ecrite, la colonne etait la, et le produit
+ * affichait `@test` partout.
+ */
+describe('les textes libres d un profil', () => {
+  it('rend `undefined` sur un texte vide — et ce n est pas une erreur', () => {
+    // ⚠️ La difference entre « je n'en veux pas » et « j'en veux un vide » : la base refuse
+    // la seconde (`between 1 and N`), donc l'appelant doit envoyer `null`. C'est `undefined`
+    // qui le lui dit.
+    expect(checkDisplayName('   ')).toEqual({ ok: true, value: undefined });
+    expect(checkBio('')).toEqual({ ok: true, value: undefined });
+  });
+
+  it('range ce qu on a tape, sans le reecrire', () => {
+    // Contrairement a un handle, **rien n'est mis en minuscules ni translittere** : c'est
+    // exactement ce que cette colonne existe pour porter.
+    expect(checkDisplayName('  Marie-Ève  ')).toEqual({ ok: true, value: 'Marie-Ève' });
+  });
+
+  it('refuse au-dela des bornes que la base porte aussi', () => {
+    expect(checkDisplayName('x'.repeat(DISPLAY_NAME_MAX + 1))).toEqual({
+      ok: false,
+      reason: 'too_long',
+    });
+    expect(checkBio('x'.repeat(BIO_MAX + 1))).toEqual({ ok: false, reason: 'too_long' });
+    // L'ancrage : la borne exacte passe. Sans lui, un `>=` fautif serait invisible.
+    expect(checkBio('x'.repeat(BIO_MAX)).ok).toBe(true);
   });
 });

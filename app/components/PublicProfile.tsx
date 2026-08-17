@@ -261,7 +261,27 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
         <Avatar handle={profile.handle} large />
 
         <div className="min-w-0 space-y-1">
-          <h1 className="page-title">@{profile.handle}</h1>
+          {/* 🔴 **`display_name` dormait dans le schema depuis `003`.** La colonne existait,
+              `rowToProfile` la lisait, `handles.ts` promettait qu'*« un nom d'affichage libre
+              porte le reste »* — et la seule page du produit dont le sujet est *quelqu'un*
+              affichait un pseudo en minuscules sans accent.
+
+              ⚠️ Le handle **reste**, sous le nom : c'est lui l'identite (l'adresse, la
+              mention, le signalement), et le remplacer ferait deux personnes indistinguables
+              le jour ou deux « Marie » se croisent. Le nom dit qui, le handle dit lequel. */}
+          {profile.displayName !== undefined ? (
+            <>
+              <h1 className="page-title">{profile.displayName}</h1>
+              <p className="meta">@{profile.handle}</p>
+            </>
+          ) : (
+            <h1 className="page-title">@{profile.handle}</h1>
+          )}
+          {/* La phrase, sous le nom et avant les mesures : c'est ce que la personne a choisi
+              de dire d'elle-meme, et ca passe avant ce que le produit a compte. */}
+          {profile.bio !== undefined ? (
+            <p className="prose-note max-w-prose">{profile.bio}</p>
+          ) : null}
           {/* La ligne qui dit **qui** c'est en deux mesures : sa face, et ce qu'il y a a lire.
               ⚠️ Le **mot** de la face, pas la pastille seule. Ailleurs c'est l'inverse : dans
               le fil et dans « des gens a decouvrir », une ligne par personne ne supporte pas un

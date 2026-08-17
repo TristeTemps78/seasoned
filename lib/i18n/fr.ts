@@ -792,6 +792,15 @@ export const FR = {
 
   // Le profil, sur « Mon compte » — voir `ProfileSettings`.
   'account.profile.title': 'Mon profil ici',
+  // 030 — le nom lisible existait dans le schema depuis `003`, sans chemin d'ecriture.
+  'account.profile.name': 'Votre nom, tel qu’il s’affiche',
+  'account.profile.namePlaceholder': 'Accents, espaces, majuscules — ce qu’un pseudo interdit',
+  'account.profile.bio': 'Une phrase sur vous',
+  'account.profile.bioPlaceholder': 'Ce que vous regardez, ce que vous cherchez…',
+  'account.profile.save': 'Enregistrer',
+  'account.profile.ok': 'Enregistré.',
+  'account.profile.too_long': 'Trop long : le nom tient en 40 caractères, la phrase en 160.',
+  'account.profile.failed': 'L’enregistrement n’est pas parti. Réessayez.',
   'account.profile.youAre': 'Vous êtes',
   'account.profile.noHandle':
     'Vous n’avez pas encore choisi de nom, donc personne ne peut vous suivre.',

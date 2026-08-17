@@ -77,7 +77,14 @@ export type Visibility = 'private' | 'followers' | 'public';
 export interface Profile {
   readonly userId: string;
   readonly handle: string;
+  /**
+   * Le nom lisible — accents, espaces, majuscules : tout ce que l'alphabet d'un handle
+   * interdit. Absent tant que personne ne l'a pose, et c'etait le cas de **tout le monde**
+   * jusqu'au 2026-08-17 : la colonne existait depuis `003` sans chemin d'ecriture.
+   */
   readonly displayName?: string;
+  /** Une phrase, 160 caracteres au plus. Voir `030_profile_words.sql`. */
+  readonly bio?: string;
   readonly visibility: Visibility;
   /**
    * La face, si elle a ete publiee. Absente = sous le seuil, donc on se tait.
@@ -545,7 +552,14 @@ function rowToProfile(row: Record<string, unknown>): Profile {
   return {
     userId: String(row['user_id']),
     handle: String(row['handle']),
-    ...(typeof row['display_name'] === 'string' ? { displayName: row['display_name'] } : {}),
+    // ⚠️ Verifies au type ET non vides : une colonne rognee a la chaine vide par un
+    // tableau de bord rendrait un nom invisible qui remplacerait quand meme le handle.
+    ...(typeof row['display_name'] === 'string' && row['display_name'].trim() !== ''
+      ? { displayName: row['display_name'].trim() }
+      : {}),
+    ...(typeof row['bio'] === 'string' && row['bio'].trim() !== ''
+      ? { bio: row['bio'].trim() }
+      : {}),
     visibility: (row['visibility'] as Visibility) ?? 'followers',
     ...(face !== undefined ? { face } : {}),
   };
@@ -904,6 +918,33 @@ export class SocialClient {
       `profile_favorites?user_id=eq.${encodeURIComponent(userId)}&select=subject,title,poster_path&order=ordinal.asc&limit=4`,
     );
     return rows.flatMap(rowToSeriesRef);
+  }
+
+  /**
+   * **Le nom lisible et la phrase d'un profil** — 030.
+   *
+   * ## 🔴 `display_name` dormait dans le schema depuis `003`
+   *
+   * La colonne existait, `rowToProfile` la lisait, `handles.ts` promettait qu'*« un nom
+   * d'affichage libre porte le reste »* — et **rien ne l'ecrivait, rien ne l'affichait**.
+   * C'est le motif que ce fichier documente comme sa panne la plus chere : `unfollow()` et
+   * `setVisibility()` ont vecu deux lots sans appelant.
+   *
+   * ⚠️ **`null` et non l'omission pour effacer** : une cle absente d'un `PATCH` laisse la
+   * valeur en place, donc un nom retire ne partirait jamais. C'est le meme piege que le
+   * `?? null` de `publishReview`, et il se paie ici par un nom qu'on ne peut plus enlever.
+   *
+   * ⚠️ Les deux champs partent **ensemble**, dans une seule requete : ils se modifient dans
+   * le meme formulaire, et deux `PATCH` feraient deux allers-retours pour un geste.
+   */
+  async setProfileWords(
+    userId: string,
+    words: { readonly displayName?: string; readonly bio?: string },
+  ): Promise<boolean> {
+    return this.#write(`profiles?user_id=eq.${encodeURIComponent(userId)}`, 'PATCH', {
+      display_name: words.displayName ?? null,
+      bio: words.bio ?? null,
+    });
   }
 
   async setVisibility(userId: string, visibility: Visibility): Promise<boolean> {
