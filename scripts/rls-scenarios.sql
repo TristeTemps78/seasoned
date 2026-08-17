@@ -1226,6 +1226,81 @@ begin
   if obtenu <> attendu then echecs := echecs + 1; end if;
 
   -- ---------------------------------------------------------------------------
+  -- 023 — les mots, et le fait qu'on n'efface que les siens
+  -- ---------------------------------------------------------------------------
+  --
+  -- Les tags vivaient entierement dans le navigateur, et `Tags.tsx` le promettait a l'ecran :
+  -- « vos mots, ranges par vous, pour vous ». Ils peuvent desormais sortir — sur accord
+  -- explicite, ferme par defaut. Le consentement se garde cote client (`tag-sharing.test.tsx`) ;
+  -- ce qui se garde ICI est ce qu'aucun test ne peut voir : les politiques.
+
+  -- 65 — La forme exacte que `publishTags` emet.
+  begin
+    insert into public.tags (user_id, subject, tag, title, poster_path)
+    values (a, tag || '_w', 'le dimanche', 'Breaking Bad', '/abc.jpg');
+    obtenu := 'ok';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := 'ok';
+  rapport := rapport || format(E'  %s  %s. un mot s ecrit avec son instantane (023)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 66 — 🔴 **LE scenario de ce lot.** `publishTags` reecrit un ETAT : il envoie
+  --      `DELETE tags?user_id=eq.moi` puis reinsere. Cette forme n'est sure QUE parce que
+  --      `tags_delete` la borne a `auth.uid()`. Sans cette borne, republier ses mots viderait
+  --      la table de tout le monde — et personne ne le verrait, puisque chacun ne relit que
+  --      ce que `can_see` lui montre.
+  begin
+    perform set_config('role', 'postgres', true);
+    insert into public.tags (user_id, subject, tag) values (b, tag || '_w', 'a moi');
+    perform set_config('role', 'authenticated', true);
+
+    -- A rejoue exactement ce que le client envoie : sans filtre autre que le sien.
+    delete from public.tags where user_id = a;
+
+    perform set_config('role', 'postgres', true);
+    select count(*)::text into obtenu from public.tags where user_id = b;
+    perform set_config('role', 'authenticated', true);
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '1';
+  rapport := rapport || format(E'  %s  %s. republier ses mots n efface QUE les siens (023)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 67 — La borne du mot mord. Elle vaut `MAX_TAG_CHARS` cote client, et elle vit **aussi**
+  --      ici : le client peut etre en retard sur la base, et c'est ici que la garantie existe.
+  begin
+    insert into public.tags (user_id, subject, tag)
+    values (a, tag || '_w2', repeat('x', 41));
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '23514';
+  rapport := rapport || format(E'  %s  %s. un mot de plus de 40 caracteres est refuse (023)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- 68 — ⚠️ La securite, comme en `018`, `020` et `021` : un profil public est lu par
+  --      n'importe qui, donc une URL absolue acceptee ici poserait un pisteur sur une page
+  --      publique. Quatrieme table a porter cette contrainte, quatrieme fois qu'elle compte.
+  begin
+    insert into public.tags (user_id, subject, tag, poster_path)
+    values (a, tag || '_w3', 'un mot', 'https://pisteur.example/x.jpg');
+    obtenu := 'acceptee';
+  exception when others then
+    obtenu := sqlstate;
+  end;
+  n := n + 1; attendu := '23514';
+  rapport := rapport || format(E'  %s  %s. une URL absolue en affiche de mot est refusee (023)  [attendu %s, obtenu %s]\n',
+                               case when obtenu = attendu then 'OK   ' else 'ECHEC' end, n, attendu, obtenu);
+  if obtenu <> attendu then echecs := echecs + 1; end if;
+
+  -- ---------------------------------------------------------------------------
   -- Sortie : toujours par une exception, donc toujours en annulant tout.
   -- ---------------------------------------------------------------------------
   perform set_config('role', 'postgres', true);

@@ -6,7 +6,7 @@ import { useAuth } from '@/app/auth/AuthProvider';
 import { useJournal } from '@/app/journal/useJournal';
 import { projectActivity } from '@/src/domain/activity';
 import { projectStops } from '@/src/domain/attrition';
-import { favoritesOf } from '@/src/domain/journal';
+import { favoritesOf, seriesEntries, tagsOf } from '@/src/domain/journal';
 import { socialFrom } from '@/app/social/socialFrom';
 
 /**
@@ -51,11 +51,13 @@ export function PublishActivity() {
   const lastSent = useRef<string | undefined>(undefined);
   const lastStops = useRef<string | undefined>(undefined);
   const lastPinned = useRef<string | undefined>(undefined);
+  const lastTags = useRef<string | undefined>(undefined);
   const forgotten = useRef(false);
 
   const accessToken = account?.accessToken;
   const userId = account?.userId;
   const keepStopsPrivate = journal.keepStopsPrivate === true;
+  const shareTags = journal.shareTags === true;
 
   useEffect(() => {
     if (!configured || !ready || userId === undefined) return;
@@ -89,6 +91,27 @@ export function PublishActivity() {
       };
     });
 
+    /**
+     * Les mots, **et seulement si la personne l'a demande**.
+     *
+     * ⚠️ L'asymetrie avec la carte des abandons est deliberee et elle est ecrite dans
+     * `Journal.shareTags` : un point d'arret est anonyme et illisible, un mot est une phrase
+     * attachee a un nom. Le tableau vide sous refus n'est pas « ne rien envoyer » — c'est
+     * **envoyer le vide**, donc retirer ce qui aurait ete publie avant que l'accord ne soit
+     * repris. Meme mecanique que `forgetStops`, en plus simple : cette table se relit.
+     */
+    const words = shareTags
+      ? seriesEntries(journal).flatMap(([key, entry]) => {
+          const snapshot = entry.snapshot;
+          return tagsOf(entry).map((tag) => ({
+            subject: key,
+            tag,
+            ...(snapshot?.title !== undefined ? { title: snapshot.title } : {}),
+            ...(snapshot?.posterPath !== undefined ? { posterPath: snapshot.posterPath } : {}),
+          }));
+        })
+      : [];
+
     // La signature de ce qu'on s'apprete a envoyer. Identique au dernier envoi = rien a
     // faire : `publish` est idempotent, mais un appel reseau inutile reste un appel.
     const shape = JSON.stringify(items);
@@ -102,11 +125,15 @@ export function PublishActivity() {
     // quatre du profil. La condition des faits laisserait l'ancienne selection en place pour
     // toujours — un profil qui montre un gout qu'on vient d'effacer.
     const sendPinned = pinnedShape !== lastPinned.current;
+    // ⚠️ Meme absence de `length > 0` que les epinglees, et pour la meme raison : retirer son
+    // dernier mot doit le retirer du profil. Un etat se reecrit, un fait s'ajoute.
+    const wordShape = JSON.stringify(words);
+    const sendTags = wordShape !== lastTags.current;
     // Le retrait ne part qu'une fois par session : la table est illisible, donc rien ne
     // permet de constater qu'elle est deja vide, et redemander a chaque frappe serait un
     // `DELETE` par touche.
     const forget = keepStopsPrivate && !forgotten.current;
-    if (!sendActivity && !sendStops && !sendPinned && !forget) return;
+    if (!sendActivity && !sendStops && !sendPinned && !sendTags && !forget) return;
 
     const timer = setTimeout(() => {
       if (sendActivity) {
@@ -126,6 +153,11 @@ export function PublishActivity() {
           if (ok) lastPinned.current = pinnedShape;
         });
       }
+      if (sendTags) {
+        void social.publishTags(userId, words).then((ok) => {
+          if (ok) lastTags.current = wordShape;
+        });
+      }
       if (forget) {
         void social.forgetStops().then((ok) => {
           if (ok) {
@@ -140,7 +172,7 @@ export function PublishActivity() {
     }, 4_000);
 
     return () => clearTimeout(timer);
-  }, [configured, ready, journal, userId, accessToken, keepStopsPrivate]);
+  }, [configured, ready, journal, userId, accessToken, keepStopsPrivate, shareTags]);
 
   // Reprendre le consentement doit pouvoir redemander un retrait plus tard.
   useEffect(() => {

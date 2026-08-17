@@ -191,7 +191,20 @@ export const FR = {
   'browse.genre.war': 'Guerre & politique',
   'browse.genre.western': 'Western',
   'tags.title': 'Mes mots',
+  // 🔴 « Rangés par vous, pour vous » était vrai jusqu'au 2026-08-17, et cesserait de l'être
+  // en silence dès que quelqu'un accepte de les montrer. La phrase dit donc l'état réel, et
+  // c'est le composant qui choisit laquelle des deux afficher.
   'tags.why': 'Rangés par vous, pour vous.',
+  'tags.why.shared': 'Rangés par vous, et montrés sur votre profil.',
+  'tags.why.change': 'Changer',
+  // --- Montrer ses mots (F11) ----------------------------------------------
+  'tags.share.title': 'Vos mots sur votre profil',
+  'tags.share.off':
+    'Vos mots restent dans ce navigateur. Vous pouvez choisir de les montrer sur votre profil : ils suivront alors la visibilité que vous avez réglée plus haut — publique, ou réservée à ceux qui vous suivent.',
+  'tags.share.on':
+    'Vos mots sont montrés sur votre profil, selon la visibilité réglée plus haut. Les reprendre les efface : ils ne sont pas seulement masqués.',
+  'tags.share.start': 'Montrer mes mots',
+  'tags.share.stop': 'Reprendre mes mots',
   'tags.placeholder': 'à revoir, le dimanche, avec Léa…',
   'tags.add': 'Ajouter',
   'tags.remove': 'Retirer le mot « {tag} »',
@@ -816,6 +829,10 @@ export const FR = {
   // personnelle, qui contient bien plus et ne sort jamais du navigateur. Deux noms pour deux
   // choses différentes — voir `journalBy`.
   'profile.journal': 'Ce qu’il ou elle regarde',
+  'profile.words': 'Ses mots',
+  // ⚠️ Ne dit PAS « elle ne les montre pas » : un refus qui se voit est un refus qu'on
+  // doit justifier. La même phrase couvre « aucun mot » et « aucun accord ».
+  'profile.noWords': 'Aucun mot à lire ici.',
   'profile.noJournal': 'Rien de publié pour l’instant.',
   'profile.none': 'Rien de public à lire ici pour l’instant.',
   'profile.tabs': 'Ce qu’il ou elle publie',

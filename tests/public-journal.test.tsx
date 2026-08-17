@@ -68,6 +68,7 @@ vi.mock('@/app/social/socialFrom', () => ({
     lovedBy: async () => [],
     favoritesBy: async () => [],
     journalBy: async () => base.journal,
+    tagsBy: async () => [],
     listsBy: async () => [],
     reviewLikesAcross: async () => [],
   }),
@@ -137,19 +138,20 @@ describe('l’onglet du journal', () => {
     await waitFor(() => expect(screen.getByText(/Rien de publié/)).toBeDefined());
   });
 
-  it('les quatre onglets bouclent au clavier', async () => {
+  it('la barre boucle au clavier, quel que soit le nombre d’onglets', async () => {
     // Le motif ARIA sort les onglets non actifs du parcours de tabulation : sans les fleches
-    // ils deviennent inatteignables. La barre passe de trois a quatre, et la boucle doit
-    // suivre — c'est le genre de detail qu'un ajout d'onglet casse en silence.
+    // ils deviennent inatteignables. La barre a grandi deux fois en un jour (journal, puis
+    // mots), et c'est exactement le genre de detail qu'un ajout casse en silence.
+    //
+    // ⚠️ La propriete testee est **le bouclage**, pas le compte : une assertion sur « quatre
+    // onglets » est tombee au premier ajout suivant sans rien apprendre. On vise donc le
+    // DERNIER, quel qu'il soit.
     mount();
     const onglets = await screen.findAllByRole('tab');
-    expect(onglets).toHaveLength(4);
+    expect(onglets.length).toBeGreaterThan(1);
+    const dernier = onglets[onglets.length - 1] as HTMLElement;
 
     fireEvent.keyDown(onglets[0] as HTMLElement, { key: 'ArrowLeft' });
-    await waitFor(() =>
-      expect(screen.getByRole('tab', { name: /regarde/i }).getAttribute('aria-selected')).toBe(
-        'true',
-      ),
-    );
+    await waitFor(() => expect(dernier.getAttribute('aria-selected')).toBe('true'));
   });
 });

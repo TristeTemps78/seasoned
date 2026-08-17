@@ -729,6 +729,26 @@ export interface Journal {
    */
   readonly keepStopsPrivate?: boolean;
   /**
+   * Montrer ses mots sur son profil.
+   *
+   * ## ⚠️ Pourquoi le champ nomme l'ACCORD, a l'inverse de {@link keepStopsPrivate}
+   *
+   * L'asymetrie est deliberee, et elle tient a ce qui part.
+   *
+   * Un point d'arret est **anonyme et illisible** : `016_stops.sql` n'a aucune politique
+   * `select`, personne ne relit ces lignes, pas meme leur auteur. Contribuer par defaut y est
+   * defendable, et le refus efface.
+   *
+   * Un mot, lui, est **une phrase ecrite par quelqu'un, attachee a son nom** — « a revoir
+   * avec Lea », « quand je n'ai pas la tete a suivre une intrigue ». `Tags.tsx` promet
+   * aujourd'hui *« vos mots, ranges par vous, pour vous »*, et les publier par defaut
+   * romprait cette promesse **retroactivement**, sur des mots ecrits avant que la question
+   * ne se pose. Aucun consentement ne peut etre suppose la-dessus.
+   *
+   * Absent = les mots restent dans le navigateur. C'est le defaut, et c'est le seul possible.
+   */
+  readonly shareTags?: boolean;
+  /**
    * La derniere face qu'on a **annoncee** a la personne.
    *
    * ## Pourquoi le journal, et pas un drapeau d'ecran

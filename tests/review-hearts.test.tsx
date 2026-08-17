@@ -113,6 +113,7 @@ vi.mock('@/app/social/socialFrom', () => ({
     lovedBy: async () => [],
     favoritesBy: async () => [],
     journalBy: async () => [],
+    tagsBy: async () => [],
     listsBy: async () => [],
     following: async () => [],
     followers: async () => [],

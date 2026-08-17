@@ -387,6 +387,7 @@ const KNOWN_JOURNAL_FIELDS = [
   'regions',
   'hideHours',
   'keepStopsPrivate',
+  'shareTags',
   'announcedFace',
   'favorites',
   'entries',
@@ -618,6 +619,7 @@ function readJournal(
     // n'aurait pas relu serait efface a la premiere sauvegarde, et la personne rentrerait
     // dans la carte sans le savoir.
     ...(source['keepStopsPrivate'] === true ? { keepStopsPrivate: true } : {}),
+    ...(source['shareTags'] === true ? { shareTags: true } : {}),
     // Meme regle encore : relu, sinon efface a la premiere sauvegarde — et une annonce
     // effacee est une annonce qui se rejoue a chaque chargement.
     ...(announcedFace !== undefined ? { announcedFace } : {}),
@@ -709,6 +711,7 @@ export function serializeJournal(journal: Journal): string {
       : {}),
     ...(journal.hideHours === true ? { hideHours: true } : {}),
     ...(journal.keepStopsPrivate === true ? { keepStopsPrivate: true } : {}),
+    ...(journal.shareTags === true ? { shareTags: true } : {}),
     ...(journal.announcedFace !== undefined ? { announcedFace: journal.announcedFace } : {}),
     ...(journal.favorites !== undefined ? { favorites: journal.favorites } : {}),
     entries,

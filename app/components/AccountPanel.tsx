@@ -91,6 +91,11 @@ export function AccountPanel() {
 
       <StopMapConsent />
 
+      {/* ⚠️ Sous la carte des abandons et non a cote : les deux reglent ce qui sort, et les
+          lire l'un apres l'autre fait voir l'asymetrie — l'un part ouvert parce qu'il est
+          anonyme, l'autre ferme parce qu'il porte des phrases signees. */}
+      <TagSharing />
+
       <section className="card max-w-md space-y-3 border-(--color-warn)/40">
         <h2 className="card-title">{t('account.delete.title')}</h2>
         <p className="prose-note">
@@ -156,6 +161,44 @@ function StopMapConsent() {
       <p className="prose-note">{t(out ? 'stops.opt.left' : 'stops.opt.body')}</p>
       <button type="button" className="btn" onClick={() => setKeepStopsPrivate(!out)}>
         {t(out ? 'stops.opt.rejoin' : 'stops.opt.leave')}
+      </button>
+    </section>
+  );
+}
+
+/**
+ * Montrer ses mots sur son profil — et c'est un ACCORD, pas un refus.
+ *
+ * ## 🔴 Pourquoi ce bloc n'est pas le jumeau de celui du dessus
+ *
+ * `StopMapConsent` fait contribuer par defaut, et sa propre documentation dit pourquoi : ce
+ * qui part est anonyme et illisible. Les mots n'ont aucune de ces deux proprietes — « a
+ * revoir avec Lea », « le dimanche » sont des phrases ecrites par quelqu'un, attachees a son
+ * nom, et `Tags.tsx` promet aujourd'hui *« vos mots, ranges par vous, pour vous »*.
+ *
+ * ⚠️ Les publier par defaut romprait cette promesse **retroactivement**, sur du texte ecrit
+ * avant que la question ne se pose. C'est la seule raison pour laquelle l'interrupteur part
+ * ferme, et elle suffit.
+ *
+ * ⚠️ **Reprendre EFFACE**, comme sortir de la carte : `publishTags` envoie le vide, donc
+ * retire les lignes. Le texte doit le dire — sans quoi quelqu'un croirait seulement arreter,
+ * et laisserait ses mots en ligne.
+ */
+function TagSharing() {
+  const { t } = useT();
+  const { journal, ready, setShareTags } = useJournal();
+  if (!ready) return null;
+
+  const shared = journal.shareTags === true;
+
+  return (
+    <section className="card max-w-md space-y-3">
+      <h2 className="card-title">{t('tags.share.title')}</h2>
+      {/* Le bloc reste entier dans les deux etats : un reglage qui se cache une fois utilise
+          n'est pas un reglage, c'est un piege. Meme lecon que le masquage des heures. */}
+      <p className="prose-note">{t(shared ? 'tags.share.on' : 'tags.share.off')}</p>
+      <button type="button" className="btn" onClick={() => setShareTags(!shared)}>
+        {t(shared ? 'tags.share.stop' : 'tags.share.start')}
       </button>
     </section>
   );

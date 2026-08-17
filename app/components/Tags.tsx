@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { journalKey, MAX_TAG_CHARS, normalizeTag, tagCounts, tagsOf } from '@/src/domain/journal';
+import { pathIn } from '@/lib/routes';
 
 /**
  * Vos mots sur une serie.
@@ -29,17 +31,25 @@ import { journalKey, MAX_TAG_CHARS, normalizeTag, tagCounts, tagsOf } from '@/sr
  *
  * ## Sans compte, comme tout le reste
  *
- * Les tags vivent dans le journal, donc dans ce navigateur. Rien ne part nulle part, et la
- * page qui accueille ce composant reste statique.
+ * Les tags vivent dans le journal, donc dans ce navigateur, et la page qui accueille ce
+ * composant reste statique.
+ *
+ * ⚠️ **« Rien ne part nulle part » etait ecrit ici, et ce n'est plus vrai sans condition
+ * depuis le 2026-08-17.** Les mots peuvent etre publies — mais uniquement apres un accord
+ * explicite (`Journal.shareTags`, ferme par defaut), et jamais retroactivement en silence :
+ * c'est precisement parce que cette phrase existait qu'il fallait un accord et pas un
+ * reglage d'opt-out. La ligne d'en-tete du composant dit desormais l'etat reel, et mene au
+ * reglage.
  */
 export function Tags({ seriesId }: { readonly seriesId: string }) {
   const { journal, ready, setTag } = useJournal();
-  const { t, tn } = useT();
+  const { t, tn, locale } = useT();
   const [draft, setDraft] = useState('');
 
   const key = journalKey(seriesId);
   const entry = journal.entries[key];
   const mine = tagsOf(entry);
+  const shared = journal.shareTags === true;
 
   // Les tags employes ailleurs dans le journal, hors ceux deja poses ici : proposer un tag
   // qui est deja sur la serie serait un bouton qui ne fait rien.
@@ -59,7 +69,20 @@ export function Tags({ seriesId }: { readonly seriesId: string }) {
     <section className="space-y-3 border-t border-(--color-edge) pt-3" aria-label={t('tags.title')}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="label">{t('tags.title')}</p>
-        <p className="meta-sm">{t('tags.why')}</p>
+        {/* 🔴 **La phrase disait « pour vous », et elle aurait cesse d'etre vraie en
+            silence.** Depuis le 2026-08-17, les mots peuvent etre montres sur un profil — sur
+            accord explicite, jamais par defaut. Une etiquette qui ne suit pas l'etat est
+            exactement le defaut que ce depot a trouve quatre fois : une phrase restee vraie
+            d'une version anterieure.
+
+            ⚠️ Et le lien vers le reglage n'est PAS decoratif : c'est le seul endroit du
+            produit ou l'on voit ses mots, donc le seul ou l'on se demande qui les voit. */}
+        <p className="meta-sm">
+          {t(shared ? 'tags.why.shared' : 'tags.why')}{' '}
+          <Link className="tap-line underline hover:text-(--color-volt)" href={pathIn('/compte', locale)}>
+            {t('tags.why.change')}
+          </Link>
+        </p>
       </div>
 
       {mine.length > 0 ? (

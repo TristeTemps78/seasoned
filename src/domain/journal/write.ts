@@ -685,6 +685,23 @@ export function setKeepStopsPrivate(journal: Journal, keepPrivate: boolean): Jou
 }
 
 /**
+ * Montrer ses mots sur son profil, ou les reprendre.
+ *
+ * ⚠️ **Reprendre ne suffit pas a effacer**, exactement comme pour la carte des abandons : ce
+ * champ arrete de publier, il ne retire pas les lignes deja posees — un journal ne sait pas
+ * ce que le serveur porte. C'est `PublishActivity` qui doit demander le retrait au moment ou
+ * le refus apparait, et c'est ecrit ici parce que c'est ici qu'on le lira.
+ *
+ * ⚠️ Et c'est un ACCORD, pas un refus : l'absence laisse les mots dans le navigateur. Voir
+ * {@link Journal.shareTags} pour pourquoi l'asymetrie avec `keepStopsPrivate` est voulue.
+ */
+export function setShareTags(journal: Journal, share: boolean): Journal {
+  if (share) return { ...journal, shareTags: true };
+  const { shareTags: _drop, ...rest } = journal;
+  return rest;
+}
+
+/**
  * Retenir qu'on vient de montrer cette face-la.
  *
  * ⚠️ **Rend le journal tel quel si la face est deja celle annoncee.** Sans ce garde, chaque

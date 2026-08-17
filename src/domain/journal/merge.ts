@@ -272,6 +272,15 @@ const DOCUMENT_MERGE: {
   // un clic, le second a deja eu lieu.
   keepStopsPrivate: (a, b) =>
     a.keepStopsPrivate === true || b.keepStopsPrivate === true ? true : undefined,
+  // ⚠️ **Le SILENCE gagne, et c'est l'exact miroir des deux au-dessus** — parce que le champ
+  // nomme l'accord et non le refus. `a || b` publierait les mots des qu'UN appareil dit oui,
+  // donc republierait ceux qu'on vient de reprendre sur l'autre ; il faut donc `a && b`.
+  //
+  // La consequence assumee : accorder sur le telephone ne suffit pas tant que l'ordinateur
+  // n'a pas re-synchronise. Se tromper vers le silence se repare en un clic ; se tromper vers
+  // la publication met en ligne, sous un nom, des phrases ecrites quand elles etaient
+  // promises privees — et ca, ca a deja eu lieu.
+  shareTags: (a, b) => (a.shareTags === true && b.shareTags === true ? true : undefined),
   // ⚠️ **La plus recente gagne** — et c'est pour ca que l'annonce porte une date. Prendre
   // « celle de `a` » trancherait par l'ordre des arguments, exactement le defaut du
   // `deviceId` de `sameJournal`. Ici la consequence serait visible : rejouer sur le

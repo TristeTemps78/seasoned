@@ -170,6 +170,16 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'browse.genre.western': 'Western',
   'tags.title': 'My words',
   'tags.why': 'Sorted by you, for you.',
+  'tags.why.shared': 'Sorted by you, and shown on your profile.',
+  'tags.why.change': 'Change',
+  // --- Showing your words (F11) --------------------------------------------
+  'tags.share.title': 'Your words on your profile',
+  'tags.share.off':
+    'Your words stay in this browser. You can choose to show them on your profile: they will then follow the visibility you set above — public, or limited to those who follow you.',
+  'tags.share.on':
+    'Your words are shown on your profile, following the visibility set above. Taking them back erases them: they are not merely hidden.',
+  'tags.share.start': 'Show my words',
+  'tags.share.stop': 'Take my words back',
   'tags.placeholder': 'rewatch, sunday, with Lea…',
   'tags.add': 'Add',
   'tags.remove': 'Remove the word “{tag}”',
@@ -697,6 +707,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'profile.reviews': 'What they have written',
   'profile.loves': 'What they love',
   'profile.journal': 'What they are watching',
+  'profile.words': 'Their words',
+  'profile.noWords': 'No words to read here.',
   'profile.noJournal': 'Nothing published yet.',
   'profile.none': 'Nothing public to read here yet.',
   'profile.tabs': 'What they publish',

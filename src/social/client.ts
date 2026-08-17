@@ -117,6 +117,16 @@ export interface ReviewLikesAcross extends ReviewLikes {
   readonly subject: string;
 }
 
+/**
+ * Un mot pose sur une serie, tel qu'il est publie.
+ *
+ * ⚠️ L'instantane voyage avec, pour la quatrieme fois apres `018`, `020` et `021` : la page
+ * d'un mot est lue par des gens qui ne suivent pas les memes series.
+ */
+export interface TaggedSeries extends SeriesRef {
+  readonly tag: string;
+}
+
 /** Une question de la manche, telle que le serveur accepte de la montrer. */
 export interface QuizServed {
   readonly kind: string;
@@ -577,6 +587,78 @@ export class SocialClient {
       `profile_favorites?user_id=eq.${encodeURIComponent(userId)}&ordinal=gt.${kept.length}`,
       'DELETE',
     );
+  }
+
+  /**
+   * Publie ses mots — ou les retire tous.
+   *
+   * ## ⚠️ Un ETAT, et il s'ecrit par suppression puis insertion
+   *
+   * Retirer un mot doit le retirer du profil : la condition `length > 0` des faits laisserait
+   * l'ancien vocabulaire en place pour toujours. On efface donc **tout ce qui est a soi**,
+   * puis on reinsere — jamais un `merge-duplicates`, qui emprunterait le chemin `UPDATE` et
+   * demanderait une politique que cette table n'a volontairement pas. C'est la lecon de `021`
+   * et du 2026-08-11, ou ce chemin rendait 42501 en silence.
+   *
+   * ⚠️ Le `DELETE` large est sur **parce que `tags_delete` le borne a `auth.uid()`** : un
+   * client qui l'enverrait tel quel n'efface que ses propres lignes. La borne est dans la
+   * base, pas ici — une borne posee dans l'appelant n'est pas une borne.
+   *
+   * ⚠️ **Cet appel ne part que si la personne l'a demande** (`shareTags`). Le client ne le
+   * sait pas et n'a pas a le savoir : c'est `PublishActivity` qui tient le consentement, au
+   * meme endroit que celui de la carte des abandons.
+   */
+  async publishTags(
+    userId: string,
+    items: readonly { readonly subject: string; readonly tag: string; readonly title?: string; readonly posterPath?: string }[],
+  ): Promise<boolean> {
+    const cleared = await this.#write(
+      `tags?user_id=eq.${encodeURIComponent(userId)}`,
+      'DELETE',
+    );
+    if (!cleared) return false;
+    if (items.length === 0) return true;
+
+    return this.#write(
+      'tags',
+      'POST',
+      items.map((one) => ({
+        user_id: userId,
+        subject: one.subject,
+        tag: one.tag,
+        title: one.title ?? null,
+        poster_path: one.posterPath ?? null,
+      })),
+      'resolution=ignore-duplicates,return=minimal',
+    );
+  }
+
+  /**
+   * Les mots de quelqu'un. RLS decide de qui les voit — et rien n'arrive ici sans son accord.
+   *
+   * ⚠️ La liste est rendue **telle quelle**, sans regroupement : compter les series par mot
+   * est une decision d'affichage, et `src/domain/` la porte deja pour le journal local
+   * (`tagCounts`). La refaire en SQL donnerait deux comptes a tenir d'accord.
+   */
+  async tagsBy(userId: string, limit = 500): Promise<readonly TaggedSeries[]> {
+    const rows = await this.#rows<Record<string, unknown>>(
+      `tags?user_id=eq.${encodeURIComponent(userId)}&select=subject,tag,title,poster_path&order=tag.asc&limit=${limit}`,
+    );
+    return rows.flatMap((row) => {
+      const tag = row['tag'];
+      const subject = row['subject'];
+      if (typeof tag !== 'string' || typeof subject !== 'string') return [];
+      const title = row['title'];
+      const posterPath = row['poster_path'];
+      return [
+        {
+          tag,
+          subject,
+          ...(typeof title === 'string' ? { title } : {}),
+          ...(typeof posterPath === 'string' ? { posterPath } : {}),
+        },
+      ];
+    });
   }
 
   /** Les epinglees de quelqu'un, dans l'ordre choisi. RLS decide de qui les voit. */

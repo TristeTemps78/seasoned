@@ -16,6 +16,7 @@ import {
   type Profile,
   type PublishedReview,
   type SeriesRef,
+  type TaggedSeries,
 } from '@/src/social/client';
 import { resolveSeriesRef } from '@/app/components/seriesRef';
 import { Lists } from '@/app/components/Lists';
@@ -90,6 +91,8 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
   const [loved, setLoved] = useState<readonly FeedItem[]>([]);
   /** Le journal deja publie de cette personne — voir `journalBy` pour ce qu'il ne contient pas. */
   const [done, setDone] = useState<readonly FeedItem[]>([]);
+  /** Les mots de cette personne — vides tant qu'elle n'a pas accepte de les montrer. */
+  const [words, setWords] = useState<readonly TaggedSeries[]>([]);
   const [pinned, setPinned] = useState<readonly SeriesRef[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [following, setFollowing] = useState(false);
@@ -148,7 +151,7 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
     if (found === undefined) return;
     // Les deux ensemble : c'est ce que la page montre l'un sous l'autre, et les enchainer
     // ferait apparaitre le gout apres les mots, dans une page qui commence par le gout.
-    const [written, hearts, favorites, journal] = await Promise.all([
+    const [written, hearts, favorites, journal, tagged] = await Promise.all([
       social.reviewsBy(found.userId),
       social.lovedBy(found.userId),
       // Les epinglees dans le meme paquet que les deux autres : elles s'affichent au-dessus,
@@ -158,11 +161,13 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
       // deja tous charges quand la page a repondu — c'est ce qui permet de changer d'onglet
       // sans rien redemander, et c'est ecrit dans le commentaire de `tab`.
       social.journalBy(found.userId),
+      social.tagsBy(found.userId),
     ]);
     setReviews(written);
     setLoved(hearts);
     setPinned(favorites);
     setDone(journal);
+    setWords(tagged);
     if (userId === undefined) return;
     // Les trois d'un coup : elles decident **ensemble** de ce que la zone d'action affiche —
     // le bouton, la mention « vous suit », ou l'invitation a prendre un nom. Les enchainer
@@ -577,6 +582,19 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
           <PublicJournal entries={done} />
         </section>
       ) : null}
+
+      {tab === 'words' ? (
+        <section
+          id="panneau-words"
+          role="tabpanel"
+          aria-labelledby="onglet-words"
+          tabIndex={0}
+          className="space-y-3"
+          aria-label={t('profile.words')}
+        >
+          <PublicWords entries={words} />
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -589,16 +607,24 @@ export function PublicProfile({ handle }: { readonly handle: string }) {
  * public »*. Il vient en dernier parce qu'il se lit apres, pas avant : les coeurs et les
  * critiques disent **qui** est quelqu'un, le journal dit ce qu'il a fait cette semaine.
  */
-const TABS = ['loves', 'reviews', 'lists', 'journal'] as const;
+const TABS = ['loves', 'reviews', 'lists', 'journal', 'words'] as const;
 type Tab = (typeof TABS)[number];
 
 const TAB_LABEL: Readonly<
-  Record<Tab, 'profile.loves' | 'profile.reviews' | 'profile.lists' | 'profile.journal'>
+  Record<
+    Tab,
+    | 'profile.loves'
+    | 'profile.reviews'
+    | 'profile.lists'
+    | 'profile.journal'
+    | 'profile.words'
+  >
 > = {
   loves: 'profile.loves',
   reviews: 'profile.reviews',
   lists: 'profile.lists',
   journal: 'profile.journal',
+  words: 'profile.words',
 };
 
 /**
@@ -666,6 +692,88 @@ function Tabs({ current, onSelect }: {
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Les mots de quelqu'un — F11.
+ *
+ * ## 🔴 Ce qui change, et ce qui ne change pas
+ *
+ * Le releve du 2026-08-16 disait : *« les tags sont "vos mots, ranges par vous, pour vous" et
+ * ne sortent jamais. Letterboxd en fait un index navigable »*. Ils sortent desormais — **et
+ * uniquement apres un accord explicite**, ferme par defaut, parce que la phrase citee etait
+ * une promesse faite a l'ecran sur du texte deja ecrit. Voir `Journal.shareTags` et
+ * `023_tags.sql` pour pourquoi cette asymetrie avec la carte des abandons est deliberee.
+ *
+ * ⚠️ **Le silence ici ne dit pas « elle n'en a pas ».** Une personne qui n'a pas accepte rend
+ * une liste vide, exactement comme une personne sans mots — et c'est voulu : afficher « cette
+ * personne garde ses mots pour elle » annoncerait un reglage, donc rendrait le refus visible.
+ * Un refus qui se voit est un refus qu'on doit justifier.
+ *
+ * ## Le regroupement se fait ici, et le compte vient avec
+ *
+ * La base rend une ligne par (mot, serie) ; c'est le rendu qui les groupe. Compter en SQL
+ * donnerait deux comptes a tenir d'accord — et `tagCounts` fait deja exactement ca pour le
+ * journal local.
+ */
+function PublicWords({ entries }: { readonly entries: readonly TaggedSeries[] }) {
+  const { t, tn, locale } = useT();
+  const { journal } = useJournal();
+
+  if (entries.length === 0) {
+    // ⚠️ Sans action, et sans nommer le reglage : le lecteur ne peut rien pour les mots de
+    // quelqu'un d'autre, et dire « elle ne les montre pas » ferait du refus une information.
+    return <EmptyState>{t('profile.noWords')}</EmptyState>;
+  }
+
+  // Groupe par mot, le plus employe d'abord — c'est le sien, et c'est ce qu'on veut lire en
+  // premier. A egalite, l'ordre alphabetique, parce que la base rend deja `tag.asc` : sans ce
+  // socle, deux mots a une occurrence changeraient de place d'un chargement a l'autre.
+  const byWord = new Map<string, TaggedSeries[]>();
+  for (const one of entries) {
+    const bucket = byWord.get(one.tag);
+    if (bucket === undefined) byWord.set(one.tag, [one]);
+    else bucket.push(one);
+  }
+  const words = [...byWord.entries()].sort((a, b) => b[1].length - a[1].length);
+
+  return (
+    <ul className="space-y-4">
+      {words.map(([word, series]) => (
+        <li key={word} className="space-y-2">
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            <span className="card-title">{word}</span>
+            <span className="meta-sm">{tn('lists.count', series.length)}</span>
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {series.map((one) => {
+              const parsed = parseJournalKey(one.subject);
+              // Meme resolution que partout : l'instantane publie d'abord, le journal du
+              // lecteur en repli. Un mot est lu par des gens qui ne suivent pas les memes
+              // series — c'est exactement le cas ou la cle nue apparaitrait.
+              const { title, posterPath } = resolveSeriesRef(one, journal, t('feed.someSeries'));
+              const chip = <PosterChip path={posterPath} title={title} wide />;
+              return (
+                <li key={`${word}:${one.subject}`}>
+                  {parsed === undefined ? (
+                    chip
+                  ) : (
+                    <Link
+                      href={pathIn(`/serie/${parsed.providerId}`, locale)}
+                      className="block"
+                      aria-label={title}
+                    >
+                      {chip}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </li>
+      ))}
+    </ul>
   );
 }
 

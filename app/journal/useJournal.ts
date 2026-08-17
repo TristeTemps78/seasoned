@@ -18,6 +18,7 @@ import {
   setArtwork as setArtworkIn,
   setHideHours as setHideHoursIn,
   setKeepStopsPrivate as setKeepStopsPrivateIn,
+  setShareTags as setShareTagsIn,
   announceFace as announceFaceIn,
   setPosition as setPositionIn,
   setSeasonRating as setSeasonRatingIn,
@@ -282,6 +283,10 @@ export function useJournal() {
     ),
     setKeepStopsPrivate: useCallback(
       (keepPrivate: boolean) => mutate((j) => setKeepStopsPrivateIn(j, keepPrivate)),
+      [mutate],
+    ),
+    setShareTags: useCallback(
+      (share: boolean) => mutate((j) => setShareTagsIn(j, share)),
       [mutate],
     ),
     /**
