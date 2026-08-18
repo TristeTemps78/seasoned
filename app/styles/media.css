@@ -40,9 +40,25 @@
       grid-template-columns: repeat(6, minmax(0, 1fr));
     }
   }
-  @media (width >= 80rem) {
+  /**
+   * ⚠️ **Le palier qui manquait, et c'est le plus frequent.** De 48 rem a 80 rem, la grille
+   * restait a six colonnes — soit 768 px et 1279 px servis pareil. Mesure au navigateur le
+   * 2026-08-18, fenetre 1054 : six colonnes de 164 px, douze series au premier ecran. La
+   * meme fenetre sur Letterboxd en montre **soixante-douze** (affiche de 70 px, douze
+   * colonnes). Six fois moins, sur l'ecran dont c'est tout le metier de comparer.
+   *
+   * Huit colonnes ramenent l'affiche a ~117 px : plus petite que la reference, encore
+   * lisible, et le seuil est place a 64 rem parce que c'est la largeur ou six colonnes
+   * commencent a produire des affiches de plus de 150 px.
+   */
+  @media (width >= 64rem) {
     .poster-grid {
       grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 80rem) {
+    .poster-grid {
+      grid-template-columns: repeat(10, minmax(0, 1fr));
     }
   }
   /**
