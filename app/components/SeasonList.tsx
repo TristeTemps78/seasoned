@@ -1,4 +1,5 @@
 import type { NormalizedSeasons, SeasonWarningCode } from '@/src/domain/seasons';
+import { Poster } from '@/app/components/Poster';
 import { formatDate } from '@/lib/format';
 import { DEFAULT_LOCALE, localeTag, t, tn, type Locale } from '@/lib/i18n';
 
@@ -73,11 +74,28 @@ export function SeasonList({ seasons, locale = DEFAULT_LOCALE }: {
           {seasons.rateable.map((season) => (
             <li
               key={season.ref.seasonNumber}
-              className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3"
             >
-              <span className="font-medium">
-                {t(locale, 'seasons.seasonN', { n: season.ref.seasonNumber })}
-              </span>
+              {/* 🔴 **La seule liste d'objets du produit qui n'avait pas d'image**, et la
+                  donnee etait la depuis toujours : TMDB rend un `poster_path` par saison,
+                  que `toRawSeason` lisait puis jetait. Cinq lignes de texte pour l'unite
+                  que ce produit revendique — *une serie n'est pas un long film*.
+
+                  ⚠️ `w154` et pas plus : la vignette sert a reconnaitre, pas a regarder.
+                  Le cadre garde le rapport 2:3 meme quand la saison n'a pas d'affiche,
+                  sinon la rangee saute d'une ligne a l'autre. */}
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="poster-frame aspect-2/3 w-11 shrink-0">
+                  <Poster
+                    path={season.posterPath}
+                    title={t(locale, 'seasons.seasonN', { n: season.ref.seasonNumber })}
+                    size="w154"
+                  />
+                </div>
+                <span className="font-medium">
+                  {t(locale, 'seasons.seasonN', { n: season.ref.seasonNumber })}
+                </span>
+              </div>
               <span className="meta">
                 {tn(locale, 'series.episodes', season.episodeCount)}
                 {season.airedFrom !== undefined

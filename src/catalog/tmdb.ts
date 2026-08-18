@@ -462,12 +462,14 @@ function toRawSeason(raw: unknown): RawSeason | undefined {
 
   const name = readString(source, 'name');
   const airDate = readDate(source, 'air_date');
+  const posterPath = readString(source, 'poster_path');
 
   return {
     seasonNumber,
     episodeCount: readNumber(source, 'episode_count') ?? 0,
     ...(name !== undefined ? { name } : {}),
     ...(airDate !== undefined ? { airDate } : {}),
+    ...(posterPath !== undefined ? { posterPath } : {}),
   };
 }
 

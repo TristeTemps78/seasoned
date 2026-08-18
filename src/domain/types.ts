@@ -74,6 +74,19 @@ export interface Season {
   readonly airedFrom?: Date;
   /** Derniere diffusion, si connue et passee. */
   readonly airedTo?: Date;
+  /**
+   * Chemin d'affiche chez le fournisseur, si la saison en a une.
+   *
+   * ⚠️ **La donnee existait depuis toujours et etait jetee au parsage.** TMDB rend un
+   * `poster_path` par saison dans `/tv/{id}` ; `toRawSeason` lisait le numero, le nom, le
+   * nombre d'episodes et la date, puis laissait tomber l'affiche. La liste des saisons
+   * etait donc cinq lignes de texte — le seul objet du produit sans image, alors que la
+   * saison est precisement l'unite que ce produit revendique.
+   *
+   * C'est l'erreur de `Cast`, refaite : *pas encore construit* ressemble a s'y meprendre
+   * a *rien derriere*.
+   */
+  readonly posterPath?: string;
 }
 
 /** Un episode, reduit a ce dont le domaine a besoin. */

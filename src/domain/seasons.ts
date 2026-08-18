@@ -43,6 +43,8 @@ export interface RawSeason {
   readonly episodeCount: number;
   /** Date de premiere diffusion annoncee pour la saison. */
   readonly airDate?: Date;
+  /** Chemin d'affiche de la saison chez le fournisseur, si elle en a une. */
+  readonly posterPath?: string;
 }
 
 /** Forme generale de la serie, deduite du decoupage. */
@@ -119,6 +121,7 @@ function toSeason(seriesId: SeriesId, raw: RawSeason): Season {
     kind: classify(raw),
     episodeCount: raw.episodeCount,
     ...(raw.airDate !== undefined ? { airedFrom: raw.airDate } : {}),
+    ...(raw.posterPath !== undefined ? { posterPath: raw.posterPath } : {}),
   };
 }
 
