@@ -74,6 +74,19 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
   le seul crochet qui distingue les deux, `no-false-empty.test.ts` refuse le onzième écran, et
   **la mesure se refait en coupant `fetch` puis en naviguant en SPA** — une navigation complète
   reconstruit le client et ne mesure rien.
+- **🔴 Un chiffre agrégé n'est pas une mesure : il faut regarder QUEL élément.**
+  Audit graphique du 2026-08-18 face à Letterboxd : neuf constats, **cinq faux**, tous par la
+  même faute — un script qui compte des `getComputedStyle` sans jamais demander ce qu'est
+  l'élément compté. « Des paragraphes à 1007 px » était la mention légale TMDB du pied de
+  page, 72 signes sur une ligne. « Les affiches sont à 0 px sans ombre » : j'avais mesuré le
+  `<img>` et pas le `.poster-frame` qui l'enveloppe — lequel porte déjà
+  `clamp(2px, 2.66%, 8px)` et une double ombre. « Le fond ne fait que 256 px » : c'est la
+  branche `@media (height < 46rem)`, posée exprès le 2026-08-15, et ma fenêtre faisait 633 px
+  de haut. Deux autres étaient des **règles écrites** prises pour des dérives (le serif réservé
+  à ce qu'un humain a écrit ; l'histogramme, non constructible — TMDB rend une moyenne, pas
+  une distribution). Ce qui a survécu a survécu parce que la cause était **lisible dans la
+  source** : six colonnes de 48 rem à 80 rem, et `toRawSeason` qui jetait `poster_path`.
+  **Avant d'écrire un constat, ouvrir le fichier qui le produirait.**
 - **Un correctif non remesuré est une hypothèse.** Le même jour : la lecture ajoutée pour
   éviter deux écritures de mots s'y **ajoutait** (3 appels au lieu de 2), parce que la décision
   d'envoyer était prise avant que la réponse n'arrive. Une `ref` ne pouvait pas le corriger —
