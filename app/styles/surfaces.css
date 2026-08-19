@@ -206,18 +206,129 @@
   }
 
   .feed-row {
+    position: relative;
     padding-block: 0.875rem;
     /* Le retrait negatif rend la zone de survol plus large que la colonne de texte : elle
        s'allume jusqu'aux marges, ce qui la fait lire comme une ligne entiere et non comme un
        fond derriere des mots. */
     margin-inline: -0.75rem;
     padding-inline: 0.75rem;
-    border-radius: var(--radius-control);
-    transition: background-color var(--dur-fast) var(--ease-out-expo);
   }
 
-  .feed-row:hover {
-    background-color: color-mix(in oklab, var(--color-surface) 55%, transparent);
+  /**
+   * =============================================================================
+   * 🔴 LE SURVOL DESSINAIT UN PAVE, ET C'EST CE QU'ON VOYAIT DU FIL
+   * =============================================================================
+   *
+   * Servi en production jusqu'au 2026-08-19 :
+   *
+   *     .feed-row        border-radius: 3px
+   *     .feed-row:hover  background-color: #2c34408c
+   *
+   * Soit, sur une ligne de ~1000 px, **un aplat gris a angles durs qui entoure l'activite**.
+   * Le fil venait d'etre sorti de ses vingt `.panel` pour devenir une continuite de lecture ;
+   * le survol les y remettait un par un, a chaque passage de souris. Verdict de Tristan le
+   * 2026-08-19 : *« y a des gros carres qui les entourent, ca m'interesse pas »*.
+   *
+   * ## Ce qui remplace, et pourquoi c'est une LIGNE et pas une boite
+   *
+   * Une boite a quatre cotes et dit *« ceci est un objet separe »* — l'inverse exact de ce
+   * qu'un fil doit dire. Trois gestes, tous orientes :
+   *
+   * - **un rail** a gauche, qui **pousse depuis le centre** (`scaleY`) au lieu d'apparaitre :
+   *   l'oeil suit une croissance, il ne subit pas un changement d'etat ;
+   * - **un voile en degrade** qui s'eteint avant le bord droit — sans arete verticale a
+   *   droite, il n'y a pas de rectangle a percevoir, seulement une ligne plus claire ;
+   * - le texte qui **avance de 2 px**, ce qui donne la sensation que la ligne repond au doigt.
+   *
+   * ⚠️ **Le voile s'essuie, il n'apparait pas** — et c'est `background-size` qui le fait, pas
+   * une opacite. Un degrade ne se transitionne pas en CSS ; sa *taille*, si. La bande part
+   * donc de zero et s'etend vers la droite, dans le meme sens que le rail qui pousse, ce qui
+   * donne un seul geste au lieu de deux effets simultanes.
+   *
+   * ⚠️ **Et pas un `::after` en `z-index: -1`**, qui etait la premiere ecriture : un negatif
+   * ne cree pas de contexte d'empilement par lui-meme, donc le voile depend de ce que font
+   * les ancetres — il tient tant que personne n'ajoute un fond ou une `transform` au-dessus,
+   * et il disparait le jour ou quelqu'un le fait, sans que rien ne le signale. Un fond pose
+   * sur l'element lui-meme n'a aucune de ces conditions.
+   */
+  .feed-row {
+    background-image: linear-gradient(
+      to right,
+      color-mix(in oklab, var(--color-surface) 62%, transparent),
+      transparent 68%
+    );
+    background-repeat: no-repeat;
+    background-size: 0% 100%;
+  }
+
+  .feed-row::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.4rem;
+    inset-inline-start: 0;
+    width: 2px;
+    border-radius: 2px;
+    background-color: var(--color-volt);
+    transform: scaleY(0);
+    transition: transform var(--dur-mid) var(--ease-out-expo);
+  }
+
+  .feed-row {
+    transition:
+      background-size var(--dur-mid) var(--ease-out-expo),
+      padding-inline-start var(--dur-fast) var(--ease-out-expo);
+  }
+
+  /* ⚠️ `:focus-within` a cote de `:hover` : une ligne de fil porte des liens et un bouton de
+     signalement. Au clavier, la ligne parcourue doit s'allumer comme elle le fait a la
+     souris, sinon la navigation au clavier traverse un fil eteint. */
+  .feed-row:hover,
+  .feed-row:focus-within {
+    background-size: 100% 100%;
+    padding-inline-start: 0.875rem;
+  }
+
+  .feed-row:hover::before,
+  .feed-row:focus-within::before {
+    transform: scaleY(1);
+  }
+
+  /**
+   * L'arrivee du fil, **en cascade**.
+   *
+   * Vingt lignes qui apparaissent au meme instant se lisent comme un bloc ; decalees de
+   * 45 ms, elles se lisent comme une succession — ce qu'un fil EST. Le decalage ne porte que
+   * sur les huit premieres : au-dela on est sous la ligne de flottaison, et attendre une
+   * demi-seconde de plus pour une ligne qu'on ne voit pas serait de l'ornement.
+   *
+   * ⚠️ Sous `prefers-reduced-motion: no-preference` **en entier** : `both` maintient l'etat
+   * initial de l'animation, donc une opacite a 0. Pose hors du garde, une preference systeme
+   * pour moins d'animation rendrait le fil **invisible** au lieu de le rendre immobile.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .feed-row {
+      animation: feed-row-in 420ms var(--ease-out-expo) both;
+    }
+    .feed-row:nth-child(1) { animation-delay: 0ms; }
+    .feed-row:nth-child(2) { animation-delay: 45ms; }
+    .feed-row:nth-child(3) { animation-delay: 90ms; }
+    .feed-row:nth-child(4) { animation-delay: 135ms; }
+    .feed-row:nth-child(5) { animation-delay: 180ms; }
+    .feed-row:nth-child(6) { animation-delay: 225ms; }
+    .feed-row:nth-child(7) { animation-delay: 270ms; }
+    .feed-row:nth-child(n + 8) { animation-delay: 315ms; }
+  }
+
+  @keyframes feed-row-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   /**
