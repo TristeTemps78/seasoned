@@ -37,8 +37,18 @@ import { codeOf, filesUnder, pathOf } from './sources';
  * liste ci-dessous est courte et se justifie ligne a ligne.
  */
 
-/** Les phrases qui **affirment** un vide. Une chaine de dictionnaire, pas un mot de code. */
-const AFFIRME_UN_VIDE = /EmptyState|\.none'|\.nobody'|\.empty'|\.noneOther'|AccountGate/;
+/**
+ * Les phrases qui **affirment** un vide. Une chaine de dictionnaire, pas un mot de code.
+ *
+ * ⚠️ **`.claim'` en fait partie depuis le 2026-08-30**, et c'est ce que cette garde ne voyait
+ * pas : le menu de l'en-tete proposait « Choisir mon pseudo » sur une lecture ratee — a
+ * quelqu'un qui a un nom depuis des semaines — sans qu'aucune phrase de vide n'apparaisse
+ * dans son code. **Une invitation a reclamer ce qu'on possede deja est le meme mensonge
+ * qu'un « personne n'a rien ecrit » sur cinq critiques**, et c'est meme le plus couteux des
+ * deux, puisqu'elle appelle un geste. Ce qui affirme un vide n'est pas seulement un encart :
+ * c'est aussi un libelle de lien.
+ */
+const AFFIRME_UN_VIDE = /EmptyState|\.none'|\.nobody'|\.empty'|\.noneOther'|\.claim'|AccountGate/;
 
 /** Le crochet qui sait distinguer, et le seul. */
 const SAIT_DISTINGUER = /useSocialRead/;
