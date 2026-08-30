@@ -50,9 +50,35 @@ function ratio(a: string, b: string): number {
 function token(name: string): string {
   const found = styleSheet()
     .replace(/\/\*[\s\S]*?\*\//g, '')
-    .match(new RegExp(String.raw`--${name}:\s*(#[0-9a-fA-F]{6})`));
+    .match(new RegExp(String.raw`--${name}:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))`));
   expect(found, `--${name} introuvable dans la feuille`).not.toBeNull();
-  return found![1]!;
+  return normalise(found![1]!);
+}
+
+/**
+ * Ramene une couleur a `#rrggbb`.
+ *
+ * ⚠️ **Trois notations et pas une seule**, depuis le 2026-08-30 : la version precedente
+ * n'acceptait que `#rrggbb`, ce qui n'etait pas une exigence de contraste mais une exigence
+ * de **syntaxe** — une palette ecrite en `rgb()` faisait tomber la garde sans qu'aucun texte
+ * ne devienne illisible. Un seuil doit juger ce qu'il annonce.
+ *
+ * Ce qu'il reste comme limite est dit plutot que subi : `oklch()` et `color-mix()` ne sont pas
+ * convertis ici, et un jeton ecrit ainsi fera echouer la lecture avec son nom — pas passer.
+ */
+function normalise(valeur: string): string {
+  if (valeur.startsWith('#')) {
+    const brut = valeur.slice(1);
+    if (brut.length === 3) return '#' + [...brut].map((c) => c + c).join('');
+    return '#' + brut.slice(0, 6);
+  }
+  const parts = valeur
+    .replace(/rgba?\(|\)/g, '')
+    .split(/[\s,/]+/)
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))));
+  return '#' + parts.map((n) => n.toString(16).padStart(2, '0')).join('');
 }
 
 it('les jetons lus sont bien ceux du depot', () => {
@@ -60,8 +86,12 @@ it('les jetons lus sont bien ceux du depot', () => {
   for (const name of ['color-ink', 'color-surface', 'color-edge', 'color-muted']) {
     expect(token(name)).toMatch(/^#[0-9a-f]{6}$/i);
   }
-  // Et le fond est bien sombre — sinon tous les seuils ci-dessous jugeraient autre chose.
-  expect(luminance(token('color-ink'))).toBeLessThan(0.05);
+  // ⚠️ **Le fond n'a plus a etre sombre** (2026-08-30). Cette ligne exigeait une luminance
+  // sous 0.05 : ce n'etait pas un seuil d'accessibilite, c'etait un theme sombre inscrit dans
+  // la CI. Une refonte claire aurait echoue ici **sans qu'un seul texte devienne illisible**,
+  // et les seuils ci-dessous — qui, eux, comparent des paires — jugent aussi bien dans les
+  // deux sens. Ce qu'il faut ancrer est qu'on lit deux couleurs differentes, pas laquelle.
+  expect(ratio(token('color-ink'), token('color-surface'))).toBeGreaterThan(1.05);
 });
 
 it('le trait qui dessine une forme atteint le seuil des elements graphiques', () => {

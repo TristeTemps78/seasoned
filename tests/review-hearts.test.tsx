@@ -186,7 +186,12 @@ describe('la vitrine de l’accueil porte le coeur', () => {
     // les coeurs (deux lectures, la seconde etant declenchee par la premiere). Une
     // assertion seche ici mesurerait l'etat transitoire — le piege exact que
     // `trajectory-section.test.tsx` documente pour la position du journal.
-    await waitFor(() => expect(hearts()[0]?.textContent).toContain('2'));
+    // ⚠️ Trois secondes et non une : **deux** lectures enchainees doivent aboutir, et la
+    // seconde ne part qu'au retour de la premiere. Sous la suite entiere — 131 fichiers en
+    // parallele — le defaut d'une seconde de `waitFor` expirait environ une fois sur trois,
+    // et l'echec designait alors la charge de la machine, jamais le produit. Un test qui
+    // echoue pour une mauvaise raison apprend a etre ignore.
+    await waitFor(() => expect(hearts()[0]?.textContent).toContain('2'), { timeout: 3_000 });
 
     fireEvent.click(hearts()[0] as HTMLElement);
 

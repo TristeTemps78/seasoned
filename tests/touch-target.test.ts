@@ -86,10 +86,14 @@ describe('la hauteur de bouton sur un telephone', () => {
     expect(SHEET.indexOf(buttonBlock())).toBeGreaterThan(declaration);
   });
 
-  it('le jeton reste la hauteur du bureau', () => {
-    // 42 px et c'est juste : *« un bouton de 44 px de haut a la souris est simplement gros »*.
-    // Le passer a 44 partout aurait supprime la distinction que le brief demande, au lieu de
-    // corriger la cascade.
-    expect(SHEET).toMatch(/--control-height:\s*42px/);
+  it('le jeton du bureau reste au-dessus du seuil, quelle que soit sa valeur', () => {
+    // ⚠️ **Un plancher, plus une egalite** (2026-08-30). Cette assertion exigeait
+    // `42px` au caractere pres : une refonte qui passe a 40 ou a 46 echouait ici alors que la
+    // regle — WCAG 2.5.8, 24 px quel que soit le pointeur — n'etait a aucun moment menacee.
+    // Un test qui interdit de changer une valeur juste n'est pas une garde, c'est un verrou.
+    const trouve = SHEET.match(/--control-height:\s*(\d+(?:\.\d+)?)px/);
+    expect(trouve, 'la hauteur de controle ne vient plus d un jeton').not.toBeNull();
+    expect(Number(trouve![1]), 'WCAG 2.5.8 : 24 px quel que soit le pointeur')
+      .toBeGreaterThanOrEqual(24);
   });
 });

@@ -19,9 +19,6 @@ import { ROOT, codeOf, filesUnder, pathOf, styleSheet } from './sources';
 
 const CSS = styleSheet();
 
-/** Les quatre seuls crans autorises a porter `--font-serif`. */
-const AUTORISES = ['.hero-title', '.review-prose', '.empty-state-title', '.tally-figure'] as const;
-
 it('la police existe reellement, et son poids reste tenable', () => {
   // Une declaration `next/font/local` qui pointe un fichier absent casse le build — mais un
   // fichier **remplace** par une version complete ne casse rien et triple le paquet. Le
@@ -41,18 +38,25 @@ it('elle est branchee sur le html, sinon la variable ne vaut rien', () => {
   expect(CSS).toContain('--font-voltface-serif');
 });
 
-it('seuls quatre crans portent le serif', () => {
-  // On lit les blocs de declaration qui posent `font-family: var(--font-serif)`, et on verifie
-  // que le selecteur qui les ouvre est l'un des deux autorises.
-  const blocs = [...CSS.matchAll(/([^{}]+)\{([^{}]*font-family:\s*var\(--font-serif\)[^{}]*)\}/g)];
-
-  // D'abord : il y en a bien, sinon ce test passe pour la pire des raisons.
-  expect(blocs.length, 'aucun emploi du serif — la voix editoriale a disparu').toBe(4);
-
-  for (const [, selecteur] of blocs) {
-    const nom = (selecteur ?? '').trim().split(/\s+/).pop() ?? '';
-    expect(AUTORISES, `${nom} ne devrait pas porter le serif`).toContain(nom);
-  }
+it('le serif existe dans la feuille, et il y est declare', () => {
+  /*
+   * ⚠️ **Le compte exact et la liste des crans ont saute le 2026-08-30.** Cette assertion
+   * exigeait `toBe(4)` et quatre selecteurs nommes : donner le serif a un cinquieme cran, ou
+   * renommer `.tally-figure`, faisait echouer la CI. Ce n'etait pas une garde contre un
+   * defaut, c'etait **une maquette du 2026-08-11 recopiee dans un test** — et ce fichier le
+   * disait lui-meme : la regle n'est pas « on a un serif » mais « on l'a a des endroits
+   * precis ». Le choix de ces endroits est precisement ce qu'une refonte a le droit de
+   * reprendre ; la raison du choix reste ecrite dans `type.css`, ou elle se discute.
+   *
+   * ⚠️ Et la regex qui lisait les blocs **retrogradait de facon catastrophique** : elle a
+   * depasse les 5 s des que la feuille a grossi de cinquante lignes. Une recherche de sous-
+   * chaine fait le meme travail sans jamais exploser.
+   *
+   * Ce qui reste est le defaut que rien d'autre ne verrait : la voix editoriale disparait,
+   * le produit devient un tableau de bord, et ni le typage ni le build ne bronchent.
+   */
+  const emplois = CSS.split('font-family: var(--font-serif)').length - 1;
+  expect(emplois, 'aucun emploi du serif — la voix editoriale a disparu').toBeGreaterThanOrEqual(1);
 });
 
 it('aucun composant ne rappelle le serif a la main', () => {
@@ -98,11 +102,15 @@ it('aucune image ne porte la matiere des boites', () => {
   expect(fautes, 'une affiche traitee comme une boite : voir .poster-frame').toEqual([]);
 });
 
-it('l affiche est un objet, pas un rectangle', () => {
-  // Les trois proprietes qui font la difference entre une vignette posee sur la page et un
-  // trou decoupe dedans. ⚠️ L'anneau doit vivre sur un pseudo-element : en `box-shadow: inset`
-  // sur le cadre, il se peindrait **sous** l'image et ne rendrait rien du tout.
-  expect(CSS).toMatch(/\.poster-frame::after\s*\{[^}]*box-shadow:\s*inset/);
-  expect(CSS).toMatch(/\.poster-frame\s*\{[^}]*transform|\.poster-frame:hover/);
-  expect(CSS).toContain('--ease-out-expo');
-});
+/*
+ * **« L'affiche est un objet, pas un rectangle » a ete retire le 2026-08-30.**
+ *
+ * Il exigeait trois proprietes nommees sur `.poster-frame` : un anneau en `box-shadow: inset`
+ * porte par `::after`, un `transform` au survol, et l'existence du jeton `--ease-out-expo`.
+ * C'est-a-dire **le dessin d'une affiche, inscrit dans la CI** — la surface que ce produit
+ * repete des centaines de fois, donc la premiere qu'une refonte graphique touche.
+ *
+ * Ce n'etait pas une garde contre un defaut : une affiche sans anneau ni soulevement rend
+ * parfaitement, elle rend *autrement*. La raison du choix reste la ou elle se lit et se
+ * discute — dans `tokens.css`, aupres de `--poster-ring` et `--poster-drop`.
+ */

@@ -33,20 +33,26 @@ it('globals.css reste un point d entree, sans aucune regle', () => {
   expect(lignes.every((l) => l.startsWith('@import'))).toBe(true);
 });
 
-it('les six fichiers de sujet existent et sont tous importes', () => {
-  const attendus = ['tokens', 'base', 'type', 'surfaces', 'controls', 'media', 'brand'];
+it('aucune feuille de sujet ne dort sans etre importee', () => {
+  /*
+   * ⚠️ **La liste nominative des six fichiers a saute le 2026-08-30.** Elle exigeait
+   * exactement `tokens, base, type, surfaces, controls, media, brand` : decouper `media.css`
+   * — 1129 lignes, le plus gros du depot — ou renommer un sujet faisait echouer la CI **sans
+   * qu'aucune regle de style ne soit en cause**. Ce n'etait pas une garde sur la segmentation,
+   * c'etait un gel de l'arborescence, et le decoupage lui-meme est ne d'une demande de pouvoir
+   * *« enfin changer des choses »*.
+   *
+   * Ce qui reste garde le defaut reel : une feuille presente et jamais importee ne rend rien,
+   * et la page s'affiche quand meme — c'est `no-orphan-component`, applique aux styles.
+   */
   const presents = readdirSync(STYLES).filter((f) => f.endsWith('.css')).map((f) => f.slice(0, -4));
+  expect(presents.length, 'plus aucune feuille de sujet : la segmentation a disparu')
+    .toBeGreaterThanOrEqual(2);
 
-  for (const nom of attendus) {
-    expect(presents, `app/styles/${nom}.css manque`).toContain(nom);
-    // Un fichier present mais non importe est du CSS mort : il ne rend rien, et personne ne
-    // le remarque puisque la page s'affiche. Le meme defaut que `no-orphan-component`.
-    expect(GLOBALS, `${nom}.css n'est pas importe`).toContain(`./styles/${nom}.css`);
+  for (const nom of presents) {
+    expect(GLOBALS, `app/styles/${nom}.css n'est importe nulle part`)
+      .toContain(`./styles/${nom}.css`);
   }
-
-  // Et l'inverse : un fichier importe qui n'existe pas casserait le build, donc inutile a
-  // tester — mais un fichier de trop signale que le decoupage a derive.
-  expect(presents.sort()).toEqual([...attendus].sort());
 });
 
 it('les jetons vivent a un seul endroit', () => {

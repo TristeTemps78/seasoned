@@ -36,6 +36,20 @@ export default defineConfig({
     },
   },
   test: {
+    /**
+     * ⚠️ **Quinze secondes, et c'est un anti-blocage, pas une mesure** (2026-08-30).
+     *
+     * Le defaut de vitest est de cinq secondes, et trois tests du depot le frolaient une fois
+     * sur trois — non parce qu'ils mesurent quelque chose de lent, mais parce que 131 fichiers
+     * tournent en parallele sur la meme machine : `journal-weight` construit mille series
+     * (1,5 s seul, 5,3 s sous la suite), `review-hearts` attend deux lectures enchainees,
+     * `account-menu` en attendait une. Un rouge qui designe la charge de la machine et non le
+     * produit est pire qu'un vert : il apprend a relancer plutot qu'a lire.
+     *
+     * Ce delai ne relache aucune assertion — chacune reste exacte. Il ne sert qu'a distinguer
+     * « bloque » de « en retard », et c'est tout ce qu'un delai sait faire.
+     */
+    testTimeout: 15_000,
     projects: [
       {
         extends: true,
