@@ -74,6 +74,13 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
   le seul crochet qui distingue les deux, `no-false-empty.test.ts` refuse le onzième écran, et
   **la mesure se refait en coupant `fetch` puis en naviguant en SPA** — une navigation complète
   reconstruit le client et ne mesure rien.
+
+  ⚠️ **Le onzième existait quand même, et la garde ne pouvait pas le voir** (2026-08-30) : le
+  menu de l'en-tête proposait « Choisir mon pseudo » — vers `/amis` — à qui a un nom depuis
+  des semaines, dès que la lecture échouait. La garde cherchait des *phrases* de vide
+  (`EmptyState`, `.none'`) ; celle-là était un **libellé de lien**. Une invitation à réclamer
+  ce qu'on possède déjà est le même mensonge en plus cher, puisqu'elle appelle un geste. Ce
+  qui affirme un vide n'est donc pas seulement un encart — `.claim'` a rejoint la garde.
 - **🔴 Un chiffre agrégé n'est pas une mesure : il faut regarder QUEL élément.**
   Audit graphique du 2026-08-18 face à Letterboxd : neuf constats, **cinq faux**, tous par la
   même faute — un script qui compte des `getComputedStyle` sans jamais demander ce qu'est
