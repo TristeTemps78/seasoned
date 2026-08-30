@@ -8,9 +8,8 @@ import { PRODUCT_NAME } from '@/lib/site';
  * Arbitrage A8 (2026-08-02) : le produit doit exister sur le web, iPhone, Android,
  * macOS et Windows. Une PWA installee **est** une application sur iOS >= 16.4, Android,
  * macOS et Windows : icone, plein ecran, lancement hors navigateur. Elle etait promise
- * par depuis le premier jour et n'avait jamais ete construite — ni
- * manifeste, ni icone, ni service worker. Une fonctionnalite ecrite n'est pas une
- * fonctionnalite qui marche.
+ * depuis le premier jour et n'avait jamais ete construite — ni manifeste, ni icone, ni
+ * service worker. Une fonctionnalite ecrite n'est pas une fonctionnalite qui marche.
  *
  * ## ⚠️ Ce commentaire affirmait une chose fausse (corrige le 2026-08-03, A11)
  *
@@ -18,7 +17,7 @@ import { PRODUCT_NAME } from '@/lib/site';
  * ARM64, et le projet voisin `Limits` est mort exactement de ce mur ». L'observation etait
  * juste, l'inference non : `Limits` a bati un **IPA en Release** depuis ce PC, en CI, sur
  * un runner macOS heberge. Il a bute sur le **sideload sans compte developpeur**, pas sur
- * le build. Detail et consequences dans
+ * le build.
  *
  * **Ce manifeste ne devient pas inutile pour autant, et c'est le point** : le natif est un
  * canal de **retention**, le web est le seul canal d'**acquisition** (une application n'a

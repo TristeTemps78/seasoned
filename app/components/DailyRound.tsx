@@ -113,8 +113,11 @@ export function DailyRound() {
       <section className="band" aria-label={t('round.board')}>
         <h2 className="row-title">{t('round.board')}</h2>
         {board.length === 0 ? (
-          // Mieux vaut se taire que compter zero : un classement vide dit qu'il n'y a
-          // rien a montrer, pas que le produit est casse.
+          // ⚠️ Une phrase, pas un silence — et le commentaire qui vivait ici disait
+          // l'inverse de ce que ce code fait : il citait « mieux vaut se taire que compter
+          // zero », la doctrine abandonnee le 2026-08-11. « Personne n'a encore joue
+          // aujourd'hui » est un fait qui s'ecrit ; il ne se confond pas avec « je n'ai pas
+          // pu lire le classement », d'ou les deux clefs.
           <p className="prose-note" {...(unreadable ? { role: 'status' as const } : {})}>
             {t(unreadable ? 'read.failed' : 'round.empty')}
           </p>
