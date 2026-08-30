@@ -149,7 +149,7 @@
     width: 2rem;
     height: 2rem;
     border-radius: 9999px;
-    font-size: 0.8125rem;
+    font-size: var(--text-xs-plus);
     font-weight: 700;
     line-height: 1;
     /* L'encre sombre sur une teinte vive : les huit teintes sont claires par construction,
@@ -194,7 +194,7 @@
   .avatar-lg {
     width: 4rem;
     height: 4rem;
-    font-size: 1.5rem;
+    font-size: var(--text-2xl);
   }
   /* La pastille et le visage sur le meme objet : la face se lit en surimpression, en bas a
      droite, comme un indicateur de presence. Sans le fond en encre, une pastille rouge sur

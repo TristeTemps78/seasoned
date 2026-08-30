@@ -284,6 +284,53 @@
      lisent pas pareil — la seconde parait arrondie comme un bouton. */
   --radius-poster: clamp(2px, 2.66%, 8px);
 
+  /* =============================================================================
+   * L'ECHELLE TYPOGRAPHIQUE — le seul endroit ou une taille de texte se decide
+   * =============================================================================
+   *
+   * 🔴 **Elle se decidait dans 23 declarations et dans une echelle invisible.** Audit du
+   * 2026-08-30 : 23 `font-size` ecrits en rem dans cinq feuilles, **et** 195 utilitaires
+   * `text-sm` / `text-xs` / `text-lg` poses dans le JSX de 99 composants. Les seconds
+   * lisaient l'echelle **par defaut de Tailwind**, que ce depot n'avait jamais declaree —
+   * donc que personne ne pouvait retoucher. Deux vocabulaires pour une meme decision, et
+   * cinq des neuf crans maison recopiaient a la main un cran Tailwind (`.meta` = `text-sm`,
+   * `.meta-sm` = `text-xs`, `.card-title` = `text-base`, `.page-title` = `text-3xl`,
+   * `.empty-state-title` = `text-2xl`).
+   *
+   * Les declarer ici les reunit : Tailwind emet deja `font-size: var(--text-sm)` pour ses
+   * utilitaires, donc **une valeur changee ici bouge les deux vocabulaires a la fois**, sans
+   * toucher a un seul composant. C'est le meme raisonnement que `--color-volt` un peu plus
+   * bas : *rien d'autre a toucher*.
+   *
+   * ⚠️ Les valeurs ci-dessous sont **exactement** celles d'aujourd'hui — les crans Tailwind
+   * reprennent leur valeur par defaut, mot pour mot. Nommer n'est pas redessiner : le CSS
+   * compile avant/apres est identique, verifie et non promis.
+   *
+   * ⚠️ **Trois crans sont a un cheveu l'un de l'autre** : 0.6875 (`--text-2xs`), 0.75
+   * (`--text-xs`) et 0.8125 (`--text-xs-plus`). Trois tailles de petit texte qu'aucun oeil ne
+   * distingue et que trois auteurs ont posees separement. Les fondre est une decision de
+   * design, pas de refactor — elle se prend a la refonte, et elle se prend **ici**.
+   */
+
+  /* Les crans partages avec les utilitaires du JSX. */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-xs-plus: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+
+  /* Les crans qui portent un role et n'existent que dans la feuille. */
+  --text-prose: 1.0625rem;
+  --text-section: 1.375rem;
+  --text-figure: 2rem;
+  --text-figure-wide: 3rem;
+  --text-hero: 2.5rem;
+  --text-hero-wide: 3.5rem;
+
   /* Trois durees, et elles suffisent. */
   --dur-fast: 0.1s;
   --dur-mid: 0.333s;
