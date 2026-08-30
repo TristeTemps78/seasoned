@@ -135,17 +135,41 @@ const alreadyAsked = new Set();
  * posait trois questions sur *The Rookie* : la deviner une fois donnait deux points
  * gratuits, et le classement aurait recompense la chance plutot que la connaissance. Le
  * defaut ne se voyait pas dans le schema — il se voyait dans la sortie du script.
+ *
+ * ⚠️ La regle est tenue par {@link untouched}, au **tirage**. Elle etait aussi ici, en
+ * refus silencieux, et c'est ce refus qui perdait des questions : voir l'en-tete de
+ * `untouched`. Une regle appliquee a deux endroits n'est pas deux fois plus sure — le
+ * second endroit sert d'excuse au premier pour tirer n'importe ou.
  */
 function add(kind, subject, prompt) {
-  if (alreadyAsked.has(subject.id)) return;
   const { choices, answer } = choicesAround(subject);
   if (choices.length < 4 || answer < 0) return;
   alreadyAsked.add(subject.id);
   questions.push({ kind, prompt, choices, answer });
 }
 
+/**
+ * Ce qui n'a pas encore servi.
+ *
+ * 🔴 **Toutes les familles tirent ici, et c'est ce qui manquait.** Les trois premieres
+ * tiraient dans le vivier entier, et `add` refusait ensuite une serie deja interrogee —
+ * silencieusement. Une collision ne decalait donc pas le tirage : elle **perdait la
+ * question**. Mesure du 2026-08-30 sur les 21 manches construites : deux d'entre elles
+ * (2026-09-14 et 2026-09-15) n'avaient que cinq questions, et les deux avaient perdu la
+ * meme famille — `poster`, la troisieme a tirer, donc celle qui a deux occasions de tomber
+ * sur une serie deja prise.
+ *
+ * La regle « une serie ne repond qu'a UNE question » n'a pas change ; elle s'applique
+ * maintenant **au tirage** plutot qu'au depot, ou elle ne pouvait que faire disparaitre du
+ * travail deja paye en appels TMDB.
+ */
+const untouched = () => pool.filter((one) => !alreadyAsked.has(one.id));
+
 // 1 — les acteurs
-for (const candidate of [pick(pool), pick(pool), pick(pool)]) {
+//
+// ⚠️ `takeSome` et non trois `pick` : trois tirages independants peuvent rendre deux fois
+// la meme serie, donc deux appels TMDB identiques pour une seule chance de plus.
+for (const candidate of takeSome(untouched(), 3, draw)) {
   const credits = await tmdb(`/tv/${candidate.id}/credits`);
   const cast = (credits.cast ?? []).slice(0, 3).map((one) => one.name).filter(Boolean);
   if (cast.length >= 2) {
@@ -155,8 +179,8 @@ for (const candidate of [pick(pool), pick(pool), pick(pool)]) {
 }
 
 // 2 — la note globale
-const rated = pick(pool);
-if (typeof rated.vote_average === 'number' && rated.vote_average > 0) {
+const rated = pick(untouched());
+if (rated !== undefined && typeof rated.vote_average === 'number' && rated.vote_average > 0) {
   add('rating', rated, { score: Number(rated.vote_average.toFixed(1)) });
 }
 
@@ -166,9 +190,8 @@ if (typeof rated.vote_average === 'number' && rated.vote_average > 0) {
 // portait une affiche : le tirage etant deterministe par jour, elle aurait pose **la meme
 // affiche tous les jours**. Le defaut ne se voit pas sur une manche — il se voit en en
 // construisant quatre.
-const withPoster = pool.filter((one) => typeof one.poster_path === 'string');
-if (withPoster.length > 0) {
-  const postered = pick(withPoster);
+const postered = pick(untouched().filter((one) => typeof one.poster_path === 'string'));
+if (postered !== undefined) {
   add('poster', postered, { url: `https://image.tmdb.org/t/p/w342${postered.poster_path}` });
 }
 
@@ -177,7 +200,6 @@ if (withPoster.length > 0) {
 // Chacune sur une serie DIFFERENTE, donc chacune coute ses propres appels. C'est le prix
 // du garde-fou ci-dessus, et il est paye une fois par jour pour tout le monde — jamais par
 // visiteur, ce que ce produit refuse partout.
-const untouched = () => pool.filter((one) => !alreadyAsked.has(one.id));
 
 for (const family of ['seasons', 'episodes', 'dates']) {
   for (let attempt = 0; attempt < 4; attempt += 1) {
