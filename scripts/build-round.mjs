@@ -35,6 +35,9 @@ import { DIM, GREEN, RED, RESET, YELLOW, projectRefFrom, readEnv } from './env.m
 // pour `db-push` : le domaine tranche, l'outillage execute. Une troisieme copie du melange
 // et du generateur vivait ici, et elle n'avait aucune raison d'exister.
 import { drawFrom, pickOne, seedOf, shuffle, takeSome } from '../src/domain/draw.ts';
+// Et la meme raison pour le corpus : qui a le droit d'entrer dans une manche est une
+// regle de produit, pas un `filter` de trois lignes au milieu d'un script sans test.
+import { eligible } from '../src/domain/corpus.ts';
 
 const env = readEnv();
 const tmdbToken = env['TMDB_ACCESS_TOKEN'];
@@ -92,29 +95,13 @@ const quote = (value) => `'${String(value).replace(/'/g, "''")}'`;
 
 console.log(`\nManches a partir du ${from} (${days}) — Voltface\n`);
 
-/**
- * Ce que `/tv/popular` rend et qui n'est pas une serie.
- *
- * 🔴 **Constate a la premiere manche construite** : elle portait sur *Secret Story*,
- * *Paradise Hotel* et *The Late Show*. TMDB range la tele-realite, les talk-shows et les
- * journaux televises parmi les « TV shows » — ce produit, lui, parle de **series**
- * (arbitrage A13). Un quiz sur un jeu de tele-realite n'est pas un quiz sur des series, et
- * il donne surtout l'impression que le produit ne sait pas de quoi il parle.
- */
-const NOT_A_SERIES = new Set([10763 /* news */, 10764 /* reality */, 10767 /* talk */]);
-
-// Un vivier large, pour que les leurres soient credibles et varies.
+// Un vivier large, pour que les leurres soient credibles et varies — et `eligible` est ce
+// qui rend la seconde moitie de cette phrase vraie. Voir `src/domain/corpus.ts` : les
+// journaux et la tele-realite d'un cote, ce que personne n'a vu de l'autre.
 const pool = [];
 for (const page of [1, 2, 3]) {
   const { results = [] } = await tmdb(`/tv/popular?page=${page}`);
-  pool.push(
-    ...results.filter(
-      (one) =>
-        typeof one.name === 'string' &&
-        one.id !== undefined &&
-        !(one.genre_ids ?? []).some((genre) => NOT_A_SERIES.has(genre)),
-    ),
-  );
+  pool.push(...results.filter(eligible));
 }
 if (pool.length < 8) fail('TMDB a rendu trop peu de series pour construire une manche');
 
