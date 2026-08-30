@@ -26,11 +26,14 @@ import { FaceDot } from '@/app/components/FaceDot';
  * la meme matiere ferait lire les listes comme des series. Un titre, son auteur, son compte —
  * c'est ce qui distingue une liste d'un titre, donc c'est ce qu'on montre.
  *
- * ## ⚠️ Le lien mene au profil, pas a la liste
+ * ## ⚠️ Le lien mene a la liste
  *
- * Il n'existe pas de page par liste : `/u/<nom>` les porte toutes, sous son onglet. Inventer
- * une route par liste ajouterait une surface pour montrer ce qu'une page existante montre
- * deja — c'est le raisonnement de `DiscoverLists`, et il n'a pas change.
+ * 🔴 Il menait au **profil de l'auteur**, et le commentaire qui vivait ici l'expliquait par
+ * un fait devenu faux : *« il n'existe pas de page par liste »*. Elle existe depuis le
+ * 2026-08-17 — `/u/<nom>/liste/<slug>`, l'adresse partageable d'une liste — et
+ * `DiscoverLists` y menait deja. Chercher « series a montrer a ma mere », la trouver, cliquer,
+ * et devoir la retrouver a l'oeil parmi les listes de quelqu'un : c'est le seul resultat de
+ * recherche du produit qui n'ouvrait pas ce qu'il annonce.
  */
 export function ListResults({ query }: { readonly query: string }) {
   const { t, tn, locale } = useT();
@@ -62,7 +65,7 @@ export function ListResults({ query }: { readonly query: string }) {
         {lists.map((list) => (
           <li key={`${list.authorId}:${list.slug}`}>
             <Link
-              href={pathIn(`/u/${list.handle}`, locale)}
+              href={pathIn(`/u/${list.handle}/liste/${list.slug}`, locale)}
               className="card flex flex-wrap items-baseline gap-x-3 gap-y-1 px-3 py-2"
             >
               <span className="text-sm font-medium hover:text-(--color-volt)">{list.title}</span>
