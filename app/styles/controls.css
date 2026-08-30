@@ -556,6 +556,34 @@
   }
 
   /**
+   * La place de la premiere ligne du volet, tenue le temps qu'on sache qui on est.
+   *
+   * ⚠️ **Une place, pas une phrase.** Ce qui vivait la avant etait « Choisir mon pseudo » —
+   * affiche pendant toute la lecture, donc a qui a deja un nom. Ne rien mettre serait honnete
+   * mais ferait apparaitre une ligne de 44 px **au-dessus** des quatre autres une fois la
+   * reponse arrivee : la cible bouge sous le doigt, exactement ce que `Feedback` evite en
+   * demandant le pseudo *avec* les retours.
+   *
+   * Aucune animation : un battement dans un volet ouvert 300 ms attire l'oeil sur la seule
+   * ligne qui n'a rien a dire.
+   */
+  .nav-menu-wait {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .nav-menu-wait::before {
+    content: '';
+    display: block;
+    width: 7rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: color-mix(in oklab, var(--color-text) 10%, transparent);
+  }
+
+  /**
    * =============================================================================
    * UN LIEN DE TEXTE QUI ATTEINT 24 PX — la regle ecrite une fois, pas comptee
    * =============================================================================

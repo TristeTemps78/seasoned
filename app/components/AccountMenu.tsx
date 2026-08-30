@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useT } from '@/app/i18n/LocaleProvider';
-import { useSocial } from '@/app/social/useSocial';
+import { useSocialRead } from '@/app/social/useSocial';
 import { pathIn } from '@/lib/routes';
 import { Icon } from '@/app/components/Icon';
 import type { Locale } from '@/lib/i18n';
@@ -64,6 +64,25 @@ import type { Locale } from '@/lib/i18n';
  * SDK pour un visiteur sans session. La lecture part donc au survol ou a la mise au point du
  * bouton, jamais au rendu : personne ne paie pour un menu qu'il n'ouvre pas, et pour qui
  * l'ouvre, la reponse est deja la. Une seule fois par compte.
+ *
+ * ## 🔴 « Une seule fois par compte » etait faux, et « choisir mon pseudo » etait un mensonge
+ *
+ * Deux defauts de cette meme lecture, corriges le 2026-08-30 :
+ *
+ * - **Elle partait deux fois.** Le garde-fou comparait l'etat `profile`, qui n'existe
+ *   qu'**apres** la reponse ; or le survol lance la lecture et le clic suit dans la foulee.
+ *   La seconde decision d'envoyer etait donc prise avant l'arrivee de la premiere reponse.
+ *   C'est la forme exacte du defaut des mots du 2026-08-18 — *un correctif non remesure est
+ *   une hypothese* — et la suite ne le voyait que sous charge, une fois sur dix.
+ * - **Son echec ressemblait a un compte sans nom.** `myProfile()` rend `undefined` dans les
+ *   deux cas, et cette ligne **invite a un geste** : « Choisir mon pseudo », vers `/amis`.
+ *   Le dire a quelqu'un qui a un nom depuis des semaines est le defaut du 2026-08-18 dans sa
+ *   forme la plus couteuse ; il vivait encore ici parce que `no-false-empty` ne cherche que
+ *   des phrases de vide (`EmptyState`, `.none'`) et que celle-la est un **libelle de lien**.
+ *   Pire, l'echec se gardait : le menu restait sans profil jusqu'a la fin de la session.
+ *
+ * Et l'invitation s'affichait deja **pendant** la lecture, a tout le monde. Elle attend
+ * maintenant la reponse, sur une place tenue — voir le squelette dans le rendu.
  */
 export function AccountMenu({ locale }: { readonly locale: Locale }) {
   const { t } = useT();
@@ -84,15 +103,37 @@ export function AccountMenu({ locale }: { readonly locale: Locale }) {
   const [profile, setProfile] = useState<{ readonly userId: string; readonly handle?: string }>();
 
   const userId = account?.userId;
-  const social = useSocial();
+  // ⚠️ `useSocialRead` et non `useSocial` : le seul crochet qui distingue « pas de profil »
+  // de « je n'ai pas pu lire », et cette ligne invite a un geste — voir l'en-tete.
+  const { social, unreadable, reset: resetUnreadable } = useSocialRead();
+
+  /**
+   * Le compte dont la lecture est **partie** — en vol ou aboutie.
+   *
+   * ⚠️ Une reference, lue et ecrite **avant** l'envoi : c'est ce qui manquait pour que
+   * « une seule fois par compte » soit vrai. Un etat ne peut pas tenir ce role, il n'arrive
+   * qu'avec la reponse. Elle porte l'identifiant et non un drapeau, pour la meme raison que
+   * `profile` : changer de compte doit redemander.
+   */
+  const asked = useRef<string | undefined>(undefined);
 
   const warm = useCallback(() => {
     if (userId === undefined || social === undefined) return;
-    if (profile?.userId === userId) return;
+    if (asked.current === userId) return;
+    asked.current = userId;
+    // Remis a zero **avant** la lecture : sans ca, une panne passagere marquerait le menu
+    // jusqu'au rechargement de la page — meme discipline que `Friends`.
+    resetUnreadable();
     void social.myProfile(userId).then((found) => {
       setProfile({ userId, ...(found?.handle !== undefined ? { handle: found.handle } : {}) });
     });
-  }, [userId, social, profile]);
+  }, [userId, social, resetUnreadable]);
+
+  // Une lecture ratee ne se garde pas : la prochaine ouverture redemande, au lieu de laisser
+  // le menu sans profil jusqu'a la fin de la session.
+  useEffect(() => {
+    if (unreadable) asked.current = undefined;
+  }, [unreadable]);
 
   // Le volet ne survit pas a la page : l'en-tete est le meme noeud d'une page a l'autre.
   useEffect(() => setOpen(false), [pathname]);
@@ -121,7 +162,9 @@ export function AccountMenu({ locale }: { readonly locale: Locale }) {
     };
   }, [open]);
 
-  const handle = profile?.userId === userId ? profile?.handle : undefined;
+  /** La reponse est-elle arrivee, **pour ce compte-ci** ? */
+  const answered = profile?.userId === userId;
+  const handle = answered ? profile?.handle : undefined;
   const signedIn = ready && account !== undefined;
 
   return (
@@ -163,8 +206,16 @@ export function AccountMenu({ locale }: { readonly locale: Locale }) {
             {signedIn ? (
               handle !== undefined ? (
                 <Item href={pathIn(`/u/${handle}`, locale)} label={`@${handle}`} hint={t('nav.profile')} />
-              ) : (
+              ) : answered && !unreadable ? (
                 <Item href={pathIn('/amis', locale)} label={t('nav.profile.claim')} />
+              ) : (
+                /* 🔴 Ni le lien ni l'invitation tant qu'on ne sait pas — mais **la place est
+                   tenue**. « Choisir mon pseudo » s'affichait pendant toute la lecture, donc
+                   a qui a un nom ; et la faire apparaitre apres coup pousserait les quatre
+                   lignes suivantes de 44 px, ce qui **deplace la cible sous le doigt** — la
+                   raison est deja ecrite dans `Feedback`, qui demande le pseudo *avec* les
+                   retours plutot qu'avant. */
+                <li className="nav-menu-wait" aria-hidden="true" />
               )
             ) : null}
 

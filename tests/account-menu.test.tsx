@@ -28,7 +28,12 @@ const session = vi.hoisted(() => ({
   account: undefined as { userId: string; accessToken: string } | undefined,
   left: 0,
 }));
-const remote = vi.hoisted(() => ({ handle: undefined as string | undefined, calls: 0 }));
+const remote = vi.hoisted(() => ({
+  handle: undefined as string | undefined,
+  calls: 0,
+  /** Quand la lecture echoue : myProfile rend undefined **et** signale la panne. */
+  fails: false,
+}));
 
 vi.mock('@/app/auth/AuthProvider', () => ({
   useAuth: () => ({
@@ -48,9 +53,18 @@ vi.mock('@/app/auth/AuthProvider', () => ({
 }));
 
 vi.mock('@/app/social/socialFrom', () => ({
-  socialFrom: () => ({
+  // ⚠️ Le rappel d'echec est **pris**, pas ignore : `useSocialRead` ne sait distinguer une
+  // panne d'une absence que par lui, et sans ca le double serait toujours un succes.
+  socialFrom: (
+    _token: unknown,
+    onFailure?: (where: string, status?: number, kind?: 'read' | 'write') => void,
+  ) => ({
     myProfile: async () => {
       remote.calls += 1;
+      if (remote.fails) {
+        onFailure?.('profiles', 500, 'read');
+        return undefined;
+      }
       return remote.handle === undefined ? undefined : { handle: remote.handle };
     },
   }),
@@ -73,6 +87,7 @@ beforeEach(() => {
   session.left = 0;
   remote.handle = undefined;
   remote.calls = 0;
+  remote.fails = false;
   pathname.current = '/fr';
 });
 
@@ -208,5 +223,96 @@ describe('le pseudo ne se demande pas au chargement', () => {
     open();
     await waitFor(() => expect(screen.getByRole('navigation')).toBeDefined());
     expect(remote.calls).toBe(1);
+  });
+
+  it('🔴 le survol puis le clic ne font qu une lecture', async () => {
+    // Le geste reel : la souris entre sur le bouton (la lecture part), et le clic suit dans
+    // la foulee — **avant** la reponse. Le garde-fou comparait un etat qui n'arrive qu'avec
+    // elle, donc l'en-tete lisait `profiles` deux fois a chaque ouverture. Le test qui
+    // existait ne le voyait que sous charge, une fois sur dix.
+    session.account = { userId: 'u1', accessToken: 'jeton' };
+    remote.handle = 'tristetemps78';
+    renderMenu();
+    fireEvent.pointerEnter(screen.getByRole('button', { expanded: false }));
+    open();
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: /tristetemps78/ })).toBeDefined(),
+    );
+    expect(remote.calls).toBe(1);
+  });
+
+  it('🔴 redemande apres un changement de compte', async () => {
+    // La reference porte l'identifiant, pas un drapeau : sinon le menu pointerait vers le
+    // profil du compte precedent — un lien juste, vers la mauvaise personne.
+    session.account = { userId: 'u1', accessToken: 'jeton' };
+    remote.handle = 'tristetemps78';
+    const { rerender } = renderMenu();
+    open();
+    await waitFor(() => expect(remote.calls).toBe(1));
+    session.account = { userId: 'u2', accessToken: 'jeton' };
+    remote.handle = 'quelquun-dautre';
+    fireEvent.keyDown(document, { key: 'Escape' });
+    rerender(
+      <LocaleProvider locale="fr" messages={DICTIONARIES.fr}>
+        <AccountMenu locale="fr" />
+      </LocaleProvider>,
+    );
+    open();
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: /quelquun-dautre/ })).toBeDefined(),
+    );
+    expect(screen.queryByRole('link', { name: /tristetemps78/ })).toBeNull();
+  });
+});
+
+describe('une lecture ratee n est pas un compte sans nom', () => {
+  it('🔴 n invite pas a choisir un pseudo tant que la reponse n est pas la', () => {
+    // « Choisir mon pseudo » s'affichait pendant **toute** la lecture, donc a qui a un nom
+    // depuis des semaines. Elle attend maintenant la reponse, sur une place tenue.
+    session.account = { userId: 'u1', accessToken: 'jeton' };
+    remote.handle = 'tristetemps78';
+    renderMenu();
+    open();
+    expect(screen.queryByRole('link', { name: 'Choisir mon pseudo' })).toBeNull();
+  });
+
+  it('🔴 n invite pas a choisir un pseudo quand la lecture a echoue', async () => {
+    // `myProfile()` rend `undefined` dans les deux cas. Sans `useSocialRead`, une panne
+    // ressemblait trait pour trait a un compte sans profil — et cette ligne **invite a un
+    // geste** qui n'a aucun sens pour qui a deja un nom. C'est le defaut du 2026-08-18, et
+    // `no-false-empty` ne pouvait pas le voir : ce n'est pas une phrase de vide, c'est un
+    // libelle de lien.
+    session.account = { userId: 'u1', accessToken: 'jeton' };
+    remote.handle = 'tristetemps78';
+    remote.fails = true;
+    renderMenu();
+    open();
+    await waitFor(() => expect(remote.calls).toBe(1));
+    expect(screen.queryByRole('link', { name: 'Choisir mon pseudo' })).toBeNull();
+    // Les autres destinations, elles, ne dependent d'aucune lecture.
+    expect(screen.getByRole('link', { name: 'Mon journal' })).toBeDefined();
+  });
+
+  it('🔴 la prochaine ouverture redemande apres un echec', async () => {
+    // L'echec se gardait : le menu restait sans profil jusqu'a la fin de la session, alors
+    // qu'une panne du social dure quelques secondes.
+    session.account = { userId: 'u1', accessToken: 'jeton' };
+    remote.handle = 'tristetemps78';
+    remote.fails = true;
+    renderMenu();
+    open();
+    await waitFor(() => expect(remote.calls).toBe(1));
+    // ⚠️ Referme au clic dehors et non par Echap : Echap **rend le focus au bouton**, donc
+    // relance la lecture avant que le reseau ne soit revenu. C'est le bon comportement, mais
+    // ce n'est pas ce que ce test mesure.
+    fireEvent.pointerDown(document.body);
+    remote.fails = false;
+    open();
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: /tristetemps78/ }).getAttribute('href')).toBe(
+        '/fr/u/tristetemps78',
+      ),
+    );
+    expect(remote.calls).toBe(2);
   });
 });
