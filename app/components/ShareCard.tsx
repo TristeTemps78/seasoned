@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { PRODUCT_NAME } from '@/lib/site';
+import { shareInk } from '@/app/components/shareInk';
 
 export interface SharePoint {
   readonly seasonNumber: number;
@@ -55,15 +56,17 @@ export function ShareCard({ title, points }: {
     const ctx = canvas.getContext('2d');
     if (ctx === null) return;
 
-    // Charte de `app/globals.css` : l'image doit appartenir au meme systeme visuel.
-    ctx.fillStyle = '#0f1115';
+    // ⚠️ La charte est **lue** sur la feuille, jamais recopiee : voir `shareInk`. Les cinq
+    // valeurs qui vivaient ici avaient deja quitte celles du site.
+    const encre = shareInk();
+    ctx.fillStyle = encre.ink;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    ctx.fillStyle = '#e6e9ef';
+    ctx.fillStyle = encre.text;
     ctx.font = '600 52px ui-sans-serif, system-ui, sans-serif';
     ctx.fillText(truncate(ctx, title, WIDTH - 160), 80, 118);
 
-    ctx.fillStyle = '#8b94a7';
+    ctx.fillStyle = encre.muted;
     ctx.font = '400 26px ui-sans-serif, system-ui, sans-serif';
     ctx.fillText(t('share.caption'), 80, 162);
 
@@ -81,27 +84,27 @@ export function ShareCard({ title, points }: {
       // La note du public en fond, la mienne par-dessus : l'ecart se lit sans legende.
       if (point.mine !== undefined) {
         const publicHeight = Math.max(6, (point.stars / 5) * height);
-        ctx.fillStyle = '#262b36';
+        ctx.fillStyle = encre.surface;
         rounded(ctx, centre - barWidth / 2, bottom - publicHeight, barWidth, publicHeight);
       }
 
-      ctx.fillStyle = point.mine !== undefined ? '#fbbf24' : '#4ade80';
+      ctx.fillStyle = point.mine !== undefined ? encre.warn : encre.volt;
       const width = point.mine !== undefined ? barWidth * 0.55 : barWidth;
       rounded(ctx, centre - width / 2, bottom - barHeight, width, barHeight);
 
-      ctx.fillStyle = '#e6e9ef';
+      ctx.fillStyle = encre.text;
       ctx.font = '600 28px ui-sans-serif, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(num(value, 1), centre, bottom - barHeight - 18);
 
-      ctx.fillStyle = '#8b94a7';
+      ctx.fillStyle = encre.muted;
       ctx.font = '400 24px ui-sans-serif, system-ui, sans-serif';
       ctx.fillText(`S${point.seasonNumber}`, centre, bottom + 38);
       ctx.textAlign = 'left';
     }
 
     const hasMine = points.some((p) => p.mine !== undefined);
-    ctx.fillStyle = '#8b94a7';
+    ctx.fillStyle = encre.muted;
     ctx.font = '400 24px ui-sans-serif, system-ui, sans-serif';
     ctx.fillText(
       hasMine ? t('share.legendMine') : t('share.legendPublic'),
@@ -109,7 +112,7 @@ export function ShareCard({ title, points }: {
       HEIGHT - 52,
     );
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#e6e9ef';
+    ctx.fillStyle = encre.text;
     ctx.font = '600 26px ui-sans-serif, system-ui, sans-serif';
     ctx.fillText(PRODUCT_NAME.toLowerCase(), WIDTH - 80, HEIGHT - 52);
     ctx.textAlign = 'left';

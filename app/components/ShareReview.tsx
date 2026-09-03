@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { useT } from '@/app/i18n/LocaleProvider';
 import { PRODUCT_NAME } from '@/lib/site';
+import { shareInk } from '@/app/components/shareInk';
 
 const WIDTH = 1080;
 const HEIGHT = 1080;
@@ -57,24 +58,27 @@ export function ShareReview({
     const ctx = canvas.getContext('2d');
     if (ctx === null) return;
 
-    // Meme charte que `globals.css` : l'image appartient au meme systeme visuel.
-    ctx.fillStyle = '#0f1115';
+    // ⚠️ La charte est **lue** sur la feuille, jamais recopiee : voir `shareInk`. Les trois
+    // valeurs qui vivaient ici avaient deja quitte celles du site.
+    const encre = shareInk();
+
+    ctx.fillStyle = encre.ink;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     const margin = 90;
     const inner = WIDTH - margin * 2;
 
-    ctx.fillStyle = '#e6e9ef';
+    ctx.fillStyle = encre.text;
     ctx.font = '600 56px ui-sans-serif, system-ui, sans-serif';
     ctx.fillText(truncate(ctx, title, inner), margin, 150);
 
-    ctx.fillStyle = '#8b94a7';
+    ctx.fillStyle = encre.muted;
     ctx.font = '400 30px ui-sans-serif, system-ui, sans-serif';
     ctx.fillText(`@${handle}`, margin, 200);
 
     // Le texte, mis en lignes. ⚠️ **Tronque plutot que deborde** : une image dont la fin
     // est coupee au ras du bord ressemble a un bug, pas a un extrait.
-    ctx.fillStyle = '#e6e9ef';
+    ctx.fillStyle = encre.text;
     ctx.font = '400 40px ui-sans-serif, system-ui, sans-serif';
     const lineHeight = 58;
     const top = 300;
@@ -84,7 +88,7 @@ export function ShareReview({
       ctx.fillText(line, margin, top + index * lineHeight);
     }
 
-    ctx.fillStyle = '#8b94a7';
+    ctx.fillStyle = encre.muted;
     ctx.font = '600 28px ui-sans-serif, system-ui, sans-serif';
     ctx.fillText(PRODUCT_NAME.toLowerCase(), margin, HEIGHT - 70);
 
