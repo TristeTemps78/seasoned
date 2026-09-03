@@ -118,6 +118,18 @@ Trois précisions, parce qu'une règle appliquée mécaniquement redevient une d
   `performance.getEntriesByType('resource')` **et** selon les journaux Supabase. Le « 503
   intermittent » du relevé du 2026-08-16 n'était que ça. Un échec réseau ne se conclut jamais
   de ce panneau seul.
+- **🔴 Les tests ne démarraient plus, et ce n'était pas le code** (2026-09-03). `vitest run`
+  rendait `failed to load config from vitest.config.ts` → `UNRESOLVED_ENTRY`, sur un fichier
+  qui existe et que `tsc --noEmit` traversait sans rien dire. La cause est sous
+  `node_modules` : **cette machine est `win32/arm64`**, le lock déclare bien
+  `@rolldown/binding-win32-arm64-msvc`, et l'installé portait `binding-win32-x64-msvc` —
+  une installation faite sous un Node x64 émulé avait figé le binaire de l'autre
+  architecture. Rolldown se rabat alors sur `binding-wasm32-wasi`, dont la résolution de
+  chemin échoue (l'indice est le `ExperimentalWarning: WASI` en tête de sortie).
+  Correctif : `npm install --no-save @rolldown/binding-win32-arm64-msvc@<version du lock>`,
+  puis 132 fichiers et 1297 tests repassent en 29 s. **Un message qui accuse un fichier de
+  configuration peut ne parler que de l'architecture du binaire qui le lit** — et le même
+  piège attend tout dépôt de cette machine qui dépend de Vite 8 / Rolldown.
 - Pousser = déployer en public : décision de Tristan.
 - **Ce fichier est le seul.** Pas de `TASKS.md`, pas d'`AGENTS.md`, pas de `docs/` :
   supprimés le 2026-08-10, à la demande de Tristan. Ne pas les recréer. Ce qui reste à
