@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Home } from '@/app/(site)/page';
+import { Home } from '@/app/components/Home';
 import { alternatesFor } from '@/lib/routes';
 
 /** L'accueil en francais — meme composant, autre langue. Voir `app/fr/serie/[id]`. */
