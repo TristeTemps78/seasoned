@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { DEFAULT_LOCALE, localeTag, t } from '@/lib/i18n';
-import { PRODUCT_NAME } from '@/lib/site';
+import { PRODUCT_NAME, SITE_INK } from '@/lib/site';
 
 /**
  * Le manifeste qui rend l'application **installable sur les cinq plateformes**.
@@ -49,12 +49,11 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    // ⚠️ Doivent suivre `--color-ink` de `globals.css`. Restees sur l'ancienne teinte lors
-    // du passage a la DA cyberpunk : la correction avait ete faite sur `siteViewport`
-    // (`SiteChrome.tsx`) et **pas ici**, donc l'ecran de demarrage de l'application
-    // installee et la barre systeme ne s'accordaient plus au fond du site.
-    background_color: '#08090e',
-    theme_color: '#08090e',
+    // ⚠️ La meme valeur que la barre systeme, et elle vit dans `SITE_INK` : le commentaire
+    // qui etait ici annoncait la correction comme faite, et les deux teintes avaient en
+    // realite quitte `--color-ink` toutes les deux.
+    background_color: SITE_INK,
+    theme_color: SITE_INK,
     categories: ['entertainment', 'lifestyle'],
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },

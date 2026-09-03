@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata, Viewport } from 'next';
 import { TMDB_ATTRIBUTION } from '@/src/catalog/provider';
-import { PRODUCT_NAME, siteUrl } from '@/lib/site';
+import { PRODUCT_NAME, SITE_INK, siteUrl } from '@/lib/site';
 import { ServiceWorker } from '@/app/components/ServiceWorker';
 import { DataSafety } from '@/app/components/DataSafety';
 import { WriteFailureNotice } from '@/app/components/WriteFailureNotice';
@@ -340,9 +340,8 @@ export function siteMetadata(locale: Locale): Metadata {
  * Android, ce qui la fait immediatement lire comme un site ouvert dans un navigateur.
  */
 export const siteViewport: Viewport = {
-  // ⚠️ Doit suivre `--color-ink` de `globals.css`. Restee sur l'ancienne teinte lors
-  // du passage a la DA cyberpunk : l'application installee encadrait un fond qui
-  // n'existait plus nulle part ailleurs.
-  themeColor: '#08090e',
+  // ⚠️ Une seule valeur pour le fond annonce au systeme — voir `SITE_INK`. Elle etait
+  // recopiee ici et dans le manifeste, et les deux avaient quitte `--color-ink`.
+  themeColor: SITE_INK,
   colorScheme: 'dark',
 };

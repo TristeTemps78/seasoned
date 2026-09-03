@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { styleSheet } from './sources';
+import { SITE_INK } from '@/lib/site';
 
 /**
  * Le contraste des jetons — la seule partie de la direction artistique qui se calcule.
@@ -209,4 +210,19 @@ it('le voile de la banniere ne depend pas de la largeur de la fenetre', () => {
   expect(Math.max(...encres), 'l encre du regime etroit').toBeGreaterThanOrEqual(82);
   expect(Math.min(...couvertures), 'la couverture du regime large').toBeGreaterThanOrEqual(28);
   expect(Math.max(...couvertures), 'la couverture du regime etroit').toBeGreaterThanOrEqual(34);
+});
+
+/**
+ * Le fond annonce au systeme d'exploitation est bien celui de la page.
+ *
+ * 🔴 Il ne l'etait pas, et trois commentaires affirmaient le contraire (2026-08-30) : la barre
+ * systeme et l'ecran de demarrage annoncaient `#08090e` quand `body` peint `#14181c`. Un
+ * telephone encadrait la page d'un noir plus sombre qu'elle.
+ *
+ * ⚠️ Cette valeur ne **peut pas** etre lue sur la feuille : elle est produite sur le serveur,
+ * dans des metadonnees Next, avant qu'aucun style n'existe. Deux endroits, donc — mais la
+ * regle qui les lie est desormais executee au lieu d'etre ecrite.
+ */
+it('le fond annonce au systeme est celui que la page peint', () => {
+  expect(SITE_INK.toLowerCase()).toBe(token('color-ink').toLowerCase());
 });

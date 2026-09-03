@@ -28,3 +28,23 @@ export function siteUrl(): string {
 
   return 'http://localhost:3000';
 }
+
+/**
+ * Le fond du site, tel que le **systeme d'exploitation** doit l'encadrer.
+ *
+ * ## 🔴 Il ne suivait pas `--color-ink`, alors que deux commentaires juraient que si
+ *
+ * Mesure du 2026-08-30 : `body` peint `var(--color-ink)`, soit `#14181c`. `siteViewport`
+ * annoncait `#08090e` a la barre systeme, et `manifest.ts` la meme teinte au fond de l'ecran
+ * de demarrage — **les deux sous un commentaire disant « doit suivre `--color-ink` »**. Un
+ * telephone encadrait donc la page d'un noir plus sombre qu'elle : une couture visible en
+ * haut de l'ecran, et un ecran de demarrage qui n'est pas la couleur du site.
+ *
+ * La regle etait ecrite trois fois et vraie zero. Elle vit maintenant a un seul endroit, et
+ * `contrast.test.ts` verifie qu'elle vaut bien le jeton — une verite executee plutot qu'un
+ * commentaire.
+ *
+ * ⚠️ Une constante et non une lecture : ces deux valeurs sont produites **sur le serveur**,
+ * dans des metadonnees Next, la ou aucune feuille de style n'existe encore.
+ */
+export const SITE_INK = '#14181c';
