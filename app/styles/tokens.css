@@ -306,16 +306,24 @@
    * reprennent leur valeur par defaut, mot pour mot. Nommer n'est pas redessiner : le CSS
    * compile avant/apres est identique, verifie et non promis.
    *
-   * ⚠️ **Trois crans sont a un cheveu l'un de l'autre** : 0.6875 (`--text-2xs`), 0.75
-   * (`--text-xs`) et 0.8125 (`--text-xs-plus`). Trois tailles de petit texte qu'aucun oeil ne
-   * distingue et que trois auteurs ont posees separement. Les fondre est une decision de
-   * design, pas de refactor — elle se prend a la refonte, et elle se prend **ici**.
+   * ## Un seul cran de petit texte (decision du 2026-08-30)
+   *
+   * Il y en avait trois, a un cheveu l'un de l'autre — 0.6875, 0.75 et 0.8125 rem — poses
+   * separement par trois auteurs. Aucun oeil ne les distingue ; ils ne coutaient que des
+   * occasions de diverger. Ils sont fondus dans `--text-xs`, et les deux cas de bord vont
+   * **tous les deux dans le bon sens** :
+   *
+   * - `.poster-progress` monte de 11 a 12 px. C'est du texte pose sur une **photo**, en blanc
+   *   sur un degrade : 11 px etait sous le plancher de ce qui se lit la. La chaine la plus
+   *   longue (`S12E24`, six signes en chiffres tabulaires) tient largement dans une tuile de
+   *   90 px, gouttiere comprise.
+   * - `.avatar` descend de 13 a 12 px. Ce sont des initiales dans un cercle de 32 px : a
+   *   cette taille, un pixel de moins ne se voit pas, et `.avatar-lg` a de toute facon son
+   *   propre cran.
    */
 
   /* Les crans partages avec les utilitaires du JSX. */
-  --text-2xs: 0.6875rem;
   --text-xs: 0.75rem;
-  --text-xs-plus: 0.8125rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
   --text-lg: 1.125rem;
