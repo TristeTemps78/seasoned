@@ -854,6 +854,11 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   // dans la rangee « Show », et c'est lui qui porte cette promesse quand on la choisit.
   'review.title': 'What people say',
   'progress.start': 'I’ve started it',
+  'progress.resumePicker': 'I’m already at…',
+  'progress.lastSeen': 'Last episode watched',
+  'progress.resumeAt': 'Resume at: {code}',
+  'progress.noKnownNext': 'No later episode listed yet.',
+  'progress.savePosition': 'Save my position',
   'progress.season': 'Season',
   'progress.episode': 'Episode',
   'progress.orGrid': 'or click an episode in the grid',

@@ -1031,6 +1031,11 @@ export const FR = {
   // « Montrer » — et c'est lui qui porte cette promesse-là, une fois qu'on la choisit.
   'review.title': 'Ce qu’en disent les gens',
   'progress.start': 'Je l’ai commencée',
+  'progress.resumePicker': 'J’en suis déjà à…',
+  'progress.lastSeen': 'Dernier épisode vu',
+  'progress.resumeAt': 'À reprendre : {code}',
+  'progress.noKnownNext': 'Aucun épisode suivant connu.',
+  'progress.savePosition': 'Enregistrer ma position',
   'progress.season': 'Saison',
   'progress.episode': 'Épisode',
   'progress.orGrid': 'ou cliquez un épisode dans la grille',

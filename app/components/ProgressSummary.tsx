@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useId, useState } from 'react';
 import { useJournal } from '@/app/journal/useJournal';
 import { useT } from '@/app/i18n/LocaleProvider';
 import { StarRating } from '@/app/components/StarRating';
@@ -12,6 +13,7 @@ import {
   MAX_FAVORITES,
 } from '@/src/domain/journal';
 import { pathIn } from '@/lib/routes';
+import { nextAfter } from '@/src/domain/remaining';
 import type { SeasonShape } from '@/app/components/MyProgress';
 
 /**
@@ -56,6 +58,10 @@ export function ProgressSummary({ seriesId, seasons }: {
   const { journal, ready, setPosition, setSeasonRating, setWanted, setLiked, watchAgain, toggleFavorite } =
     useJournal();
   const { t, locale } = useT();
+  const resumeId = useId();
+  const [resumeOpen, setResumeOpen] = useState(false);
+  const [resumeSeason, setResumeSeason] = useState<number>();
+  const [resumeEpisode, setResumeEpisode] = useState<number>();
 
   const key = journalKey(seriesId);
   const entry = journal.entries[key];
@@ -83,6 +89,18 @@ export function ProgressSummary({ seriesId, seasons }: {
   const currentSeason = position?.seasonNumber;
   const currentRating =
     currentSeason !== undefined ? entry?.seasonRatings?.[String(currentSeason)] : undefined;
+  const selectableSeasons = seasons.filter((s) => s.episodeCount > 0);
+  const selectedSeason = selectableSeasons.find((s) => s.seasonNumber === resumeSeason) ?? selectableSeasons[0];
+  const draft = selectedSeason && resumeEpisode !== undefined && resumeEpisode >= 1 && resumeEpisode <= selectedSeason.episodeCount
+    ? { seasonNumber: selectedSeason.seasonNumber, episodeNumber: resumeEpisode }
+    : undefined;
+  const next = nextAfter(seasons, draft);
+
+  function closeResume() {
+    setResumeOpen(false);
+    setResumeSeason(undefined);
+    setResumeEpisode(undefined);
+  }
 
   return (
     <section className="show-actions panel" aria-label={t('progress.quickAria')}>
@@ -144,13 +162,62 @@ export function ProgressSummary({ seriesId, seasons }: {
         {position === undefined ? (
           <button
             type="button"
-            onClick={() => setPosition(key, seasons[0]?.seasonNumber ?? 1, 1)}
+            onClick={() => {
+              closeResume();
+              setPosition(key, seasons[0]?.seasonNumber ?? 1, 1);
+            }}
             className="btn rounded-full"
           >
             {t('progress.start')}
           </button>
         ) : null}
+        {position === undefined && selectableSeasons.length > 0 ? (
+          <button
+            type="button"
+            className="btn rounded-full"
+            aria-expanded={resumeOpen}
+            aria-controls={resumeOpen ? resumeId : undefined}
+            onClick={() => resumeOpen ? closeResume() : setResumeOpen(true)}
+          >
+            {t('progress.resumePicker')}
+          </button>
+        ) : null}
       </div>
+
+      {position === undefined && resumeOpen && selectedSeason ? (
+        <form id={resumeId} className="space-y-2" onSubmit={(e) => {
+          e.preventDefault();
+          if (!draft) return;
+          setPosition(key, draft.seasonNumber, draft.episodeNumber);
+          closeResume();
+        }}>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="meta" htmlFor={`${resumeId}-season`}>{t('progress.season')}</label>
+            <select id={`${resumeId}-season`} className="menu" value={selectedSeason.seasonNumber}
+              onChange={(e) => { setResumeSeason(Number(e.target.value)); setResumeEpisode(undefined); }}>
+              {selectableSeasons.map(({ seasonNumber }) => (
+                <option key={seasonNumber} value={seasonNumber}>{seasonNumber}</option>
+              ))}
+            </select>
+            <label className="meta" htmlFor={`${resumeId}-episode`}>{t('progress.lastSeen')}</label>
+            <select id={`${resumeId}-episode`} className="menu" value={resumeEpisode ?? ''}
+              onChange={(e) => setResumeEpisode(Number(e.target.value) || undefined)}>
+              <option value="">—</option>
+              {Array.from({ length: selectedSeason.episodeCount }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+          <p className="meta-sm" aria-live="polite">
+            {draft ? (next ? t('progress.resumeAt', { code: `S${next.seasonNumber}E${next.episodeNumber}` })
+              : t('progress.noKnownNext')) : null}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="submit" className="btn rounded-full" disabled={!draft}>{t('progress.savePosition')}</button>
+            <button type="button" className="btn rounded-full" onClick={closeResume}>{t('lists.cancel')}</button>
+          </div>
+        </form>
+      ) : null}
 
       {/* Ou l'on en est, et le cran du moment. Deux lignes seulement : le detail — changer de
           saison, la grille, la decision — vit plus bas, la ou on descend quand on le cherche. */}
