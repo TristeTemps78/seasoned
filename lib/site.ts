@@ -22,9 +22,10 @@ export function siteUrl(): string {
   if (explicit !== undefined && explicit.trim().length > 0) {
     return explicit.replace(/\/$/, '');
   }
-  // Fourni automatiquement par Vercel sur les previews et la production.
-  const vercel = process.env['VERCEL_PROJECT_PRODUCTION_URL'] ?? process.env['VERCEL_URL'];
-  if (vercel !== undefined && vercel.trim().length > 0) return `https://${vercel}`;
+  // Le nom technique de déploiement Vercel n'est pas une URL canonique.
+  if (process.env['VERCEL'] === '1' || process.env['NODE_ENV'] === 'production') {
+    return 'https://www.voltface.app';
+  }
 
   return 'http://localhost:3000';
 }
