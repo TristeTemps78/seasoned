@@ -75,6 +75,7 @@ export function ProgressSummary({ seriesId, seasons, decision, episodeMinutes }:
   const [resumeOpen, setResumeOpen] = useState(false);
   const [resumeSeason, setResumeSeason] = useState<number>();
   const [resumeEpisode, setResumeEpisode] = useState<number>();
+  const [eveningMinutes, setEveningMinutes] = useState(60);
 
   const key = journalKey(seriesId);
   const entry = journal.entries[key];
@@ -113,6 +114,8 @@ export function ProgressSummary({ seriesId, seasons, decision, episodeMinutes }:
     ? remainingAfter(seasons, position, episodeMinutes, marksOf(entry))
     : undefined;
   const resume = left !== undefined && !left.done ? nextAfter(seasons, position) : undefined;
+  const perEvening = episodeMinutes !== undefined && Number.isFinite(episodeMinutes) && episodeMinutes > 0
+    ? Math.floor(eveningMinutes / episodeMinutes) : undefined;
 
   function closeResume() {
     setResumeOpen(false);
@@ -123,8 +126,8 @@ export function ProgressSummary({ seriesId, seasons, decision, episodeMinutes }:
   return (
     <section className="show-actions panel" aria-label={t('progress.quickAria')}>
       {pilot && position !== undefined ? (
-        <div className="space-y-1">
-          <p className="font-semibold">
+        <div className="space-y-2 rounded-lg border border-(--color-faint) p-3">
+          <p className="text-lg font-semibold text-(--color-volt)">
             {resume ? t('progress.resumeAt', { code: `S${resume.seasonNumber}E${resume.episodeNumber}` })
               : t(left?.done ? 'progress.noRemaining' : 'progress.noKnownNext')}
           </p>
@@ -134,6 +137,35 @@ export function ProgressSummary({ seriesId, seasons, decision, episodeMinutes }:
                 ? t('progress.remainingEstimate', { time: formatCommitment(left.minutes, tr) })
                 : t('progress.remainingEpisodes', { episodes: tn('series.episodes', left.episodes) })}
             </p>
+          ) : null}
+          {selectableSeasons.length ? (
+            <ol aria-label={t('progress.seasonStrip')} className="flex flex-wrap gap-1">
+              {selectableSeasons.map(({ seasonNumber }) => (
+                <li key={seasonNumber} aria-current={seasonNumber === resume?.seasonNumber ? 'step' : undefined}
+                  className={`rounded px-2 py-1 text-xs ${seasonNumber === resume?.seasonNumber
+                    ? 'bg-(--color-volt) text-(--color-bg) font-semibold' : 'border border-(--color-faint)'}`}>
+                  S{seasonNumber}
+                </li>
+              ))}
+            </ol>
+          ) : null}
+          {left !== undefined && !left.done && left.episodes > 0 && perEvening !== undefined ? (
+            <details className="border-t border-(--color-faint) pt-2">
+              <summary className="cursor-pointer text-sm font-semibold">{t('progress.eveningPlan')}</summary>
+              <fieldset className="mt-2">
+                <legend className="meta">{t('progress.eveningBudget')}</legend>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {[30, 60, 90, 120].map((minutes) => (
+                    <button key={minutes} type="button" className="btn rounded-full min-h-11"
+                      aria-pressed={minutes === eveningMinutes} onClick={() => setEveningMinutes(minutes)}>{minutes} min</button>
+                  ))}
+                </div>
+              </fieldset>
+              <p className="mt-2 font-semibold" role="status">{perEvening > 0
+                ? tn('progress.evenings', Math.ceil(left.episodes / perEvening))
+                : t('progress.eveningTooShort')}</p>
+              <p className="meta">{t('progress.eveningEstimate')}</p>
+            </details>
           ) : null}
         </div>
       ) : pilot && passes === 0 && decision !== undefined ? (

@@ -140,12 +140,10 @@ export async function seriesMetadata(id: string, locale: Locale): Promise<Metada
   const slowHorses = id === '95480';
   const defaultTitle = started !== undefined ? `${detail.title} (${started})` : detail.title;
   const title = slowHorses
-    ? `${detail.title} : ${locale === 'fr' ? 'saison 6, épisodes et durée' : 'Season 6: episodes and watch time'}`
+    ? `${detail.title} : ${t(locale, 'series.slowHorses.titleSuffix')}`
     : defaultTitle;
   const description = slowHorses
-    ? locale === 'fr'
-      ? 'Slow Horses : la saison 6 compte six épisodes. Retrouvez les dates Apple TV, la durée estimée de la série et votre point de reprise, sans spoiler.'
-      : 'Slow Horses season 6 has six episodes. See the Apple TV dates, the estimated watch time for the series and where to pick up, without spoilers.'
+    ? t(locale, 'series.slowHorses.description')
     : `${detail.title} — ${parts.join(', ')}.`;
   const image = posterUrl(detail.posterPath, 'w500');
   // Canonique **de cette langue**, et declaration reciproque des autres. Pointer toutes
@@ -617,11 +615,9 @@ export async function SeriesView({ id, locale }: {
 
       {id === '95480' ? (
         <section id="slow-horses-saison-6" className="section-rule space-y-2">
-          <h2 className="section-heading">{locale === 'fr' ? 'Slow Horses : la saison 6 sans spoiler' : 'Slow Horses season 6, spoiler-free'}</h2>
-          <p className="prose-note">{locale === 'fr'
-            ? 'La saison 6 compte six épisodes, diffusés sur Apple TV du 16 septembre au 21 octobre 2026. C’est une suite, pas un nouveau point de départ : si vous avez terminé la saison 5, reprenez à S6E1. La durée estimée en haut de cette fiche concerne la série, pas seulement la saison 6.'
-            : 'Season 6 has six episodes, released on Apple TV from September 16 to October 21, 2026. It continues the story: if you finished season 5, pick up at S6E1. The estimated watch time at the top of this page is for the series, not just season 6.'}</p>
-          <a className="underline" href="https://apple.com/tv-pr/originals/slow-horses/">{locale === 'fr' ? 'Vérifier les dates chez Apple TV' : 'Check the dates with Apple TV'}</a>
+          <h2 className="section-heading">{tr.t('series.slowHorses.sectionTitle')}</h2>
+          <p className="prose-note">{tr.t('series.slowHorses.sectionBody')}</p>
+          <a className="underline" href="https://apple.com/tv-pr/originals/slow-horses/">{tr.t('series.slowHorses.sourceLink')}</a>
         </section>
       ) : null}
 

@@ -54,6 +54,21 @@ describe('ProgressSummary — reprise en cours de série', () => {
     expect(screen.queryByRole('heading', { name: 'Avant de te lancer' })).toBeNull();
   });
 
+  it('estime les soirées par épisodes entiers, sans modifier la progression', async () => {
+    renderPilot('95480', 45);
+    fireEvent.click(await screen.findByRole('button', { name: 'J’en suis déjà à…' }));
+    fireEvent.change(screen.getByLabelText('Dernier épisode vu'), { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer ma position' }));
+    expect(await screen.findByRole('list', { name: 'Progression par saison' })).toBeDefined();
+    const storage = window.localStorage.getItem(STORAGE_KEY);
+    fireEvent.click(screen.getByText('Plan de soirée'));
+    fireEvent.click(screen.getByRole('button', { name: '90 min' }));
+    expect(screen.getByText('Environ 4 soirées')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: '30 min' }));
+    expect(screen.getByText('Prévois un créneau plus long.')).toBeDefined();
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe(storage);
+  });
+
   it('prévisualise la reprise avant de mémoriser uniquement le dernier épisode vu', async () => {
     renderSummary();
     fireEvent.click(await screen.findByRole('button', { name: 'J’en suis déjà à…' }));
