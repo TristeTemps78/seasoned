@@ -10,11 +10,21 @@ import {
   favoritesOf,
   hasCompletionOn,
   journalKey,
+  marksOf,
   MAX_FAVORITES,
 } from '@/src/domain/journal';
+import { formatCommitment } from '@/lib/format';
 import { pathIn } from '@/lib/routes';
-import { nextAfter } from '@/src/domain/remaining';
+import { isDecisionPilot } from '@/lib/series-pilot';
+import { nextAfter, remainingAfter } from '@/src/domain/remaining';
 import type { SeasonShape } from '@/app/components/MyProgress';
+
+interface DecisionEvidence {
+  readonly duration?: string;
+  readonly status: string;
+  readonly rating?: string;
+  readonly votes?: string;
+}
 
 /**
  * Les gestes a un tap, **dans le premier ecran**.
@@ -51,13 +61,16 @@ import type { SeasonShape } from '@/app/components/MyProgress';
  * serveur, le HTML est partage entre tous les visiteurs par le cache de bord. C'est la meme
  * mecanique que `MyProgress`, montee un cran plus haut dans le document.
  */
-export function ProgressSummary({ seriesId, seasons }: {
+export function ProgressSummary({ seriesId, seasons, decision, episodeMinutes }: {
   readonly seriesId: string;
   readonly seasons: readonly SeasonShape[];
+  readonly decision?: DecisionEvidence;
+  readonly episodeMinutes?: number;
 }) {
   const { journal, ready, setPosition, setSeasonRating, setWanted, setLiked, watchAgain, toggleFavorite } =
     useJournal();
-  const { t, locale } = useT();
+  const tr = useT();
+  const { t, tn, locale } = tr;
   const resumeId = useId();
   const [resumeOpen, setResumeOpen] = useState(false);
   const [resumeSeason, setResumeSeason] = useState<number>();
@@ -66,6 +79,7 @@ export function ProgressSummary({ seriesId, seasons }: {
   const key = journalKey(seriesId);
   const entry = journal.entries[key];
   const position = entry?.position;
+  const pilot = isDecisionPilot(seriesId);
 
   // La hauteur reservee est celle du bloc **non suivi** — le cas de la quasi-totalite des
   // arrivees : deux rangees de boutons dans une colonne de 18 rem. `.show-actions` porte le
@@ -76,7 +90,7 @@ export function ProgressSummary({ seriesId, seasons }: {
   // regle de 40 rem (`grid-column: 2`) — c'est-a-dire par-dessus le titre, dans le HTML servi
   // et jusqu'a l'hydratation. Pas de `panel` en revanche : un cadre vide qui clignote se lit
   // comme un defaut de chargement.
-  if (!ready || seasons.length === 0) {
+  if (!ready || (seasons.length === 0 && !pilot)) {
     return <div className="show-actions" aria-hidden="true" />;
   }
 
@@ -95,6 +109,10 @@ export function ProgressSummary({ seriesId, seasons }: {
     ? { seasonNumber: selectedSeason.seasonNumber, episodeNumber: resumeEpisode }
     : undefined;
   const next = nextAfter(seasons, draft);
+  const left = pilot && position !== undefined
+    ? remainingAfter(seasons, position, episodeMinutes, marksOf(entry))
+    : undefined;
+  const resume = left !== undefined && !left.done ? nextAfter(seasons, position) : undefined;
 
   function closeResume() {
     setResumeOpen(false);
@@ -104,6 +122,43 @@ export function ProgressSummary({ seriesId, seasons }: {
 
   return (
     <section className="show-actions panel" aria-label={t('progress.quickAria')}>
+      {pilot && position !== undefined ? (
+        <div className="space-y-1">
+          <p className="font-semibold">
+            {resume ? t('progress.resumeAt', { code: `S${resume.seasonNumber}E${resume.episodeNumber}` })
+              : t(left?.done ? 'progress.noRemaining' : 'progress.noKnownNext')}
+          </p>
+          {left !== undefined && !left.done ? (
+            <p className="meta">
+              {left.minutes !== undefined && left.minutes > 0
+                ? t('progress.remainingEstimate', { time: formatCommitment(left.minutes, tr) })
+                : t('progress.remainingEpisodes', { episodes: tn('series.episodes', left.episodes) })}
+            </p>
+          ) : null}
+        </div>
+      ) : pilot && passes === 0 && decision !== undefined ? (
+        <div className="space-y-1">
+          <h2 className="row-title">{t('series.beforeStarting')}</h2>
+          <dl className="space-y-1 text-sm">
+            {decision.duration !== undefined ? (
+              <div className="flex flex-wrap gap-x-2">
+                <dt className="text-(--color-muted)">{t('stat.commitment')}</dt>
+                <dd>~ {decision.duration}</dd>
+              </div>
+            ) : null}
+            <div className="flex flex-wrap gap-x-2">
+              <dt className="text-(--color-muted)">{t('series.beforeStatus')}</dt>
+              <dd>{decision.status}</dd>
+            </div>
+            {decision.rating !== undefined ? (
+              <div className="flex flex-wrap gap-x-2">
+                <dt className="text-(--color-muted)">{t('stat.public')}</dt>
+                <dd>{decision.rating}{decision.votes !== undefined ? ` · ${decision.votes}` : ''}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
         {/* Niveau 0 — le seul geste possible pour qui arrive d'un moteur de recherche et
             n'a pas vu la serie. Sans lui, le produit demandait de finir pour commencer. */}
@@ -159,7 +214,7 @@ export function ProgressSummary({ seriesId, seasons }: {
           </button>
         ) : null}
 
-        {position === undefined ? (
+        {position === undefined && seasons.length > 0 ? (
           <button
             type="button"
             onClick={() => {

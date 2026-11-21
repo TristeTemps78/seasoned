@@ -49,6 +49,7 @@ import { AddToList } from '@/app/components/AddToList';
 import { ProgressSummary } from '@/app/components/ProgressSummary';
 import { ChooseArtwork } from '@/app/components/ChooseArtwork';
 import { legalIsComplete } from '@/lib/legal';
+import { isDecisionPilot } from '@/lib/series-pilot';
 import { isShowcased } from '@/src/domain/program';
 
 /**
@@ -136,8 +137,16 @@ export async function seriesMetadata(id: string, locale: Locale): Promise<Metada
       : []),
   ];
 
-  const title = started !== undefined ? `${detail.title} (${started})` : detail.title;
-  const description = `${detail.title} — ${parts.join(', ')}.`;
+  const slowHorses = id === '95480';
+  const defaultTitle = started !== undefined ? `${detail.title} (${started})` : detail.title;
+  const title = slowHorses
+    ? `${detail.title} : ${locale === 'fr' ? 'saison 6, épisodes et durée' : 'Season 6: episodes and watch time'}`
+    : defaultTitle;
+  const description = slowHorses
+    ? locale === 'fr'
+      ? 'Slow Horses : la saison 6 compte six épisodes. Retrouvez les dates Apple TV, la durée estimée de la série et votre point de reprise, sans spoiler.'
+      : 'Slow Horses season 6 has six episodes. See the Apple TV dates, the estimated watch time for the series and where to pick up, without spoilers.'
+    : `${detail.title} — ${parts.join(', ')}.`;
   const image = posterUrl(detail.posterPath, 'w500');
   // Canonique **de cette langue**, et declaration reciproque des autres. Pointer toutes
   // les canoniques vers l'anglais reviendrait a demander la desindexation du francais.
@@ -201,6 +210,18 @@ export async function SeriesView({ id, locale }: {
   // Sur la meme echelle que les notes de l'utilisateur : comparer un 8,4/10 a un
   // 4,5/5 ne veut rien dire, et la conversion doit se faire une seule fois.
   const publicStars = starsFromTen(detail.voteAverage);
+  const publicRating = publicStars !== undefined
+    ? `${formatNumberIn(publicStars, locale, 1)} / ${MAX_STARS}`
+    : undefined;
+  const publicVotes = detail.voteCount !== undefined && detail.voteCount > 0
+    ? tn(locale, 'stat.publicVotes', detail.voteCount, { n: formatNumberIn(detail.voteCount, locale) })
+    : undefined;
+  const episodeMinutes = totalRuntimeMinutes !== undefined && episodeCount > 0
+    ? totalRuntimeMinutes / episodeCount
+    : undefined;
+  const tr = translatorFor(locale);
+  const duration = totalRuntimeMinutes !== undefined ? formatCommitment(totalRuntimeMinutes, tr) : undefined;
+  const pilot = isDecisionPilot(id);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -317,8 +338,16 @@ export async function SeriesView({ id, locale }: {
                 <span className="ml-2 font-normal text-(--color-muted)">{started}</span>
               ) : null}
             </h1>
+            {duration !== undefined ? (
+              <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-(--color-muted)">
+                <span>{t(locale, 'stat.commitment')}</span>
+                <strong className="numeric text-base text-(--color-text)">
+                  ~ {duration}
+                </strong>
+              </p>
+            ) : null}
             {detail.originalTitle !== undefined && detail.originalTitle !== detail.title ? (
-              <p className="meta">{detail.originalTitle}</p>
+              <p className="meta mt-2">{detail.originalTitle}</p>
             ) : null}
           </div>
 
@@ -399,6 +428,13 @@ export async function SeriesView({ id, locale }: {
             un endroit. */}
         <ProgressSummary
           seriesId={id}
+          {...(pilot ? { decision: {
+            status: statusLabel(status.status, tr),
+            ...(duration !== undefined ? { duration } : {}),
+            ...(publicRating !== undefined ? { rating: publicRating } : {}),
+            ...(publicVotes !== undefined ? { votes: publicVotes } : {}),
+          } } : {})}
+          {...(pilot && episodeMinutes !== undefined ? { episodeMinutes } : {})}
           seasons={seasons.rateable.map((s) => ({
             seasonNumber: s.ref.seasonNumber,
             episodeCount: s.episodeCount,
@@ -435,16 +471,6 @@ export async function SeriesView({ id, locale }: {
             <dl className="series-measures">
               <Stat label={t(locale, 'stat.seasons')} value={String(seasons.rateable.length)} />
               <Stat label={t(locale, 'stat.episodes')} value={String(episodeCount)} />
-              {totalRuntimeMinutes !== undefined ? (
-                // Le tilde n'est pas cosmetique : le total est une estimation (mediane
-                // d'une saison x nombre d'episodes), et l'annoncer comme exact serait
-                // mentir sur la seule promesse chiffree de la page d'accueil.
-                <Stat
-                  label={t(locale, 'stat.commitment')}
-                  value={`~ ${formatCommitment(totalRuntimeMinutes, translatorFor(locale))}`}
-                  emphasis
-                />
-              ) : null}
               {detail.lastAiredAt !== undefined ? (
                 <Stat
                   label={t(locale, 'stat.lastEpisode')}
@@ -460,17 +486,11 @@ export async function SeriesView({ id, locale }: {
                   Sur l'echelle en etoiles et non sur dix : `starsFromTen` convertit une
                   seule fois, et c'est la meme echelle que les notes du lecteur — sans quoi
                   « le public dit 8,4, vous dites 4 » ne se compare a rien. */}
-              {publicStars !== undefined ? (
+              {publicRating !== undefined ? (
                 <Stat
                   label={t(locale, 'stat.public')}
-                  value={`${formatNumberIn(publicStars, locale, 1)} / ${MAX_STARS}`}
-                  {...(detail.voteCount !== undefined && detail.voteCount > 0
-                    ? {
-                        hint: tn(locale, 'stat.publicVotes', detail.voteCount, {
-                          n: formatNumberIn(detail.voteCount, locale),
-                        }),
-                      }
-                    : {})}
+                  value={publicRating}
+                  {...(publicVotes !== undefined ? { hint: publicVotes } : {})}
                 />
               ) : null}
             </dl>
@@ -525,6 +545,7 @@ export async function SeriesView({ id, locale }: {
           Quatre coupures, pas douze : une ligne entre chaque bloc redessinerait un tableau. */}
       <MyProgress
         canPublish={legalIsComplete()}
+        remainingInHeader={pilot}
         seriesId={id}
         seasons={seasons.rateable.map((s) => ({
           seasonNumber: s.ref.seasonNumber,
@@ -549,9 +570,7 @@ export async function SeriesView({ id, locale }: {
         }}
         // Mediane deduite du total : `lib/catalog.ts` l'a deja calculee sur une saison
         // representative, la redemander couterait un appel pour rien.
-        {...(totalRuntimeMinutes !== undefined && episodeCount > 0
-          ? { episodeMinutes: totalRuntimeMinutes / episodeCount }
-          : {})}
+        {...(episodeMinutes !== undefined ? { episodeMinutes } : {})}
       />
 
       {/* Juste apres les chiffres qu'il qualifie : il ne dit pas « erreur », il dit
@@ -595,6 +614,16 @@ export async function SeriesView({ id, locale }: {
             position avant les critiques des autres. */}
         <div className="series-main">
       <WatchHere id={id} locale={locale} />
+
+      {id === '95480' ? (
+        <section id="slow-horses-saison-6" className="section-rule space-y-2">
+          <h2 className="section-heading">{locale === 'fr' ? 'Slow Horses : la saison 6 sans spoiler' : 'Slow Horses season 6, spoiler-free'}</h2>
+          <p className="prose-note">{locale === 'fr'
+            ? 'La saison 6 compte six épisodes, diffusés sur Apple TV du 16 septembre au 21 octobre 2026. C’est une suite, pas un nouveau point de départ : si vous avez terminé la saison 5, reprenez à S6E1. La durée estimée en haut de cette fiche concerne la série, pas seulement la saison 6.'
+            : 'Season 6 has six episodes, released on Apple TV from September 16 to October 21, 2026. It continues the story: if you finished season 5, pick up at S6E1. The estimated watch time at the top of this page is for the series, not just season 6.'}</p>
+          <a className="underline" href="https://apple.com/tv-pr/originals/slow-horses/">{locale === 'fr' ? 'Vérifier les dates chez Apple TV' : 'Check the dates with Apple TV'}</a>
+        </section>
+      ) : null}
 
       <Trajectory
         id={id}
@@ -862,21 +891,7 @@ async function Trajectory({ id, title, seasons, totalRuntimeMinutes, episodeCoun
   );
 }
 
-/**
- * Un chiffre de la fiche.
- *
- * ## `emphasis` designe **la** reponse de la page, et une seule
- *
- * « ~ 50 heures — 2 jours et 2 h » repond a la question que pose le nom du site. Elle
- * s'affichait avec exactement le meme poids visuel que « 29 septembre 2013 » : quatre
- * cartes identiques, dont une seule comptait. Le regard n'avait aucune raison d'aller au
- * bon endroit.
- *
- * Elle porte donc l'accent du produit, la grille monospace et un liseré lumineux — et les
- * trois autres restent volontairement plates. Mettre deux chiffres en avant reviendrait a
- * n'en mettre aucun.
- */
-function Stat({ label, value, hint, emphasis = false }: {
+function Stat({ label, value, hint }: {
   readonly label: string;
   readonly value: string;
   /**
@@ -888,28 +903,11 @@ function Stat({ label, value, hint, emphasis = false }: {
    * commentaire libre — les trois autres tuiles se passent tres bien d'en avoir un.
    */
   readonly hint?: string;
-  readonly emphasis?: boolean;
 }) {
   return (
-    <div
-      // 🔴 `panel-lit` et non trois utilitaires. La version precedente ecrivait
-      // `shadow-[0_0_24px_-12px_…]`, c'est-a-dire un `box-shadow` **complet** — et un
-      // utilitaire gagne sur la couche `components`. Elle effacait donc l'elevation
-      // partagee, ce qui faisait de la seule tuile qui compte **la seule tuile plate de la
-      // page**. Exactement le defaut que `--halo` existe pour rendre impossible.
-      //
-      // Le fond volt reste un utilitaire : c'est la seule chose que `.panel-lit` ne fasse
-      // pas, et il ne se compose avec rien.
-      className={`tile ${emphasis ? 'panel-lit bg-(--color-volt)/[0.06]' : ''}`}
-    >
-      <dt className={`label ${emphasis ? 'text-(--color-volt)/80' : ''}`}>{label}</dt>
-      <dd
-        className={`tile-value ${
-          emphasis ? 'font-semibold text-(--color-volt)' : 'text-base text-(--color-text)'
-        }`}
-      >
-        {value}
-      </dd>
+    <div className="tile">
+      <dt className="label">{label}</dt>
+      <dd className="tile-value text-base text-(--color-text)">{value}</dd>
       {hint !== undefined ? <dd className="meta-sm text-(--color-muted)">{hint}</dd> : null}
     </div>
   );

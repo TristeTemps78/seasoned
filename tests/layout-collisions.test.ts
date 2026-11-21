@@ -236,6 +236,15 @@ it('les mesures de la serie ne dependent pas d un point de rupture de fenetre', 
   ).toBe(false);
 });
 
+it('la durée estimée figure une seule fois près du titre, avant le synopsis', () => {
+  const page = codeOf(filesUnder('app').find((file) => pathOf(file) === 'app/(site)/serie/[id]/page.tsx')!);
+  const lede = page.slice(page.indexOf('className="show-lede'), page.indexOf('className="show-measures'));
+  const heading = lede.slice(0, lede.indexOf('className="prose-note"'));
+  expect(heading).toMatch(/<\/h1>\s*\{duration !== undefined[\s\S]*?flex-wrap[\s\S]*?~ \{duration\}/);
+  expect(heading).toContain("'stat.commitment'");
+  expect(page.match(/'stat.commitment'/g)).toHaveLength(1);
+});
+
 it('un rail qui aimante ses affiches reserve la place de sa gouttiere', () => {
   /*
    * 🔴 Le defaut n°4, mesure en production le 2026-08-12 sur une fenetre de 1440 px :

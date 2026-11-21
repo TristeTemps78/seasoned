@@ -59,7 +59,7 @@ export type SeriesShape = Omit<JournalSnapshot, 'cachedAt' | 'seasonSizes'>;
  * Tout est garde dans le navigateur. Aucun compte, aucune donnee envoyee nulle part —
  * et la page qui l'accueille reste statique et mise en cache.
  */
-export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPublish = false }: {
+export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPublish = false, remainingInHeader = false }: {
   readonly seriesId: string;
   readonly seasons: readonly SeasonShape[];
   readonly series: SeriesShape;
@@ -70,6 +70,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
   readonly episodeMinutes?: number;
   /** Le verrou legal est-il leve ? Ecrire est toujours possible ; publier, non. */
   readonly canPublish?: boolean;
+  readonly remainingInHeader?: boolean;
 }) {
   const {
     journal,
@@ -140,7 +141,7 @@ export function MyProgress({ seriesId, seasons, series, episodeMinutes, canPubli
   // 12 episodes » continuerait de compter ceux qu'on vient de declarer sauter. Ce depot a
   // livre `ordering.ts` et `episodeMinutes` morts-nes exactement comme ca.
   const marks = marksOf(entry);
-  const left = remainingAfter(seasons, position, episodeMinutes, marks);
+  const left = remainingInHeader ? undefined : remainingAfter(seasons, position, episodeMinutes, marks);
   const rated = new Set(
     Object.keys(entry?.seasonRatings ?? {})
       .map(Number)
