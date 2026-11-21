@@ -872,6 +872,8 @@ export const EN: Readonly<Record<keyof typeof FR, string>> = {
   'progress.eveningBudget': 'Time available each evening',
   'progress.evenings.one': 'About {n} evening',
   'progress.evenings.other': 'About {n} evenings',
+  'progress.episodesPerEvening.one': 'Up to {n} episode per evening',
+  'progress.episodesPerEvening.other': 'Up to {n} episodes per evening',
   'progress.eveningTooShort': 'Plan for a longer slot.',
   'progress.eveningEstimate': 'Based on average episode length, without splitting episodes. Some counted episodes may not have aired yet.',
   'progress.remainingEpisodes': 'Still to watch: {episodes}',

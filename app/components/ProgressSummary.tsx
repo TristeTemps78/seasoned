@@ -116,6 +116,29 @@ export function ProgressSummary({ seriesId, seasons, decision, episodeMinutes }:
   const resume = left !== undefined && !left.done ? nextAfter(seasons, position) : undefined;
   const perEvening = episodeMinutes !== undefined && Number.isFinite(episodeMinutes) && episodeMinutes > 0
     ? Math.floor(eveningMinutes / episodeMinutes) : undefined;
+  const deciding = pilot && position === undefined && passes === 0 && decision !== undefined;
+  const planEpisodes = left?.episodes ?? (deciding
+    ? selectableSeasons.reduce((total, season) => total + season.episodeCount, 0) : 0);
+  const eveningPlan = perEvening !== undefined && planEpisodes > 0 ? (
+    <details className="border-t border-(--color-faint) pt-2">
+      <summary className="cursor-pointer text-sm font-semibold">{t('progress.eveningPlan')}</summary>
+      <fieldset className="mt-2">
+        <legend className="meta">{t('progress.eveningBudget')}</legend>
+        <div className="mt-1 flex flex-wrap gap-1">
+          {[30, 60, 90, 120].map((minutes) => (
+            <button key={minutes} type="button" className="btn rounded-full min-h-11"
+              aria-pressed={minutes === eveningMinutes} onClick={() => setEveningMinutes(minutes)}>{minutes} min</button>
+          ))}
+        </div>
+      </fieldset>
+      <div className="mt-2" role="status">
+        <p className="font-semibold">{perEvening > 0 ? tn('progress.evenings', Math.ceil(planEpisodes / perEvening))
+          : t('progress.eveningTooShort')}</p>
+        {perEvening > 0 ? <p className="meta">{tn('progress.episodesPerEvening', Math.min(planEpisodes, perEvening))}</p> : null}
+      </div>
+      <p className="meta">{t('progress.eveningEstimate')}</p>
+    </details>
+  ) : null;
 
   function closeResume() {
     setResumeOpen(false);
@@ -149,26 +172,9 @@ export function ProgressSummary({ seriesId, seasons, decision, episodeMinutes }:
               ))}
             </ol>
           ) : null}
-          {left !== undefined && !left.done && left.episodes > 0 && perEvening !== undefined ? (
-            <details className="border-t border-(--color-faint) pt-2">
-              <summary className="cursor-pointer text-sm font-semibold">{t('progress.eveningPlan')}</summary>
-              <fieldset className="mt-2">
-                <legend className="meta">{t('progress.eveningBudget')}</legend>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {[30, 60, 90, 120].map((minutes) => (
-                    <button key={minutes} type="button" className="btn rounded-full min-h-11"
-                      aria-pressed={minutes === eveningMinutes} onClick={() => setEveningMinutes(minutes)}>{minutes} min</button>
-                  ))}
-                </div>
-              </fieldset>
-              <p className="mt-2 font-semibold" role="status">{perEvening > 0
-                ? tn('progress.evenings', Math.ceil(left.episodes / perEvening))
-                : t('progress.eveningTooShort')}</p>
-              <p className="meta">{t('progress.eveningEstimate')}</p>
-            </details>
-          ) : null}
+          {eveningPlan}
         </div>
-      ) : pilot && passes === 0 && decision !== undefined ? (
+      ) : deciding ? (
         <div className="space-y-1">
           <h2 className="row-title">{t('series.beforeStarting')}</h2>
           <dl className="space-y-1 text-sm">
@@ -189,6 +195,7 @@ export function ProgressSummary({ seriesId, seasons, decision, episodeMinutes }:
               </div>
             ) : null}
           </dl>
+          {eveningPlan}
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-2">

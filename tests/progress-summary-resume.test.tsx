@@ -54,6 +54,23 @@ describe('ProgressSummary — reprise en cours de série', () => {
     expect(screen.queryByRole('heading', { name: 'Avant de te lancer' })).toBeNull();
   });
 
+  it('permet de planifier avant de commencer, sans inscrire la série au journal', async () => {
+    renderPilot('95480', 45);
+    await screen.findByRole('heading', { name: 'Avant de te lancer' });
+    const storage = window.localStorage.getItem(STORAGE_KEY);
+    fireEvent.click(screen.getByText('Plan de soirée'));
+    fireEvent.click(screen.getByRole('button', { name: '90 min' }));
+    expect(screen.getByText('Environ 6 soirées')).toBeDefined();
+    expect(screen.getByText('Jusqu’à 2 épisodes par soirée')).toBeDefined();
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe(storage);
+  });
+
+  it('n’affiche pas le plan de soirée si la durée par épisode est inconnue', async () => {
+    renderPilot('95480');
+    await screen.findByRole('heading', { name: 'Avant de te lancer' });
+    expect(screen.queryByText('Plan de soirée')).toBeNull();
+  });
+
   it('estime les soirées par épisodes entiers, sans modifier la progression', async () => {
     renderPilot('95480', 45);
     fireEvent.click(await screen.findByRole('button', { name: 'J’en suis déjà à…' }));

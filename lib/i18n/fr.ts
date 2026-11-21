@@ -1049,6 +1049,8 @@ export const FR = {
   'progress.eveningBudget': 'Temps disponible par soirée',
   'progress.evenings.one': 'Environ {n} soirée',
   'progress.evenings.other': 'Environ {n} soirées',
+  'progress.episodesPerEvening.one': 'Jusqu’à {n} épisode par soirée',
+  'progress.episodesPerEvening.other': 'Jusqu’à {n} épisodes par soirée',
   'progress.eveningTooShort': 'Prévois un créneau plus long.',
   'progress.eveningEstimate': 'Estimation sur la durée moyenne, sans fractionner les épisodes. Certains épisodes comptés peuvent ne pas encore être diffusés.',
   'progress.remainingEpisodes': 'Reste à voir : {episodes}',
